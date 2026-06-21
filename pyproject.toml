@@ -1,0 +1,82 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = [".", "platform", "products", "shared"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "N",        # pep8-naming
+    "UP",       # pyupgrade
+    "S",        # bandit security
+    "B",        # bugbear
+    "C4",       # comprehensions
+    "DJ",       # django-specific
+    "T20",      # print statements
+    "RUF",      # ruff-specific
+]
+ignore = ["S101", "S105", "S106", "S311"]
+
+[tool.ruff.lint.per-file-ignores]
+"*/tests/*" = ["S", "B"]
+"*/migrations/*" = ["N806"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["core", "platform", "products", "shared"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+exclude = ["migrations/", "tests/"]
+
+[[tool.mypy.overrides]]
+module = ["celery.*", "confluent_kafka.*", "fastavro.*"]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "core.settings"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "core.settings"
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--tb=short",
+    "--cov=.",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--cov-fail-under=80",
+]
+markers = [
+    "unit: pure unit tests (no DB, no network)",
+    "integration: tests requiring DB or external services",
+    "e2e: end-to-end tests",
+    "slow: tests that take > 5s",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "manage.py",
+    "core/wsgi.py",
+    "core/asgi.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
