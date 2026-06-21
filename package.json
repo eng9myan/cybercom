@@ -1,0 +1,61 @@
+{
+  "name": "cybercom-mobile-shell",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "react-native start",
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "lint": "eslint . --ext .ts,.tsx --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "jest --passWithNoTests",
+    "test:coverage": "jest --coverage --passWithNoTests"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-native": "^0.74.1",
+    "@react-navigation/native": "^6.1.17",
+    "@react-navigation/native-stack": "^6.10.0",
+    "react-native-screens": "^3.31.1",
+    "react-native-safe-area-context": "^4.10.1",
+    "@watermelondb/watermelondb": "^0.27.0",
+    "react-native-keychain": "^8.2.0",
+    "react-native-biometrics": "^3.0.1",
+    "react-native-background-fetch": "^4.2.5",
+    "@react-native-async-storage/async-storage": "^1.23.1",
+    "zustand": "^4.5.2",
+    "@tanstack/react-query": "^5.32.0",
+    "jose": "^5.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "@types/react": "^18.3.1",
+    "@types/react-native": "^0.73.0",
+    "@types/react-test-renderer": "^18.0.7",
+    "@babel/core": "^7.24.5",
+    "@babel/preset-env": "^7.24.5",
+    "@babel/preset-react": "^7.24.1",
+    "@babel/preset-typescript": "^7.24.1",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.9.0",
+    "@typescript-eslint/parser": "^7.9.0",
+    "jest": "^29.7.0",
+    "babel-jest": "^29.7.0",
+    "@testing-library/react-native": "^12.5.0",
+    "react-test-renderer": "^18.3.1"
+  },
+  "jest": {
+    "preset": "react-native",
+    "setupFilesAfterFramework": ["@testing-library/react-native/extend-expect"],
+    "transformIgnorePatterns": [
+      "node_modules/(?!(react-native|@react-native|@react-navigation|react-native-screens|@watermelondb|react-native-keychain|react-native-biometrics)/)"
+    ],
+    "collectCoverageFrom": ["src/**/*.{ts,tsx}", "!src/**/*.d.ts"],
+    "coverageThreshold": {
+      "global": {
+        "lines": 70,
+        "functions": 70
+      }
+    }
+  }
+}
