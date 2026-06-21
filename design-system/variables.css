@@ -1,0 +1,115 @@
+/**
+ * CyberCom Design System — CSS Custom Properties. ADR-0032.
+ * Semantic tokens. Direction-agnostic via CSS Logical Properties.
+ */
+
+:root {
+  /* ── Brand Palette ──────────────────────────────────────────────────── */
+  --color-brand-50: hsl(220, 100%, 97%);
+  --color-brand-100: hsl(220, 96%, 93%);
+  --color-brand-200: hsl(220, 95%, 85%);
+  --color-brand-300: hsl(220, 92%, 73%);
+  --color-brand-400: hsl(220, 90%, 61%);
+  --color-brand-500: hsl(220, 85%, 50%);
+  --color-brand-600: hsl(220, 82%, 40%);
+  --color-brand-700: hsl(220, 80%, 32%);
+  --color-brand-800: hsl(220, 75%, 24%);
+  --color-brand-900: hsl(220, 70%, 16%);
+
+  /* ── Semantic Color Tokens ──────────────────────────────────────────── */
+  --color-primary: var(--color-brand-500);
+  --color-primary-light: var(--color-brand-400);
+  --color-primary-dark: var(--color-brand-700);
+  --color-secondary: hsl(280, 70%, 50%);
+  --color-secondary-light: hsl(280, 70%, 60%);
+
+  /* ── Surface / Background ───────────────────────────────────────────── */
+  --color-background: hsl(220, 20%, 10%);
+  --color-surface: hsl(220, 18%, 14%);
+  --color-surface-raised: hsl(220, 16%, 18%);
+  --color-surface-overlay: hsl(220, 14%, 22%);
+
+  /* ── Text ───────────────────────────────────────────────────────────── */
+  --color-text: hsl(220, 10%, 95%);
+  --color-text-muted: hsl(220, 8%, 60%);
+  --color-text-subtle: hsl(220, 6%, 40%);
+
+  /* ── Status ─────────────────────────────────────────────────────────── */
+  --color-success: hsl(142, 70%, 45%);
+  --color-warning: hsl(38, 90%, 50%);
+  --color-error: hsl(0, 75%, 55%);
+  --color-info: hsl(200, 80%, 50%);
+
+  /* ── Clinical Colors ────────────────────────────────────────────────── */
+  --color-clinical: hsl(210, 80%, 22%);
+  --color-clinical-light: hsl(210, 70%, 35%);
+
+  /* ── Glassmorphism ──────────────────────────────────────────────────── */
+  --glass-background: rgba(255, 255, 255, 0.04);
+  --glass-blur: blur(12px);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+
+  /* ── Typography ─────────────────────────────────────────────────────── */
+  --font-family-latin: "Inter", system-ui, -apple-system, sans-serif;
+  --font-family-arabic: "IBM Plex Arabic", "Noto Sans Arabic", sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ── Spacing (8px grid) ─────────────────────────────────────────────── */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+
+  /* ── Border Radius ──────────────────────────────────────────────────── */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-full: 9999px;
+
+  /* ── Shadows ────────────────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.35);
+
+  /* ── Transitions ────────────────────────────────────────────────────── */
+  --transition-fast: all 0.1s ease;
+  --transition-smooth: all 0.2s ease;
+  --transition-slow: all 0.4s ease;
+
+  /* ── Z-Index ────────────────────────────────────────────────────────── */
+  --z-below: -1;
+  --z-base: 0;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-notification: 400;
+  --z-tooltip: 500;
+}
+
+[data-theme="light"] {
+  --color-background: hsl(220, 30%, 97%);
+  --color-surface: hsl(220, 25%, 94%);
+  --color-surface-raised: hsl(220, 20%, 90%);
+  --color-text: hsl(220, 25%, 10%);
+  --color-text-muted: hsl(220, 15%, 45%);
+  --glass-background: rgba(0, 0, 0, 0.03);
+  --glass-border: 1px solid rgba(0, 0, 0, 0.08);
+}
