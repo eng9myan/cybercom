@@ -358,6 +358,18 @@ class TestTerminologyService:
         assert outcome == "subsumes"
         assert TerminologyAuditLog.objects.filter(tenant_id=test_tenant_id, operation="subsumes").count() == 1
 
+        # Verify OutboxEvents were published (Event Driven)
+        from platform.events.models import OutboxEvent
+        events = OutboxEvent.objects.filter(tenant_id=test_tenant_id)
+        assert events.count() == 6
+        assert events.filter(event_type="cyterminology.search.executed").count() == 1
+        assert events.filter(event_type="cyterminology.lookup.executed").count() == 1
+        assert events.filter(event_type="cyterminology.validation.executed").count() == 1
+        assert events.filter(event_type="cyterminology.translation.executed").count() == 1
+        assert events.filter(event_type="cyterminology.expansion.executed").count() == 1
+        assert events.filter(event_type="cyterminology.subsumes.executed").count() == 1
+
+
 
 @pytest.mark.django_db
 class TestTerminologyAPIs:

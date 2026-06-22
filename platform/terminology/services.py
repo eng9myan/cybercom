@@ -21,6 +21,18 @@ except ImportError:
             return dummy_span()
     tracer = DummyTracer()
 
+def _publish_event(tenant_id: str, event_type: str, payload: Dict[str, Any]) -> None:
+    try:
+        from platform.events.models import OutboxEvent
+        OutboxEvent.objects.create(
+            tenant_id=tenant_id,
+            topic="platform.terminology.events",
+            event_type=event_type,
+            payload=payload
+        )
+    except Exception:
+        pass
+
 class TerminologyService:
     """
     Unified entry point for all clinical terminology operations.
@@ -56,6 +68,11 @@ class TerminologyService:
                 duration_ms=elapsed,
                 requested_by=requested_by
             )
+            _publish_event(
+                tenant_id=tenant_id,
+                event_type="cyterminology.search.executed",
+                payload={"provider": provider, "query": query, "records_returned": len(results), "requested_by": requested_by}
+            )
             return results
 
     @classmethod
@@ -86,6 +103,11 @@ class TerminologyService:
                 duration_ms=elapsed,
                 requested_by=requested_by
             )
+            _publish_event(
+                tenant_id=tenant_id,
+                event_type="cyterminology.lookup.executed",
+                payload={"provider": provider, "code": code, "found": res is not None, "requested_by": requested_by}
+            )
             return res
 
     @classmethod
@@ -115,6 +137,11 @@ class TerminologyService:
                 records_returned=1,
                 duration_ms=elapsed,
                 requested_by=requested_by
+            )
+            _publish_event(
+                tenant_id=tenant_id,
+                event_type="cyterminology.validation.executed",
+                payload={"provider": provider, "code": code, "valid": is_valid, "requested_by": requested_by}
             )
             return is_valid
 
@@ -149,6 +176,11 @@ class TerminologyService:
                 duration_ms=elapsed,
                 requested_by=requested_by
             )
+            _publish_event(
+                tenant_id=tenant_id,
+                event_type="cyterminology.translation.executed",
+                payload={"provider": provider, "code": code, "target_system": target_system, "found": res is not None, "requested_by": requested_by}
+            )
             return res
 
     @classmethod
@@ -179,6 +211,11 @@ class TerminologyService:
                 records_returned=len(results),
                 duration_ms=elapsed,
                 requested_by=requested_by
+            )
+            _publish_event(
+                tenant_id=tenant_id,
+                event_type="cyterminology.expansion.executed",
+                payload={"provider": provider, "value_set": value_set, "records_returned": len(results), "requested_by": requested_by}
             )
             return results
 
@@ -234,6 +271,11 @@ class TerminologyService:
                 records_returned=1,
                 duration_ms=elapsed,
                 requested_by=requested_by
+            )
+            _publish_event(
+                tenant_id=tenant_id,
+                event_type="cyterminology.subsumes.executed",
+                payload={"provider": provider, "code_a": code_a, "code_b": code_b, "outcome": res, "requested_by": requested_by}
             )
             return res
 
