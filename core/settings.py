@@ -59,7 +59,22 @@ PLATFORM_APPS = [
     "platform.terminology",
 ]
 
-INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS
+PRODUCT_APPS = [
+    "products.cymed.core.patients",
+    "products.cymed.core.providers",
+    "products.cymed.core.organizations",
+    "products.cymed.core.facilities",
+    "products.cymed.core.encounters",
+    "products.cymed.core.clinical",
+    "products.cymed.core.documents",
+    "products.cymed.core.careplans",
+    "products.cymed.core.orders",
+    "products.cymed.core.scheduling",
+    "products.cymed.core.consents",
+    "products.cymed.core.registries",
+]
+
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
 
 # ---------------------------------------------------------------------------
 # MIDDLEWARE (order matters — tenant before audit)

@@ -26,4 +26,18 @@ urlpatterns = [
     path("api/v1/ai/", include("platform.cyai.urls")),
     path("api/v1/common/", include("platform.common.urls")),
     path("api/v1/terminology/", include("platform.terminology.urls")),
+    
+    # ── CyMed Clinical Core API v1 ──────────────────────────────────────────
+    path("api/v1/patients/", include("products.cymed.core.patients.urls")),
+    path("api/v1/providers/", include("products.cymed.core.providers.urls")),
+    path("api/v1/organizations/", include("products.cymed.core.organizations.urls")),
+    path("api/v1/facilities/", include("products.cymed.core.facilities.urls")),
+    path("api/v1/encounters/", include("products.cymed.core.encounters.urls")),
+    path("api/v1/clinical/", include("products.cymed.core.clinical.urls")),
+    path("api/v1/documents/", include("products.cymed.core.documents.urls")),
+    path("api/v1/careplans/", include("products.cymed.core.careplans.urls")),
+    path("api/v1/orders/", include("products.cymed.core.orders.urls")),
+    path("api/v1/scheduling/", include("products.cymed.core.scheduling.urls")),
+    path("api/v1/consents/", include("products.cymed.core.consents.urls")),
+    path("api/v1/registries/", include("products.cymed.core.registries.urls")),
 ]
