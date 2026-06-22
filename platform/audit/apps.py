@@ -6,3 +6,6 @@ class AuditConfig(AppConfig):
     name = "platform.audit"
     label = "platform_audit"
     verbose_name = "Platform Audit"
+
+    def ready(self):
+        import platform.audit.signals  # noqa: F401
