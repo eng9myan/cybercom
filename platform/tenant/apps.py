@@ -6,3 +6,6 @@ class TenantConfig(AppConfig):
     name = "platform.tenant"
     label = "platform_tenant"
     verbose_name = "Platform Tenant"
+
+    def ready(self):
+        import platform.tenant.signals  # noqa: F401
