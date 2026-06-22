@@ -13,7 +13,11 @@ class TenantIsolationMiddleware:
         tenant_id = request.headers.get('X-Tenant-ID', None)
         
         # Allow open paths to bypass tenant validation
-        if request.path in ['/health', '/health/liveness', '/health/readiness']:
+        if request.path in [
+            '/health', '/health/liveness', '/health/readiness',
+            '/api/v1/identity/healthz/', '/api/v1/identity/metrics',
+            '/api/v1/identity/token/validate/'
+        ]:
             return self.get_response(request)
 
         # Fallback to check token session payload if header is missing
@@ -24,8 +28,9 @@ class TenantIsolationMiddleware:
             return JsonResponse({"detail": "X-Tenant-ID header or claim is missing."}, status=400)
 
         # Set thread-safe setting inside PostgreSQL connection pool
-        with connection.cursor() as cursor:
-            cursor.execute("SET LOCAL app.current_tenant_id = %s;", [tenant_id])
+        if connection.vendor == 'postgresql':
+            with connection.cursor() as cursor:
+                cursor.execute("SET LOCAL app.current_tenant_id = %s;", [tenant_id])
 
         request.tenant_id = tenant_id
         return self.get_response(request)
