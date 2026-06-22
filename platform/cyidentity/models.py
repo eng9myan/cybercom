@@ -392,7 +392,7 @@ class RoleAssignment(PlatformModel):
         db_table = "platform_role_assignments"
         constraints = [
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(kind="permission", permission__isnull=False, child_role__isnull=True)
                     | models.Q(kind="composite", child_role__isnull=False, permission__isnull=True)
                 ),
