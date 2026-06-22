@@ -40,4 +40,7 @@ urlpatterns = [
     path("api/v1/scheduling/", include("products.cymed.core.scheduling.urls")),
     path("api/v1/consents/", include("products.cymed.core.consents.urls")),
     path("api/v1/registries/", include("products.cymed.core.registries.urls")),
+    
+    # ── CyMed Clinic Edition API v1 ──────────────────────────────────────────
+    path("api/v1/clinic/", include("products.cymed.clinic.urls")),
 ]

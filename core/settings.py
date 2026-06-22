@@ -72,6 +72,19 @@ PRODUCT_APPS = [
     "products.cymed.core.scheduling",
     "products.cymed.core.consents",
     "products.cymed.core.registries",
+    
+    # CyMed Clinic Edition (Program 3.1)
+    "products.cymed.clinic.reception",
+    "products.cymed.clinic.appointments",
+    "products.cymed.clinic.consultations",
+    "products.cymed.clinic.triage",
+    "products.cymed.clinic.telemedicine",
+    "products.cymed.clinic.referrals",
+    "products.cymed.clinic.queues",
+    "products.cymed.clinic.specialties",
+    "products.cymed.clinic.clinical_forms",
+    "products.cymed.clinic.billing_bridge",
+    "products.cymed.clinic.insurance_bridge",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
