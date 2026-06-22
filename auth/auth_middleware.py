@@ -11,8 +11,12 @@ class CyIdentityAuthMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Allow health checks to bypass auth
-        if request.path in ['/health', '/health/liveness', '/health/readiness']:
+        # Allow health checks, metrics and token validation to bypass auth
+        if request.path in [
+            '/health', '/health/liveness', '/health/readiness',
+            '/api/v1/identity/healthz/', '/api/v1/identity/metrics',
+            '/api/v1/identity/token/validate/'
+        ]:
             return self.get_response(request)
 
         auth_header = request.headers.get('Authorization', None)
@@ -23,11 +27,12 @@ class CyIdentityAuthMiddleware:
         try:
             # In production, this validates against cached JWKS. Moked for bootstrap.
             payload = jwt.decode(token, settings.JWT_SIGNING_KEY, algorithms=['RS256'], options={"verify_signature": False})
+            request.auth_claims = payload
             request.user_session = {
                 "user_id": payload.get("sub"),
                 "email": payload.get("email"),
                 "tenant_id": payload.get("tenant_id"),
-                "roles": payload.get("roles", []),
+                "roles": payload.get("roles") or payload.get("realm_access", {}).get("roles", []),
                 "permissions": payload.get("permissions", [])
             }
         except jwt.ExpiredSignatureError:
