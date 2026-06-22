@@ -25,4 +25,5 @@ urlpatterns = [
     path("api/v1/data/", include("platform.cydata.urls")),
     path("api/v1/ai/", include("platform.cyai.urls")),
     path("api/v1/common/", include("platform.common.urls")),
+    path("api/v1/terminology/", include("platform.terminology.urls")),
 ]

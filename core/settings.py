@@ -56,6 +56,7 @@ PLATFORM_APPS = [
     "platform.cyintegrationhub",
     "platform.cydata",
     "platform.cyai",
+    "platform.terminology",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS
