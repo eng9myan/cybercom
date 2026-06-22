@@ -55,3 +55,49 @@ class OutboxEvent(models.Model):
         self.error_message = error
         self.retry_count += 1
         self.save(update_fields=["status", "error_message", "retry_count"])
+
+
+class EventDeliveryLog(models.Model):
+    """
+    Logs delivery of events to specific consumer groups / subscriptions.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event_id = models.UUIDField(db_index=True)
+    consumer_group = models.CharField(max_length=200, db_index=True)
+    tenant_id = models.UUIDField(db_index=True)
+    status = models.CharField(max_length=50, default="delivered")
+    delivered_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "platform_event_delivery_logs"
+        ordering = ["-delivered_at"]
+
+
+class DeadLetterEvent(models.Model):
+    """
+    Captures toxic events that failed validation or processing after multiple retries.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    original_event_id = models.UUIDField(null=True, blank=True)
+    tenant_id = models.UUIDField(db_index=True)
+    topic = models.CharField(max_length=500)
+    payload = models.JSONField()
+    error_message = models.TextField()
+    failed_at = models.DateTimeField(default=timezone.now)
+    resolved = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = "platform_dead_letter_events"
+        ordering = ["-failed_at"]
+
+
+class EventSignature(models.Model):
+    """
+    Stores cryptographic signatures of outbox events for integrity checking and non-repudiation.
+    """
+    event = models.OneToOneField(OutboxEvent, on_delete=models.CASCADE, related_name="signature_record")
+    signature = models.TextField()
+    signed_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "platform_event_signatures"

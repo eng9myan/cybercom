@@ -18,6 +18,7 @@ _plat_spec = importlib.util.spec_from_file_location(
 )
 _stdlib_platform = importlib.util.module_from_spec(_plat_spec)
 _plat_spec.loader.exec_module(_stdlib_platform)
+_stdlib_platform.__path__ = [str(Path(__file__).resolve().parent / "platform")]
 
 # Register under 'platform' in sys.modules BEFORE any plugin/library imports it
 # but only do this temporarily during import bootstrap
@@ -28,6 +29,7 @@ import pytest
 
 if __name__ == "__main__":
     import os
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings_test")
     os.environ.setdefault("DJANGO_DEBUG", "True")
     os.environ.setdefault("DJANGO_SECRET_KEY", "dev-test-secret-key-cyidentity-2026")
     os.environ.setdefault("KEYCLOAK_ENABLED", "False")

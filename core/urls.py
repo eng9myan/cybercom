@@ -20,4 +20,9 @@ urlpatterns = [
     # ── Platform API v1 ────────────────────────────────────────────────────
     path("api/v1/tenants/", include("platform.tenant.urls")),
     path("api/v1/identity/", include("platform.cyidentity.urls")),
+    path("api/v1/events/", include("platform.events.urls")),
+    path("api/v1/integration/", include("platform.cyintegrationhub.urls")),
+    path("api/v1/data/", include("platform.cydata.urls")),
+    path("api/v1/ai/", include("platform.cyai.urls")),
+    path("api/v1/common/", include("platform.common.urls")),
 ]
