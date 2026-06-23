@@ -158,6 +158,37 @@ HOSPITAL_MEDICAL_CITY_FEATURES = HOSPITAL_ENTERPRISE_FEATURES + [
     "hospital.regional_network",
 ]
 
+# Laboratory Edition Feature Maps (Program 3.3)
+LAB_BASIC_FEATURES = [
+    "lab.orders",
+    "lab.specimens",
+    "lab.accessioning",
+    "lab.worklists",
+    "lab.results",
+    "lab.blood_bank",
+]
+
+LAB_ADVANCED_FEATURES = LAB_BASIC_FEATURES + [
+    "lab.microbiology",
+    "lab.pathology",
+    "lab.histopathology",
+    "lab.quality",
+    "lab.analytics",
+]
+
+LAB_REFERENCE_FEATURES = LAB_ADVANCED_FEATURES + [
+    "lab.reference_lab",
+    "lab.multi_site",
+    "lab.cross_lab_routing",
+]
+
+LAB_NATIONAL_FEATURES = LAB_REFERENCE_FEATURES + [
+    "lab.public_health",
+    "lab.national_registry",
+    "lab.population_analytics",
+    "lab.government_integration",
+]
+
 EDITION_FEATURE_MAP = {
     "cymed_clinic:starter": CLINIC_STARTER_FEATURES,
     "cymed_clinic:professional": CLINIC_PROFESSIONAL_FEATURES,
@@ -165,4 +196,8 @@ EDITION_FEATURE_MAP = {
     "cymed_hospital:community": HOSPITAL_COMMUNITY_FEATURES,
     "cymed_hospital:enterprise": HOSPITAL_ENTERPRISE_FEATURES,
     "cymed_hospital:medical_city": HOSPITAL_MEDICAL_CITY_FEATURES,
+    "cymed_laboratory:basic": LAB_BASIC_FEATURES,
+    "cymed_laboratory:advanced": LAB_ADVANCED_FEATURES,
+    "cymed_laboratory:reference": LAB_REFERENCE_FEATURES,
+    "cymed_laboratory:national": LAB_NATIONAL_FEATURES,
 }

@@ -112,6 +112,20 @@ PRODUCT_APPS = [
     "products.cymed.hospital.discharge",
     "products.cymed.hospital.clinical_command_center",
     "products.cymed.hospital.capacity_management",
+
+    # CyMed Laboratory Edition (Program 3.3)
+    "products.cymed.laboratory.orders",
+    "products.cymed.laboratory.specimens",
+    "products.cymed.laboratory.accessioning",
+    "products.cymed.laboratory.worklists",
+    "products.cymed.laboratory.results",
+    "products.cymed.laboratory.microbiology",
+    "products.cymed.laboratory.pathology",
+    "products.cymed.laboratory.histopathology",
+    "products.cymed.laboratory.quality",
+    "products.cymed.laboratory.blood_bank_foundation",
+    "products.cymed.laboratory.analytics",
+    "products.cymed.laboratory.reference_lab",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS

@@ -30,7 +30,8 @@ EDITIONS = [
     # Laboratory
     {"product": "cymed_laboratory", "code": "basic",       "name": "CyMed Laboratory Basic",    "tier": "basic",    "max_users": 20, "max_providers": 5,  "max_beds": 0, "max_facilities": 1, "max_clinics": 0, "sort_order": 1},
     {"product": "cymed_laboratory", "code": "advanced",    "name": "CyMed Laboratory Advanced", "tier": "advanced", "max_users": 0,  "max_providers": 0,  "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 2},
-    {"product": "cymed_laboratory", "code": "reference",   "name": "CyMed Reference Lab",       "tier": "reference_lab", "max_users": 0, "max_providers": 0, "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 3},
+    {"product": "cymed_laboratory", "code": "reference",   "name": "CyMed Reference Lab",              "tier": "reference_lab",    "max_users": 0, "max_providers": 0, "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 3},
+    {"product": "cymed_laboratory", "code": "national",   "name": "CyMed National Laboratory Network", "tier": "national_network", "max_users": 0, "max_providers": 0, "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 4},
     # Imaging
     {"product": "cymed_imaging", "code": "basic",       "name": "CyMed Imaging Basic",       "tier": "basic",      "max_users": 20, "max_providers": 5,  "max_beds": 0, "max_facilities": 1, "max_clinics": 0, "sort_order": 1},
     {"product": "cymed_imaging", "code": "enterprise",  "name": "CyMed Imaging Enterprise",  "tier": "enterprise", "max_users": 0,  "max_providers": 0,  "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 2},
@@ -82,6 +83,32 @@ EDITION_MODULES = {
         "hospital.icu", "hospital.operating_room", "hospital.anesthesia",
         "hospital.maternity", "hospital.transfer_center", "hospital.capacity_management",
         "hospital.clinical_command_center",
+    ],
+    "cymed_laboratory:basic": [
+        "lab.orders", "lab.specimens", "lab.accessioning",
+        "lab.worklists", "lab.results", "lab.blood_bank",
+    ],
+    "cymed_laboratory:advanced": [
+        "lab.orders", "lab.specimens", "lab.accessioning",
+        "lab.worklists", "lab.results", "lab.blood_bank",
+        "lab.microbiology", "lab.pathology", "lab.histopathology",
+        "lab.quality", "lab.analytics",
+    ],
+    "cymed_laboratory:reference": [
+        "lab.orders", "lab.specimens", "lab.accessioning",
+        "lab.worklists", "lab.results", "lab.blood_bank",
+        "lab.microbiology", "lab.pathology", "lab.histopathology",
+        "lab.quality", "lab.analytics",
+        "lab.reference_lab", "lab.multi_site", "lab.cross_lab_routing",
+    ],
+    "cymed_laboratory:national": [
+        "lab.orders", "lab.specimens", "lab.accessioning",
+        "lab.worklists", "lab.results", "lab.blood_bank",
+        "lab.microbiology", "lab.pathology", "lab.histopathology",
+        "lab.quality", "lab.analytics",
+        "lab.reference_lab", "lab.multi_site", "lab.cross_lab_routing",
+        "lab.public_health", "lab.national_registry",
+        "lab.population_analytics", "lab.government_integration",
     ],
 }
 
