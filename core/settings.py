@@ -72,7 +72,19 @@ PRODUCT_APPS = [
     "products.cymed.core.scheduling",
     "products.cymed.core.consents",
     "products.cymed.core.registries",
-    
+
+    # CyMed Commercial Foundation (Program 3.C0)
+    "products.cymed.commercial.licensing",
+    "products.cymed.commercial.editions",
+    "products.cymed.commercial.feature_flags",
+    "products.cymed.commercial.subscriptions",
+    "products.cymed.commercial.branding",
+    "products.cymed.commercial.deployment_profiles",
+    "products.cymed.commercial.product_catalog",
+    "products.cymed.commercial.usage_metering",
+    "products.cymed.commercial.customer_management",
+    "products.cymed.commercial.partner_management",
+
     # CyMed Clinic Edition (Program 3.1)
     "products.cymed.clinic.reception",
     "products.cymed.clinic.appointments",
