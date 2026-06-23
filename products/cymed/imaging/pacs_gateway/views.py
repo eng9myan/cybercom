@@ -1,0 +1,28 @@
+from products.cymed.imaging.views import ImagingModelViewSet
+from .models import PACSNode, PACSQuery, StudyRoute, PACSEvent
+from .serializers import PACSNodeSerializer, PACSQuerySerializer, StudyRouteSerializer, PACSEventSerializer
+
+
+class PACSNodeViewSet(ImagingModelViewSet):
+    queryset = PACSNode.objects.all()
+    serializer_class = PACSNodeSerializer
+    required_feature = "imaging.pacs"
+
+
+class PACSQueryViewSet(ImagingModelViewSet):
+    queryset = PACSQuery.objects.select_related("pacs_node")
+    serializer_class = PACSQuerySerializer
+    required_feature = "imaging.pacs"
+
+
+class StudyRouteViewSet(ImagingModelViewSet):
+    queryset = StudyRoute.objects.select_related("source_pacs", "destination_pacs")
+    serializer_class = StudyRouteSerializer
+    required_feature = "imaging.pacs"
+
+
+class PACSEventViewSet(ImagingModelViewSet):
+    queryset = PACSEvent.objects.select_related("pacs_node")
+    serializer_class = PACSEventSerializer
+    required_feature = "imaging.pacs"
+    http_method_names = ["get", "head", "options"]

@@ -32,9 +32,11 @@ EDITIONS = [
     {"product": "cymed_laboratory", "code": "advanced",    "name": "CyMed Laboratory Advanced", "tier": "advanced", "max_users": 0,  "max_providers": 0,  "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 2},
     {"product": "cymed_laboratory", "code": "reference",   "name": "CyMed Reference Lab",              "tier": "reference_lab",    "max_users": 0, "max_providers": 0, "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 3},
     {"product": "cymed_laboratory", "code": "national",   "name": "CyMed National Laboratory Network", "tier": "national_network", "max_users": 0, "max_providers": 0, "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 4},
-    # Imaging
-    {"product": "cymed_imaging", "code": "basic",       "name": "CyMed Imaging Basic",       "tier": "basic",      "max_users": 20, "max_providers": 5,  "max_beds": 0, "max_facilities": 1, "max_clinics": 0, "sort_order": 1},
-    {"product": "cymed_imaging", "code": "enterprise",  "name": "CyMed Imaging Enterprise",  "tier": "enterprise", "max_users": 0,  "max_providers": 0,  "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 2},
+    # Imaging (Program 3.4)
+    {"product": "cymed_imaging", "code": "basic",          "name": "CyMed Imaging Basic",              "tier": "basic",          "max_users": 20, "max_providers": 5,  "max_beds": 0, "max_facilities": 1, "max_clinics": 0, "sort_order": 1},
+    {"product": "cymed_imaging", "code": "enterprise",     "name": "CyMed Imaging Enterprise",         "tier": "enterprise",     "max_users": 0,  "max_providers": 0,  "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 2},
+    {"product": "cymed_imaging", "code": "teleradiology",  "name": "CyMed Imaging Teleradiology",      "tier": "teleradiology",  "max_users": 0,  "max_providers": 0,  "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 3},
+    {"product": "cymed_imaging", "code": "national",       "name": "CyMed National Imaging Network",   "tier": "national",       "max_users": 0,  "max_providers": 0,  "max_beds": 0, "max_facilities": 0, "max_clinics": 0, "sort_order": 4},
     # Pharmacy
     {"product": "cymed_pharmacy", "code": "retail",            "name": "CyMed Pharmacy Retail",          "tier": "retail",            "max_users": 10,  "max_providers": 0,  "max_beds": 0, "max_facilities": 1,  "max_clinics": 0, "sort_order": 1},
     {"product": "cymed_pharmacy", "code": "chain",             "name": "CyMed Pharmacy Chain",           "tier": "chain",             "max_users": 0,   "max_providers": 0,  "max_beds": 0, "max_facilities": 0,  "max_clinics": 0, "sort_order": 2},
@@ -109,6 +111,25 @@ EDITION_MODULES = {
         "lab.reference_lab", "lab.multi_site", "lab.cross_lab_routing",
         "lab.public_health", "lab.national_registry",
         "lab.population_analytics", "lab.government_integration",
+    ],
+    "cymed_imaging:basic": [
+        "imaging.orders", "imaging.scheduling", "imaging.reporting", "imaging.results",
+    ],
+    "cymed_imaging:enterprise": [
+        "imaging.orders", "imaging.scheduling", "imaging.reporting", "imaging.results",
+        "imaging.pacs", "imaging.dicom", "imaging.worklist", "imaging.quality", "imaging.analytics",
+    ],
+    "cymed_imaging:teleradiology": [
+        "imaging.orders", "imaging.scheduling", "imaging.reporting", "imaging.results",
+        "imaging.pacs", "imaging.dicom", "imaging.worklist", "imaging.quality", "imaging.analytics",
+        "imaging.teleradiology", "imaging.second_opinion", "imaging.multi_site", "imaging.reading_network",
+    ],
+    "cymed_imaging:national": [
+        "imaging.orders", "imaging.scheduling", "imaging.reporting", "imaging.results",
+        "imaging.pacs", "imaging.dicom", "imaging.worklist", "imaging.quality", "imaging.analytics",
+        "imaging.teleradiology", "imaging.second_opinion", "imaging.multi_site", "imaging.reading_network",
+        "imaging.national_registry", "imaging.government", "imaging.population_analytics",
+        "imaging.public_health_reporting",
     ],
 }
 

@@ -126,6 +126,18 @@ PRODUCT_APPS = [
     "products.cymed.laboratory.blood_bank_foundation",
     "products.cymed.laboratory.analytics",
     "products.cymed.laboratory.reference_lab",
+
+    # CyMed Imaging Edition (Program 3.4)
+    "products.cymed.imaging.orders",
+    "products.cymed.imaging.modality_worklist",
+    "products.cymed.imaging.scheduling",
+    "products.cymed.imaging.radiology_reporting",
+    "products.cymed.imaging.results",
+    "products.cymed.imaging.pacs_gateway",
+    "products.cymed.imaging.dicom_registry",
+    "products.cymed.imaging.teleradiology",
+    "products.cymed.imaging.quality",
+    "products.cymed.imaging.analytics",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS

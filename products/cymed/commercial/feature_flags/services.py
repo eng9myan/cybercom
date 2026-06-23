@@ -189,6 +189,36 @@ LAB_NATIONAL_FEATURES = LAB_REFERENCE_FEATURES + [
     "lab.government_integration",
 ]
 
+# Imaging Edition Feature Maps (Program 3.4)
+IMAGING_BASIC_FEATURES = [
+    "imaging.orders",
+    "imaging.scheduling",
+    "imaging.reporting",
+    "imaging.results",
+]
+
+IMAGING_ENTERPRISE_FEATURES = IMAGING_BASIC_FEATURES + [
+    "imaging.pacs",
+    "imaging.dicom",
+    "imaging.worklist",
+    "imaging.quality",
+    "imaging.analytics",
+]
+
+IMAGING_TELERADIOLOGY_FEATURES = IMAGING_ENTERPRISE_FEATURES + [
+    "imaging.teleradiology",
+    "imaging.second_opinion",
+    "imaging.multi_site",
+    "imaging.reading_network",
+]
+
+IMAGING_NATIONAL_FEATURES = IMAGING_TELERADIOLOGY_FEATURES + [
+    "imaging.national_registry",
+    "imaging.government",
+    "imaging.population_analytics",
+    "imaging.public_health_reporting",
+]
+
 EDITION_FEATURE_MAP = {
     "cymed_clinic:starter": CLINIC_STARTER_FEATURES,
     "cymed_clinic:professional": CLINIC_PROFESSIONAL_FEATURES,
@@ -200,4 +230,8 @@ EDITION_FEATURE_MAP = {
     "cymed_laboratory:advanced": LAB_ADVANCED_FEATURES,
     "cymed_laboratory:reference": LAB_REFERENCE_FEATURES,
     "cymed_laboratory:national": LAB_NATIONAL_FEATURES,
+    "cymed_imaging:basic": IMAGING_BASIC_FEATURES,
+    "cymed_imaging:enterprise": IMAGING_ENTERPRISE_FEATURES,
+    "cymed_imaging:teleradiology": IMAGING_TELERADIOLOGY_FEATURES,
+    "cymed_imaging:national": IMAGING_NATIONAL_FEATURES,
 }

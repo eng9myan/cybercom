@@ -52,4 +52,7 @@ urlpatterns = [
 
     # ── CyMed Laboratory Edition API v1 (Program 3.3) ────────────────────────
     path("api/v1/lab/", include("products.cymed.laboratory.urls")),
+
+    # ── CyMed Imaging Edition API v1 (Program 3.4) ───────────────────────────
+    path("api/v1/imaging/", include("products.cymed.imaging.urls")),
 ]
