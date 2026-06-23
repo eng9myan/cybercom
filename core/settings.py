@@ -85,6 +85,21 @@ PRODUCT_APPS = [
     "products.cymed.clinic.clinical_forms",
     "products.cymed.clinic.billing_bridge",
     "products.cymed.clinic.insurance_bridge",
+
+    # CyMed Hospital Edition (Program 3.2)
+    "products.cymed.hospital.adt",
+    "products.cymed.hospital.bed_management",
+    "products.cymed.hospital.emergency",
+    "products.cymed.hospital.inpatient",
+    "products.cymed.hospital.nursing",
+    "products.cymed.hospital.icu",
+    "products.cymed.hospital.operating_room",
+    "products.cymed.hospital.anesthesia",
+    "products.cymed.hospital.maternity",
+    "products.cymed.hospital.transfer_center",
+    "products.cymed.hospital.discharge",
+    "products.cymed.hospital.clinical_command_center",
+    "products.cymed.hospital.capacity_management",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
