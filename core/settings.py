@@ -138,6 +138,31 @@ PRODUCT_APPS = [
     "products.cymed.imaging.teleradiology",
     "products.cymed.imaging.quality",
     "products.cymed.imaging.analytics",
+
+    # CyMed Pharmacy Edition (Program 3.5)
+    "products.cymed.pharmacy.prescriptions",
+    "products.cymed.pharmacy.dispensing",
+    "products.cymed.pharmacy.clinical_pharmacy",
+    "products.cymed.pharmacy.medication_reconciliation",
+    "products.cymed.pharmacy.drug_interactions",
+    "products.cymed.pharmacy.formulary",
+    "products.cymed.pharmacy.automation",
+    "products.cymed.pharmacy.analytics",
+    "products.cymed.pharmacy.inventory_bridge",
+    "products.cymed.pharmacy.procurement_bridge",
+
+    # CyMed Population Health Edition (Program 3.6)
+    "products.cymed.population_health.care_gaps",
+    "products.cymed.population_health.risk_management",
+    "products.cymed.population_health.cohorts",
+    "products.cymed.population_health.quality",
+    "products.cymed.population_health.registries",
+    "products.cymed.population_health.epidemiology",
+    "products.cymed.population_health.national_programs",
+    "products.cymed.population_health.digital_health",
+
+    # Website Public APIs (Program 3.10)
+    "products.website",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
@@ -267,6 +292,16 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.environ.get("API_PAGE_SIZE", "25")),
     "EXCEPTION_HANDLER": "platform.api.exceptions.cybercom_exception_handler",
+    "DEFAULT_THROTTLE_CLASSES": [],
+    "DEFAULT_THROTTLE_RATES": {
+        # Website public API throttle buckets (per IP)
+        "website_public_read": os.environ.get("THROTTLE_WEBSITE_READ", "600/hour"),
+        "website_public_write": os.environ.get("THROTTLE_WEBSITE_WRITE", "20/hour"),
+        "website_demo_request": os.environ.get("THROTTLE_DEMO_REQUEST", "5/hour"),
+        "website_contact": os.environ.get("THROTTLE_CONTACT", "10/hour"),
+        "website_partner_application": os.environ.get("THROTTLE_PARTNER_APP", "3/hour"),
+        "website_newsletter": os.environ.get("THROTTLE_NEWSLETTER", "5/hour"),
+    },
 }
 
 # ---------------------------------------------------------------------------

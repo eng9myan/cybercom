@@ -47,6 +47,9 @@ urlpatterns = [
     # ── CyMed Hospital Edition API v1 ────────────────────────────────────────
     path("api/v1/hospital/", include("products.cymed.hospital.urls")),
 
+    # ── Website Public APIs v1 (Program 3.10) ────────────────────────────────
+    path("api/v1/public/", include("products.website.urls", namespace="website")),
+
     # ── CyMed Commercial Foundation API v1 ───────────────────────────────────
     path("api/v1/commercial/", include("products.cymed.commercial.urls")),
 
@@ -55,4 +58,7 @@ urlpatterns = [
 
     # ── CyMed Imaging Edition API v1 (Program 3.4) ───────────────────────────
     path("api/v1/imaging/", include("products.cymed.imaging.urls")),
+
+    # ── CyMed Pharmacy Edition API v1 (Program 3.5) ──────────────────────────
+    path("api/v1/pharmacy/", include("products.cymed.pharmacy.urls")),
 ]
