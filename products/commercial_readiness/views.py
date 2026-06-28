@@ -1,3 +1,4 @@
+from django.db import models as db_models
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -9,10 +10,18 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from .models import (
     PricingPlan, Quotation, Proposal, LicenseKey,
     ComplianceCertification, CompetitiveBenchmark,
+    License, Subscription, ProductEdition, FeatureFlag,
+    TenantFeatureFlagOverride, WhiteLabelConfig, ConcurrentLicenseSession,
+    CustomerPortalAccess, SupportTicket, MarketplaceListing,
+    MarketplaceInstallation, CommercialMetricsSnapshot,
 )
 from .serializers import (
     PricingPlanSerializer, QuotationSerializer, ProposalSerializer, LicenseKeySerializer,
     ComplianceCertificationSerializer, CompetitiveBenchmarkSerializer,
+    LicenseSerializer, SubscriptionSerializer, ProductEditionSerializer, FeatureFlagSerializer,
+    TenantFeatureFlagOverrideSerializer, WhiteLabelConfigSerializer, ConcurrentLicenseSessionSerializer,
+    CustomerPortalAccessSerializer, SupportTicketSerializer, MarketplaceListingSerializer,
+    MarketplaceInstallationSerializer, CommercialMetricsSnapshotSerializer,
 )
 
 
@@ -142,3 +151,222 @@ class CompetitiveBenchmarkViewSet(BaseViewSet):
     filterset_fields = ["product_code", "category", "competitor_name"]
     search_fields = ["competitor_name", "benchmark_notes", "product_code"]
     ordering_fields = ["our_score", "competitor_score", "last_updated", "created_at"]
+
+
+class LicenseViewSet(BaseViewSet):
+    queryset = License.objects.all()
+    serializer_class = LicenseSerializer
+    filterset_fields = ["status", "product_code", "edition", "license_type"]
+    search_fields = ["license_key", "issued_to", "issued_to_email"]
+    ordering_fields = ["created_at", "valid_until", "status"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(tenant_id=getattr(self.request, "tenant_id", None)) if getattr(self.request, "tenant_id", None) else qs.none()
+
+    @action(detail=True, methods=["post"])
+    def activate(self, request, pk=None):
+        license = self.get_object()
+        license.status = "active"
+        license.activated_at = timezone.now()
+        license.save(update_fields=["status", "activated_at", "updated_at"])
+        return Response({"status": "activated"})
+
+    @action(detail=True, methods=["post"])
+    def deactivate(self, request, pk=None):
+        license = self.get_object()
+        license.status = "suspended"
+        license.save(update_fields=["status", "updated_at"])
+        return Response({"status": "suspended"})
+
+    @action(detail=True, methods=["post"])
+    def renew(self, request, pk=None):
+        license = self.get_object()
+        from dateutil.relativedelta import relativedelta
+        if license.valid_until:
+            license.valid_until = license.valid_until + relativedelta(years=1)
+        license.status = "active"
+        license.save(update_fields=["status", "valid_until", "updated_at"])
+        return Response({"status": "renewed", "valid_until": license.valid_until})
+
+    @action(detail=True, methods=["post"])
+    def suspend(self, request, pk=None):
+        license = self.get_object()
+        license.status = "suspended"
+        license.save(update_fields=["status", "updated_at"])
+        return Response({"status": "suspended"})
+
+    @action(detail=True, methods=["post"])
+    def generate_offline_token(self, request, pk=None):
+        license = self.get_object()
+        token = license.generate_offline_token()
+        license.save(update_fields=["offline_token"])
+        return Response({"offline_token": token, "valid_days": license.offline_valid_days})
+
+
+class SubscriptionViewSet(BaseViewSet):
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+    filterset_fields = ["status", "billing_cycle"]
+    ordering_fields = ["created_at", "current_period_end"]
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        sub = self.get_object()
+        sub.cancel_at_period_end = True
+        sub.canceled_at = timezone.now()
+        sub.save(update_fields=["cancel_at_period_end", "canceled_at", "updated_at"])
+        return Response({"status": "cancellation_scheduled"})
+
+    @action(detail=True, methods=["post"])
+    def resume(self, request, pk=None):
+        sub = self.get_object()
+        sub.cancel_at_period_end = False
+        sub.canceled_at = None
+        sub.status = "active"
+        sub.save(update_fields=["cancel_at_period_end", "canceled_at", "status", "updated_at"])
+        return Response({"status": "resumed"})
+
+
+class ProductEditionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ProductEdition.objects.filter(is_active=True)
+    serializer_class = ProductEditionSerializer
+    filterset_fields = ["product_code", "edition_code"]
+    ordering_fields = ["product_code", "sort_order"]
+    permission_classes = []  # public read
+
+
+class FeatureFlagViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = FeatureFlag.objects.filter(is_enabled=True)
+    serializer_class = FeatureFlagSerializer
+    filterset_fields = ["product_code", "edition_code"]
+    permission_classes = []
+
+
+class TenantFeatureFlagOverrideViewSet(BaseViewSet):
+    queryset = TenantFeatureFlagOverride.objects.all()
+    serializer_class = TenantFeatureFlagOverrideSerializer
+    filterset_fields = ["flag", "is_enabled"]
+
+
+class WhiteLabelConfigViewSet(BaseViewSet):
+    queryset = WhiteLabelConfig.objects.all()
+    serializer_class = WhiteLabelConfigSerializer
+
+
+class ConcurrentLicenseSessionViewSet(BaseViewSet):
+    queryset = ConcurrentLicenseSession.objects.all()
+    serializer_class = ConcurrentLicenseSessionSerializer
+    filterset_fields = ["license", "is_active"]
+
+    @action(detail=True, methods=["post"])
+    def checkin(self, request, pk=None):
+        session = self.get_object()
+        session.is_active = True
+        session.ended_at = None
+        session.save(update_fields=["is_active", "ended_at", "last_heartbeat_at"])
+        return Response({"status": "checked_in"})
+
+    @action(detail=True, methods=["post"])
+    def checkout(self, request, pk=None):
+        session = self.get_object()
+        session.is_active = False
+        session.ended_at = timezone.now()
+        session.save(update_fields=["is_active", "ended_at"])
+        return Response({"status": "checked_out"})
+
+
+class CustomerPortalAccessViewSet(BaseViewSet):
+    queryset = CustomerPortalAccess.objects.all()
+    serializer_class = CustomerPortalAccessSerializer
+    filterset_fields = ["access_level", "is_active"]
+    search_fields = ["user_id"]
+
+
+class SupportTicketViewSet(BaseViewSet):
+    queryset = SupportTicket.objects.all()
+    serializer_class = SupportTicketSerializer
+    filterset_fields = ["status", "priority", "product_code"]
+    search_fields = ["ticket_number", "subject"]
+    ordering_fields = ["created_at", "priority", "sla_due_at"]
+
+    def perform_create(self, serializer):
+        import uuid
+        ticket_number = f"TKT-{str(uuid.uuid4().hex[:8]).upper()}"
+        serializer.save(
+            tenant_id=getattr(self.request, "tenant_id", None),
+            ticket_number=ticket_number,
+            submitted_by_id=getattr(self.request.user, "id", None),
+        )
+
+    @action(detail=True, methods=["post"])
+    def resolve(self, request, pk=None):
+        ticket = self.get_object()
+        ticket.status = "resolved"
+        ticket.resolved_at = timezone.now()
+        ticket.resolution_notes = request.data.get("resolution_notes", "")
+        ticket.save(update_fields=["status", "resolved_at", "resolution_notes", "updated_at"])
+        return Response({"status": "resolved"})
+
+    @action(detail=True, methods=["post"])
+    def close(self, request, pk=None):
+        ticket = self.get_object()
+        ticket.status = "closed"
+        ticket.save(update_fields=["status", "updated_at"])
+        return Response({"status": "closed"})
+
+    @action(detail=True, methods=["post"])
+    def assign(self, request, pk=None):
+        ticket = self.get_object()
+        ticket.assigned_to_id = request.data.get("assigned_to_id")
+        ticket.status = "in_progress"
+        ticket.save(update_fields=["assigned_to_id", "status", "updated_at"])
+        return Response({"status": "assigned"})
+
+
+class MarketplaceListingViewSet(viewsets.ModelViewSet):
+    queryset = MarketplaceListing.objects.filter(status="published")
+    serializer_class = MarketplaceListingSerializer
+    filterset_fields = ["category", "publisher_type", "price_model", "is_featured"]
+    search_fields = ["name", "description", "tags"]
+    ordering_fields = ["install_count", "rating_avg", "published_at"]
+
+    def get_permissions(self):
+        if self.action in ["list", "retrieve"]:
+            return []
+        return super().get_permissions()
+
+    @action(detail=True, methods=["post"])
+    def install(self, request, pk=None):
+        listing = self.get_object()
+        tenant_id = getattr(request, "tenant_id", None)
+        if not tenant_id:
+            return Response({"error": "Tenant context required"}, status=400)
+        installation, created = MarketplaceInstallation.objects.get_or_create(
+            tenant_id=tenant_id,
+            listing=listing,
+            defaults={
+                "installed_by_id": getattr(request.user, "id", None),
+                "installed_version": listing.version,
+                "is_active": True,
+            },
+        )
+        if not created:
+            installation.is_active = True
+            installation.save(update_fields=["is_active"])
+        listing.install_count = db_models.F("install_count") + 1
+        listing.save(update_fields=["install_count"])
+        return Response({"status": "installed", "installation_id": str(installation.id)})
+
+
+class MarketplaceInstallationViewSet(BaseViewSet):
+    queryset = MarketplaceInstallation.objects.all()
+    serializer_class = MarketplaceInstallationSerializer
+    filterset_fields = ["listing", "is_active"]
+
+
+class CommercialMetricsSnapshotViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CommercialMetricsSnapshot.objects.all()
+    serializer_class = CommercialMetricsSnapshotSerializer
+    filterset_fields = ["metric_type", "product_code", "snapshot_date"]
+    ordering_fields = ["snapshot_date"]
