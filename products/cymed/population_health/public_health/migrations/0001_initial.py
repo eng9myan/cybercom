@@ -1,4 +1,4 @@
-mport django.db.models.deletion
+import django.db.models.deletion
 import django.utils.timezone
 import uuid
 from django.db import migrations, models

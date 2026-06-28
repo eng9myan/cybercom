@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 from django.db import models
 from platform.common.models import BaseModel
 
@@ -161,7 +161,7 @@ class AuthorizationDecision(BaseModel):
         related_name="decisions",
     )
     # FHIR: ClaimResponse.outcome
-    decision = models.CharField(max_length=20, choices=DECISION_CHOICES)
+    decision = models.CharField(max_length=30, choices=DECISION_CHOICES)
     # FHIR: ClaimResponse.created
     decision_date = models.DateTimeField()
     # Payer reviewer name or ID

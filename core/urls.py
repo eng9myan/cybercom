@@ -26,6 +26,11 @@ urlpatterns = [
     path("api/v1/ai/", include("platform.cyai.urls")),
     path("api/v1/common/", include("platform.common.urls")),
     path("api/v1/terminology/", include("platform.terminology.urls")),
+    path("api/v1/notifications/", include("platform.notifications.urls")),
+    path("api/v1/audit/", include("platform.audit.urls")),
+
+    # ── CyCom ERP API v1 ───────────────────────────────────────────────────
+    path("api/v1/erp/", include("products.cycom.urls")),
 
     # ── CyMed Clinical Core API v1 (Program 3.0) ───────────────────────────
     path("api/v1/patients/", include("products.cymed.core.patients.urls")),

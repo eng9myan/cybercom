@@ -1,4 +1,4 @@
-rom rest_framework.routers import DefaultRouter
+from rest_framework.routers import DefaultRouter
 from .views import (
     SurveillanceCaseViewSet,
     OutbreakViewSet,

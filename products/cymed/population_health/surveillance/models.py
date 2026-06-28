@@ -1,4 +1,4 @@
-rom django.db import models
+from django.db import models
 from platform.common.models import BaseModel
 
 

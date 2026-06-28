@@ -74,7 +74,7 @@ class Migration(migrations.Migration):
                 ('rule', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='cymed_hospital_capacity_management.capacityrule')),
             ],
             options={
-                'db_table': 'cymed_hospital_capacity_thresholds',
+                'db_table': 'cymed_hospital_capacity_mgmt_thresholds',
             },
         ),
     ]

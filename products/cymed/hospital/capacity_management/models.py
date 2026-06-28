@@ -17,7 +17,7 @@ class CapacityThreshold(BaseModel):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "cymed_hospital_capacity_thresholds"
+        db_table = "cymed_hospital_capacity_mgmt_thresholds"
 
 class SurgePlan(BaseModel):
     name = models.CharField(max_length=255)

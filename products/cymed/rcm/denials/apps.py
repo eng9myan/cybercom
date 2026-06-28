@@ -1,8 +1,8 @@
-﻿from django.apps import AppConfig
+from django.apps import AppConfig
 
 
 class DenialsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "backend.products.cymed.rcm.denials"
+    name = "products.cymed.rcm.denials"
     label = "cymed_rcm_denials"
     verbose_name = "CyMed RCM - Denials"

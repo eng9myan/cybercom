@@ -61,6 +61,19 @@ PLATFORM_APPS = [
 ]
 
 PRODUCT_APPS = [
+    # CyCom ERP Foundation
+    "products.cycom.crm.accounts",
+    "products.cycom.finance.gl",
+    "products.cycom.finance.ap",
+    "products.cycom.finance.ar",
+    "products.cycom.procurement.purchase_orders",
+    "products.cycom.procurement.vendors",
+    "products.cycom.hr",
+    "products.cycom.payroll",
+    "products.cycom.inventory",
+    "products.cycom.assets",
+    "products.cycom.bi",
+
     "products.cymed.core.patients",
     "products.cymed.core.providers",
     "products.cymed.core.organizations",
