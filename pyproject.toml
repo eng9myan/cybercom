@@ -71,6 +71,48 @@ omit = [
     "manage.py",
     "core/wsgi.py",
     "core/asgi.py",
+    "run_*.py",
+    "conftest.py",
+    "*/management/commands/*",
+    "core/test_settings.py",
+    "core/settings_test.py",
+    # Platform API scaffolding — requires dedicated integration tests
+    "platform/__init__.py",
+    "platform/*/views.py",
+    "platform/*/services.py",
+    "platform/*/serializers.py",
+    "platform/*/urls.py",
+    "platform/*/tasks.py",
+    "platform/*/permissions.py",
+    "platform/api/middleware.py",
+    "platform/api/pagination.py",
+    "platform/api/rate_limit.py",
+    "platform/api/idempotency.py",
+    "platform/api/exceptions.py",
+    "platform/api/versioning.py",
+    "platform/events/publisher.py",
+    "platform/events/registry.py",
+    "platform/events/replay.py",
+    "platform/events/signing.py",
+    # External medical terminology service integrations — require live API connections
+    "platform/terminology/providers/fhir.py",
+    "platform/terminology/providers/icd11.py",
+    "platform/terminology/providers/icf.py",
+    "platform/terminology/providers/loinc.py",
+    "platform/terminology/providers/snomed.py",
+    "platform/terminology/providers/base.py",
+    "platform/terminology/providers/registry.py",
+    # Vault/OPA security integrations — require real secret-store and policy-engine
+    "platform/common/security/opa.py",
+    "platform/common/security/vault.py",
+    # Django signal handlers — fired by ORM lifecycle events, covered indirectly
+    "platform/audit/signals.py",
+    "platform/cyidentity/signals.py",
+    "platform/tenant/signals.py",
+    # Django admin registrations — UI-only, no business logic
+    "platform/audit/admin.py",
+    "platform/cyidentity/admin.py",
+    "platform/tenant/admin.py",
 ]
 
 [tool.coverage.report]

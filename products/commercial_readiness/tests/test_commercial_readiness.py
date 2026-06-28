@@ -1,3 +1,4 @@
+import datetime
 import uuid
 import pytest
 from django.utils import timezone
@@ -15,6 +16,88 @@ from products.commercial_readiness.models import (
 )
 
 TENANT_A = uuid.UUID("aaaaaaaa-0000-0000-0000-000000000001")
+
+
+# ---------------------------------------------------------------------------
+# Unit tests — pure model logic, no database required
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+class TestLicenseModelProperties:
+
+    def _make_license(self, valid_until=None, grace_period_days=30):
+        lic = License.__new__(License)
+        lic.valid_until = valid_until
+        lic.grace_period_days = grace_period_days
+        lic.license_key = "LIC-UNIT-TEST"
+        lic.product_code = "cymed_clinic"
+        lic.max_users = 50
+        lic.licensed_features = ["appointments", "emr", "lab"]
+        return lic
+
+    def test_is_expired_true_when_past_valid_until(self):
+        lic = self._make_license(valid_until=timezone.now() - datetime.timedelta(days=1))
+        assert lic.is_expired is True
+
+    def test_is_expired_false_when_valid_until_in_future(self):
+        lic = self._make_license(valid_until=timezone.now() + datetime.timedelta(days=90))
+        assert lic.is_expired is False
+
+    def test_is_expired_false_when_no_valid_until(self):
+        lic = self._make_license(valid_until=None)
+        assert lic.is_expired is False
+
+    def test_is_in_grace_period_true_when_recently_expired(self):
+        lic = self._make_license(
+            valid_until=timezone.now() - datetime.timedelta(hours=12),
+            grace_period_days=30,
+        )
+        assert lic.is_in_grace_period is True
+
+    def test_is_in_grace_period_false_when_well_past_grace(self):
+        lic = self._make_license(
+            valid_until=timezone.now() - datetime.timedelta(days=60),
+            grace_period_days=30,
+        )
+        assert lic.is_in_grace_period is False
+
+    def test_is_in_grace_period_false_when_still_active(self):
+        lic = self._make_license(valid_until=timezone.now() + datetime.timedelta(days=1))
+        assert lic.is_in_grace_period is False
+
+    def test_is_in_grace_period_false_when_no_valid_until(self):
+        lic = self._make_license(valid_until=None)
+        assert lic.is_in_grace_period is False
+
+    def test_generate_offline_token_returns_64_char_sha256_hex(self):
+        lic = self._make_license(valid_until=timezone.now() + datetime.timedelta(days=365))
+        token = lic.generate_offline_token()
+        assert len(token) == 64
+        assert all(c in "0123456789abcdef" for c in token)
+
+    def test_generate_offline_token_sets_offline_token_attribute(self):
+        lic = self._make_license()
+        token = lic.generate_offline_token()
+        assert lic.offline_token == token
+
+    def test_generate_offline_token_deterministic(self):
+        lic = self._make_license(valid_until=None)
+        t1 = lic.generate_offline_token()
+        t2 = lic.generate_offline_token()
+        assert t1 == t2
+
+    def test_generate_offline_token_differs_by_product(self):
+        lic1 = self._make_license()
+        lic2 = self._make_license()
+        lic2.product_code = "cymed_hospital"
+        assert lic1.generate_offline_token() != lic2.generate_offline_token()
+
+    def test_generate_offline_token_sorts_features(self):
+        lic_a = self._make_license()
+        lic_a.licensed_features = ["emr", "appointments", "lab"]
+        lic_b = self._make_license()
+        lic_b.licensed_features = ["appointments", "emr", "lab"]
+        assert lic_a.generate_offline_token() == lic_b.generate_offline_token()
 
 
 @pytest.fixture
