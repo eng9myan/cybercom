@@ -1,6 +1,8 @@
 import random
 from rest_framework import serializers
 from products.cymed.clinic.insurance_bridge.models import Payer, InsurancePlan, EligibilityCheck, AuthorizationRequest, AuthorizationResponse
+from platform.cyintegrationhub.models import IntegrationPartner
+from platform.cyintegrationhub.services import ConnectorFramework
 
 class PayerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -23,12 +25,36 @@ class EligibilityCheckSerializer(serializers.ModelSerializer):
         tenant_id = getattr(request, "tenant_id", "00000000-0000-0000-0000-000000000000")
         validated_data["tenant_id"] = tenant_id
 
-        # Mock Eligibility Validation
-        is_eligible = True
+        # Fetch or create partner for external routing
+        partner, _ = IntegrationPartner.objects.get_or_create(
+            name="Availity Clearinghouse",
+            defaults={
+                "slug": "availity",
+                "protocol": "fhir",
+                "direction": "bidirectional",
+                "metadata": {"endpoint": "https://api.availity.com/v1"}
+            }
+        )
+
+        # Route through CyIntegrationHub Connector
+        connector_res = ConnectorFramework.execute_connector(
+            tenant_id=tenant_id,
+            partner=partner,
+            connector_type="fhir",
+            action="send",
+            payload={
+                "patient_id": str(validated_data["patient"].id),
+                "plan_code": validated_data["plan"].plan_code,
+                "payer_code": validated_data["plan"].payer.payer_code
+            }
+        )
+
+        is_eligible = True if connector_res.get("fhir_status") == "synced" else False
         response_details = {
-            "card_status": "active",
-            "coverage_valid": True,
-            "copay_percent": float(validated_data["plan"].copay_percentage)
+            "card_status": "active" if is_eligible else "inactive",
+            "coverage_valid": is_eligible,
+            "copay_percent": float(validated_data["plan"].copay_percentage),
+            "connector_raw": connector_res
         }
 
         return EligibilityCheck.objects.create(
@@ -54,8 +80,28 @@ class AuthorizationRequestSerializer(serializers.ModelSerializer):
         tenant_id = getattr(request, "tenant_id", "00000000-0000-0000-0000-000000000000")
         validated_data["tenant_id"] = tenant_id
 
-        # Prior Authorization logic mock
-        status_val = "approved"
+        # Fetch or create partner for external routing
+        partner, _ = IntegrationPartner.objects.get_or_create(
+            name="Availity Clearinghouse",
+            defaults={
+                "slug": "availity",
+                "protocol": "fhir",
+                "direction": "bidirectional",
+                "metadata": {"endpoint": "https://api.availity.com/v1"}
+            }
+        )
+
+        # Route soap transaction through CyIntegrationHub Connector
+        connector_res = ConnectorFramework.execute_connector(
+            tenant_id=tenant_id,
+            partner=partner,
+            connector_type="soap",
+            action="send",
+            payload=f"<PriorAuthRequest><Patient>{validated_data['patient'].id}</Patient><Service>{validated_data['requested_service']}</Service></PriorAuthRequest>"
+        )
+
+        # Prior Authorization logic using SOAP response
+        status_val = "approved" if connector_res.get("soap_status") == "response_received" else "pending"
         auth_req = AuthorizationRequest.objects.create(status=status_val, **validated_data)
 
         # Generate auth response immediately
@@ -67,3 +113,4 @@ class AuthorizationRequestSerializer(serializers.ModelSerializer):
         )
 
         return auth_req
+

@@ -133,7 +133,7 @@ class TestPatientLists:
         from products.cymed.provider_portal.patient_lists.models import PatientList, PatientAssignment
         pl = PatientList.objects.create(
             tenant_id=TENANT, name="Ward 4B", list_type="ward",
-            workspace_id=uuid.uuid4(), unit_name="Cardiology Ward 4B",
+            workspace_id=uuid.uuid4(),
         )
         assignment = PatientAssignment.objects.create(
             tenant_id=TENANT, patient_list=pl,

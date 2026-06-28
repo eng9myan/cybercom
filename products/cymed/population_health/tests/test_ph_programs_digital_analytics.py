@@ -168,7 +168,7 @@ class NationalProgramsTest(TestCase):
             unit="%",
             meets_target=False,
         ))
-        self.assertEqual(metric.actual_value, 62.00)
+        self.assertEqual(float(metric.actual_value), 62.00)
         self.assertFalse(metric.meets_target)
 
 
@@ -286,7 +286,7 @@ class AnalyticsTest(TestCase):
             quality_score="74.20",
         ))
         self.assertEqual(snap.total_population, 36000000)
-        self.assertEqual(snap.care_gap_rate, 28.50)
+        self.assertEqual(float(snap.care_gap_rate), 28.50)
 
     def test_outbreak_forecast_advisory_only(self):
         from products.cymed.population_health.analytics.models import OutbreakForecast

@@ -150,7 +150,7 @@ class RiskManagementTest(TestCase):
             contribution_weight="35.00",
             icd11_code="BA80",
         ))
-        self.assertEqual(factor.contribution_weight, 35.00)
+        self.assertEqual(float(factor.contribution_weight), 35.00)
         self.assertEqual(factor.factor_type, "clinical")
 
     def test_risk_category_thresholds(self):
@@ -344,7 +344,7 @@ class QualityTest(TestCase):
             compliant_count=72,
             compliance_rate="72.00",
         ))
-        self.assertEqual(audit.compliance_rate, 72.00)
+        self.assertEqual(float(audit.compliance_rate), 72.00)
         self.assertEqual(audit.audit_type, "medication")
 
     def test_quality_measure_unique_result_per_period(self):

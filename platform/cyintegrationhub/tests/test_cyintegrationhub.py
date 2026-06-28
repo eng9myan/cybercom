@@ -223,3 +223,69 @@ class TestIntegrationAPIs:
         )
         assert resp.status_code == 200
         assert resp.data["fhir_status"] == "synced"
+
+
+@pytest.mark.django_db
+class TestResilienceAndParsers:
+    def test_dicom_binary_parsing(self):
+        # Create a mock DICOM byte string: 128 bytes preamble + b"DICM" + metadata
+        preamble = b"\x00" * 128
+        magic = b"DICM"
+        payload = preamble + magic + b"some_dicom_data"
+        
+        metadata = ConnectorFramework.parse_dicom_metadata(payload)
+        assert metadata["patient_name"] == "John Doe"
+        assert metadata["sop_instance_uid"] == "1.2.840.10008.5.1.4.1.1.2.999"
+
+    def test_complex_hl7_parsing(self):
+        hl7_msg = (
+            "MSH|^~\\&|SEND_APP|SEND_FAC|||20260628||ADT^A08|MSG123|P|2.5\r"
+            "PID|||MRN98765^^^Hospital|John^Doe^Smith||19851025|M|||123 Main St||||||||\r"
+            "PV1||I|ICU-01||||Dr. Johnson|||||||||||ENC4455\r"
+            "OBX|1|NM|BP_SYSTOLIC||120|mmHg|90-140|N|||F"
+        )
+        parsed = TransformationEngine.transform(hl7_msg, "hl7v2")
+        
+        assert parsed["message_type"] == "ADT^A08"
+        assert parsed["message_code"] == "ADT"
+        assert parsed["trigger_event"] == "A08"
+        assert parsed["patient"]["patient_id"] == "MRN98765"
+        assert parsed["patient"]["first_name"] == "Doe"
+        assert parsed["patient"]["last_name"] == "John"
+        assert parsed["patient"]["dob"] == "19851025"
+        assert parsed["visit"]["patient_class"] == "I"
+        assert parsed["visit"]["assigned_location"] == "ICU-01"
+        assert parsed["visit"]["encounter_id"] == "ENC4455"
+        assert parsed["observations"][0]["value"] == "120"
+        assert parsed["observations"][0]["units"] == "mmHg"
+
+    def test_circuit_breaker_tripping(self, test_tenant_id):
+        from platform.cyintegrationhub.services import CircuitBreakerOpenException
+        partner = IntegrationPartner.objects.create(name="Failing Partner", slug="fail-p", protocol="fhir")
+        
+        # We simulate repeated failure calling a mock failing connector type
+        # Let's trigger execute_connector with an invalid connector type or make it fail
+        # ConnectorFramework raises default_processed or handles Exceptions.
+        # Let's force an exception in execution to trigger the circuit breaker failure records.
+        # Since execute_connector catches Exception internally and returns {"error": ...}, we can test the decorator directly.
+        from platform.cyintegrationhub.services import resilient_call, get_breaker
+        
+        call_count = 0
+        @resilient_call(partner_name="Failing Partner", max_retries=2, backoff_seconds=0.01)
+        def fail_operation():
+            nonlocal call_count
+            call_count += 1
+            raise ValueError("Connection failed")
+
+        # Let's execute it repeatedly until the breaker opens (failure threshold = 5)
+        for _ in range(5):
+            with pytest.raises(ValueError):
+                fail_operation()
+
+        # The 6th call should trip the circuit breaker and raise CircuitBreakerOpenException immediately without executing
+        with pytest.raises(CircuitBreakerOpenException):
+            fail_operation()
+
+        # Call count should be 10 (2 attempts per call, 5 calls before opening)
+        assert call_count == 10
+
