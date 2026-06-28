@@ -19,6 +19,10 @@ class CyIdentityAuthMiddleware:
         ]:
             return self.get_response(request)
 
+        # Allow public website marketing APIs to bypass authentication
+        if request.path.startswith('/api/v1/public/'):
+            return self.get_response(request)
+
         auth_header = request.headers.get('Authorization', None)
         if not auth_header or not auth_header.startswith('Bearer '):
             return JsonResponse({"detail": "Authentication credentials were not provided."}, status=401)
