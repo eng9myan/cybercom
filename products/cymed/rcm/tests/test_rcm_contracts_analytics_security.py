@@ -20,6 +20,7 @@ from products.cymed.rcm.revenue_analytics.models import (
 from products.cymed.rcm.payer_portal.models import (
     PayerPortalAccount, PayerDashboard, PayerClaimReview, PayerAuthorizationReview,
 )
+from products.cymed.rcm.collections.models import CollectionCase
 
 
 TENANT_A = uuid.uuid4()

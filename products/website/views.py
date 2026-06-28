@@ -376,16 +376,33 @@ class DocumentationSearchView(AuditMixin, APIView):
             )
 
         qs = DocumentationItem.objects.filter(is_published=True).select_related("section__product")
-        qs = qs.filter(Q(title__icontains=query) | Q(summary__icontains=query) | Q(tags__contains=[query]))
+        # Use icontains for title/summary (works on all DB backends).
+        # For tag matching: fetch candidates first then filter in Python (avoids
+        # JSONField `contains` which is PostgreSQL-only and unsupported in SQLite tests).
+        text_qs = qs.filter(Q(title__icontains=query) | Q(summary__icontains=query))
 
         if product_slug := request.query_params.get("product"):
-            qs = qs.filter(section__product__slug=product_slug)
+            text_qs = text_qs.filter(section__product__slug=product_slug)
         if content_type := request.query_params.get("content_type"):
-            qs = qs.filter(content_type=content_type)
+            text_qs = text_qs.filter(content_type=content_type)
 
-        qs = qs[:20]
-        serializer = DocumentationItemSerializer(qs, many=True)
+        # Collect matching IDs from text search
+        matched_ids = set(text_qs.values_list("id", flat=True))
+
+        # Tag search: load all published items for tag matching (bounded by tag filter scope)
+        tag_qs = qs.exclude(id__in=matched_ids)
+        if product_slug := request.query_params.get("product"):
+            tag_qs = tag_qs.filter(section__product__slug=product_slug)
+        if content_type := request.query_params.get("content_type"):
+            tag_qs = tag_qs.filter(content_type=content_type)
+        for item in tag_qs:
+            if any(query.lower() in str(tag).lower() for tag in (item.tags or [])):
+                matched_ids.add(item.id)
+
+        combined_qs = qs.filter(id__in=matched_ids)[:20]
+        serializer = DocumentationItemSerializer(combined_qs, many=True)
         return Response({"count": len(serializer.data), "results": serializer.data})
+
 
 
 # ---------------------------------------------------------------------------

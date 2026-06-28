@@ -52,5 +52,19 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "core.settings_test.TestJWTAuthentication",
     ],
+    # Disable throttling in tests so rate-limited public endpoints
+    # (demo-request, contact, newsletter) can be called multiple times
+    # without hitting the IP-scoped bucket.
+    "DEFAULT_THROTTLE_CLASSES": [],
+    "DEFAULT_THROTTLE_RATES": {
+        "website_public_read": "99999/second",
+        "website_public_write": "99999/second",
+        "website_demo_request": "99999/second",
+        "website_contact": "99999/second",
+        "website_partner_application": "99999/second",
+        "website_newsletter": "99999/second",
+    },
 }
+
+
 
