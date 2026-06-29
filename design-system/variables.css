@@ -27,10 +27,15 @@
   --color-background: hsl(220, 20%, 10%);
   --color-surface: hsl(220, 18%, 14%);
   --color-surface-raised: hsl(220, 16%, 18%);
+  --color-surface-elevated: hsl(220, 16%, 18%);   /* alias used by module pages */
   --color-surface-overlay: hsl(220, 14%, 22%);
+
+  /* ── Border ─────────────────────────────────────────────────────────── */
+  --color-border: rgba(255, 255, 255, 0.08);
 
   /* ── Text ───────────────────────────────────────────────────────────── */
   --color-text: hsl(220, 10%, 95%);
+  --color-foreground: hsl(220, 10%, 95%);          /* alias used by root page.tsx */
   --color-text-muted: hsl(220, 8%, 60%);
   --color-text-subtle: hsl(220, 6%, 40%);
 
@@ -108,8 +113,11 @@
   --color-background: hsl(220, 30%, 97%);
   --color-surface: hsl(220, 25%, 94%);
   --color-surface-raised: hsl(220, 20%, 90%);
+  --color-surface-elevated: hsl(220, 20%, 90%);
   --color-text: hsl(220, 25%, 10%);
+  --color-foreground: hsl(220, 25%, 10%);
   --color-text-muted: hsl(220, 15%, 45%);
+  --color-border: rgba(0, 0, 0, 0.10);
   --glass-background: rgba(0, 0, 0, 0.03);
   --glass-border: 1px solid rgba(0, 0, 0, 0.08);
 }
