@@ -8,7 +8,9 @@ Capabilities: ADC Integration, Cabinet Integration, Dispensing Robot Integration
 ALL external device integrations route through CyIntegrationHub (Program 2.6).
 No direct device communication in this module.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -37,6 +39,7 @@ class AutomationDevice(BaseModel):
     Device communication is handled exclusively via CyIntegrationHub (Program 2.6).
     This record is the platform-side reference — not the device controller.
     """
+
     device_code = models.CharField(max_length=100, unique=True, db_index=True)
     device_name = models.CharField(max_length=255)
     device_type = models.CharField(max_length=30, choices=DeviceType.choices)
@@ -47,7 +50,7 @@ class AutomationDevice(BaseModel):
 
     # Location
     facility_id = models.UUIDField(null=True, blank=True)
-    location = models.CharField(max_length=255)                       # e.g., "ICU Level 3, Bay 2"
+    location = models.CharField(max_length=255)  # e.g., "ICU Level 3, Bay 2"
     ward_id = models.UUIDField(null=True, blank=True)
 
     # CyIntegrationHub reference
@@ -55,7 +58,9 @@ class AutomationDevice(BaseModel):
     integration_hub_endpoint = models.CharField(max_length=500, blank=True)
 
     # Status
-    status = models.CharField(max_length=30, choices=DeviceStatus.choices, default=DeviceStatus.OFFLINE)
+    status = models.CharField(
+        max_length=30, choices=DeviceStatus.choices, default=DeviceStatus.OFFLINE
+    )
     last_seen_at = models.DateTimeField(null=True, blank=True)
     last_sync_at = models.DateTimeField(null=True, blank=True)
 
@@ -85,11 +90,12 @@ class DispensingRobot(BaseModel):
     References the AutomationDevice master record.
     All robot commands route through CyIntegrationHub.
     """
+
     device = models.OneToOneField(
         AutomationDevice, on_delete=models.CASCADE, related_name="robot_profile"
     )
-    dispensing_speed = models.PositiveSmallIntegerField(default=0)    # items/hour
-    storage_capacity = models.PositiveIntegerField(default=0)         # unique drugs
+    dispensing_speed = models.PositiveSmallIntegerField(default=0)  # items/hour
+    storage_capacity = models.PositiveIntegerField(default=0)  # unique drugs
     supports_iv_admixture = models.BooleanField(default=False)
     supports_unit_dose = models.BooleanField(default=True)
     supports_blister_pack = models.BooleanField(default=False)
@@ -106,6 +112,7 @@ class CabinetDevice(BaseModel):
     Extended profile for ADC / smart cabinet devices (e.g., BD Pyxis, Omnicell).
     All cabinet commands route through CyIntegrationHub.
     """
+
     device = models.OneToOneField(
         AutomationDevice, on_delete=models.CASCADE, related_name="cabinet_profile"
     )
@@ -117,12 +124,12 @@ class CabinetDevice(BaseModel):
             ("refrigerated", "Refrigerated Cabinet"),
             ("chemotherapy", "Chemotherapy Cabinet"),
         ],
-        default="adc"
+        default="adc",
     )
     slot_count = models.PositiveSmallIntegerField(default=0)
     is_networked = models.BooleanField(default=True)
     requires_biometric = models.BooleanField(default=False)
-    requires_witness = models.BooleanField(default=False)             # For controlled substances
+    requires_witness = models.BooleanField(default=False)  # For controlled substances
     restocking_alert_threshold = models.PositiveSmallIntegerField(default=20)  # % remaining
     assigned_formulary_id = models.UUIDField(null=True, blank=True)
 
@@ -135,6 +142,7 @@ class AutomationQueue(BaseModel):
     Queue of dispense requests routed to automation devices.
     CyIntegrationHub picks up and executes the actual device commands.
     """
+
     QUEUE_STATUS = [
         ("pending", "Pending"),
         ("sent_to_hub", "Sent to CyIntegrationHub"),
@@ -146,7 +154,7 @@ class AutomationQueue(BaseModel):
         ("timeout", "Timeout"),
     ]
 
-    dispense_order_id = models.UUIDField(db_index=True)              # FK to DispenseOrder
+    dispense_order_id = models.UUIDField(db_index=True)  # FK to DispenseOrder
     device = models.ForeignKey(
         AutomationDevice, on_delete=models.PROTECT, related_name="queue_items"
     )
@@ -171,7 +179,7 @@ class AutomationQueue(BaseModel):
     priority = models.CharField(
         max_length=20,
         choices=[("stat", "STAT"), ("urgent", "Urgent"), ("routine", "Routine")],
-        default="routine"
+        default="routine",
     )
 
     class Meta:

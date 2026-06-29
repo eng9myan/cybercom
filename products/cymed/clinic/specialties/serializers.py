@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from products.cymed.clinic.specialties.models import SpecialtyProfile, SpecialtyTemplate, SpecialtyQuestionnaire, SpecialtyClinicalRule
+
+from products.cymed.clinic.specialties.models import (
+    SpecialtyClinicalRule,
+    SpecialtyProfile,
+    SpecialtyQuestionnaire,
+    SpecialtyTemplate,
+)
+
 
 class SpecialtyProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,6 +19,7 @@ class SpecialtyProfileSerializer(serializers.ModelSerializer):
             validated_data["tenant_id"] = request.tenant_id
         return super().create(validated_data)
 
+
 class SpecialtyTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecialtyTemplate
@@ -23,6 +31,7 @@ class SpecialtyTemplateSerializer(serializers.ModelSerializer):
             validated_data["tenant_id"] = request.tenant_id
         return super().create(validated_data)
 
+
 class SpecialtyQuestionnaireSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecialtyQuestionnaire
@@ -33,6 +42,7 @@ class SpecialtyQuestionnaireSerializer(serializers.ModelSerializer):
         if request and hasattr(request, "tenant_id"):
             validated_data["tenant_id"] = request.tenant_id
         return super().create(validated_data)
+
 
 class SpecialtyClinicalRuleSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,11 +1,27 @@
 from rest_framework import serializers
-from products.cymed.hospital.emergency.models import EmergencyVisit, EmergencyTriage, EmergencyAcuity, EmergencyDisposition, EmergencyObservation, EmergencyTracking
+
 from platform.events.models import OutboxEvent
+from products.cymed.hospital.emergency.models import (
+    EmergencyAcuity,
+    EmergencyDisposition,
+    EmergencyObservation,
+    EmergencyTracking,
+    EmergencyTriage,
+    EmergencyVisit,
+)
+
 
 class EmergencyVisitSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmergencyVisit
-        fields = ["id", "patient", "arrival_time", "arrival_method", "presenting_complaint", "status"]
+        fields = [
+            "id",
+            "patient",
+            "arrival_time",
+            "arrival_method",
+            "presenting_complaint",
+            "status",
+        ]
         read_only_fields = ["arrival_time"]
 
     def create(self, validated_data):
@@ -22,11 +38,12 @@ class EmergencyVisitSerializer(serializers.ModelSerializer):
                 "charge_type": "emergency_admission",
                 "amount": 250.00,
                 "currency": "AED",
-                "service_code": "ER-ADM-01"
-            }
+                "service_code": "ER-ADM-01",
+            },
         )
 
         return visit
+
 
 class EmergencyTriageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -60,11 +77,12 @@ class EmergencyTriageSerializer(serializers.ModelSerializer):
                     "visit_id": str(visit.id),
                     "patient_id": str(visit.patient.id),
                     "alert_type": "critical_esi_level_1",
-                    "description": "Patient categorized as ESI Level 1 (Resuscitation Required)."
-                }
+                    "description": "Patient categorized as ESI Level 1 (Resuscitation Required).",
+                },
             )
 
         return triage
+
 
 class EmergencyAcuitySerializer(serializers.ModelSerializer):
     class Meta:
@@ -86,21 +104,24 @@ class EmergencyAcuitySerializer(serializers.ModelSerializer):
                     "visit_id": str(acuity.visit.id),
                     "patient_id": str(acuity.visit.patient.id),
                     "alert_type": "high_news2_deterioration",
-                    "description": f"Critical physiological deterioration flagged. NEWS2 score: {acuity.news2_score}"
-                }
+                    "description": f"Critical physiological deterioration flagged. NEWS2 score: {acuity.news2_score}",
+                },
             )
 
         return acuity
+
 
 class EmergencyDispositionSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmergencyDisposition
         fields = "__all__"
 
+
 class EmergencyObservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmergencyObservation
         fields = "__all__"
+
 
 class EmergencyTrackingSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,5 +1,6 @@
-﻿from rest_framework import serializers
-from .models import CollectionCase, CollectionAction, PaymentPlan, CollectionOutcome
+from rest_framework import serializers
+
+from .models import CollectionAction, CollectionCase, CollectionOutcome, PaymentPlan
 
 
 class CollectionCaseSerializer(serializers.ModelSerializer):

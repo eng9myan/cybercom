@@ -3,45 +3,68 @@ Website Public APIs — Views.
 All endpoints: unauthenticated (IsPublicEndpoint), rate-limited, audit-logged.
 OpenAPI annotations via drf-spectacular @extend_schema.
 """
+
 import time
 
 from django.db.models import Q
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiResponse
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+)
 from rest_framework import status
-from rest_framework.exceptions import Throttled
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .audit import log_website_request, log_lead_event
+from .audit import log_lead_event, log_website_request
 from .models import (
-    ProductListing, Industry, CaseStudy,
-    DemoRequest, ContactMessage, PartnerListing, PartnerApplication,
-    DocumentationSection, DocumentationItem, NewsletterSubscription, NewsletterStatus,
+    CaseStudy,
+    ContactMessage,
+    DemoRequest,
+    DocumentationItem,
+    DocumentationSection,
+    Industry,
+    NewsletterStatus,
+    NewsletterSubscription,
+    PartnerListing,
+    ProductListing,
 )
 from .permissions import IsPublicEndpoint
 from .serializers import (
-    ProductListingListSerializer, ProductListingDetailSerializer,
-    IndustryListSerializer, IndustryDetailSerializer,
-    CaseStudyListSerializer, CaseStudyDetailSerializer,
-    PartnerListingSerializer,
-    DocumentationSectionSerializer, DocumentationSectionDetailSerializer, DocumentationItemSerializer,
-    DemoRequestCreateSerializer, DemoRequestResponseSerializer,
-    ContactMessageCreateSerializer, ContactMessageResponseSerializer,
-    PartnerApplicationCreateSerializer, PartnerApplicationResponseSerializer,
+    CaseStudyDetailSerializer,
+    CaseStudyListSerializer,
+    ContactMessageCreateSerializer,
+    ContactMessageResponseSerializer,
+    DemoRequestCreateSerializer,
+    DemoRequestResponseSerializer,
+    DocumentationItemSerializer,
+    DocumentationSectionDetailSerializer,
+    DocumentationSectionSerializer,
+    IndustryDetailSerializer,
+    IndustryListSerializer,
     NewsletterSubscribeSerializer,
+    PartnerApplicationCreateSerializer,
+    PartnerApplicationResponseSerializer,
+    PartnerListingSerializer,
+    ProductListingDetailSerializer,
+    ProductListingListSerializer,
 )
 from .throttling import (
-    PublicReadThrottle, DemoRequestThrottle,
-    ContactThrottle, PartnerApplicationThrottle, NewsletterThrottle,
+    ContactThrottle,
+    DemoRequestThrottle,
+    NewsletterThrottle,
+    PartnerApplicationThrottle,
+    PublicReadThrottle,
 )
-
 
 # ---------------------------------------------------------------------------
 # Mixin: request timing + logging
 # ---------------------------------------------------------------------------
+
 
 class AuditMixin:
     """Attach start_time on dispatch; log on finalize_response."""
@@ -67,6 +90,7 @@ class AuditMixin:
 # Health / Status
 # ---------------------------------------------------------------------------
 
+
 @extend_schema(
     tags=["Public Health"],
     summary="Website API health check",
@@ -81,25 +105,28 @@ class PublicHealthView(AuditMixin, APIView):
     _resource_type = "health"
 
     def get(self, request):
-        return Response({
-            "status": "ok",
-            "service": "cybercom-website-api",
-            "version": "v1",
-            "endpoints": [
-                "/api/v1/public/products/",
-                "/api/v1/public/industries/",
-                "/api/v1/public/case-studies/",
-                "/api/v1/public/partners/",
-                "/api/v1/public/documentation/",
-                "/api/v1/public/demo-request/",
-                "/api/v1/public/contact/",
-            ],
-        })
+        return Response(
+            {
+                "status": "ok",
+                "service": "cybercom-website-api",
+                "version": "v1",
+                "endpoints": [
+                    "/api/v1/public/products/",
+                    "/api/v1/public/industries/",
+                    "/api/v1/public/case-studies/",
+                    "/api/v1/public/partners/",
+                    "/api/v1/public/documentation/",
+                    "/api/v1/public/demo-request/",
+                    "/api/v1/public/contact/",
+                ],
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
 # Products
 # ---------------------------------------------------------------------------
+
 
 @extend_schema_view(
     get=extend_schema(
@@ -110,8 +137,12 @@ class PublicHealthView(AuditMixin, APIView):
             "Filter by `category` or `is_featured=true` for homepage use."
         ),
         parameters=[
-            OpenApiParameter("category", OpenApiTypes.STR, description="Filter by product category"),
-            OpenApiParameter("is_featured", OpenApiTypes.BOOL, description="Featured products only"),
+            OpenApiParameter(
+                "category", OpenApiTypes.STR, description="Filter by product category"
+            ),
+            OpenApiParameter(
+                "is_featured", OpenApiTypes.BOOL, description="Featured products only"
+            ),
             OpenApiParameter("search", OpenApiTypes.STR, description="Search name or tagline"),
         ],
         responses={200: ProductListingListSerializer(many=True)},
@@ -161,12 +192,15 @@ class ProductDetailView(AuditMixin, RetrieveAPIView):
 # Industries
 # ---------------------------------------------------------------------------
 
+
 @extend_schema_view(
     get=extend_schema(
         tags=["Public Industries"],
         summary="List published industries",
         parameters=[
-            OpenApiParameter("is_featured", OpenApiTypes.BOOL, description="Featured industries only"),
+            OpenApiParameter(
+                "is_featured", OpenApiTypes.BOOL, description="Featured industries only"
+            ),
         ],
         responses={200: IndustryListSerializer(many=True)},
     )
@@ -211,6 +245,7 @@ class IndustryDetailView(AuditMixin, RetrieveAPIView):
 # ---------------------------------------------------------------------------
 # Case Studies
 # ---------------------------------------------------------------------------
+
 
 @extend_schema_view(
     get=extend_schema(
@@ -257,7 +292,11 @@ class CaseStudyDetailView(AuditMixin, RetrieveAPIView):
     _resource_type = "case_study"
 
     def get_queryset(self):
-        return CaseStudy.objects.filter(is_published=True).select_related("industry").prefetch_related("products")
+        return (
+            CaseStudy.objects.filter(is_published=True)
+            .select_related("industry")
+            .prefetch_related("products")
+        )
 
     def get_object(self):
         obj = super().get_object()
@@ -268,6 +307,7 @@ class CaseStudyDetailView(AuditMixin, RetrieveAPIView):
 # ---------------------------------------------------------------------------
 # Partners
 # ---------------------------------------------------------------------------
+
 
 @extend_schema_view(
     get=extend_schema(
@@ -305,6 +345,7 @@ class PartnerListView(AuditMixin, ListAPIView):
 # Documentation
 # ---------------------------------------------------------------------------
 
+
 @extend_schema_view(
     get=extend_schema(
         tags=["Public Documentation"],
@@ -332,7 +373,10 @@ class DocumentationSectionListView(AuditMixin, ListAPIView):
 @extend_schema(
     tags=["Public Documentation"],
     summary="Get documentation section with items",
-    responses={200: DocumentationSectionDetailSerializer, 404: OpenApiResponse(description="Not found")},
+    responses={
+        200: DocumentationSectionDetailSerializer,
+        404: OpenApiResponse(description="Not found"),
+    },
 )
 class DocumentationSectionDetailView(AuditMixin, RetrieveAPIView):
     permission_classes = [IsPublicEndpoint]
@@ -342,9 +386,11 @@ class DocumentationSectionDetailView(AuditMixin, RetrieveAPIView):
     _resource_type = "doc_section"
 
     def get_queryset(self):
-        return DocumentationSection.objects.filter(is_published=True).prefetch_related(
-            "items"
-        ).select_related("product")
+        return (
+            DocumentationSection.objects.filter(is_published=True)
+            .prefetch_related("items")
+            .select_related("product")
+        )
 
     def get_object(self):
         obj = super().get_object()
@@ -404,10 +450,10 @@ class DocumentationSearchView(AuditMixin, APIView):
         return Response({"count": len(serializer.data), "results": serializer.data})
 
 
-
 # ---------------------------------------------------------------------------
 # Demo Request
 # ---------------------------------------------------------------------------
+
 
 @extend_schema(
     tags=["Public Lead Generation"],
@@ -488,6 +534,7 @@ class DemoRequestStatusView(AuditMixin, APIView):
 # Contact
 # ---------------------------------------------------------------------------
 
+
 @extend_schema(
     tags=["Public Lead Generation"],
     summary="Submit a contact message",
@@ -553,6 +600,7 @@ class ContactStatusView(AuditMixin, APIView):
 # Newsletter
 # ---------------------------------------------------------------------------
 
+
 @extend_schema(
     tags=["Public Lead Generation"],
     summary="Subscribe to newsletter",
@@ -602,6 +650,7 @@ class NewsletterSubscribeView(AuditMixin, APIView):
 # Partner Application
 # ---------------------------------------------------------------------------
 
+
 @extend_schema(
     tags=["Public Partners"],
     summary="Submit a partner program application",
@@ -647,6 +696,7 @@ class PartnerApplicationCreateView(AuditMixin, APIView):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _get_ip(request):
     forwarded = request.META.get("HTTP_X_FORWARDED_FOR")

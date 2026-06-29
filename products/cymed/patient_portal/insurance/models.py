@@ -1,14 +1,14 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class InsuranceCard(BaseModel):
     PLAN_TYPE_CHOICES = [
-        ('individual', 'Individual'),
-        ('family', 'Family'),
-        ('corporate', 'Corporate'),
-        ('government', 'Government'),
+        ("individual", "Individual"),
+        ("family", "Family"),
+        ("corporate", "Corporate"),
+        ("government", "Government"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -19,7 +19,7 @@ class InsuranceCard(BaseModel):
     member_id = models.CharField(max_length=100)
     group_number = models.CharField(max_length=100, blank=True)
     plan_name = models.CharField(max_length=255, blank=True)
-    plan_type = models.CharField(max_length=20, choices=PLAN_TYPE_CHOICES, default='individual')
+    plan_type = models.CharField(max_length=20, choices=PLAN_TYPE_CHOICES, default="individual")
     card_front_url = models.URLField(max_length=2000, blank=True)
     card_back_url = models.URLField(max_length=2000, blank=True)
     effective_date = models.DateField(null=True, blank=True)
@@ -32,9 +32,9 @@ class InsuranceCard(BaseModel):
     out_of_pocket_max = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_insurance_cards'
+        db_table = "cymed_portal_insurance_cards"
         indexes = [
-            models.Index(fields=['account_id', 'is_active', 'is_primary']),
+            models.Index(fields=["account_id", "is_active", "is_primary"]),
         ]
 
     def __str__(self):
@@ -43,31 +43,31 @@ class InsuranceCard(BaseModel):
 
 class CoverageVerification(BaseModel):
     VERIFICATION_TYPE_CHOICES = [
-        ('eligibility', 'Eligibility'),
-        ('benefits', 'Benefits'),
-        ('specific_service', 'Specific Service'),
+        ("eligibility", "Eligibility"),
+        ("benefits", "Benefits"),
+        ("specific_service", "Specific Service"),
     ]
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('verified', 'Verified'),
-        ('not_covered', 'Not Covered'),
-        ('partially_covered', 'Partially Covered'),
-        ('failed', 'Failed'),
+        ("pending", "Pending"),
+        ("verified", "Verified"),
+        ("not_covered", "Not Covered"),
+        ("partially_covered", "Partially Covered"),
+        ("failed", "Failed"),
     ]
 
     account_id = models.UUIDField(db_index=True)
     patient_id = models.UUIDField(db_index=True)
     insurance_card = models.ForeignKey(
         InsuranceCard,
-        related_name='verifications',
+        related_name="verifications",
         on_delete=models.CASCADE,
     )
     verification_type = models.CharField(
-        max_length=20, choices=VERIFICATION_TYPE_CHOICES, default='eligibility'
+        max_length=20, choices=VERIFICATION_TYPE_CHOICES, default="eligibility"
     )
     service_type = models.CharField(max_length=100, blank=True)
     service_date = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     coverage_percentage = models.PositiveSmallIntegerField(null=True, blank=True)
     patient_responsibility = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True
@@ -77,9 +77,9 @@ class CoverageVerification(BaseModel):
     valid_until = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_coverage_verifications'
+        db_table = "cymed_portal_coverage_verifications"
         indexes = [
-            models.Index(fields=['account_id', 'status']),
+            models.Index(fields=["account_id", "status"]),
         ]
 
     def __str__(self):
@@ -88,19 +88,19 @@ class CoverageVerification(BaseModel):
 
 class PreauthorizationRequest(BaseModel):
     STATUS_CHOICES = [
-        ('submitted', 'Submitted'),
-        ('under_review', 'Under Review'),
-        ('approved', 'Approved'),
-        ('denied', 'Denied'),
-        ('pending_info', 'Pending Info'),
-        ('expired', 'Expired'),
+        ("submitted", "Submitted"),
+        ("under_review", "Under Review"),
+        ("approved", "Approved"),
+        ("denied", "Denied"),
+        ("pending_info", "Pending Info"),
+        ("expired", "Expired"),
     ]
 
     account_id = models.UUIDField(db_index=True)
     patient_id = models.UUIDField(db_index=True)
     insurance_card = models.ForeignKey(
         InsuranceCard,
-        related_name='preauths',
+        related_name="preauths",
         on_delete=models.CASCADE,
     )
     service_type = models.CharField(max_length=100)
@@ -111,7 +111,7 @@ class PreauthorizationRequest(BaseModel):
     diagnosis_codes = models.JSONField(default=list)
     procedure_codes = models.JSONField(default=list)
     estimated_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='submitted')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="submitted")
     auth_number = models.CharField(max_length=100, blank=True)
     approved_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     denial_reason = models.TextField(blank=True)
@@ -121,9 +121,9 @@ class PreauthorizationRequest(BaseModel):
     responded_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_preauth_requests'
+        db_table = "cymed_portal_preauth_requests"
         indexes = [
-            models.Index(fields=['account_id', 'status']),
+            models.Index(fields=["account_id", "status"]),
         ]
 
     def __str__(self):
@@ -132,19 +132,19 @@ class PreauthorizationRequest(BaseModel):
 
 class ClaimStatus(BaseModel):
     STATUS_CHOICES = [
-        ('submitted', 'Submitted'),
-        ('processing', 'Processing'),
-        ('paid', 'Paid'),
-        ('denied', 'Denied'),
-        ('appealing', 'Appealing'),
-        ('closed', 'Closed'),
+        ("submitted", "Submitted"),
+        ("processing", "Processing"),
+        ("paid", "Paid"),
+        ("denied", "Denied"),
+        ("appealing", "Appealing"),
+        ("closed", "Closed"),
     ]
 
     account_id = models.UUIDField(db_index=True)
     patient_id = models.UUIDField(db_index=True)
     insurance_card = models.ForeignKey(
         InsuranceCard,
-        related_name='claims',
+        related_name="claims",
         on_delete=models.CASCADE,
     )
     claim_number = models.CharField(max_length=100, db_index=True)
@@ -157,14 +157,14 @@ class ClaimStatus(BaseModel):
     patient_responsibility = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True
     )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='submitted')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="submitted")
     denial_reason = models.TextField(blank=True)
     eob_url = models.URLField(max_length=2000, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_claims'
+        db_table = "cymed_portal_claims"
         indexes = [
-            models.Index(fields=['account_id', 'status', 'service_date']),
+            models.Index(fields=["account_id", "status", "service_date"]),
         ]
 
     def __str__(self):

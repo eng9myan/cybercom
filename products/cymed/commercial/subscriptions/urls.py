@@ -1,8 +1,12 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.commercial.subscriptions.views import (
-    SubscriptionPlanViewSet, SubscriptionViewSet, SubscriptionUsageViewSet,
-    SubscriptionInvoiceViewSet, SubscriptionContractViewSet
+    SubscriptionContractViewSet,
+    SubscriptionInvoiceViewSet,
+    SubscriptionPlanViewSet,
+    SubscriptionUsageViewSet,
+    SubscriptionViewSet,
 )
 
 router = DefaultRouter()

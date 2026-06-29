@@ -1,18 +1,26 @@
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
-    ImplementationProject, ProjectMilestone, ProjectTask,
-    CutoverChecklist, HypercareLog, MethodologyTemplate,
+    CutoverChecklist,
+    HypercareLog,
+    ImplementationProject,
+    MethodologyTemplate,
+    ProjectMilestone,
+    ProjectTask,
 )
 from .serializers import (
-    ImplementationProjectSerializer, ProjectMilestoneSerializer, ProjectTaskSerializer,
-    CutoverChecklistSerializer, HypercareLogSerializer, MethodologyTemplateSerializer,
+    CutoverChecklistSerializer,
+    HypercareLogSerializer,
+    ImplementationProjectSerializer,
+    MethodologyTemplateSerializer,
+    ProjectMilestoneSerializer,
+    ProjectTaskSerializer,
 )
 
 
@@ -87,7 +95,9 @@ class CutoverChecklistViewSet(BaseViewSet):
         checklist.completed_by_id = request.data.get("completed_by_id")
         checklist.completed_at = timezone.now()
         checklist.completed_items = checklist.items
-        checklist.save(update_fields=["completed_by_id", "completed_at", "completed_items", "updated_at"])
+        checklist.save(
+            update_fields=["completed_by_id", "completed_at", "completed_items", "updated_at"]
+        )
         return Response({"completed_at": checklist.completed_at, "id": str(checklist.id)})
 
 

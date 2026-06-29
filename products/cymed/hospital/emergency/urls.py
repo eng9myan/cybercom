@@ -1,8 +1,13 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.hospital.emergency.views import (
-    EmergencyVisitViewSet, EmergencyTriageViewSet, EmergencyAcuityViewSet,
-    EmergencyDispositionViewSet, EmergencyObservationViewSet, EmergencyTrackingViewSet
+    EmergencyAcuityViewSet,
+    EmergencyDispositionViewSet,
+    EmergencyObservationViewSet,
+    EmergencyTrackingViewSet,
+    EmergencyTriageViewSet,
+    EmergencyVisitViewSet,
 )
 
 router = DefaultRouter()

@@ -1,18 +1,25 @@
 import uuid
-import json
-import pytest
 from unittest.mock import patch
-from django.utils import timezone
-from rest_framework.test import APIClient
-import jwt
 
-from platform.events.models import OutboxEvent, OutboxEventStatus, DeadLetterEvent, EventDeliveryLog, EventSignature
-from platform.events.signing import EventSigner
+import jwt
+import pytest
+from rest_framework.test import APIClient
+
+from platform.events.models import (
+    DeadLetterEvent,
+    EventDeliveryLog,
+    EventSignature,
+    OutboxEvent,
+    OutboxEventStatus,
+)
 from platform.events.replay import EventReplayManager
+from platform.events.signing import EventSigner
+
 
 @pytest.fixture
 def test_tenant_id():
     return uuid.uuid4()
+
 
 @pytest.fixture
 def auth_client(test_tenant_id):
@@ -32,6 +39,7 @@ def auth_client(test_tenant_id):
     )
     return client
 
+
 @pytest.mark.django_db
 class TestEventModels:
     def test_outbox_event_lifecycle(self, test_tenant_id):
@@ -39,10 +47,13 @@ class TestEventModels:
             tenant_id=test_tenant_id,
             topic="platform.identity.events",
             event_type="cyidentity.user.provisioned",
-            payload={"user_id": "usr-123"}
+            payload={"user_id": "usr-123"},
         )
         assert event.status == OutboxEventStatus.PENDING
-        assert str(event) == f"OutboxEvent(platform.identity.events, cyidentity.user.provisioned, pending)"
+        assert (
+            str(event)
+            == "OutboxEvent(platform.identity.events, cyidentity.user.provisioned, pending)"
+        )
 
         event.mark_published()
         assert event.status == OutboxEventStatus.PUBLISHED
@@ -59,7 +70,7 @@ class TestEventModels:
             tenant_id=test_tenant_id,
             topic="platform.identity.events",
             payload={"user_id": "usr-123"},
-            error_message="Validation error"
+            error_message="Validation error",
         )
         assert dlq.resolved is False
         assert dlq.failed_at is not None
@@ -69,7 +80,7 @@ class TestEventModels:
             event_id=uuid.uuid4(),
             consumer_group="identity-group",
             tenant_id=test_tenant_id,
-            status="delivered"
+            status="delivered",
         )
         assert log.status == "delivered"
 
@@ -78,12 +89,9 @@ class TestEventModels:
             tenant_id=test_tenant_id,
             topic="platform.identity.events",
             event_type="cyidentity.user.provisioned",
-            payload={"user_id": "usr-123"}
+            payload={"user_id": "usr-123"},
         )
-        sig = EventSignature.objects.create(
-            event=event,
-            signature="test-sig-123"
-        )
+        sig = EventSignature.objects.create(event=event, signature="test-sig-123")
         assert sig.signature == "test-sig-123"
         assert event.signature_record == sig
 
@@ -93,12 +101,15 @@ class TestEventSigning:
     def test_sign_and_verify(self, test_tenant_id):
         payload = b'{"user_id": "usr-123"}'
         sig = EventSigner.sign_payload(str(test_tenant_id), payload)
-        
+
         # Verify valid signature
         assert EventSigner.verify_signature(str(test_tenant_id), payload, sig) is True
 
         # Verify invalid signature (tampered payload)
-        assert EventSigner.verify_signature(str(test_tenant_id), b'{"user_id": "usr-999"}', sig) is False
+        assert (
+            EventSigner.verify_signature(str(test_tenant_id), b'{"user_id": "usr-999"}', sig)
+            is False
+        )
 
         # Verify invalid signature (wrong tenant)
         assert EventSigner.verify_signature(str(uuid.uuid4()), payload, sig) is False
@@ -112,31 +123,30 @@ class TestEventReplay:
     @patch("platform.events.publisher.KafkaEventPublisher.publish")
     def test_replay_events(self, mock_publish, test_tenant_id):
         mock_publish.return_value = True
-        
+
         # Create events
         OutboxEvent.objects.create(
             tenant_id=test_tenant_id,
             topic="platform.identity.events",
             event_type="cyidentity.user.provisioned",
-            payload={"user_id": "usr-1"}
+            payload={"user_id": "usr-1"},
         )
         OutboxEvent.objects.create(
             tenant_id=test_tenant_id,
             topic="platform.identity.events",
             event_type="cyidentity.user.provisioned",
-            payload={"user_id": "usr-2"}
+            payload={"user_id": "usr-2"},
         )
         # Event in different topic/tenant
         OutboxEvent.objects.create(
             tenant_id=uuid.uuid4(),
             topic="platform.identity.events",
             event_type="cyidentity.user.provisioned",
-            payload={"user_id": "usr-3"}
+            payload={"user_id": "usr-3"},
         )
 
         replayed = EventReplayManager.replay_events(
-            tenant_id=str(test_tenant_id),
-            topic="platform.identity.events"
+            tenant_id=str(test_tenant_id), topic="platform.identity.events"
         )
         assert replayed == 2
         assert mock_publish.call_count == 2
@@ -150,12 +160,11 @@ class TestEventReplay:
             topic="platform.identity.events",
             event_type="cyidentity.user.provisioned",
             payload={"user_id": "usr-1"},
-            status=OutboxEventStatus.FAILED
+            status=OutboxEventStatus.FAILED,
         )
 
         replayed = EventReplayManager.replay_failed_events(
-            tenant_id=str(test_tenant_id),
-            topic="platform.identity.events"
+            tenant_id=str(test_tenant_id), topic="platform.identity.events"
         )
         assert replayed == 1
         event.refresh_from_db()
@@ -174,7 +183,7 @@ class TestEventAPIs:
             tenant_id=test_tenant_id,
             topic="platform.identity.events",
             event_type="cyidentity.user.provisioned",
-            payload={"user_id": "usr-1"}
+            payload={"user_id": "usr-1"},
         )
         resp = auth_client.get("/api/v1/events/outbox/")
         assert resp.status_code == 200
@@ -187,16 +196,13 @@ class TestEventAPIs:
             tenant_id=test_tenant_id,
             topic="platform.identity.events",
             event_type="cyidentity.user.provisioned",
-            payload={"user_id": "usr-1"}
+            payload={"user_id": "usr-1"},
         )
 
         resp = auth_client.post(
             "/api/v1/events/outbox/replay/",
-            {
-                "tenant_id": str(test_tenant_id),
-                "topic": "platform.identity.events"
-            },
-            format="json"
+            {"tenant_id": str(test_tenant_id), "topic": "platform.identity.events"},
+            format="json",
         )
         assert resp.status_code == 200
         assert resp.data["replayed_count"] == 1
@@ -206,28 +212,25 @@ class TestEventAPIs:
             tenant_id=test_tenant_id,
             topic="platform.identity.events",
             event_type="cyidentity.user.provisioned",
-            payload={"user_id": "usr-1"}
+            payload={"user_id": "usr-1"},
         )
         resp = auth_client.post(f"/api/v1/events/outbox/{event.id}/sign/", format="json")
         assert resp.status_code == 200
         assert "signature" in resp.data
 
     def test_api_retry_dlq(self, auth_client, test_tenant_id):
-        event = OutboxEvent.objects.create(
+        OutboxEvent.objects.create(
             tenant_id=test_tenant_id,
             topic="platform.identity.events",
             event_type="cyidentity.user.provisioned",
             payload={"user_id": "usr-1"},
-            status=OutboxEventStatus.FAILED
+            status=OutboxEventStatus.FAILED,
         )
         with patch("platform.events.publisher.KafkaEventPublisher.publish", return_value=True):
             resp = auth_client.post(
                 "/api/v1/events/dlq/retry/",
-                {
-                    "tenant_id": str(test_tenant_id),
-                    "topic": "platform.identity.events"
-                },
-                format="json"
+                {"tenant_id": str(test_tenant_id), "topic": "platform.identity.events"},
+                format="json",
             )
             assert resp.status_code == 200
             assert resp.data["retried_count"] == 1

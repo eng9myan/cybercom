@@ -1,15 +1,22 @@
 """CyMed Pharmacy — Drug Interaction Views."""
+
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import status
+
 from platform.events.models import OutboxEvent
-from .models import InteractionRule, DrugInteraction, InteractionSeverity, InteractionAlert
+
+from ..views import PharmacyModelViewSet
+from .models import DrugInteraction, InteractionAlert, InteractionRule, InteractionSeverity
 from .serializers import (
-    InteractionRuleSerializer, DrugInteractionSerializer, InteractionSeveritySerializer,
-    InteractionAlertSerializer, InteractionCheckSerializer, InteractionOverrideSerializer
+    DrugInteractionSerializer,
+    InteractionAlertSerializer,
+    InteractionCheckSerializer,
+    InteractionOverrideSerializer,
+    InteractionRuleSerializer,
+    InteractionSeveritySerializer,
 )
 from .services import DrugInteractionService
-from ..views import PharmacyModelViewSet
 
 
 class InteractionRuleViewSet(PharmacyModelViewSet):
@@ -66,10 +73,12 @@ class DrugInteractionViewSet(PharmacyModelViewSet):
                 },
             )
 
-        return Response({
-            "interaction_count": len(interactions),
-            "interactions": DrugInteractionSerializer(interactions, many=True).data,
-        })
+        return Response(
+            {
+                "interaction_count": len(interactions),
+                "interactions": DrugInteractionSerializer(interactions, many=True).data,
+            }
+        )
 
     @action(detail=True, methods=["post"], url_path="override")
     def override(self, request, pk=None):
@@ -82,7 +91,9 @@ class DrugInteractionViewSet(PharmacyModelViewSet):
         serializer.is_valid(raise_exception=True)
         pharmacist_id = request.user.id if hasattr(request, "user") else None
         if pharmacist_id is None:
-            return Response({"detail": "Pharmacist authentication required."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "Pharmacist authentication required."}, status=status.HTTP_403_FORBIDDEN
+            )
 
         try:
             updated = DrugInteractionService.override_interaction(

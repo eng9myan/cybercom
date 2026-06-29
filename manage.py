@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
+
 import os
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ elif "" in sys.path:
     sys_path_removed = True
 
 import platform as std_platform
+
 platform_pkg_path = os.path.join(script_dir, "platform")
 if not hasattr(std_platform, "__path__") or std_platform.__path__ is None:
     std_platform.__path__ = [platform_pkg_path]
@@ -24,10 +26,10 @@ elif platform_pkg_path not in std_platform.__path__:
 if sys_path_removed:
     sys.path.insert(0, script_dir)
 
-def main():
 
+def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
@@ -38,5 +40,6 @@ def main():
         ) from exc
     execute_from_command_line(sys.argv)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

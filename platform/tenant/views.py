@@ -1,50 +1,79 @@
 """
 CyberCom Multi-Tenant Framework — REST API Views.
 """
-from rest_framework import viewsets, status
+
+from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from platform.tenant.models import (
-    Tenant, TenantProfile, TenantConfiguration, TenantBranding,
-    TenantSubscription, TenantLicense, TenantEnvironment, TenantRegion,
-    TenantDeploymentProfile, TenantFeatureFlag, TenantDomain,
-    TenantSSOConfiguration, TenantStoragePolicy, TenantRetentionPolicy,
-    TenantComplianceProfile, TenantAuditConfiguration, TenantStatus,
-)
-from platform.tenant.serializers import (
-    TenantSerializer, TenantCreateSerializer,
-    TenantProfileSerializer, TenantConfigurationSerializer, TenantBrandingSerializer,
-    TenantSubscriptionSerializer, TenantLicenseSerializer, TenantEnvironmentSerializer,
-    TenantRegionSerializer, TenantDeploymentProfileSerializer, TenantFeatureFlagSerializer,
-    TenantDomainSerializer, TenantSSOConfigurationSerializer, TenantStoragePolicySerializer,
-    TenantRetentionPolicySerializer, TenantComplianceProfileSerializer,
-    TenantAuditConfigurationSerializer,
-    TenantBootstrapSerializer, TenantSuspendSerializer, TenantTerminateSerializer,
-    TenantRealmAssignSerializer, TenantFeatureFlagToggleSerializer,
-    TenantDomainVerifySerializer,
+    Tenant,
+    TenantAuditConfiguration,
+    TenantBranding,
+    TenantComplianceProfile,
+    TenantConfiguration,
+    TenantDeploymentProfile,
+    TenantDomain,
+    TenantEnvironment,
+    TenantFeatureFlag,
+    TenantLicense,
+    TenantProfile,
+    TenantRegion,
+    TenantRetentionPolicy,
+    TenantSSOConfiguration,
+    TenantStatus,
+    TenantStoragePolicy,
+    TenantSubscription,
 )
 from platform.tenant.permissions import (
-    IsPlatformAdmin, ReadOnlyOrPlatformAdmin, NoCrossTenantAccess,
-    CanProvisionTenant, CanTerminateTenant,
+    CanProvisionTenant,
+    CanTerminateTenant,
+    IsPlatformAdmin,
+    ReadOnlyOrPlatformAdmin,
+)
+from platform.tenant.serializers import (
+    TenantAuditConfigurationSerializer,
+    TenantBootstrapSerializer,
+    TenantBrandingSerializer,
+    TenantComplianceProfileSerializer,
+    TenantConfigurationSerializer,
+    TenantCreateSerializer,
+    TenantDeploymentProfileSerializer,
+    TenantDomainSerializer,
+    TenantEnvironmentSerializer,
+    TenantFeatureFlagSerializer,
+    TenantFeatureFlagToggleSerializer,
+    TenantLicenseSerializer,
+    TenantProfileSerializer,
+    TenantRealmAssignSerializer,
+    TenantRegionSerializer,
+    TenantRetentionPolicySerializer,
+    TenantSerializer,
+    TenantSSOConfigurationSerializer,
+    TenantStoragePolicySerializer,
+    TenantSubscriptionSerializer,
+    TenantSuspendSerializer,
+    TenantTerminateSerializer,
 )
 from platform.tenant.services import (
-    TenantBootstrapService, TenantBootstrapRequest, TenantLifecycleService,
-    TenantRealmMappingService, TenantFeatureFlagService, TenantDomainService,
-    TenantLicenseService, TenantComplianceService,
+    TenantBootstrapRequest,
+    TenantBootstrapService,
+    TenantDomainService,
+    TenantFeatureFlagService,
+    TenantLifecycleService,
+    TenantRealmMappingService,
     render_prometheus,
 )
-
 
 # ---------------------------------------------------------------------------
 # Health + Metrics
 # ---------------------------------------------------------------------------
 
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def tenant_health(request):
-    from django.db import connection
     try:
         count = Tenant.objects.filter(status=TenantStatus.ACTIVE).count()
         db_ok = True
@@ -52,10 +81,12 @@ def tenant_health(request):
         count = 0
         db_ok = False
 
-    return Response({
-        "status": "ok" if db_ok else "degraded",
-        "active_tenants": count,
-    })
+    return Response(
+        {
+            "status": "ok" if db_ok else "degraded",
+            "active_tenants": count,
+        }
+    )
 
 
 @api_view(["GET"])
@@ -68,6 +99,7 @@ def tenant_metrics(request):
 # TenantViewSet — main CRUD + lifecycle actions
 # ---------------------------------------------------------------------------
 
+
 class TenantViewSet(viewsets.ModelViewSet):
     queryset = Tenant.objects.all().order_by("name")
     permission_classes = [ReadOnlyOrPlatformAdmin]
@@ -77,14 +109,19 @@ class TenantViewSet(viewsets.ModelViewSet):
             return TenantCreateSerializer
         return TenantSerializer
 
-    @action(detail=False, methods=["post"], permission_classes=[CanProvisionTenant],
-            url_path="bootstrap")
+    @action(
+        detail=False,
+        methods=["post"],
+        permission_classes=[CanProvisionTenant],
+        url_path="bootstrap",
+    )
     def bootstrap(self, request):
         ser = TenantBootstrapSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         d = ser.validated_data
         req = TenantBootstrapRequest(
-            name=d["name"], slug=d["slug"],
+            name=d["name"],
+            slug=d["slug"],
             display_name=d.get("display_name", ""),
             tenant_type=d.get("tenant_type", "saas"),
             tier=d.get("tier", "shared"),
@@ -98,15 +135,15 @@ class TenantViewSet(viewsets.ModelViewSet):
         tenant = TenantBootstrapService().bootstrap(req, created_by=str(request.user))
         return Response(TenantSerializer(tenant).data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsPlatformAdmin],
-            url_path="activate")
+    @action(
+        detail=True, methods=["post"], permission_classes=[IsPlatformAdmin], url_path="activate"
+    )
     def activate(self, request, pk=None):
         tenant = self.get_object()
         TenantLifecycleService().activate(tenant, by=str(request.user))
         return Response(TenantSerializer(tenant).data)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsPlatformAdmin],
-            url_path="suspend")
+    @action(detail=True, methods=["post"], permission_classes=[IsPlatformAdmin], url_path="suspend")
     def suspend(self, request, pk=None):
         tenant = self.get_object()
         ser = TenantSuspendSerializer(data=request.data)
@@ -116,15 +153,13 @@ class TenantViewSet(viewsets.ModelViewSet):
         )
         return Response(TenantSerializer(tenant).data)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsPlatformAdmin],
-            url_path="archive")
+    @action(detail=True, methods=["post"], permission_classes=[IsPlatformAdmin], url_path="archive")
     def archive(self, request, pk=None):
         tenant = self.get_object()
         TenantLifecycleService().archive(tenant, by=str(request.user))
         return Response(TenantSerializer(tenant).data)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsPlatformAdmin],
-            url_path="restore")
+    @action(detail=True, methods=["post"], permission_classes=[IsPlatformAdmin], url_path="restore")
     def restore(self, request, pk=None):
         tenant = self.get_object()
         try:
@@ -133,8 +168,9 @@ class TenantViewSet(viewsets.ModelViewSet):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(TenantSerializer(tenant).data)
 
-    @action(detail=True, methods=["post"], permission_classes=[CanTerminateTenant],
-            url_path="terminate")
+    @action(
+        detail=True, methods=["post"], permission_classes=[CanTerminateTenant], url_path="terminate"
+    )
     def terminate(self, request, pk=None):
         tenant = self.get_object()
         ser = TenantTerminateSerializer(data=request.data)
@@ -144,8 +180,12 @@ class TenantViewSet(viewsets.ModelViewSet):
         )
         return Response(TenantSerializer(tenant).data)
 
-    @action(detail=True, methods=["post"], permission_classes=[CanTerminateTenant],
-            url_path="decommission")
+    @action(
+        detail=True,
+        methods=["post"],
+        permission_classes=[CanTerminateTenant],
+        url_path="decommission",
+    )
     def decommission(self, request, pk=None):
         tenant = self.get_object()
         try:
@@ -154,8 +194,9 @@ class TenantViewSet(viewsets.ModelViewSet):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(TenantSerializer(tenant).data)
 
-    @action(detail=True, methods=["post"], permission_classes=[IsPlatformAdmin],
-            url_path="assign-realm")
+    @action(
+        detail=True, methods=["post"], permission_classes=[IsPlatformAdmin], url_path="assign-realm"
+    )
     def assign_realm(self, request, pk=None):
         tenant = self.get_object()
         ser = TenantRealmAssignSerializer(data=request.data)
@@ -171,6 +212,7 @@ class TenantViewSet(viewsets.ModelViewSet):
 # ---------------------------------------------------------------------------
 # Sub-resource ViewSets
 # ---------------------------------------------------------------------------
+
 
 class TenantProfileViewSet(viewsets.ModelViewSet):
     queryset = TenantProfile.objects.all()
@@ -234,7 +276,8 @@ class TenantFeatureFlagViewSet(viewsets.ModelViewSet):
         svc = TenantFeatureFlagService()
         if ser.validated_data["enabled"]:
             flag = svc.enable(
-                tenant, ser.validated_data["key"],
+                tenant,
+                ser.validated_data["key"],
                 by=str(request.user),
                 value=ser.validated_data.get("value"),
             )

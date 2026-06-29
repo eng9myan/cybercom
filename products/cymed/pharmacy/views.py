@@ -3,6 +3,7 @@ CyMed Pharmacy Edition — Base ViewSet
 Tenant isolation + feature flag gating for all pharmacy endpoints.
 Mirrors LaboratoryModelViewSet pattern for consistency.
 """
+
 from rest_framework import viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -16,6 +17,7 @@ class PharmacyModelViewSet(viewsets.ModelViewSet):
       - Tenant isolation (tenant_id scoping)
       - Feature flag gating (Program 3.C0 Commercial Foundation)
     """
+
     permission_classes = [IsAuthenticated]
     required_feature: str = ""
 
@@ -32,6 +34,7 @@ class PharmacyModelViewSet(viewsets.ModelViewSet):
 
     def _check_feature(self, request, feature_code: str) -> None:
         from products.cymed.commercial.feature_flags.services import FeatureFlagService
+
         tenant_id = getattr(request, "tenant_id", None)
         if not FeatureFlagService.is_enabled(
             feature_code, tenant_id=str(tenant_id) if tenant_id else None

@@ -1,8 +1,13 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.clinic.consultations.views import (
-    ConsultationViewSet, ConsultationDiagnosisViewSet, ConsultationProcedureViewSet,
-    ConsultationPlanViewSet, ConsultationFollowUpViewSet, ConsultationAttachmentViewSet
+    ConsultationAttachmentViewSet,
+    ConsultationDiagnosisViewSet,
+    ConsultationFollowUpViewSet,
+    ConsultationPlanViewSet,
+    ConsultationProcedureViewSet,
+    ConsultationViewSet,
 )
 
 router = DefaultRouter()

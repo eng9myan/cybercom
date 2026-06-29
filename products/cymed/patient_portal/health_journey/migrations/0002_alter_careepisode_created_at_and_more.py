@@ -5,85 +5,94 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_portal_health_journey', '0001_initial'),
+        ("cymed_portal_health_journey", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='careepisode',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="careepisode",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='careepisode',
-            name='tenant_id',
+            model_name="careepisode",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='careepisode',
-            name='updated_at',
+            model_name="careepisode",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='healthmilestone',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="healthmilestone",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='healthmilestone',
-            name='tenant_id',
+            model_name="healthmilestone",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='healthmilestone',
-            name='updated_at',
+            model_name="healthmilestone",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='healthtimeline',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="healthtimeline",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='healthtimeline',
-            name='tenant_id',
+            model_name="healthtimeline",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='healthtimeline',
-            name='updated_at',
+            model_name="healthtimeline",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='healthtimelineevent',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="healthtimelineevent",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='healthtimelineevent',
-            name='tenant_id',
+            model_name="healthtimelineevent",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='healthtimelineevent',
-            name='updated_at',
+            model_name="healthtimelineevent",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='patientjourney',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="patientjourney",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='patientjourney',
-            name='tenant_id',
+            model_name="patientjourney",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='patientjourney',
-            name='updated_at',
+            model_name="patientjourney",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

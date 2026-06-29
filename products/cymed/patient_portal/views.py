@@ -2,10 +2,10 @@
 CyMed Patient Portal — Package-Level Views
 Portal health check and feature edition map.
 """
+
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-
 
 PORTAL_EDITIONS = {
     "cymed_patient_portal_standard": [

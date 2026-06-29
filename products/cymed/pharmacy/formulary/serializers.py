@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import Formulary, FormularyDrug, FormularyRestriction, TherapeuticClass, PreferredMedication
+
+from .models import (
+    Formulary,
+    FormularyDrug,
+    FormularyRestriction,
+    PreferredMedication,
+    TherapeuticClass,
+)
 
 
 class TherapeuticClassSerializer(serializers.ModelSerializer):

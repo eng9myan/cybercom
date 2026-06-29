@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import DiseaseRegistry, RegistryPatient, RegistryEnrollment, RegistryStatus, RegistryOutcome
+
+from .models import (
+    DiseaseRegistry,
+    RegistryEnrollment,
+    RegistryOutcome,
+    RegistryPatient,
+    RegistryStatus,
+)
 
 
 class DiseaseRegistrySerializer(serializers.ModelSerializer):

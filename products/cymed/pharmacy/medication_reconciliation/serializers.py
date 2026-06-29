@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import MedicationReconciliation, MedicationChange, MedicationConflict
+
+from .models import MedicationChange, MedicationConflict, MedicationReconciliation
 
 
 class MedicationChangeSerializer(serializers.ModelSerializer):

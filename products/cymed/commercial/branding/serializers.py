@@ -1,6 +1,11 @@
 from rest_framework import serializers
+
 from products.cymed.commercial.branding.models import (
-    Brand, BrandTheme, BrandAsset, BrandDomain, BrandLocalization
+    Brand,
+    BrandAsset,
+    BrandDomain,
+    BrandLocalization,
+    BrandTheme,
 )
 
 

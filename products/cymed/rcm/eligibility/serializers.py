@@ -1,9 +1,10 @@
-﻿from rest_framework import serializers
+from rest_framework import serializers
+
 from .models import (
+    BenefitVerification,
+    CoverageVerification,
     EligibilityRequest,
     EligibilityResponse,
-    CoverageVerification,
-    BenefitVerification,
 )
 
 

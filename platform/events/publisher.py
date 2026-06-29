@@ -2,9 +2,11 @@
 Kafka event publisher for CyberCom platform. ADR-0004.
 Uses confluent-kafka producer with Avro serialization.
 """
+
 import json
 import logging
 from typing import Any
+
 from django.conf import settings
 
 logger = logging.getLogger("cybercom.events")
@@ -15,6 +17,7 @@ class KafkaEventPublisher:
     Publishes domain events to Kafka topics.
     Wraps confluent-kafka Producer with platform conventions.
     """
+
     _producer = None
 
     @classmethod
@@ -22,19 +25,24 @@ class KafkaEventPublisher:
         if cls._producer is None:
             try:
                 from confluent_kafka import Producer
-                cls._producer = Producer({
-                    "bootstrap.servers": settings.KAFKA_BOOTSTRAP_SERVERS,
-                    "security.protocol": settings.KAFKA_SECURITY_PROTOCOL,
-                    "acks": "all",
-                    "enable.idempotence": True,
-                    "compression.type": "snappy",
-                })
+
+                cls._producer = Producer(
+                    {
+                        "bootstrap.servers": settings.KAFKA_BOOTSTRAP_SERVERS,
+                        "security.protocol": settings.KAFKA_SECURITY_PROTOCOL,
+                        "acks": "all",
+                        "enable.idempotence": True,
+                        "compression.type": "snappy",
+                    }
+                )
             except ImportError:
                 logger.warning("confluent-kafka not available; event publishing disabled.")
         return cls._producer
 
     @classmethod
-    def publish(cls, topic: str, key: str, payload: dict[str, Any], headers: dict | None = None) -> bool:
+    def publish(
+        cls, topic: str, key: str, payload: dict[str, Any], headers: dict | None = None
+    ) -> bool:
         producer = cls.get_producer()
         if producer is None:
             return False

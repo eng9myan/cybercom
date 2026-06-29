@@ -1,7 +1,10 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.commercial.usage_metering.views import (
-    UsageMeterViewSet, UsageAlertViewSet, UsageDashboardView
+    UsageAlertViewSet,
+    UsageDashboardView,
+    UsageMeterViewSet,
 )
 
 router = DefaultRouter()

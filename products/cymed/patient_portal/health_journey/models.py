@@ -1,18 +1,19 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class HealthTimeline(BaseModel):
     account_id = models.UUIDField(db_index=True)
     patient_id = models.UUIDField(db_index=True)
-    timeline_name = models.CharField(max_length=200, default='My Health Timeline')
+    timeline_name = models.CharField(max_length=200, default="My Health Timeline")
     start_date = models.DateField(null=True, blank=True)
     total_events = models.PositiveIntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'cymed_portal_health_timelines'
-        unique_together = [('tenant_id', 'patient_id')]
+        db_table = "cymed_portal_health_timelines"
+        unique_together = [("tenant_id", "patient_id")]
 
     def __str__(self):
         return f"{self.timeline_name} — patient {self.patient_id}"
@@ -20,22 +21,22 @@ class HealthTimeline(BaseModel):
 
 class HealthTimelineEvent(BaseModel):
     EVENT_TYPE_CHOICES = [
-        ('appointment', 'Appointment'),
-        ('lab_result', 'Lab Result'),
-        ('imaging', 'Imaging'),
-        ('prescription', 'Prescription'),
-        ('hospitalization', 'Hospitalization'),
-        ('vaccination', 'Vaccination'),
-        ('diagnosis', 'Diagnosis'),
-        ('procedure', 'Procedure'),
-        ('telemedicine', 'Telemedicine'),
-        ('note', 'Note'),
+        ("appointment", "Appointment"),
+        ("lab_result", "Lab Result"),
+        ("imaging", "Imaging"),
+        ("prescription", "Prescription"),
+        ("hospitalization", "Hospitalization"),
+        ("vaccination", "Vaccination"),
+        ("diagnosis", "Diagnosis"),
+        ("procedure", "Procedure"),
+        ("telemedicine", "Telemedicine"),
+        ("note", "Note"),
     ]
 
     timeline = models.ForeignKey(
         HealthTimeline,
         on_delete=models.CASCADE,
-        related_name='events',
+        related_name="events",
     )
     account_id = models.UUIDField(db_index=True)
     patient_id = models.UUIDField(db_index=True)
@@ -51,15 +52,15 @@ class HealthTimelineEvent(BaseModel):
     attachments = models.JSONField(default=list)
 
     class Meta:
-        db_table = 'cymed_portal_timeline_events'
+        db_table = "cymed_portal_timeline_events"
         indexes = [
             models.Index(
-                fields=['timeline', 'event_date'],
-                name='timeline_events_timeline_date_idx',
+                fields=["timeline", "event_date"],
+                name="timeline_events_timeline_date_idx",
             ),
             models.Index(
-                fields=['account_id', 'event_type'],
-                name='timeline_events_acct_type_idx',
+                fields=["account_id", "event_type"],
+                name="timeline_events_acct_type_idx",
             ),
         ]
 
@@ -69,20 +70,20 @@ class HealthTimelineEvent(BaseModel):
 
 class PatientJourney(BaseModel):
     JOURNEY_TYPE_CHOICES = [
-        ('chronic_condition', 'Chronic Condition'),
-        ('surgical', 'Surgical'),
-        ('maternity', 'Maternity'),
-        ('cancer_care', 'Cancer Care'),
-        ('rehabilitation', 'Rehabilitation'),
-        ('preventive', 'Preventive'),
-        ('general', 'General'),
+        ("chronic_condition", "Chronic Condition"),
+        ("surgical", "Surgical"),
+        ("maternity", "Maternity"),
+        ("cancer_care", "Cancer Care"),
+        ("rehabilitation", "Rehabilitation"),
+        ("preventive", "Preventive"),
+        ("general", "General"),
     ]
 
     STATUS_CHOICES = [
-        ('active', 'Active'),
-        ('completed', 'Completed'),
-        ('paused', 'Paused'),
-        ('discontinued', 'Discontinued'),
+        ("active", "Active"),
+        ("completed", "Completed"),
+        ("paused", "Paused"),
+        ("discontinued", "Discontinued"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -97,41 +98,43 @@ class PatientJourney(BaseModel):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='active',
+        default="active",
     )
     care_team = models.JSONField(default=list)
     goals = models.JSONField(default=list)
     notes = models.TextField(blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_patient_journeys'
+        db_table = "cymed_portal_patient_journeys"
         indexes = [
             models.Index(
-                fields=['account_id', 'status'],
-                name='patient_journeys_acct_status_idx',
+                fields=["account_id", "status"],
+                name="patient_journeys_acct_status_idx",
             ),
         ]
 
     def __str__(self):
-        return f"{self.journey_name} ({self.get_journey_type_display()}) — {self.get_status_display()}"
+        return (
+            f"{self.journey_name} ({self.get_journey_type_display()}) — {self.get_status_display()}"
+        )
 
 
 class HealthMilestone(BaseModel):
     MILESTONE_TYPE_CHOICES = [
-        ('diagnosis', 'Diagnosis'),
-        ('treatment_start', 'Treatment Start'),
-        ('surgery', 'Surgery'),
-        ('first_chemo', 'First Chemotherapy'),
-        ('remission', 'Remission'),
-        ('discharge', 'Discharge'),
-        ('goal_achieved', 'Goal Achieved'),
-        ('custom', 'Custom'),
+        ("diagnosis", "Diagnosis"),
+        ("treatment_start", "Treatment Start"),
+        ("surgery", "Surgery"),
+        ("first_chemo", "First Chemotherapy"),
+        ("remission", "Remission"),
+        ("discharge", "Discharge"),
+        ("goal_achieved", "Goal Achieved"),
+        ("custom", "Custom"),
     ]
 
     journey = models.ForeignKey(
         PatientJourney,
         on_delete=models.CASCADE,
-        related_name='milestones',
+        related_name="milestones",
     )
     account_id = models.UUIDField(db_index=True)
     patient_id = models.UUIDField(db_index=True)
@@ -144,11 +147,11 @@ class HealthMilestone(BaseModel):
     is_shared = models.BooleanField(default=False)
 
     class Meta:
-        db_table = 'cymed_portal_health_milestones'
+        db_table = "cymed_portal_health_milestones"
         indexes = [
             models.Index(
-                fields=['journey', 'is_achieved'],
-                name='health_milestones_journey_achieved_idx',
+                fields=["journey", "is_achieved"],
+                name="health_milestones_journey_achieved_idx",
             ),
         ]
 
@@ -158,11 +161,11 @@ class HealthMilestone(BaseModel):
 
 class CareEpisode(BaseModel):
     EPISODE_TYPE_CHOICES = [
-        ('inpatient', 'Inpatient'),
-        ('outpatient', 'Outpatient'),
-        ('emergency', 'Emergency'),
-        ('telemedicine', 'Telemedicine'),
-        ('home_care', 'Home Care'),
+        ("inpatient", "Inpatient"),
+        ("outpatient", "Outpatient"),
+        ("emergency", "Emergency"),
+        ("telemedicine", "Telemedicine"),
+        ("home_care", "Home Care"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -170,7 +173,7 @@ class CareEpisode(BaseModel):
     journey = models.ForeignKey(
         PatientJourney,
         on_delete=models.SET_NULL,
-        related_name='episodes',
+        related_name="episodes",
         null=True,
         blank=True,
     )
@@ -188,16 +191,15 @@ class CareEpisode(BaseModel):
     cymed_admission_id = models.UUIDField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_care_episodes'
+        db_table = "cymed_portal_care_episodes"
         indexes = [
             models.Index(
-                fields=['account_id', 'episode_type', 'admission_date'],
-                name='care_episodes_acct_type_date_idx',
+                fields=["account_id", "episode_type", "admission_date"],
+                name="care_episodes_acct_type_date_idx",
             ),
         ]
 
     def __str__(self):
         return (
-            f"{self.get_episode_type_display()} at {self.facility_name} "
-            f"from {self.admission_date}"
+            f"{self.get_episode_type_display()} at {self.facility_name} from {self.admission_date}"
         )

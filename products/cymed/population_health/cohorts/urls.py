@@ -1,9 +1,10 @@
-﻿from rest_framework.routers import DefaultRouter
+from rest_framework.routers import DefaultRouter
+
 from .views import (
-    CohortViewSet,
+    CohortAnalysisViewSet,
     CohortMemberViewSet,
     CohortOutcomeViewSet,
-    CohortAnalysisViewSet,
+    CohortViewSet,
 )
 
 router = DefaultRouter()

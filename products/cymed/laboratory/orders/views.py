@@ -1,10 +1,24 @@
-﻿import uuid
-from rest_framework.decorators import action
-from rest_framework.response import Response
+import uuid
+
 from platform.events.models import OutboxEvent
-from .models import LabTest, LabPanel, LabOrder, LabOrderItem, LabOrderDiagnosis, LabOrderAttachment, LabOrderStatusHistory
-from .serializers import LabTestSerializer, LabPanelSerializer, LabOrderSerializer, LabOrderItemSerializer, LabOrderDiagnosisSerializer, LabOrderAttachmentSerializer
+
 from ..views import LaboratoryModelViewSet
+from .models import (
+    LabOrder,
+    LabOrderAttachment,
+    LabOrderDiagnosis,
+    LabOrderItem,
+    LabPanel,
+    LabTest,
+)
+from .serializers import (
+    LabOrderAttachmentSerializer,
+    LabOrderDiagnosisSerializer,
+    LabOrderItemSerializer,
+    LabOrderSerializer,
+    LabPanelSerializer,
+    LabTestSerializer,
+)
 
 
 class LabTestViewSet(LaboratoryModelViewSet):
@@ -37,7 +51,11 @@ class LabOrderViewSet(LaboratoryModelViewSet):
             tenant_id=str(tenant_id) if tenant_id else None,
             topic="cymed.lab.order.created",
             event_type="cymed.lab.order.created",
-            payload={"order_id": str(obj.id), "order_number": obj.order_number, "priority": obj.priority},
+            payload={
+                "order_id": str(obj.id),
+                "order_number": obj.order_number,
+                "priority": obj.priority,
+            },
         )
 
 

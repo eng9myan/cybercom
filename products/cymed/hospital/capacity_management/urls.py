@@ -1,8 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.hospital.capacity_management.views import (
-    CapacityRuleViewSet, CapacityThresholdViewSet, SurgePlanViewSet,
-    OverflowUnitViewSet
+    CapacityRuleViewSet,
+    CapacityThresholdViewSet,
+    OverflowUnitViewSet,
+    SurgePlanViewSet,
 )
 
 router = DefaultRouter()

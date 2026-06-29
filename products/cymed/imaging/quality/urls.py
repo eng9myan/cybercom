@@ -1,5 +1,11 @@
 from rest_framework.routers import DefaultRouter
-from .views import QualityAuditViewSet, ImagingQualityMetricViewSet, RadiationDoseRecordViewSet, AccreditationRecordViewSet
+
+from .views import (
+    AccreditationRecordViewSet,
+    ImagingQualityMetricViewSet,
+    QualityAuditViewSet,
+    RadiationDoseRecordViewSet,
+)
 
 router = DefaultRouter()
 router.register("audits", QualityAuditViewSet, basename="quality-audit")

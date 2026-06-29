@@ -1,4 +1,5 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 REPORT_STATUSES = [
@@ -43,7 +44,9 @@ class RadiologyReport(BaseModel):
     report_template = models.ForeignKey(
         "img_reporting.ReportTemplate", null=True, blank=True, on_delete=models.SET_NULL
     )
-    status = models.CharField(max_length=30, choices=REPORT_STATUSES, default="draft", db_index=True)
+    status = models.CharField(
+        max_length=30, choices=REPORT_STATUSES, default="draft", db_index=True
+    )
     technique = models.TextField(blank=True)
     clinical_indication = models.TextField(blank=True)
     comparison_studies = models.TextField(blank=True)
@@ -70,12 +73,17 @@ class RadiologyFinding(BaseModel):
         db_table = "cymed_img_findings"
 
     SEVERITY_CHOICES = [
-        ("normal", "Normal"), ("minor", "Minor"),
-        ("moderate", "Moderate"), ("severe", "Severe"), ("critical", "Critical"),
+        ("normal", "Normal"),
+        ("minor", "Minor"),
+        ("moderate", "Moderate"),
+        ("severe", "Severe"),
+        ("critical", "Critical"),
     ]
 
     report = models.ForeignKey(
-        "img_reporting.RadiologyReport", on_delete=models.CASCADE, related_name="structured_findings"
+        "img_reporting.RadiologyReport",
+        on_delete=models.CASCADE,
+        related_name="structured_findings",
     )
     finding_code = models.CharField(max_length=100, blank=True)  # SNOMED via TerminologyService
     body_region = models.CharField(max_length=100, blank=True)
@@ -93,12 +101,10 @@ class RadiologyFinding(BaseModel):
 
 
 class RadiologyImpression(BaseModel):
-    class Meta:
-        app_label = "img_reporting"
-        db_table = "cymed_img_impressions"
-
     report = models.ForeignKey(
-        "img_reporting.RadiologyReport", on_delete=models.CASCADE, related_name="structured_impressions"
+        "img_reporting.RadiologyReport",
+        on_delete=models.CASCADE,
+        related_name="structured_impressions",
     )
     impression_number = models.PositiveSmallIntegerField(default=1)
     impression_text = models.TextField()
@@ -122,11 +128,20 @@ class CriticalFinding(BaseModel):
     )
     finding_description = models.TextField()
     snomed_code = models.CharField(max_length=20, blank=True)
-    severity = models.CharField(max_length=20, choices=[("urgent", "Urgent"), ("emergent", "Emergent")], default="urgent")
-    notification_status = models.CharField(max_length=30, choices=[
-        ("pending", "Pending"), ("notified", "Notified"),
-        ("acknowledged", "Acknowledged"), ("completed", "Completed"),
-    ], default="pending", db_index=True)
+    severity = models.CharField(
+        max_length=20, choices=[("urgent", "Urgent"), ("emergent", "Emergent")], default="urgent"
+    )
+    notification_status = models.CharField(
+        max_length=30,
+        choices=[
+            ("pending", "Pending"),
+            ("notified", "Notified"),
+            ("acknowledged", "Acknowledged"),
+            ("completed", "Completed"),
+        ],
+        default="pending",
+        db_index=True,
+    )
     notified_clinician_id = models.UUIDField(null=True, blank=True)
     notification_method = models.CharField(max_length=30, blank=True)
     notified_at = models.DateTimeField(null=True, blank=True)
@@ -144,7 +159,9 @@ class StructuredReport(BaseModel):
         db_table = "cymed_img_structured_reports"
 
     report = models.OneToOneField("img_reporting.RadiologyReport", on_delete=models.CASCADE)
-    report_schema = models.CharField(max_length=100, blank=True)  # e.g. "RADS", "PI-RADS", "TI-RADS"
+    report_schema = models.CharField(
+        max_length=100, blank=True
+    )  # e.g. "RADS", "PI-RADS", "TI-RADS"
     schema_version = models.CharField(max_length=20, blank=True)
     score = models.CharField(max_length=20, blank=True)
     category = models.CharField(max_length=50, blank=True)

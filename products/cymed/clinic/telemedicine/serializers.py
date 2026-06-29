@@ -1,17 +1,26 @@
 import uuid
+
 from rest_framework import serializers
-from products.cymed.clinic.telemedicine.models import VirtualVisit, VirtualSession, VirtualRecording, VirtualConsent
-from platform.events.models import OutboxEvent
+
+from products.cymed.clinic.telemedicine.models import (
+    VirtualConsent,
+    VirtualRecording,
+    VirtualSession,
+    VirtualVisit,
+)
+
 
 class VirtualRecordingSerializer(serializers.ModelSerializer):
     class Meta:
         model = VirtualRecording
         fields = "__all__"
 
+
 class VirtualSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = VirtualSession
         fields = ["session_token", "connection_url", "started_at", "ended_at"]
+
 
 class VirtualConsentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,6 +33,7 @@ class VirtualConsentSerializer(serializers.ModelSerializer):
         if request and hasattr(request, "tenant_id"):
             validated_data["tenant_id"] = request.tenant_id
         return super().create(validated_data)
+
 
 class VirtualVisitSerializer(serializers.ModelSerializer):
     session = VirtualSessionSerializer(read_only=True)
@@ -47,7 +57,7 @@ class VirtualVisitSerializer(serializers.ModelSerializer):
             tenant_id=tenant_id,
             visit=visit,
             session_token=session_token,
-            connection_url=connection_url
+            connection_url=connection_url,
         )
 
         return visit

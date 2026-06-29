@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import WorkforceComplianceConfig, RamadanComplianceRule, WardRatioConfig, ComplianceAuditLog
+
+from .models import (
+    ComplianceAuditLog,
+    RamadanComplianceRule,
+    WardRatioConfig,
+    WorkforceComplianceConfig,
+)
 
 
 class WorkforceComplianceConfigSerializer(serializers.ModelSerializer):

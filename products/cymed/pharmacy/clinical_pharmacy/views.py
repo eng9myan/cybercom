@@ -1,14 +1,23 @@
 """CyMed Pharmacy — Clinical Pharmacy Views."""
+
+import django.utils.timezone as tz
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import status
-import django.utils.timezone as tz
-from .models import MedicationReview, ClinicalIntervention, PharmacistRecommendation, MedicationTherapyManagement, ReviewStatus
-from .serializers import (
-    MedicationReviewSerializer, ClinicalInterventionSerializer,
-    PharmacistRecommendationSerializer, MedicationTherapyManagementSerializer
-)
+
 from ..views import PharmacyModelViewSet
+from .models import (
+    ClinicalIntervention,
+    MedicationReview,
+    MedicationTherapyManagement,
+    PharmacistRecommendation,
+    ReviewStatus,
+)
+from .serializers import (
+    ClinicalInterventionSerializer,
+    MedicationReviewSerializer,
+    MedicationTherapyManagementSerializer,
+    PharmacistRecommendationSerializer,
+)
 
 
 class MedicationReviewViewSet(PharmacyModelViewSet):
@@ -35,6 +44,7 @@ class MedicationReviewViewSet(PharmacyModelViewSet):
         review = self.get_object()
         try:
             from platform.cyai.services import CyAIService
+
             score = CyAIService.analyze_polypharmacy(
                 medication_codes=review.medications_reviewed,
                 patient_age=request.data.get("patient_age"),
@@ -43,7 +53,9 @@ class MedicationReviewViewSet(PharmacyModelViewSet):
             review.ai_polypharmacy_score = score.get("risk_score", 0.0)
             review.polypharmacy_risk = score.get("risk_level", "low")
             review.adherence_score = score.get("adherence_score")
-            review.save(update_fields=["ai_polypharmacy_score", "polypharmacy_risk", "adherence_score"])
+            review.save(
+                update_fields=["ai_polypharmacy_score", "polypharmacy_risk", "adherence_score"]
+            )
         except Exception:
             pass  # CyAI is advisory
         return Response(MedicationReviewSerializer(review).data)

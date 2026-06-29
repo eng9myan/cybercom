@@ -5,85 +5,92 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_portal_notifications', '0001_initial'),
+        ("cymed_portal_notifications", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='patientnotification',
-            new_name='cymed_porta_account_1d179f_idx',
-            old_name='cymed_portal_notif_acct_read_idx',
+            model_name="patientnotification",
+            new_name="cymed_porta_account_1d179f_idx",
+            old_name="cymed_portal_notif_acct_read_idx",
         ),
         migrations.RenameIndex(
-            model_name='patientnotification',
-            new_name='cymed_porta_account_3743ea_idx',
-            old_name='cymed_portal_notif_acct_prio_idx',
+            model_name="patientnotification",
+            new_name="cymed_porta_account_3743ea_idx",
+            old_name="cymed_portal_notif_acct_prio_idx",
         ),
         migrations.RenameIndex(
-            model_name='pushsubscription',
-            new_name='cymed_porta_account_4a8db0_idx',
-            old_name='cymed_portal_push_acct_active_idx',
+            model_name="pushsubscription",
+            new_name="cymed_porta_account_4a8db0_idx",
+            old_name="cymed_portal_push_acct_active_idx",
         ),
         migrations.AlterField(
-            model_name='notificationpreference',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="notificationpreference",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='notificationpreference',
-            name='tenant_id',
+            model_name="notificationpreference",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='notificationpreference',
-            name='updated_at',
+            model_name="notificationpreference",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='notificationtemplate',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="notificationtemplate",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='notificationtemplate',
-            name='tenant_id',
+            model_name="notificationtemplate",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='notificationtemplate',
-            name='updated_at',
+            model_name="notificationtemplate",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='patientnotification',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="patientnotification",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='patientnotification',
-            name='tenant_id',
+            model_name="patientnotification",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='patientnotification',
-            name='updated_at',
+            model_name="patientnotification",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='pushsubscription',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="pushsubscription",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='pushsubscription',
-            name='tenant_id',
+            model_name="pushsubscription",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='pushsubscription',
-            name='updated_at',
+            model_name="pushsubscription",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

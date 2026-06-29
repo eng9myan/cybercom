@@ -1,27 +1,28 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from . import views
 
 router = DefaultRouter()
 router.register(
-    r'prescriptions',
+    r"prescriptions",
     views.PortalPrescriptionViewViewSet,
-    basename='portal-prescription',
+    basename="portal-prescription",
 )
 router.register(
-    r'refill-requests',
+    r"refill-requests",
     views.RefillRequestViewSet,
-    basename='refill-request',
+    basename="refill-request",
 )
 router.register(
-    r'medication-instructions',
+    r"medication-instructions",
     views.MedicationInstructionViewSet,
-    basename='medication-instruction',
+    basename="medication-instruction",
 )
 router.register(
-    r'adherence-logs',
+    r"adherence-logs",
     views.MedicationAdherenceLogViewSet,
-    basename='medication-adherence-log',
+    basename="medication-adherence-log",
 )
 
-urlpatterns = [path('', include(router.urls))]
+urlpatterns = [path("", include(router.urls))]

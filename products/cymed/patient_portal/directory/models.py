@@ -1,14 +1,13 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
-
 NETWORK_PROVIDER_TYPE_CHOICES = [
-    ('hospital', 'Hospital'),
-    ('clinic', 'Clinic'),
-    ('laboratory', 'Laboratory'),
-    ('imaging_center', 'Imaging Center'),
-    ('pharmacy', 'Pharmacy'),
+    ("hospital", "Hospital"),
+    ("clinic", "Clinic"),
+    ("laboratory", "Laboratory"),
+    ("imaging_center", "Imaging Center"),
+    ("pharmacy", "Pharmacy"),
 ]
 
 
@@ -44,10 +43,10 @@ class HospitalListing(BaseModel):
     review_count = models.PositiveIntegerField(default=0)
 
     class Meta:
-        db_table = 'cymed_dir_hospitals'
+        db_table = "cymed_dir_hospitals"
         indexes = [
-            models.Index(fields=['tenant_id', 'city', 'is_published']),
-            models.Index(fields=['is_featured', 'is_published']),
+            models.Index(fields=["tenant_id", "city", "is_published"]),
+            models.Index(fields=["is_featured", "is_published"]),
         ]
 
     def __str__(self):
@@ -83,10 +82,10 @@ class ClinicListing(BaseModel):
     review_count = models.PositiveIntegerField(default=0)
 
     class Meta:
-        db_table = 'cymed_dir_clinics'
+        db_table = "cymed_dir_clinics"
         indexes = [
-            models.Index(fields=['tenant_id', 'city', 'primary_specialty', 'is_published']),
-            models.Index(fields=['is_featured']),
+            models.Index(fields=["tenant_id", "city", "primary_specialty", "is_published"]),
+            models.Index(fields=["is_featured"]),
         ]
 
     def __str__(self):
@@ -104,8 +103,8 @@ class ClinicSpecialty(BaseModel):
     display_order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        db_table = 'cymed_dir_clinic_specialties'
-        ordering = ['display_order', 'name']
+        db_table = "cymed_dir_clinic_specialties"
+        ordering = ["display_order", "name"]
 
     def __str__(self):
         return f"{self.name} ({self.code})"
@@ -133,7 +132,7 @@ class LaboratoryListing(BaseModel):
     is_published = models.BooleanField(default=True)
 
     class Meta:
-        db_table = 'cymed_dir_laboratories'
+        db_table = "cymed_dir_laboratories"
 
     def __str__(self):
         return self.name
@@ -158,7 +157,7 @@ class ImagingCenterListing(BaseModel):
     accreditations = models.JSONField(default=list)
 
     class Meta:
-        db_table = 'cymed_dir_imaging_centers'
+        db_table = "cymed_dir_imaging_centers"
 
     def __str__(self):
         return self.name
@@ -183,7 +182,7 @@ class PharmacyListing(BaseModel):
     home_delivery = models.BooleanField(default=False)
 
     class Meta:
-        db_table = 'cymed_dir_pharmacies'
+        db_table = "cymed_dir_pharmacies"
 
     def __str__(self):
         return self.name
@@ -205,9 +204,9 @@ class ProviderReview(BaseModel):
     moderated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_dir_reviews'
+        db_table = "cymed_dir_reviews"
         indexes = [
-            models.Index(fields=['provider_type', 'provider_listing_id', 'is_published']),
+            models.Index(fields=["provider_type", "provider_listing_id", "is_published"]),
         ]
 
     def __str__(self):

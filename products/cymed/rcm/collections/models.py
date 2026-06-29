@@ -1,5 +1,5 @@
-﻿import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -34,15 +34,9 @@ class CollectionCase(BaseModel):
     case_number = models.CharField(max_length=50, unique=True)
     outstanding_balance = models.DecimalField(max_digits=14, decimal_places=2)
     original_balance = models.DecimalField(max_digits=14, decimal_places=2)
-    aging_bucket = models.CharField(
-        max_length=20, choices=AGING_BUCKET_CHOICES, default="current"
-    )
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="active"
-    )
-    priority = models.CharField(
-        max_length=10, choices=PRIORITY_CHOICES, default="medium"
-    )
+    aging_bucket = models.CharField(max_length=20, choices=AGING_BUCKET_CHOICES, default="current")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="medium")
     assigned_to_user_id = models.UUIDField(null=True, blank=True)
     last_contact_date = models.DateField(null=True, blank=True)
     next_follow_up_date = models.DateField(null=True, blank=True)
@@ -80,9 +74,7 @@ class CollectionAction(BaseModel):
     action_date = models.DateTimeField(auto_now_add=True)
     performed_by_user_id = models.UUIDField()
     notes = models.TextField(blank=True)
-    amount_collected = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0
-    )
+    amount_collected = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     next_action_date = models.DateField(null=True, blank=True)
 
     class Meta:
@@ -118,9 +110,7 @@ class PaymentPlan(BaseModel):
     number_of_installments = models.PositiveSmallIntegerField()
     amount_paid = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     amount_remaining = models.DecimalField(max_digits=14, decimal_places=2)
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="active"
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     approved_by_user_id = models.UUIDField(null=True, blank=True)
 
     class Meta:
@@ -128,9 +118,7 @@ class PaymentPlan(BaseModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return (
-            f"PaymentPlan {self.id} | {self.frequency} | {self.status}"
-        )
+        return f"PaymentPlan {self.id} | {self.frequency} | {self.status}"
 
 
 class CollectionOutcome(BaseModel):
@@ -148,12 +136,8 @@ class CollectionOutcome(BaseModel):
     )
     outcome_date = models.DateField()
     outcome_type = models.CharField(max_length=30, choices=OUTCOME_TYPE_CHOICES)
-    amount_recovered = models.DecimalField(
-        max_digits=14, decimal_places=2, default=0
-    )
-    amount_written_off = models.DecimalField(
-        max_digits=14, decimal_places=2, default=0
-    )
+    amount_recovered = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    amount_written_off = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     notes = models.TextField(blank=True)
 
     class Meta:

@@ -1,11 +1,12 @@
-﻿"""
+"""
 CyMed Population Health — Care Gaps
 Covers: CareGap, CareGapRule, CareGapRecommendation, CareGapResolution
 Terminology: ICD-11 and LOINC codes resolved via TerminologyService (not stored locally).
 """
-from django.db import models
-from platform.common.models import BaseModel
 
+from django.db import models
+
+from platform.common.models import BaseModel
 
 GAP_TYPE_CHOICES = [
     ("screening", "Screening"),
@@ -29,6 +30,7 @@ GENDER_CHOICES = [
 
 class CareGap(BaseModel):
     """An identified gap in care for a specific patient."""
+
     STATUS_CHOICES = [
         ("open", "Open"),
         ("closed", "Closed"),
@@ -98,9 +100,7 @@ class CareGapRule(BaseModel):
 class CareGapRecommendation(BaseModel):
     """A clinical recommendation attached to a care gap."""
 
-    care_gap = models.ForeignKey(
-        CareGap, on_delete=models.CASCADE, related_name="recommendations"
-    )
+    care_gap = models.ForeignKey(CareGap, on_delete=models.CASCADE, related_name="recommendations")
     recommendation_text = models.TextField()
     recommended_by_provider_id = models.UUIDField(null=True, blank=True)
     recommendation_date = models.DateField(auto_now_add=True)
@@ -118,6 +118,7 @@ class CareGapRecommendation(BaseModel):
 
 class CareGapResolution(BaseModel):
     """Records how and when a care gap was resolved."""
+
     RESOLUTION_TYPE_CHOICES = [
         ("completed", "Completed"),
         ("waived", "Waived"),
@@ -126,9 +127,7 @@ class CareGapResolution(BaseModel):
         ("auto_closed", "Auto Closed"),
     ]
 
-    care_gap = models.ForeignKey(
-        CareGap, on_delete=models.CASCADE, related_name="resolutions"
-    )
+    care_gap = models.ForeignKey(CareGap, on_delete=models.CASCADE, related_name="resolutions")
     resolved_by_user_id = models.UUIDField()
     resolution_date = models.DateField()
     resolution_type = models.CharField(max_length=20, choices=RESOLUTION_TYPE_CHOICES)

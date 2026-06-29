@@ -1,20 +1,23 @@
 import uuid
+
 import pytest
 from django.utils import timezone
 
-from products.cymed.core.patients.models import Patient
-from products.cymed.core.encounters.models import Encounter
-from products.cymed.core.organizations.models import Organization
-from products.cymed.core.facilities.models import Facility
-
-from products.cymed.laboratory.orders.models import LabTest, LabOrder, LabPriority, LabTestCategory
-from products.cymed.laboratory.specimens.models import Specimen, SpecimenStatus
-from products.cymed.laboratory.results.models import LabResult, ResultStatus, ResultValue, InterpretationCode
-from products.cymed.laboratory.worklists.models import LabWorklist, WorklistItem
-from products.cymed.laboratory.reference_lab.models import ReferenceLab, ReferenceLabOrder
-
 from products.cymed.core.clinical.services import ClinicalAIService
-from platform.events.models import OutboxEvent
+from products.cymed.core.encounters.models import Encounter
+from products.cymed.core.facilities.models import Facility
+from products.cymed.core.organizations.models import Organization
+from products.cymed.core.patients.models import Patient
+from products.cymed.laboratory.orders.models import LabOrder, LabTest, LabTestCategory
+from products.cymed.laboratory.reference_lab.models import ReferenceLab, ReferenceLabOrder
+from products.cymed.laboratory.results.models import (
+    InterpretationCode,
+    LabResult,
+    ResultStatus,
+    ResultValue,
+)
+from products.cymed.laboratory.specimens.models import Specimen, SpecimenStatus
+from products.cymed.laboratory.worklists.models import LabWorklist, WorklistItem
 
 
 @pytest.fixture
@@ -31,11 +34,19 @@ def setup_lab_base_data(test_tenant_id):
         tenant_id=test_tenant_id, organization=org, name="Main Hospital Facility", code="MAIN-HOSP"
     )
     patient = Patient.objects.create(
-        tenant_id=test_tenant_id, first_name="Ahmad", last_name="Kamal", dob="1985-05-15", mrn="MRN-LAB-001"
+        tenant_id=test_tenant_id,
+        first_name="Ahmad",
+        last_name="Kamal",
+        dob="1985-05-15",
+        mrn="MRN-LAB-001",
     )
     encounter = Encounter.objects.create(
-        tenant_id=test_tenant_id, patient=patient, encounter_type="inpatient",
-        status="in_progress", organization=org, facility=facility
+        tenant_id=test_tenant_id,
+        patient=patient,
+        encounter_type="inpatient",
+        status="in_progress",
+        organization=org,
+        facility=facility,
     )
 
     return {
@@ -48,7 +59,6 @@ def setup_lab_base_data(test_tenant_id):
 
 @pytest.mark.django_db
 class TestLabEndToEndWorkflow:
-
     def test_full_lab_order_to_result_workflow(self, test_tenant_id, setup_lab_base_data):
         patient = setup_lab_base_data["patient"]
         encounter = setup_lab_base_data["encounter"]
@@ -76,6 +86,7 @@ class TestLabEndToEndWorkflow:
         )
 
         from products.cymed.laboratory.orders.models import LabOrderItem
+
         item = LabOrderItem.objects.create(
             tenant_id=test_tenant_id,
             order=order,
@@ -96,6 +107,7 @@ class TestLabEndToEndWorkflow:
         )
 
         from products.cymed.laboratory.specimens.models import SpecimenCollection
+
         SpecimenCollection.objects.create(
             tenant_id=test_tenant_id,
             specimen=spec,
@@ -220,6 +232,7 @@ class TestLabEndToEndWorkflow:
             status="submitted",
         )
         from products.cymed.laboratory.orders.models import LabOrderItem
+
         item = LabOrderItem.objects.create(
             tenant_id=test_tenant_id,
             order=order,
@@ -237,6 +250,7 @@ class TestLabEndToEndWorkflow:
         )
 
         from products.cymed.laboratory.specimens.models import SpecimenRejection
+
         rej = SpecimenRejection.objects.create(
             tenant_id=test_tenant_id,
             specimen=spec,
@@ -267,6 +281,7 @@ class TestLabEndToEndWorkflow:
             status="submitted",
         )
         from products.cymed.laboratory.orders.models import LabOrderItem
+
         item = LabOrderItem.objects.create(
             tenant_id=test_tenant_id,
             order=order,

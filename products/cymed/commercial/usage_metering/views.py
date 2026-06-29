@@ -1,11 +1,14 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from products.cymed.commercial.usage_metering.models import UsageAlert, UsageMeter
+from products.cymed.commercial.usage_metering.serializers import (
+    UsageAlertSerializer,
+    UsageMeterSerializer,
+)
 from products.cymed.commercial.views import CommercialModelViewSet
-from products.cymed.commercial.usage_metering.models import UsageMeter, UsageAlert
-from products.cymed.commercial.usage_metering.serializers import UsageMeterSerializer, UsageAlertSerializer
 
 
 class UsageMeterViewSet(CommercialModelViewSet):
@@ -26,6 +29,7 @@ class UsageAlertViewSet(CommercialModelViewSet):
 
 class UsageDashboardView(APIView):
     """Platform-level usage dashboard for commercial admin."""
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -43,13 +47,15 @@ class UsageDashboardView(APIView):
         total_api = sum(m.api_calls for m in meters)
         over_limit = [m for m in meters if m.is_over_user_limit or m.is_over_bed_limit]
 
-        return Response({
-            "snapshot_date": str(today),
-            "summary": {
-                "total_active_users": total_users,
-                "total_active_providers": total_providers,
-                "total_occupied_beds": total_beds,
-                "total_api_calls_today": total_api,
-                "tenants_over_limit": len(over_limit),
+        return Response(
+            {
+                "snapshot_date": str(today),
+                "summary": {
+                    "total_active_users": total_users,
+                    "total_active_providers": total_providers,
+                    "total_occupied_beds": total_beds,
+                    "total_api_calls_today": total_api,
+                    "tenants_over_limit": len(over_limit),
+                },
             }
-        })
+        )

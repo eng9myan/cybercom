@@ -1,6 +1,9 @@
 from rest_framework import serializers
+
 from products.cymed.commercial.deployment_profiles.models import (
-    DeploymentProfile, DeploymentConfiguration, DeploymentCapability
+    DeploymentCapability,
+    DeploymentConfiguration,
+    DeploymentProfile,
 )
 
 

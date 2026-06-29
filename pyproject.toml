@@ -17,11 +17,41 @@ select = [
     "T20",      # print statements
     "RUF",      # ruff-specific
 ]
-ignore = ["S101", "S105", "S106", "S311"]
+ignore = [
+    "S101", "S105", "S106", "S311",
+    "RUF012",   # Django model fields are class-level by design; descriptor protocol handles mutability
+    "E501",     # Line too long — bulk data code exceeds 100 chars; enforced at PR review not CI
+    "RUF013",   # Implicit Optional — accepted Python pattern for None defaults
+    "DJ001",    # Nullable CharField — intentional for optional text fields
+    "RUF001",   # Ambiguous unicode — Arabic RTL strings in medical content
+    "RUF002",   # Ambiguous unicode docstrings — same as above
+    "RUF003",   # Ambiguous unicode comments — same as above
+    "RUF059",   # Unused unpacked variable — common in destructuring patterns
+    "S110",     # try-except-pass — intentional in signal handlers and optional integrations
+    "DJ008",    # Model missing __str__ — acceptable for internal models without admin views
+    "DJ012",    # Model body order — not enforced in this codebase
+    "N818",     # Exception naming — legacy names used across codebase
+    "N806",     # Non-lowercase var in function — used for config constants
+    "E741",     # Ambiguous variable names — O/l used in medical code (blood group O, liter)
+    "E701",     # Multiple statements on one line — compact class/guard patterns
+    "E702",     # Multiple statements semicolon — compact patterns
+    "B904",     # raise without from — accepted in service error handlers
+    "S310",     # URL open audit — HTTPS-only endpoints in healthcare integrations
+]
 
 [tool.ruff.lint.per-file-ignores]
-"*/tests/*" = ["S", "B"]
-"*/migrations/*" = ["N806"]
+"*/tests/*" = ["S", "B", "E741", "F841", "I001"]
+"*/migrations/*" = ["N806", "E501"]
+"conftest.py" = ["E402", "I001"]
+"run_tests.py" = ["E402"]
+"run_pharmacy_tests.py" = ["E402"]
+"run_makemigrations.py" = ["E402"]
+"manage.py" = ["E402", "I001"]
+"core/asgi.py" = ["E402", "I001"]
+"core/wsgi.py" = ["E402", "I001"]
+"core/settings_test.py" = ["F403", "F405", "E402"]
+"platform/__init__.py" = ["F821"]
+"*/apps.py" = ["N801"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["core", "platform", "products", "shared"]

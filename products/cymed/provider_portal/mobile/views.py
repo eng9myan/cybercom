@@ -1,17 +1,18 @@
-from rest_framework import viewsets
-from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets
+from rest_framework.filters import OrderingFilter, SearchFilter
+
 from .models import (
-    ProviderMobileDevice,
-    MobileSession,
     MobilePreferences,
     MobilePushNotification,
+    MobileSession,
+    ProviderMobileDevice,
 )
 from .serializers import (
-    ProviderMobileDeviceSerializer,
-    MobileSessionSerializer,
     MobilePreferencesSerializer,
     MobilePushNotificationSerializer,
+    MobileSessionSerializer,
+    ProviderMobileDeviceSerializer,
 )
 
 
@@ -30,9 +31,7 @@ class ProviderMobileDeviceViewSet(viewsets.ModelViewSet):
     ordering = ["-registered_at"]
 
     def get_queryset(self):
-        return ProviderMobileDevice.objects.filter(
-            tenant_id=self.request.tenant_id
-        )
+        return ProviderMobileDevice.objects.filter(tenant_id=self.request.tenant_id)
 
 
 class MobileSessionViewSet(viewsets.ModelViewSet):
@@ -50,9 +49,7 @@ class MobileSessionViewSet(viewsets.ModelViewSet):
     ordering = ["-started_at"]
 
     def get_queryset(self):
-        return MobileSession.objects.filter(
-            tenant_id=self.request.tenant_id
-        )
+        return MobileSession.objects.filter(tenant_id=self.request.tenant_id)
 
 
 class MobilePreferencesViewSet(viewsets.ModelViewSet):
@@ -70,9 +67,7 @@ class MobilePreferencesViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        return MobilePreferences.objects.filter(
-            tenant_id=self.request.tenant_id
-        )
+        return MobilePreferences.objects.filter(tenant_id=self.request.tenant_id)
 
 
 class MobilePushNotificationViewSet(viewsets.ModelViewSet):
@@ -91,6 +86,4 @@ class MobilePushNotificationViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        return MobilePushNotification.objects.filter(
-            tenant_id=self.request.tenant_id
-        )
+        return MobilePushNotification.objects.filter(tenant_id=self.request.tenant_id)

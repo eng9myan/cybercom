@@ -1,8 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.commercial.feature_flags.views import (
-    FeatureFlagViewSet, FeatureDependencyViewSet,
-    TenantFeatureViewSet, CustomerFeatureViewSet
+    CustomerFeatureViewSet,
+    FeatureDependencyViewSet,
+    FeatureFlagViewSet,
+    TenantFeatureViewSet,
 )
 
 router = DefaultRouter()

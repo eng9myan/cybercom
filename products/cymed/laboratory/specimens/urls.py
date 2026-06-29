@@ -1,5 +1,14 @@
-﻿from rest_framework.routers import DefaultRouter
-from .views import SpecimenViewSet, SpecimenContainerViewSet, SpecimenCollectionViewSet, SpecimenTransportViewSet, SpecimenStorageViewSet, SpecimenRejectionViewSet, SpecimenChainOfCustodyViewSet
+from rest_framework.routers import DefaultRouter
+
+from .views import (
+    SpecimenChainOfCustodyViewSet,
+    SpecimenCollectionViewSet,
+    SpecimenContainerViewSet,
+    SpecimenRejectionViewSet,
+    SpecimenStorageViewSet,
+    SpecimenTransportViewSet,
+    SpecimenViewSet,
+)
 
 router = DefaultRouter()
 router.register("specimens", SpecimenViewSet, basename="lab-specimens")

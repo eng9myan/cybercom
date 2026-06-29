@@ -2,47 +2,82 @@
 Website Public API — Serializers.
 Read serializers for content; write serializers for lead capture with validation.
 """
-import re
-from django.utils import timezone
+
 from rest_framework import serializers
 
 from .models import (
-    ProductListing, Industry, CaseStudy,
-    DemoRequest, ContactMessage, PartnerListing, PartnerApplication,
-    DocumentationSection, DocumentationItem, NewsletterSubscription,
+    CaseStudy,
+    ContactMessage,
+    DemoRequest,
+    DocumentationItem,
+    DocumentationSection,
+    Industry,
+    PartnerApplication,
+    PartnerListing,
+    ProductListing,
 )
-
 
 # ---------------------------------------------------------------------------
 # Content — Read Serializers
 # ---------------------------------------------------------------------------
 
+
 class ProductListingListSerializer(serializers.ModelSerializer):
     """Compact product listing for index pages."""
+
     class Meta:
         model = ProductListing
         fields = [
-            "id", "name", "slug", "tagline", "short_description",
-            "category", "icon_class", "hero_color", "hero_image_url",
-            "is_featured", "sort_order", "seo_title", "seo_description",
+            "id",
+            "name",
+            "slug",
+            "tagline",
+            "short_description",
+            "category",
+            "icon_class",
+            "hero_color",
+            "hero_image_url",
+            "is_featured",
+            "sort_order",
+            "seo_title",
+            "seo_description",
         ]
 
 
 class ProductListingDetailSerializer(serializers.ModelSerializer):
     """Full product detail including features, editions, compliance."""
+
     sub_products = ProductListingListSerializer(many=True, read_only=True)
 
     class Meta:
         model = ProductListing
         fields = [
-            "id", "name", "slug", "tagline", "short_description", "description",
-            "category", "icon_class", "hero_color", "hero_image_url",
-            "features", "key_metrics", "editions", "compliance_badges",
-            "tech_stack", "deployment_models",
-            "cta_demo_label", "cta_docs_url", "cta_video_url",
-            "is_featured", "sort_order",
-            "seo_title", "seo_description", "seo_keywords",
-            "sub_products", "updated_at",
+            "id",
+            "name",
+            "slug",
+            "tagline",
+            "short_description",
+            "description",
+            "category",
+            "icon_class",
+            "hero_color",
+            "hero_image_url",
+            "features",
+            "key_metrics",
+            "editions",
+            "compliance_badges",
+            "tech_stack",
+            "deployment_models",
+            "cta_demo_label",
+            "cta_docs_url",
+            "cta_video_url",
+            "is_featured",
+            "sort_order",
+            "seo_title",
+            "seo_description",
+            "seo_keywords",
+            "sub_products",
+            "updated_at",
         ]
 
 
@@ -50,9 +85,16 @@ class IndustryListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Industry
         fields = [
-            "id", "name", "slug", "short_description",
-            "icon_class", "hero_image_url", "is_featured", "sort_order",
-            "seo_title", "seo_description",
+            "id",
+            "name",
+            "slug",
+            "short_description",
+            "icon_class",
+            "hero_image_url",
+            "is_featured",
+            "sort_order",
+            "seo_title",
+            "seo_description",
         ]
 
 
@@ -62,12 +104,22 @@ class IndustryDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Industry
         fields = [
-            "id", "name", "slug", "description", "short_description",
-            "icon_class", "hero_image_url",
-            "challenges", "solutions", "stats",
+            "id",
+            "name",
+            "slug",
+            "description",
+            "short_description",
+            "icon_class",
+            "hero_image_url",
+            "challenges",
+            "solutions",
+            "stats",
             "relevant_products",
-            "is_featured", "sort_order",
-            "seo_title", "seo_description", "updated_at",
+            "is_featured",
+            "sort_order",
+            "seo_title",
+            "seo_description",
+            "updated_at",
         ]
 
 
@@ -77,11 +129,23 @@ class CaseStudyListSerializer(serializers.ModelSerializer):
     class Meta:
         model = CaseStudy
         fields = [
-            "id", "title", "slug", "customer_name", "customer_logo_url",
-            "country", "region", "industry_name",
-            "summary", "metrics", "quote", "quote_author",
-            "hero_image_url", "is_featured", "published_at",
-            "seo_title", "seo_description",
+            "id",
+            "title",
+            "slug",
+            "customer_name",
+            "customer_logo_url",
+            "country",
+            "region",
+            "industry_name",
+            "summary",
+            "metrics",
+            "quote",
+            "quote_author",
+            "hero_image_url",
+            "is_featured",
+            "published_at",
+            "seo_title",
+            "seo_description",
         ]
 
 
@@ -92,12 +156,29 @@ class CaseStudyDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = CaseStudy
         fields = [
-            "id", "title", "slug", "customer_name", "customer_logo_url",
-            "country", "region", "industry", "products",
-            "summary", "challenge", "solution", "outcome",
-            "metrics", "quote", "quote_author", "quote_title",
-            "hero_image_url", "is_featured", "published_at",
-            "seo_title", "seo_description", "updated_at",
+            "id",
+            "title",
+            "slug",
+            "customer_name",
+            "customer_logo_url",
+            "country",
+            "region",
+            "industry",
+            "products",
+            "summary",
+            "challenge",
+            "solution",
+            "outcome",
+            "metrics",
+            "quote",
+            "quote_author",
+            "quote_title",
+            "hero_image_url",
+            "is_featured",
+            "published_at",
+            "seo_title",
+            "seo_description",
+            "updated_at",
         ]
 
 
@@ -105,10 +186,19 @@ class PartnerListingSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartnerListing
         fields = [
-            "id", "company_name", "slug", "logo_url", "website",
-            "description", "partner_type", "expertise_areas",
-            "countries", "languages", "certifications",
-            "is_featured", "sort_order",
+            "id",
+            "company_name",
+            "slug",
+            "logo_url",
+            "website",
+            "description",
+            "partner_type",
+            "expertise_areas",
+            "countries",
+            "languages",
+            "certifications",
+            "is_featured",
+            "sort_order",
         ]
 
 
@@ -118,8 +208,13 @@ class DocumentationSectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = DocumentationSection
         fields = [
-            "id", "title", "slug", "description",
-            "product_slug", "icon_class", "sort_order",
+            "id",
+            "title",
+            "slug",
+            "description",
+            "product_slug",
+            "icon_class",
+            "sort_order",
         ]
 
 
@@ -129,9 +224,18 @@ class DocumentationItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = DocumentationItem
         fields = [
-            "id", "title", "slug", "section_slug", "content_type",
-            "summary", "content_url", "external_url",
-            "version", "tags", "sort_order", "published_at",
+            "id",
+            "title",
+            "slug",
+            "section_slug",
+            "content_type",
+            "summary",
+            "content_url",
+            "external_url",
+            "version",
+            "tags",
+            "sort_order",
+            "published_at",
         ]
 
 
@@ -142,8 +246,14 @@ class DocumentationSectionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = DocumentationSection
         fields = [
-            "id", "title", "slug", "description",
-            "product_slug", "icon_class", "sort_order", "items",
+            "id",
+            "title",
+            "slug",
+            "description",
+            "product_slug",
+            "icon_class",
+            "sort_order",
+            "items",
         ]
 
 
@@ -151,10 +261,16 @@ class DocumentationSectionDetailSerializer(serializers.ModelSerializer):
 # Lead Capture — Write Serializers
 # ---------------------------------------------------------------------------
 
-DISPOSABLE_DOMAINS = frozenset([
-    "mailinator.com", "guerrillamail.com", "tempmail.com",
-    "throwaway.email", "yopmail.com", "sharklasers.com",
-])
+DISPOSABLE_DOMAINS = frozenset(
+    [
+        "mailinator.com",
+        "guerrillamail.com",
+        "tempmail.com",
+        "throwaway.email",
+        "yopmail.com",
+        "sharklasers.com",
+    ]
+)
 
 
 def _validate_business_email(email: str) -> str:
@@ -168,13 +284,25 @@ class DemoRequestCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DemoRequest
         fields = [
-            "full_name", "email", "phone", "job_title",
-            "company", "company_size", "country",
-            "product_interests", "message",
-            "preferred_time", "preferred_date",
-            "source", "utm_source", "utm_medium", "utm_campaign",
-            "referrer_url", "landing_page",
-            "gdpr_consent", "marketing_consent",
+            "full_name",
+            "email",
+            "phone",
+            "job_title",
+            "company",
+            "company_size",
+            "country",
+            "product_interests",
+            "message",
+            "preferred_time",
+            "preferred_date",
+            "source",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+            "referrer_url",
+            "landing_page",
+            "gdpr_consent",
+            "marketing_consent",
         ]
 
     def validate_email(self, value: str) -> str:
@@ -206,9 +334,15 @@ class ContactMessageCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactMessage
         fields = [
-            "full_name", "email", "company", "phone",
-            "subject", "message", "department",
-            "source", "gdpr_consent",
+            "full_name",
+            "email",
+            "company",
+            "phone",
+            "subject",
+            "message",
+            "department",
+            "source",
+            "gdpr_consent",
         ]
 
     def validate_email(self, value: str) -> str:
@@ -235,10 +369,19 @@ class PartnerApplicationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PartnerApplication
         fields = [
-            "company_name", "contact_name", "email", "phone",
-            "website", "country", "partner_type",
-            "expertise_areas", "years_in_business", "employee_count",
-            "message", "existing_customers", "gdpr_consent",
+            "company_name",
+            "contact_name",
+            "email",
+            "phone",
+            "website",
+            "country",
+            "partner_type",
+            "expertise_areas",
+            "years_in_business",
+            "employee_count",
+            "message",
+            "existing_customers",
+            "gdpr_consent",
         ]
 
     def validate_email(self, value: str) -> str:

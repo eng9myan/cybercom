@@ -1,16 +1,25 @@
 from rest_framework import serializers
-from products.cymed.hospital.capacity_management.models import CapacityRule, CapacityThreshold, SurgePlan, OverflowUnit
+
 from platform.events.models import OutboxEvent
+from products.cymed.hospital.capacity_management.models import (
+    CapacityRule,
+    CapacityThreshold,
+    OverflowUnit,
+    SurgePlan,
+)
+
 
 class CapacityRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = CapacityRule
         fields = "__all__"
 
+
 class CapacityThresholdSerializer(serializers.ModelSerializer):
     class Meta:
         model = CapacityThreshold
         fields = "__all__"
+
 
 class SurgePlanSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,11 +43,12 @@ class SurgePlanSerializer(serializers.ModelSerializer):
                     "surge_plan_id": str(plan.id),
                     "item_code": "SURGE-BED-EXTRA",
                     "quantity": plan.allocated_beds_count,
-                    "requestor": "CapacityManagement"
-                }
+                    "requestor": "CapacityManagement",
+                },
             )
 
         return plan
+
 
 class OverflowUnitSerializer(serializers.ModelSerializer):
     class Meta:

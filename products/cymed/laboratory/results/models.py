@@ -1,10 +1,12 @@
-﻿"""
+"""
 CyMed Laboratory â€” Result Management
 Covers: LabResult, ResultValue, ReferenceRange, ResultInterpretation,
         CriticalResult, ResultCorrection, ResultApproval
 Full validation â†’ verification â†’ approval workflow with delta checks.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -38,13 +40,20 @@ class InterpretationCode(models.TextChoices):
 
 class LabResult(BaseModel):
     """Aggregated result record for an order item â€” groups all analyte values."""
+
     order_item = models.OneToOneField(
         "lab_orders.LabOrderItem", on_delete=models.CASCADE, related_name="result"
     )
     specimen = models.ForeignKey(
-        "lab_specimens.Specimen", on_delete=models.PROTECT, null=True, blank=True, related_name="results"
+        "lab_specimens.Specimen",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="results",
     )
-    status = models.CharField(max_length=20, choices=ResultStatus.choices, default=ResultStatus.PENDING)
+    status = models.CharField(
+        max_length=20, choices=ResultStatus.choices, default=ResultStatus.PENDING
+    )
     has_critical_value = models.BooleanField(default=False)
     has_abnormal_value = models.BooleanField(default=False)
     resulted_by = models.UUIDField(null=True, blank=True)
@@ -65,6 +74,7 @@ class LabResult(BaseModel):
 
 class ResultValue(BaseModel):
     """Individual analyte measurement within a result set."""
+
     VALUE_TYPES = [
         ("numeric", "Numeric"),
         ("text", "Text"),
@@ -74,7 +84,7 @@ class ResultValue(BaseModel):
     ]
 
     result = models.ForeignKey(LabResult, on_delete=models.CASCADE, related_name="values")
-    analyte_code = models.CharField(max_length=100)         # internal code
+    analyte_code = models.CharField(max_length=100)  # internal code
     analyte_name = models.CharField(max_length=255)
     loinc_code = models.CharField(max_length=20, blank=True)  # from TerminologyService
     value_type = models.CharField(max_length=20, choices=VALUE_TYPES, default="numeric")
@@ -82,9 +92,7 @@ class ResultValue(BaseModel):
     value_text = models.CharField(max_length=500, blank=True)
     value_coded = models.CharField(max_length=100, blank=True)
     unit = models.CharField(max_length=50, blank=True)
-    interpretation = models.CharField(
-        max_length=5, choices=InterpretationCode.choices, blank=True
-    )
+    interpretation = models.CharField(max_length=5, choices=InterpretationCode.choices, blank=True)
     is_critical = models.BooleanField(default=False)
     is_abnormal = models.BooleanField(default=False)
     delta_flag = models.BooleanField(default=False)
@@ -100,9 +108,12 @@ class ResultValue(BaseModel):
 
 class ReferenceRange(BaseModel):
     """Age/sex/population-specific normal ranges for a test analyte."""
+
     SEX_CHOICES = [("M", "Male"), ("F", "Female"), ("all", "All")]
 
-    test = models.ForeignKey("lab_orders.LabTest", on_delete=models.CASCADE, related_name="reference_ranges")
+    test = models.ForeignKey(
+        "lab_orders.LabTest", on_delete=models.CASCADE, related_name="reference_ranges"
+    )
     analyte_code = models.CharField(max_length=100, blank=True)
     sex = models.CharField(max_length=5, choices=SEX_CHOICES, default="all")
     age_min_years = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
@@ -125,7 +136,10 @@ class ReferenceRange(BaseModel):
 
 class ResultInterpretation(BaseModel):
     """Narrative or structured interpretation attached to a result value."""
-    result_value = models.OneToOneField(ResultValue, on_delete=models.CASCADE, related_name="interpretation_note")
+
+    result_value = models.OneToOneField(
+        ResultValue, on_delete=models.CASCADE, related_name="interpretation_note"
+    )
     interpretation_text = models.TextField()
     interpretation_method = models.CharField(max_length=100, blank=True)
     generated_by = models.CharField(max_length=50, default="manual")  # manual, cyai, rule
@@ -138,6 +152,7 @@ class ResultInterpretation(BaseModel):
 
 class CriticalResult(BaseModel):
     """Mandatory notification workflow for life-threatening result values."""
+
     NOTIFICATION_STATUS = [
         ("pending", "Pending Notification"),
         ("notified", "Notified â€” Acknowledgement Pending"),
@@ -146,9 +161,13 @@ class CriticalResult(BaseModel):
         ("closed", "Closed"),
     ]
 
-    result_value = models.OneToOneField(ResultValue, on_delete=models.CASCADE, related_name="critical_alert")
+    result_value = models.OneToOneField(
+        ResultValue, on_delete=models.CASCADE, related_name="critical_alert"
+    )
     critical_at = models.DateTimeField(auto_now_add=True)
-    notification_status = models.CharField(max_length=20, choices=NOTIFICATION_STATUS, default="pending")
+    notification_status = models.CharField(
+        max_length=20, choices=NOTIFICATION_STATUS, default="pending"
+    )
     notified_by = models.UUIDField(null=True, blank=True)
     notified_to_id = models.UUIDField(null=True, blank=True)
     notified_at = models.DateTimeField(null=True, blank=True)
@@ -167,6 +186,7 @@ class CriticalResult(BaseModel):
 
 class ResultCorrection(BaseModel):
     """Amendment record â€” immutable record of original vs. corrected value."""
+
     result = models.ForeignKey(LabResult, on_delete=models.CASCADE, related_name="corrections")
     analyte_code = models.CharField(max_length=100)
     original_value = models.CharField(max_length=255)
@@ -184,13 +204,14 @@ class ResultCorrection(BaseModel):
 
 class ResultApproval(BaseModel):
     """Electronic signoff record for result release â€” replaces wet signature."""
+
     result = models.ForeignKey(LabResult, on_delete=models.CASCADE, related_name="approvals")
-    approval_level = models.CharField(max_length=30)    # verification, pathologist, director
+    approval_level = models.CharField(max_length=30)  # verification, pathologist, director
     approved_by = models.UUIDField()
     approved_at = models.DateTimeField(auto_now_add=True)
     digital_signature = models.CharField(max_length=512, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    signature_method = models.CharField(max_length=30, default="pin")   # pin, biometric, token
+    signature_method = models.CharField(max_length=30, default="pin")  # pin, biometric, token
     comments = models.TextField(blank=True)
 
     class Meta:

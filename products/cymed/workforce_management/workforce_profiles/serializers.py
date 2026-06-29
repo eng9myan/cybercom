@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import WorkforceProfile, ClinicalCredential, CompetencyRecord
+
+from .models import ClinicalCredential, CompetencyRecord, WorkforceProfile
 
 
 class WorkforceProfileSerializer(serializers.ModelSerializer):

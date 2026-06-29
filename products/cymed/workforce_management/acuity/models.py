@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 ACUITY_LEVEL_CHOICES = [
     (1, "Level 1 — Stable (HPPD 4.0h)"),
@@ -108,4 +108,6 @@ class SkillMixValidation(BaseModel):
     failure_reasons = models.JSONField(default=list)
 
     def __str__(self):
-        return f"Skill mix {self.slot_date} ward {self.ward_id} — {'PASS' if self.passed else 'FAIL'}"
+        return (
+            f"Skill mix {self.slot_date} ward {self.ward_id} — {'PASS' if self.passed else 'FAIL'}"
+        )

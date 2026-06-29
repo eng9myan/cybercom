@@ -1,4 +1,5 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -17,7 +18,9 @@ class ImagingOperationsDashboard(BaseModel):
     average_tat_hours = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     stat_tat_hours = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     urgent_tat_hours = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
-    capacity_utilization_pct = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    capacity_utilization_pct = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
     no_shows = models.PositiveIntegerField(default=0)
     cancellations = models.PositiveIntegerField(default=0)
     by_modality = models.JSONField(default=dict)
@@ -35,14 +38,24 @@ class RadiologistProductivity(BaseModel):
     radiologist_id = models.UUIDField(db_index=True)
     period_start = models.DateField()
     period_end = models.DateField()
-    period_type = models.CharField(max_length=20, choices=[
-        ("daily", "Daily"), ("weekly", "Weekly"), ("monthly", "Monthly"),
-    ], default="daily")
+    period_type = models.CharField(
+        max_length=20,
+        choices=[
+            ("daily", "Daily"),
+            ("weekly", "Weekly"),
+            ("monthly", "Monthly"),
+        ],
+        default="daily",
+    )
     total_rvu = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     studies_read = models.PositiveIntegerField(default=0)
     reports_finalized = models.PositiveIntegerField(default=0)
-    avg_report_tat_hours = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
-    critical_findings_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    avg_report_tat_hours = models.DecimalField(
+        max_digits=8, decimal_places=2, null=True, blank=True
+    )
+    critical_findings_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
     peer_review_score = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
     amendments_issued = models.PositiveIntegerField(default=0)
     by_modality = models.JSONField(default=dict)
@@ -83,9 +96,14 @@ class ImagingRevenueEvent(BaseModel):
     procedure_code = models.CharField(max_length=100)
     modality = models.CharField(max_length=20)
     rvu_value = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
-    event_type = models.CharField(max_length=30, choices=[
-        ("charge_created", "Charge Created"), ("charge_voided", "Charge Voided"),
-    ], default="charge_created")
+    event_type = models.CharField(
+        max_length=30,
+        choices=[
+            ("charge_created", "Charge Created"),
+            ("charge_voided", "Charge Voided"),
+        ],
+        default="charge_created",
+    )
     outbox_event_id = models.UUIDField(null=True, blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
 

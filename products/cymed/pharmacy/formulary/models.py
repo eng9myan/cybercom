@@ -7,7 +7,9 @@ Supports: Hospital, Retail, Government, Pharmacy Chain formularies.
 Terminology: Drug codes via TerminologyService (RxNorm, SNOMED).
              Therapeutic classes via SNOMED via TerminologyService.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -25,14 +27,15 @@ class TherapeuticClass(BaseModel):
     Drug therapeutic classification hierarchy.
     Maps to ATC classification via TerminologyService.
     """
+
     code = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=255)
     name_ar = models.CharField(max_length=255, blank=True)
-    atc_code = models.CharField(max_length=20, blank=True)            # ATC via TerminologyService
+    atc_code = models.CharField(max_length=20, blank=True)  # ATC via TerminologyService
     parent = models.ForeignKey(
         "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children"
     )
-    level = models.PositiveSmallIntegerField(default=1)               # 1=class, 2=subclass, 3=drug
+    level = models.PositiveSmallIntegerField(default=1)  # 1=class, 2=subclass, 3=drug
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
 
@@ -49,6 +52,7 @@ class Formulary(BaseModel):
     A formulary defines the approved medication list for a specific context.
     Each tenant may have multiple formularies (hospital, retail, insurance).
     """
+
     name = models.CharField(max_length=255)
     name_ar = models.CharField(max_length=255, blank=True)
     formulary_type = models.CharField(
@@ -58,7 +62,7 @@ class Formulary(BaseModel):
     is_default = models.BooleanField(default=False)
     effective_date = models.DateField(null=True, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
-    managed_by = models.UUIDField(null=True, blank=True)              # Pharmacy Director
+    managed_by = models.UUIDField(null=True, blank=True)  # Pharmacy Director
     version = models.CharField(max_length=20, default="1.0")
     description = models.TextField(blank=True)
 
@@ -77,6 +81,7 @@ class FormularyDrug(BaseModel):
     A drug entry in a formulary.
     Drug codes resolved via TerminologyService (RxNorm).
     """
+
     STATUS_CHOICES = [
         ("preferred", "Preferred"),
         ("non_preferred", "Non-Preferred"),
@@ -94,11 +99,15 @@ class FormularyDrug(BaseModel):
 
     formulary = models.ForeignKey(Formulary, on_delete=models.CASCADE, related_name="drugs")
     therapeutic_class = models.ForeignKey(
-        TherapeuticClass, on_delete=models.SET_NULL, null=True, blank=True, related_name="formulary_drugs"
+        TherapeuticClass,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="formulary_drugs",
     )
 
     # Drug identity via TerminologyService
-    drug_code = models.CharField(max_length=100, db_index=True)       # RxNorm
+    drug_code = models.CharField(max_length=100, db_index=True)  # RxNorm
     drug_name = models.CharField(max_length=500)
     drug_name_ar = models.CharField(max_length=500, blank=True)
     generic_code = models.CharField(max_length=100, blank=True)
@@ -118,15 +127,15 @@ class FormularyDrug(BaseModel):
     gender_restriction = models.CharField(
         max_length=10,
         choices=[("any", "Any"), ("male", "Male Only"), ("female", "Female Only")],
-        default="any"
+        default="any",
     )
-    indication_restrictions = models.JSONField(default=list)          # ICD-11 codes
-    quantity_limits = models.JSONField(default=dict)                  # {"per_fill": 30, "per_year": 360}
+    indication_restrictions = models.JSONField(default=list)  # ICD-11 codes
+    quantity_limits = models.JSONField(default=dict)  # {"per_fill": 30, "per_year": 360}
 
     # Availability
     available_strengths = models.JSONField(default=list)
-    available_forms = models.JSONField(default=list)                  # tablet, capsule, injection
-    dispensing_locations = models.JSONField(default=list)             # ward, outpatient, retail
+    available_forms = models.JSONField(default=list)  # tablet, capsule, injection
+    dispensing_locations = models.JSONField(default=list)  # ward, outpatient, retail
 
     effective_date = models.DateField(null=True, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
@@ -147,6 +156,7 @@ class FormularyRestriction(BaseModel):
     Additional restriction rules applied to specific formulary drugs.
     Linked to specific criteria (diagnosis, prescriber specialty, etc.)
     """
+
     RESTRICTION_TYPES = [
         ("diagnosis_required", "Specific Diagnosis Required"),
         ("specialist_only", "Specialist Prescriber Only"),
@@ -163,8 +173,8 @@ class FormularyRestriction(BaseModel):
     )
     restriction_type = models.CharField(max_length=30, choices=RESTRICTION_TYPES)
     description = models.TextField()
-    criteria = models.JSONField(default=dict)                         # Flexible criteria store
-    is_hard_stop = models.BooleanField(default=False)                 # Block or warn
+    criteria = models.JSONField(default=dict)  # Flexible criteria store
+    is_hard_stop = models.BooleanField(default=False)  # Block or warn
     effective_date = models.DateField(null=True, blank=True)
 
     class Meta:
@@ -176,6 +186,7 @@ class PreferredMedication(BaseModel):
     Therapeutic interchange — preferred alternatives to non-formulary drugs.
     Used to suggest formulary-compliant substitutes.
     """
+
     INTERCHANGE_REASON = [
         ("cost", "Cost Reduction"),
         ("formulary_compliance", "Formulary Compliance"),
@@ -184,12 +195,16 @@ class PreferredMedication(BaseModel):
         ("availability", "Drug Availability"),
     ]
 
-    formulary = models.ForeignKey(Formulary, on_delete=models.CASCADE, related_name="preferred_medications")
+    formulary = models.ForeignKey(
+        Formulary, on_delete=models.CASCADE, related_name="preferred_medications"
+    )
     non_formulary_drug_code = models.CharField(max_length=100, db_index=True)
     non_formulary_drug_name = models.CharField(max_length=500)
     preferred_drug_code = models.CharField(max_length=100, db_index=True)
     preferred_drug_name = models.CharField(max_length=500)
-    interchange_reason = models.CharField(max_length=30, choices=INTERCHANGE_REASON, default="formulary_compliance")
+    interchange_reason = models.CharField(
+        max_length=30, choices=INTERCHANGE_REASON, default="formulary_compliance"
+    )
     dose_conversion_notes = models.TextField(blank=True)
     clinical_notes = models.TextField(blank=True)
     requires_pharmacist_counseling = models.BooleanField(default=True)

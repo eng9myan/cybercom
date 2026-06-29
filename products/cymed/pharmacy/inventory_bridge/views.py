@@ -1,12 +1,15 @@
 """CyMed Pharmacy — Inventory Bridge Views."""
+
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+
 from platform.events.models import OutboxEvent
-from .models import MedicationConsumptionEvent, InventoryQueryResult
-from .serializers import MedicationConsumptionEventSerializer, InventoryQueryResultSerializer
+
 from ..views import PharmacyModelViewSet
+from .models import InventoryQueryResult, MedicationConsumptionEvent
+from .serializers import InventoryQueryResultSerializer, MedicationConsumptionEventSerializer
 
 
 class MedicationConsumptionEventViewSet(PharmacyModelViewSet):
@@ -44,6 +47,7 @@ class InventoryQueryView(APIView):
     Results are cached in InventoryQueryResult for performance.
     CyCom owns the actual inventory — this is read-only bridge.
     """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -62,6 +66,7 @@ class InventoryQueryView(APIView):
         # Query CyCom ERP via CyIntegrationHub
         try:
             from platform.cyintegrationhub.services import IntegrationHubService
+
             erp_data = IntegrationHubService.query_erp_inventory(
                 drug_code=drug_code, tenant_id=str(tenant_id)
             )
@@ -72,4 +77,6 @@ class InventoryQueryView(APIView):
             )
             return Response(InventoryQueryResultSerializer(result).data)
         except Exception as e:
-            return Response({"detail": f"ERP query failed: {str(e)}", "drug_code": drug_code}, status=503)
+            return Response(
+                {"detail": f"ERP query failed: {e!s}", "drug_code": drug_code}, status=503
+            )

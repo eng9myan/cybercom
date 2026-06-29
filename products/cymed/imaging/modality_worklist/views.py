@@ -1,6 +1,12 @@
 from products.cymed.imaging.views import ImagingModelViewSet
-from .models import Modality, ModalityWorklist, WorklistEntry, StudyQueue
-from .serializers import ModalitySerializer, ModalityWorklistSerializer, WorklistEntrySerializer, StudyQueueSerializer
+
+from .models import Modality, ModalityWorklist, StudyQueue, WorklistEntry
+from .serializers import (
+    ModalitySerializer,
+    ModalityWorklistSerializer,
+    StudyQueueSerializer,
+    WorklistEntrySerializer,
+)
 
 
 class ModalityViewSet(ImagingModelViewSet):

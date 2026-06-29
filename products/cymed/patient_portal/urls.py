@@ -2,7 +2,8 @@
 CyMed Patient Portal — Package-Level URL Router
 Routes requests to each portal app.
 """
-from django.urls import path, include
+
+from django.urls import include, path
 
 urlpatterns = [
     path("accounts/", include("products.cymed.patient_portal.accounts.urls")),

@@ -1,16 +1,16 @@
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import FloatPoolMember, FloatDeployment, AgencyStaffRegistration, StaffingShortageAlert
+from .models import AgencyStaffRegistration, FloatDeployment, FloatPoolMember, StaffingShortageAlert
 from .serializers import (
-    FloatPoolMemberSerializer,
-    FloatDeploymentSerializer,
     AgencyStaffRegistrationSerializer,
+    FloatDeploymentSerializer,
+    FloatPoolMemberSerializer,
     StaffingShortageAlertSerializer,
 )
 
@@ -62,7 +62,13 @@ class FloatDeploymentViewSet(HWMModelViewSet):
 class AgencyStaffRegistrationViewSet(HWMModelViewSet):
     queryset = AgencyStaffRegistration.objects.all()
     serializer_class = AgencyStaffRegistrationSerializer
-    filterset_fields = ["facility_id", "status", "credential_verified", "identity_verified", "ehr_access_token_issued"]
+    filterset_fields = [
+        "facility_id",
+        "status",
+        "credential_verified",
+        "identity_verified",
+        "ehr_access_token_issued",
+    ]
     search_fields = ["display_name", "agency_name", "specialty"]
     ordering_fields = ["contract_start", "contract_end", "created_at"]
 
@@ -74,7 +80,15 @@ class AgencyStaffRegistrationViewSet(HWMModelViewSet):
         if staff.identity_verified:
             staff.ehr_access_token_issued = True
             staff.status = "active"
-        staff.save(update_fields=["credential_verified", "credential_verified_at", "ehr_access_token_issued", "status", "updated_at"])
+        staff.save(
+            update_fields=[
+                "credential_verified",
+                "credential_verified_at",
+                "ehr_access_token_issued",
+                "status",
+                "updated_at",
+            ]
+        )
         return Response({"status": staff.status, "id": str(staff.id)})
 
     @action(detail=True, methods=["post"])
@@ -85,7 +99,15 @@ class AgencyStaffRegistrationViewSet(HWMModelViewSet):
         if staff.credential_verified:
             staff.ehr_access_token_issued = True
             staff.status = "active"
-        staff.save(update_fields=["identity_verified", "identity_verified_at", "ehr_access_token_issued", "status", "updated_at"])
+        staff.save(
+            update_fields=[
+                "identity_verified",
+                "identity_verified_at",
+                "ehr_access_token_issued",
+                "status",
+                "updated_at",
+            ]
+        )
         return Response({"status": staff.status, "id": str(staff.id)})
 
 

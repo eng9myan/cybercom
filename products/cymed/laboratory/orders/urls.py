@@ -1,5 +1,13 @@
-﻿from rest_framework.routers import DefaultRouter
-from .views import LabTestViewSet, LabPanelViewSet, LabOrderViewSet, LabOrderItemViewSet, LabOrderDiagnosisViewSet, LabOrderAttachmentViewSet
+from rest_framework.routers import DefaultRouter
+
+from .views import (
+    LabOrderAttachmentViewSet,
+    LabOrderDiagnosisViewSet,
+    LabOrderItemViewSet,
+    LabOrderViewSet,
+    LabPanelViewSet,
+    LabTestViewSet,
+)
 
 router = DefaultRouter()
 router.register("tests", LabTestViewSet, basename="lab-tests")

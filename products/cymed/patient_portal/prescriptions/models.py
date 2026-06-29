@@ -1,15 +1,16 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class PortalPrescriptionView(BaseModel):
     STATUS_CHOICES = [
-        ('active', 'Active'),
-        ('dispensed', 'Dispensed'),
-        ('completed', 'Completed'),
-        ('cancelled', 'Cancelled'),
-        ('expired', 'Expired'),
-        ('on_hold', 'On Hold'),
+        ("active", "Active"),
+        ("dispensed", "Dispensed"),
+        ("completed", "Completed"),
+        ("cancelled", "Cancelled"),
+        ("expired", "Expired"),
+        ("on_hold", "On Hold"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -23,7 +24,7 @@ class PortalPrescriptionView(BaseModel):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='active',
+        default="active",
     )
     is_controlled = models.BooleanField(default=False)
     items_summary = models.JSONField(default=list)
@@ -34,20 +35,18 @@ class PortalPrescriptionView(BaseModel):
     can_request_refill = models.BooleanField(default=False)
     is_viewed = models.BooleanField(default=False)
     viewed_at = models.DateTimeField(null=True, blank=True)
-    fhir_medication_request_id = models.CharField(
-        max_length=255, blank=True, db_index=True
-    )
+    fhir_medication_request_id = models.CharField(max_length=255, blank=True, db_index=True)
 
     class Meta:
-        db_table = 'cymed_portal_prescriptions'
+        db_table = "cymed_portal_prescriptions"
         indexes = [
             models.Index(
-                fields=['account_id', 'status'],
-                name='prescriptions_acct_status_idx',
+                fields=["account_id", "status"],
+                name="prescriptions_acct_status_idx",
             ),
             models.Index(
-                fields=['patient_id', 'prescribed_at'],
-                name='prescriptions_patient_date_idx',
+                fields=["patient_id", "prescribed_at"],
+                name="prescriptions_patient_date_idx",
             ),
         ]
 
@@ -57,18 +56,18 @@ class PortalPrescriptionView(BaseModel):
 
 class RefillRequest(BaseModel):
     PICKUP_METHOD_CHOICES = [
-        ('counter', 'Counter Pickup'),
-        ('delivery', 'Delivery'),
-        ('mail', 'Mail'),
+        ("counter", "Counter Pickup"),
+        ("delivery", "Delivery"),
+        ("mail", "Mail"),
     ]
 
     STATUS_CHOICES = [
-        ('submitted', 'Submitted'),
-        ('received_by_pharmacy', 'Received by Pharmacy'),
-        ('processing', 'Processing'),
-        ('ready', 'Ready'),
-        ('dispensed', 'Dispensed'),
-        ('cancelled', 'Cancelled'),
+        ("submitted", "Submitted"),
+        ("received_by_pharmacy", "Received by Pharmacy"),
+        ("processing", "Processing"),
+        ("ready", "Ready"),
+        ("dispensed", "Dispensed"),
+        ("cancelled", "Cancelled"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -76,21 +75,21 @@ class RefillRequest(BaseModel):
     portal_prescription = models.ForeignKey(
         PortalPrescriptionView,
         on_delete=models.CASCADE,
-        related_name='refill_requests',
+        related_name="refill_requests",
     )
     preferred_pharmacy_id = models.UUIDField(null=True, blank=True)
     preferred_pharmacy_name = models.CharField(max_length=255, blank=True)
     pickup_method = models.CharField(
         max_length=20,
         choices=PICKUP_METHOD_CHOICES,
-        default='counter',
+        default="counter",
     )
     delivery_address = models.CharField(max_length=500, blank=True)
     notes = models.TextField(blank=True)
     status = models.CharField(
         max_length=30,
         choices=STATUS_CHOICES,
-        default='submitted',
+        default="submitted",
     )
     submitted_at = models.DateTimeField(auto_now_add=True)
     pharmacy_response = models.TextField(blank=True)
@@ -98,19 +97,16 @@ class RefillRequest(BaseModel):
     cymed_dispense_id = models.UUIDField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_refill_requests'
+        db_table = "cymed_portal_refill_requests"
         indexes = [
             models.Index(
-                fields=['account_id', 'status'],
-                name='refill_requests_acct_status_idx',
+                fields=["account_id", "status"],
+                name="refill_requests_acct_status_idx",
             ),
         ]
 
     def __str__(self):
-        return (
-            f"Refill request for {self.portal_prescription} "
-            f"({self.get_status_display()})"
-        )
+        return f"Refill request for {self.portal_prescription} ({self.get_status_display()})"
 
 
 class MedicationInstruction(BaseModel):
@@ -128,8 +124,8 @@ class MedicationInstruction(BaseModel):
     ai_explanation = models.TextField(blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_medication_instructions'
-        unique_together = [('tenant_id', 'patient_id', 'drug_code')]
+        db_table = "cymed_portal_medication_instructions"
+        unique_together = [("tenant_id", "patient_id", "drug_code")]
 
     def __str__(self):
         return f"{self.drug_name} ({self.drug_code}) instructions"
@@ -137,10 +133,10 @@ class MedicationInstruction(BaseModel):
 
 class MedicationAdherenceLog(BaseModel):
     STATUS_CHOICES = [
-        ('taken', 'Taken'),
-        ('missed', 'Missed'),
-        ('skipped', 'Skipped'),
-        ('rescheduled', 'Rescheduled'),
+        ("taken", "Taken"),
+        ("missed", "Missed"),
+        ("skipped", "Skipped"),
+        ("rescheduled", "Rescheduled"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -148,7 +144,7 @@ class MedicationAdherenceLog(BaseModel):
     portal_prescription = models.ForeignKey(
         PortalPrescriptionView,
         on_delete=models.CASCADE,
-        related_name='adherence_logs',
+        related_name="adherence_logs",
     )
     drug_code = models.CharField(max_length=100)
     drug_name = models.CharField(max_length=500)
@@ -157,21 +153,18 @@ class MedicationAdherenceLog(BaseModel):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='taken',
+        default="taken",
     )
     notes = models.TextField(blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_adherence_logs'
+        db_table = "cymed_portal_adherence_logs"
         indexes = [
             models.Index(
-                fields=['account_id', 'status', 'scheduled_time'],
-                name='adherence_logs_acct_status_time_idx',
+                fields=["account_id", "status", "scheduled_time"],
+                name="adherence_logs_acct_status_time_idx",
             ),
         ]
 
     def __str__(self):
-        return (
-            f"{self.drug_name} adherence — {self.get_status_display()} "
-            f"at {self.scheduled_time}"
-        )
+        return f"{self.drug_name} adherence — {self.get_status_display()} at {self.scheduled_time}"

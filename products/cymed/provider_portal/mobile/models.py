@@ -1,5 +1,5 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -69,9 +69,7 @@ class MobilePreferences(BaseModel):
         related_name="preferences",
     )
     provider_id = models.UUIDField()
-    home_tab = models.CharField(
-        max_length=20, choices=HOME_TAB_CHOICES, default="dashboard"
-    )
+    home_tab = models.CharField(max_length=20, choices=HOME_TAB_CHOICES, default="dashboard")
     push_critical_results = models.BooleanField(default=True)
     push_task_alerts = models.BooleanField(default=True)
     push_messages = models.BooleanField(default=True)
@@ -111,16 +109,12 @@ class MobilePushNotification(BaseModel):
 
     provider_id = models.UUIDField(db_index=True)
     device_id = models.UUIDField(db_index=True, null=True, blank=True)
-    notification_type = models.CharField(
-        max_length=30, choices=NOTIFICATION_TYPE_CHOICES
-    )
+    notification_type = models.CharField(max_length=30, choices=NOTIFICATION_TYPE_CHOICES)
     title = models.CharField(max_length=255)
     body = models.TextField()
     action_type = models.CharField(max_length=100, blank=True)
     action_id = models.UUIDField(null=True, blank=True)
-    priority = models.CharField(
-        max_length=10, choices=PRIORITY_CHOICES, default="normal"
-    )
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="normal")
     is_delivered = models.BooleanField(default=False)
     delivered_at = models.DateTimeField(null=True, blank=True)
     is_read = models.BooleanField(default=False)

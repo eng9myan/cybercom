@@ -1,7 +1,12 @@
 from rest_framework import serializers
+
 from .models import (
-    ImplementationProject, ProjectMilestone, ProjectTask,
-    CutoverChecklist, HypercareLog, MethodologyTemplate,
+    CutoverChecklist,
+    HypercareLog,
+    ImplementationProject,
+    MethodologyTemplate,
+    ProjectMilestone,
+    ProjectTask,
 )
 
 

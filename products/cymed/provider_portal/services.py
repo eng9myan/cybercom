@@ -20,12 +20,13 @@ Architecture:
 
 ADR refs: ADR-0012 (provider workspace), ADR-0028 (audit).
 """
+
 from __future__ import annotations
 
-import uuid
-import logging
 import datetime
-from typing import Any, Optional
+import logging
+import uuid
+from typing import Any
 
 from django.db import transaction
 from django.utils import timezone
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # 1. ProviderWorkspaceService
 # ---------------------------------------------------------------------------
+
 
 class ProviderWorkspaceService:
     """
@@ -61,14 +63,12 @@ class ProviderWorkspaceService:
 
         filter_type options: 'my_patients' | 'ward' | 'dept' | 'all'
         """
+        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
         from products.cymed.provider_portal.patient_lists.models import (
             ProviderAssignment,
-            PatientAssignment,
-            PatientList,
         )
-        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
         from products.cymed.provider_portal.results.models import CriticalResultAlert
-        from products.cymed.provider_portal.rounding.models import ClinicalRound, RoundChecklist
+        from products.cymed.provider_portal.rounding.models import RoundChecklist
 
         results: list[dict[str, Any]] = []
 
@@ -93,36 +93,37 @@ class ProviderWorkspaceService:
             )
 
         # Pending orders count per patient
-        pending_orders_qs = (
-            ProviderOrderRequest.objects.filter(
-                tenant_id=tenant_id,
-                patient_id__in=patient_ids,
-                status__in=["draft", "submitted"],
-            )
-            .values("patient_id")
-        )
+        pending_orders_qs = ProviderOrderRequest.objects.filter(
+            tenant_id=tenant_id,
+            patient_id__in=patient_ids,
+            status__in=["draft", "submitted"],
+        ).values("patient_id")
         pending_orders_map: dict = {}
         for row in pending_orders_qs:
             pid = str(row["patient_id"])
             pending_orders_map[pid] = pending_orders_map.get(pid, 0) + 1
 
         # Critical flags per patient
-        critical_pids = set(
+        critical_pids = {
             str(pid)
             for pid in CriticalResultAlert.objects.filter(
                 tenant_id=tenant_id,
                 patient_id__in=patient_ids,
                 status="pending",
             ).values_list("patient_id", flat=True)
-        )
+        }
 
         # Last round per patient
         today = datetime.date.today()
-        round_checklists = RoundChecklist.objects.filter(
-            tenant_id=tenant_id,
-            patient_id__in=patient_ids,
-            round__round_date=today,
-        ).select_related("round").order_by("-round__round_date")
+        round_checklists = (
+            RoundChecklist.objects.filter(
+                tenant_id=tenant_id,
+                patient_id__in=patient_ids,
+                round__round_date=today,
+            )
+            .select_related("round")
+            .order_by("-round__round_date")
+        )
         last_round_map: dict = {}
         for rc in round_checklists:
             pid = str(rc.patient_id)
@@ -134,8 +135,8 @@ class ProviderWorkspaceService:
             results.append(
                 {
                     "patient_id": pid,
-                    "name": "",          # Populated from CyIdentity / patient registry
-                    "mrn": "",           # Populated from CyIdentity / patient registry
+                    "name": "",  # Populated from CyIdentity / patient registry
+                    "mrn": "",  # Populated from CyIdentity / patient registry
                     "age": None,
                     "ward": "",
                     "room": "",
@@ -169,17 +170,19 @@ class ProviderWorkspaceService:
                 tasks_due: int,
             }
         """
-        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
-        from products.cymed.provider_portal.results.models import (
-            ProviderResultView,
-            CriticalResultAlert,
+        from products.cymed.provider_portal.clinical_documentation.models import (
+            ProviderClinicalNote,
         )
-        from products.cymed.provider_portal.clinical_documentation.models import ProviderClinicalNote
         from products.cymed.provider_portal.clinical_messaging.models import (
             ClinicalMessage,
             MessageThreadParticipant,
         )
         from products.cymed.provider_portal.clinical_tasks.models import ClinicalTask, TaskStatus
+        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
+        from products.cymed.provider_portal.results.models import (
+            CriticalResultAlert,
+            ProviderResultView,
+        )
 
         orders_to_sign = ProviderOrderRequest.objects.filter(
             tenant_id=tenant_id,
@@ -208,11 +211,15 @@ class ProviderWorkspaceService:
                 is_active=True,
             ).values_list("thread_id", flat=True)
         )
-        messages = ClinicalMessage.objects.filter(
-            tenant_id=tenant_id,
-            thread_id__in=thread_ids,
-            is_read=False,
-        ).exclude(sender_provider_id=provider_id).count()
+        messages = (
+            ClinicalMessage.objects.filter(
+                tenant_id=tenant_id,
+                thread_id__in=thread_ids,
+                is_read=False,
+            )
+            .exclude(sender_provider_id=provider_id)
+            .count()
+        )
 
         critical_alerts = CriticalResultAlert.objects.filter(
             tenant_id=tenant_id,
@@ -241,7 +248,7 @@ class ProviderWorkspaceService:
         cls,
         tenant_id,
         provider_id,
-        date: Optional[datetime.date] = None,
+        date: datetime.date | None = None,
     ) -> list[dict[str, Any]]:
         """
         Returns the provider's rounding schedule and clinical rounds for a given date.
@@ -289,6 +296,7 @@ class ProviderWorkspaceService:
 # 2. ClinicalDocumentationService
 # ---------------------------------------------------------------------------
 
+
 class ClinicalDocumentationService:
     """
     Manages provider clinical notes lifecycle: create, sign, co-sign, amend.
@@ -319,8 +327,10 @@ class ClinicalDocumentationService:
         Emits: cymed.provider.note.created
         Returns: {document_id, status, note_number}
         """
-        from products.cymed.provider_portal.clinical_documentation.models import ProviderClinicalNote
         from platform.events.models import OutboxEvent
+        from products.cymed.provider_portal.clinical_documentation.models import (
+            ProviderClinicalNote,
+        )
 
         note_body = (
             f"SUBJECTIVE:\n{subjective}\n\n"
@@ -364,6 +374,7 @@ class ClinicalDocumentationService:
 
         try:
             from platform.audit.services import AuditService
+
             AuditService().record(
                 action="clinical_note.created",
                 action_verb="CREATE",
@@ -397,8 +408,10 @@ class ClinicalDocumentationService:
         Signs a clinical note.  Changes status: draft → signed.
         Records signed_at and signed_by. Emits OutboxEvent.
         """
-        from products.cymed.provider_portal.clinical_documentation.models import ProviderClinicalNote
         from platform.events.models import OutboxEvent
+        from products.cymed.provider_portal.clinical_documentation.models import (
+            ProviderClinicalNote,
+        )
 
         note = ProviderClinicalNote.objects.select_for_update().get(
             pk=document_id,
@@ -433,6 +446,7 @@ class ClinicalDocumentationService:
 
         try:
             from platform.audit.services import AuditService
+
             AuditService().record(
                 action="clinical_note.signed",
                 action_verb="UPDATE",
@@ -469,11 +483,11 @@ class ClinicalDocumentationService:
         Creates a co-signature request on an existing note.
         Changes note status: draft → in_review.
         """
-        from products.cymed.provider_portal.clinical_documentation.models import (
-            ProviderClinicalNote,
-            NoteCoSignature,
-        )
         from platform.events.models import OutboxEvent
+        from products.cymed.provider_portal.clinical_documentation.models import (
+            NoteCoSignature,
+            ProviderClinicalNote,
+        )
 
         note = ProviderClinicalNote.objects.select_for_update().get(
             pk=document_id,
@@ -481,9 +495,7 @@ class ClinicalDocumentationService:
         )
 
         if note.status not in ("draft",):
-            raise ValueError(
-                f"Cannot request co-signature on a note in status '{note.status}'."
-            )
+            raise ValueError(f"Cannot request co-signature on a note in status '{note.status}'.")
 
         cosig = NoteCoSignature.objects.create(
             tenant_id=tenant_id,
@@ -526,7 +538,9 @@ class ClinicalDocumentationService:
         """
         Returns all clinical notes for an encounter ordered by creation time (desc).
         """
-        from products.cymed.provider_portal.clinical_documentation.models import ProviderClinicalNote
+        from products.cymed.provider_portal.clinical_documentation.models import (
+            ProviderClinicalNote,
+        )
 
         notes = ProviderClinicalNote.objects.filter(
             tenant_id=tenant_id,
@@ -554,6 +568,7 @@ class ClinicalDocumentationService:
 # 3. OrderManagementService
 # ---------------------------------------------------------------------------
 
+
 class OrderManagementService:
     """
     Places, modifies, and cancels provider orders across all order categories:
@@ -580,8 +595,8 @@ class OrderManagementService:
         Emits: cymed.order.lab.placed
         Returns: {order_id, order_number, tests, validated_codes}
         """
-        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
         from platform.events.models import OutboxEvent
+        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
 
         # Validate test codes via TerminologyService (non-blocking)
         validated_codes: list[str] = []
@@ -589,6 +604,7 @@ class OrderManagementService:
         for code in test_codes:
             try:
                 from platform.terminology.services import TerminologyService
+
                 result = TerminologyService.lookup(code=code, system="loinc")
                 if result:
                     validated_codes.append(code)
@@ -599,14 +615,13 @@ class OrderManagementService:
                 validated_codes.append(code)  # non-blocking in degraded env
 
         order_number = (
-            f"LAB-PP-{datetime.date.today().strftime('%Y%m%d')}-"
-            f"{str(uuid.uuid4()).upper()[:8]}"
+            f"LAB-PP-{datetime.date.today().strftime('%Y%m%d')}-{str(uuid.uuid4()).upper()[:8]}"
         )
 
         order = ProviderOrderRequest.objects.create(
             tenant_id=tenant_id,
             cymed_encounter_id=encounter_id,
-            patient_id=uuid.uuid4(),   # Resolved from encounter upstream
+            patient_id=uuid.uuid4(),  # Resolved from encounter upstream
             ordering_provider_id=provider_id,
             ordering_provider_name=provider_name,
             order_category="laboratory",
@@ -641,6 +656,7 @@ class OrderManagementService:
 
         try:
             from platform.audit.services import AuditService
+
             AuditService().record(
                 action="order.lab.placed",
                 action_verb="CREATE",
@@ -683,21 +699,21 @@ class OrderManagementService:
         Routes to imaging module via OutboxEvent.
         Emits: cymed.order.imaging.placed
         """
-        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
         from platform.events.models import OutboxEvent
+        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
 
         # Validate via TerminologyService — non-blocking
         radlex_valid = True
         try:
             from platform.terminology.services import TerminologyService
+
             result = TerminologyService.lookup(code=modality, system="radlex")
             radlex_valid = result is not None
         except Exception:
             pass  # non-blocking
 
         order_number = (
-            f"IMG-PP-{datetime.date.today().strftime('%Y%m%d')}-"
-            f"{str(uuid.uuid4()).upper()[:8]}"
+            f"IMG-PP-{datetime.date.today().strftime('%Y%m%d')}-{str(uuid.uuid4()).upper()[:8]}"
         )
 
         order = ProviderOrderRequest.objects.create(
@@ -741,6 +757,7 @@ class OrderManagementService:
 
         try:
             from platform.audit.services import AuditService
+
             AuditService().record(
                 action="order.imaging.placed",
                 action_verb="CREATE",
@@ -778,7 +795,7 @@ class OrderManagementService:
         indication: str = "",
         provider_name: str = "",
         patient_id=None,
-        drug_codes: Optional[list[str]] = None,
+        drug_codes: list[str] | None = None,
         check_interactions: bool = True,
     ) -> dict[str, Any]:
         """
@@ -788,14 +805,17 @@ class OrderManagementService:
         Emits: cymed.order.medication.placed
         Returns: {order_id, order_number, interaction_alerts}
         """
-        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
         from platform.events.models import OutboxEvent
+        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
 
         # Drug interaction check — advisory only, non-blocking
         interaction_alerts: list[dict] = []
         if check_interactions and drug_codes and patient_id:
             try:
-                from products.cymed.pharmacy.drug_interactions.services import DrugInteractionService
+                from products.cymed.pharmacy.drug_interactions.services import (
+                    DrugInteractionService,
+                )
+
                 interactions = DrugInteractionService.check_prescription(
                     patient_id=patient_id,
                     drug_codes=drug_codes or [],
@@ -817,8 +837,7 @@ class OrderManagementService:
                 )
 
         order_number = (
-            f"MED-PP-{datetime.date.today().strftime('%Y%m%d')}-"
-            f"{str(uuid.uuid4()).upper()[:8]}"
+            f"MED-PP-{datetime.date.today().strftime('%Y%m%d')}-{str(uuid.uuid4()).upper()[:8]}"
         )
 
         order = ProviderOrderRequest.objects.create(
@@ -868,6 +887,7 @@ class OrderManagementService:
 
         try:
             from platform.audit.services import AuditService
+
             AuditService().record(
                 action="order.medication.placed",
                 action_verb="CREATE",
@@ -913,12 +933,11 @@ class OrderManagementService:
         Places a referral order to a specialist.
         Emits: cymed.order.referral.placed
         """
-        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
         from platform.events.models import OutboxEvent
+        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
 
         order_number = (
-            f"REF-PP-{datetime.date.today().strftime('%Y%m%d')}-"
-            f"{str(uuid.uuid4()).upper()[:8]}"
+            f"REF-PP-{datetime.date.today().strftime('%Y%m%d')}-{str(uuid.uuid4()).upper()[:8]}"
         )
 
         priority_map = {"urgent": "urgent", "stat": "stat", "routine": "routine"}
@@ -981,12 +1000,12 @@ class OrderManagementService:
         Cancels an active order. Creates OrderModification audit record.
         Emits: cymed.order.cancelled
         """
+        from platform.events.models import OutboxEvent
         from products.cymed.provider_portal.orders.models import (
-            ProviderOrderRequest,
             OrderModification,
             OrderStatusUpdate,
+            ProviderOrderRequest,
         )
-        from platform.events.models import OutboxEvent
 
         order = ProviderOrderRequest.objects.select_for_update().get(
             pk=order_id,
@@ -994,9 +1013,7 @@ class OrderManagementService:
         )
 
         if order.status in ("completed", "cancelled"):
-            raise ValueError(
-                f"Cannot cancel order in status '{order.status}'."
-            )
+            raise ValueError(f"Cannot cancel order in status '{order.status}'.")
 
         prev_status = order.status
         order.status = "cancelled"
@@ -1040,6 +1057,7 @@ class OrderManagementService:
 
         try:
             from platform.audit.services import AuditService
+
             AuditService().record(
                 action="order.cancelled",
                 action_verb="UPDATE",
@@ -1066,6 +1084,7 @@ class OrderManagementService:
 # ---------------------------------------------------------------------------
 # 4. ResultsInboxService
 # ---------------------------------------------------------------------------
+
 
 class ResultsInboxService:
     """
@@ -1133,11 +1152,11 @@ class ResultsInboxService:
         Marks a result as acknowledged. Creates ResultAcknowledgement record.
         Emits: cymed.result.acknowledged
         """
+        from platform.events.models import OutboxEvent
         from products.cymed.provider_portal.results.models import (
             ProviderResultView,
             ResultAcknowledgement,
         )
-        from platform.events.models import OutboxEvent
 
         result = ProviderResultView.objects.select_for_update().get(
             pk=result_id,
@@ -1152,8 +1171,11 @@ class ResultsInboxService:
         result.reviewed_at = now
         result.save(
             update_fields=[
-                "is_acknowledged", "acknowledged_at",
-                "is_reviewed", "reviewed_by_provider_id", "reviewed_at",
+                "is_acknowledged",
+                "acknowledged_at",
+                "is_reviewed",
+                "reviewed_by_provider_id",
+                "reviewed_at",
                 "updated_at",
             ]
         )
@@ -1203,11 +1225,15 @@ class ResultsInboxService:
         """
         from products.cymed.provider_portal.results.models import CriticalResultAlert
 
-        alerts = CriticalResultAlert.objects.filter(
-            tenant_id=tenant_id,
-            alerted_provider_id=provider_id,
-            status="pending",
-        ).select_related("result").order_by("-created_at")
+        alerts = (
+            CriticalResultAlert.objects.filter(
+                tenant_id=tenant_id,
+                alerted_provider_id=provider_id,
+                status="pending",
+            )
+            .select_related("result")
+            .order_by("-created_at")
+        )
 
         return [
             {
@@ -1244,11 +1270,11 @@ class ResultsInboxService:
         Creates a CriticalResultAlert and notifies the provider.
         Emits: cymed.result.critical.notified
         """
-        from products.cymed.provider_portal.results.models import (
-            ProviderResultView,
-            CriticalResultAlert,
-        )
         from platform.events.models import OutboxEvent
+        from products.cymed.provider_portal.results.models import (
+            CriticalResultAlert,
+            ProviderResultView,
+        )
 
         result = ProviderResultView.objects.get(pk=result_id, tenant_id=tenant_id)
         effective_patient_id = patient_id or result.patient_id
@@ -1299,6 +1325,7 @@ class ResultsInboxService:
 # 5. RoundingService
 # ---------------------------------------------------------------------------
 
+
 class RoundingService:
     """
     Manages clinical rounding workflow: rounding lists, completion of rounds,
@@ -1310,7 +1337,7 @@ class RoundingService:
         cls,
         tenant_id,
         provider_id,
-        date: Optional[datetime.date] = None,
+        date: datetime.date | None = None,
     ) -> list[dict[str, Any]]:
         """
         Returns all patients assigned for rounding today, with last round info.
@@ -1321,7 +1348,6 @@ class RoundingService:
             RoundChecklist,
             RoundTeam,
         )
-        from products.cymed.provider_portal.patient_lists.models import ProviderAssignment
 
         target_date = date or datetime.date.today()
 
@@ -1361,8 +1387,12 @@ class RoundingService:
                         "completed_items": cl.completed_items,
                         "total_items": cl.total_items,
                         "round_started_at": cl.started_at.isoformat() if cl.started_at else None,
-                        "round_completed_at": cl.completed_at.isoformat() if cl.completed_at else None,
-                        "checklist_complete": cl.completed_items >= cl.total_items if cl.total_items else False,
+                        "round_completed_at": cl.completed_at.isoformat()
+                        if cl.completed_at
+                        else None,
+                        "checklist_complete": cl.completed_items >= cl.total_items
+                        if cl.total_items
+                        else False,
                     }
                 )
 
@@ -1381,8 +1411,8 @@ class RoundingService:
         unit_id=None,
         unit_name: str = "",
         attending_name: str = "",
-        findings: Optional[list[dict]] = None,
-        actions: Optional[list[dict]] = None,
+        findings: list[dict] | None = None,
+        actions: list[dict] | None = None,
     ) -> dict[str, Any]:
         """
         Completes a clinical round entry for a patient.
@@ -1390,14 +1420,14 @@ class RoundingService:
         Emits: cymed.round.completed
         Returns: {round_id, patient_id, completed_at}
         """
+        from platform.events.models import OutboxEvent
         from products.cymed.provider_portal.rounding.models import (
             ClinicalRound,
-            RoundTeam,
+            RoundAction,
             RoundChecklist,
             RoundFinding,
-            RoundAction,
+            RoundTeam,
         )
-        from platform.events.models import OutboxEvent
 
         now = timezone.now()
         today = now.date()
@@ -1443,7 +1473,7 @@ class RoundingService:
         )
 
         # Record findings
-        for finding_data in (findings or []):
+        for finding_data in findings or []:
             RoundFinding.objects.create(
                 tenant_id=tenant_id,
                 round=rnd,
@@ -1458,7 +1488,7 @@ class RoundingService:
             )
 
         # Record actions
-        for action_data in (actions or []):
+        for action_data in actions or []:
             RoundAction.objects.create(
                 tenant_id=tenant_id,
                 round=rnd,
@@ -1487,6 +1517,7 @@ class RoundingService:
 
         try:
             from platform.audit.services import AuditService
+
             AuditService().record(
                 action="round.completed",
                 action_verb="CREATE",
@@ -1525,11 +1556,14 @@ class RoundingService:
         Emits: cymed.careplan.updated
         Creates a progress note summarising the care plan update.
         """
-        from products.cymed.provider_portal.clinical_documentation.models import ProviderClinicalNote
         from platform.events.models import OutboxEvent
+        from products.cymed.provider_portal.clinical_documentation.models import (
+            ProviderClinicalNote,
+        )
 
         goals_text = "\n".join(
-            f"• {g.get('goal', '')}" + (f" (target: {g.get('target', '')})" if g.get("target") else "")
+            f"• {g.get('goal', '')}"
+            + (f" (target: {g.get('target', '')})" if g.get("target") else "")
             for g in goals
         )
         interventions_text = "\n".join(
@@ -1586,6 +1620,7 @@ class RoundingService:
 # 6. ClinicalMessagingService
 # ---------------------------------------------------------------------------
 
+
 class ClinicalMessagingService:
     """
     Secure, encrypted clinical messaging between providers.
@@ -1613,12 +1648,12 @@ class ClinicalMessagingService:
         Emits: cymed.message.sent
         Returns: {message_id, thread_id, sent_at}
         """
+        from platform.events.models import OutboxEvent
         from products.cymed.provider_portal.clinical_messaging.models import (
-            ClinicalMessageThread,
             ClinicalMessage,
+            ClinicalMessageThread,
             MessageThreadParticipant,
         )
-        from platform.events.models import OutboxEvent
 
         # Determine thread_type from recipient count
         resolved_thread_type = "direct" if len(recipient_ids) == 1 else "team"
@@ -1725,19 +1760,21 @@ class ClinicalMessagingService:
             ).values_list("thread_id", flat=True)
         )
 
-        qs = ClinicalMessage.objects.filter(
-            tenant_id=tenant_id,
-            thread_id__in=thread_ids,
-        ).select_related("thread").order_by("-sent_at")
+        qs = (
+            ClinicalMessage.objects.filter(
+                tenant_id=tenant_id,
+                thread_id__in=thread_ids,
+            )
+            .select_related("thread")
+            .order_by("-sent_at")
+        )
 
         if folder == "sent":
             qs = qs.filter(sender_provider_id=provider_id)
         elif folder == "inbox":
             qs = qs.exclude(sender_provider_id=provider_id)
         elif folder == "urgent":
-            qs = qs.filter(priority__in=["urgent", "stat"]).exclude(
-                sender_provider_id=provider_id
-            )
+            qs = qs.filter(priority__in=["urgent", "stat"]).exclude(sender_provider_id=provider_id)
 
         if unread_only:
             qs = qs.filter(is_read=False)
@@ -1754,9 +1791,7 @@ class ClinicalMessagingService:
                 "priority": m.priority,
                 "is_read": m.is_read,
                 "sent_at": m.sent_at.isoformat(),
-                "regarding_patient_id": (
-                    str(m.thread.patient_id) if m.thread.patient_id else None
-                ),
+                "regarding_patient_id": (str(m.thread.patient_id) if m.thread.patient_id else None),
                 "is_urgent": m.thread.is_urgent,
             }
             for m in qs

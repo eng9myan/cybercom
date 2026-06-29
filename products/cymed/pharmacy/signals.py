@@ -2,6 +2,7 @@
 CyMed Pharmacy Edition — Signal Handlers
 Publishes domain events via Program 2.5 Event Framework (OutboxEvent).
 """
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -10,6 +11,7 @@ def _publish_event(topic: str, event_type: str, payload: dict, tenant_id=None):
     """Helper to publish via OutboxEvent (Program 2.5)."""
     try:
         from platform.events.models import OutboxEvent
+
         OutboxEvent.objects.create(
             tenant_id=str(tenant_id) if tenant_id else None,
             topic=topic,
@@ -46,7 +48,9 @@ def on_dispense_saved(sender, instance, created, **kwargs):
             event_type="cymed.pharmacy.dispense.completed",
             payload={
                 "dispense_id": str(instance.id),
-                "prescription_id": str(instance.prescription_id) if instance.prescription_id else None,
+                "prescription_id": str(instance.prescription_id)
+                if instance.prescription_id
+                else None,
                 "patient_id": str(instance.patient_id),
             },
             tenant_id=instance.tenant_id,

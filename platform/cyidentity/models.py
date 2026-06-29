@@ -17,11 +17,14 @@ access records, audit hooks).
   DeviceRegistration, WebAuthnCredential,
   BreakGlassAccess
 """
+
 from __future__ import annotations
 
 import uuid
+
 from django.db import models
 from django.utils import timezone
+
 from platform.common.models import BaseModel, PlatformModel
 
 
@@ -91,10 +94,13 @@ class IdentityRealm(PlatformModel):
     ADR-0017 §5.2: per-tenant realm isolation.
     ADR-0035 §5.3: realm map by population type.
     """
+
     tenant_id = models.UUIDField(unique=True, db_index=True)
     realm_name = models.CharField(max_length=100, unique=True)
     realm_type = models.CharField(max_length=20, choices=RealmType.choices)
-    status = models.CharField(max_length=20, choices=RealmStatus.choices, default=RealmStatus.PENDING)
+    status = models.CharField(
+        max_length=20, choices=RealmStatus.choices, default=RealmStatus.PENDING
+    )
     issuer_url = models.URLField(max_length=500)
     jwks_uri = models.URLField(max_length=500)
     admin_api_url = models.URLField(max_length=500)
@@ -142,7 +148,10 @@ class IdentityRealm(PlatformModel):
 # ---------------------------------------------------------------------------
 class RealmConfiguration(PlatformModel):
     """Realm-level tunables: token lifetime, theme, MFA policy, branding."""
-    realm = models.OneToOneField(IdentityRealm, on_delete=models.CASCADE, related_name="configuration")
+
+    realm = models.OneToOneField(
+        IdentityRealm, on_delete=models.CASCADE, related_name="configuration"
+    )
     access_token_lifetime_seconds = models.PositiveIntegerField(default=900)  # 15 min
     refresh_token_lifetime_seconds = models.PositiveIntegerField(default=1800)  # 30 min
     idle_timeout_seconds = models.PositiveIntegerField(default=1800)  # 30 min
@@ -171,7 +180,10 @@ class IdentityProvider(PlatformModel):
     ADR-0017 §5.2: workforce federates to corporate IdP, customer to tenant IdP,
     citizen to national eID.
     """
-    realm = models.ForeignKey(IdentityRealm, on_delete=models.CASCADE, related_name="identity_providers")
+
+    realm = models.ForeignKey(
+        IdentityRealm, on_delete=models.CASCADE, related_name="identity_providers"
+    )
     alias = models.SlugField(max_length=100)
     display_name = models.CharField(max_length=200)
     protocol = models.CharField(max_length=20, choices=ClientProtocol.choices)
@@ -211,8 +223,11 @@ class ServicePrincipal(PlatformModel):
     Machine-to-machine service account.
     ADR-0017 §5.4: workload identity for out-of-mesh services.
     """
+
     name = models.CharField(max_length=200)
-    realm = models.ForeignKey(IdentityRealm, on_delete=models.PROTECT, related_name="service_principals")
+    realm = models.ForeignKey(
+        IdentityRealm, on_delete=models.PROTECT, related_name="service_principals"
+    )
     client_id = models.CharField(max_length=200, unique=True)
     is_active = models.BooleanField(default=True)
     scopes = models.JSONField(default=list, blank=True)
@@ -239,11 +254,14 @@ class ApplicationClient(PlatformModel):
     Registered OAuth 2.1 / OIDC client (frontend, mobile, partner app).
     ADR-0017 §5.3: apps registered per tenant.
     """
+
     realm = models.ForeignKey(IdentityRealm, on_delete=models.CASCADE, related_name="clients")
     client_id = models.CharField(max_length=200, unique=True)
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
-    protocol = models.CharField(max_length=20, choices=ClientProtocol.choices, default=ClientProtocol.OIDC)
+    protocol = models.CharField(
+        max_length=20, choices=ClientProtocol.choices, default=ClientProtocol.OIDC
+    )
     enabled = models.BooleanField(default=True)
     public_client = models.BooleanField(default=False)  # PKCE for native/SPA
     standard_flow_enabled = models.BooleanField(default=True)
@@ -278,6 +296,7 @@ class ClientSecret(BaseModel):
     Rotating client secret. ADR-0035 §5.2 — secret rotation quarterly.
     Only the hash is stored; cleartext is returned exactly once at creation.
     """
+
     client = models.ForeignKey(ApplicationClient, on_delete=models.CASCADE, related_name="secrets")
     secret_hash = models.CharField(max_length=128)
     secret_hint = models.CharField(max_length=8, blank=True)  # last 4 chars for UI display
@@ -318,13 +337,16 @@ class Role(PlatformModel):
     RBAC role within a realm. ADR-0005 hybrid RBAC+ABAC; roles are coarse,
     fine-grained authz lives in the policy engine.
     """
+
     realm = models.ForeignKey(IdentityRealm, on_delete=models.CASCADE, related_name="roles")
     name = models.CharField(max_length=100)
     display_name = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
     composite = models.BooleanField(default=False)
     client_role = models.BooleanField(default=False)  # client-scoped vs realm-scoped
-    client = models.ForeignKey(ApplicationClient, on_delete=models.CASCADE, null=True, blank=True, related_name="roles")
+    client = models.ForeignKey(
+        ApplicationClient, on_delete=models.CASCADE, null=True, blank=True, related_name="roles"
+    )
     attributes = models.JSONField(default=dict, blank=True)
     is_default = models.BooleanField(default=False)
 
@@ -352,6 +374,7 @@ class Role(PlatformModel):
 # ---------------------------------------------------------------------------
 class Permission(PlatformModel):
     """Permission catalog entry. Bound to roles via RoleAssignment."""
+
     scope = models.CharField(max_length=100)  # e.g. "cymed", "cycom", "platform"
     action = models.CharField(max_length=50)  # e.g. "read", "write", "delete", "approve"
     resource = models.CharField(max_length=100)  # e.g. "patient", "ledger", "role"
@@ -378,14 +401,19 @@ class RoleAssignment(PlatformModel):
     """
     Assignment of a permission to a role, or a child role to a parent role.
     """
+
     ASSIGNMENT_KIND_CHOICES = [
         ("permission", "Permission"),
         ("composite", "Composite Role"),
     ]
     kind = models.CharField(max_length=20, choices=ASSIGNMENT_KIND_CHOICES, default="permission")
     role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name="assignments")
-    permission = models.ForeignKey(Permission, on_delete=models.CASCADE, null=True, blank=True, related_name="assignments")
-    child_role = models.ForeignKey(Role, on_delete=models.CASCADE, null=True, blank=True, related_name="parent_assignments")
+    permission = models.ForeignKey(
+        Permission, on_delete=models.CASCADE, null=True, blank=True, related_name="assignments"
+    )
+    child_role = models.ForeignKey(
+        Role, on_delete=models.CASCADE, null=True, blank=True, related_name="parent_assignments"
+    )
     granted_by = models.CharField(max_length=255, blank=True)
 
     class Meta:
@@ -411,10 +439,13 @@ class RoleAssignment(PlatformModel):
 # ---------------------------------------------------------------------------
 class Group(PlatformModel):
     """Keycloak-style group for bulk role assignment and ABAC attributes."""
+
     realm = models.ForeignKey(IdentityRealm, on_delete=models.CASCADE, related_name="groups")
     name = models.CharField(max_length=200)
     path = models.CharField(max_length=500, db_index=True)
-    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="children")
+    parent = models.ForeignKey(
+        "self", on_delete=models.CASCADE, null=True, blank=True, related_name="children"
+    )
     description = models.TextField(blank=True)
     attributes = models.JSONField(default=dict, blank=True)  # ABAC attribute source
 
@@ -434,6 +465,7 @@ class Group(PlatformModel):
 # ---------------------------------------------------------------------------
 class GroupMembership(BaseModel):
     """A user's membership in a group (one user can belong to many groups)."""
+
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="memberships")
     user_id = models.UUIDField(db_index=True)  # Keycloak user sub
     membership_expires_at = models.DateTimeField(null=True, blank=True)
@@ -455,6 +487,7 @@ class UserProfile(BaseModel):
     Authoritative credential and authentication state lives in Keycloak;
     this row holds CyberCom attributes (display name, locale, status, attributes).
     """
+
     realm = models.ForeignKey(IdentityRealm, on_delete=models.CASCADE, related_name="users")
     keycloak_user_id = models.UUIDField(unique=True, db_index=True)  # Keycloak `sub`
     username = models.CharField(max_length=200)
@@ -506,9 +539,12 @@ class UserProfile(BaseModel):
 # ---------------------------------------------------------------------------
 class UserSession(BaseModel):
     """Active/expired/revoked session. Mirrored from Keycloak session list."""
+
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="sessions")
     keycloak_session_id = models.CharField(max_length=128, unique=True)
-    status = models.CharField(max_length=20, choices=SessionStatus.choices, default=SessionStatus.ACTIVE)
+    status = models.CharField(
+        max_length=20, choices=SessionStatus.choices, default=SessionStatus.ACTIVE
+    )
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     geo_country = models.CharField(max_length=2, blank=True)
@@ -548,6 +584,7 @@ class UserSession(BaseModel):
 # ---------------------------------------------------------------------------
 class LoginAudit(BaseModel):
     """Per-login audit record. Streams to platform_audit_logs in production."""
+
     OUTCOME_CHOICES = [
         ("success", "Success"),
         ("failure", "Failure"),
@@ -556,14 +593,18 @@ class LoginAudit(BaseModel):
         ("locked", "Account Locked"),
         ("break_glass", "Break Glass"),
     ]
-    user = models.ForeignKey(UserProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name="login_events")
+    user = models.ForeignKey(
+        UserProfile, on_delete=models.SET_NULL, null=True, blank=True, related_name="login_events"
+    )
     realm = models.ForeignKey(IdentityRealm, on_delete=models.CASCADE, related_name="login_events")
     outcome = models.CharField(max_length=30, choices=OUTCOME_CHOICES, db_index=True)
     username_attempted = models.CharField(max_length=200, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     mfa_method = models.CharField(max_length=30, blank=True)
-    session = models.ForeignKey(UserSession, on_delete=models.SET_NULL, null=True, blank=True, related_name="login_events")
+    session = models.ForeignKey(
+        UserSession, on_delete=models.SET_NULL, null=True, blank=True, related_name="login_events"
+    )
     failure_reason = models.CharField(max_length=200, blank=True)
     details = models.JSONField(default=dict, blank=True)
 
@@ -584,6 +625,7 @@ class LoginAudit(BaseModel):
 # ---------------------------------------------------------------------------
 class DeviceRegistration(BaseModel):
     """A device the user has registered for MFA or persistent session."""
+
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="devices")
     device_id = models.UUIDField(default=uuid.uuid4, unique=True)
     name = models.CharField(max_length=200)
@@ -619,8 +661,17 @@ class WebAuthnCredential(BaseModel):
     WebAuthn / Passkey credential metadata.
     Private key material NEVER stored; only credential ID + public key + counters.
     """
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="webauthn_credentials")
-    device = models.ForeignKey(DeviceRegistration, on_delete=models.SET_NULL, null=True, blank=True, related_name="webauthn_credentials")
+
+    user = models.ForeignKey(
+        UserProfile, on_delete=models.CASCADE, related_name="webauthn_credentials"
+    )
+    device = models.ForeignKey(
+        DeviceRegistration,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="webauthn_credentials",
+    )
     credential_id = models.CharField(max_length=512, unique=True, db_index=True)
     public_key = models.TextField()  # COSE-encoded base64
     attestation_format = models.CharField(max_length=50, blank=True)
@@ -654,13 +705,20 @@ class BreakGlassAccess(BaseModel):
     Time-boxed emergency access. ADR-0017 §7.3 Risk-8 — mandatory dual-approval,
     automatic expiration, audit logged, 24-hour post-review required.
     """
-    user = models.ForeignKey(UserProfile, on_delete=models.PROTECT, related_name="break_glass_accesses")
-    realm = models.ForeignKey(IdentityRealm, on_delete=models.PROTECT, related_name="break_glass_accesses")
+
+    user = models.ForeignKey(
+        UserProfile, on_delete=models.PROTECT, related_name="break_glass_accesses"
+    )
+    realm = models.ForeignKey(
+        IdentityRealm, on_delete=models.PROTECT, related_name="break_glass_accesses"
+    )
     reason = models.CharField(max_length=30, choices=BreakGlassReason.choices)
     justification = models.TextField()
     target_resource = models.CharField(max_length=300)
     target_action = models.CharField(max_length=100)
-    status = models.CharField(max_length=20, choices=BreakGlassStatus.choices, default=BreakGlassStatus.REQUESTED)
+    status = models.CharField(
+        max_length=20, choices=BreakGlassStatus.choices, default=BreakGlassStatus.REQUESTED
+    )
     requested_at = models.DateTimeField(default=timezone.now)
     approved_by = models.CharField(max_length=255, blank=True)
     approved_at = models.DateTimeField(null=True, blank=True)
@@ -686,7 +744,9 @@ class BreakGlassAccess(BaseModel):
         self.approved_by = approver
         self.approved_at = timezone.now()
         self.second_approver = second_approver
-        self.save(update_fields=["status", "approved_by", "approved_at", "second_approver", "updated_at"])
+        self.save(
+            update_fields=["status", "approved_by", "approved_at", "second_approver", "updated_at"]
+        )
 
     def activate(self, duration_seconds: int = 3600) -> None:
         self.status = BreakGlassStatus.ACTIVE

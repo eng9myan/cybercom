@@ -5,28 +5,39 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('cymed_clinic_triage', '0001_initial'),
-        ('cymed_reception', '0001_initial'),
+        ("cymed_clinic_triage", "0001_initial"),
+        ("cymed_reception", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='triageassessment',
-            name='checkin',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='triage_assessments', to='cymed_reception.checkin'),
+            model_name="triageassessment",
+            name="checkin",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="triage_assessments",
+                to="cymed_reception.checkin",
+            ),
         ),
         migrations.AddField(
-            model_name='triageriskscore',
-            name='assessment',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='risk_score', to='cymed_clinic_triage.triageassessment'),
+            model_name="triageriskscore",
+            name="assessment",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="risk_score",
+                to="cymed_clinic_triage.triageassessment",
+            ),
         ),
         migrations.AddField(
-            model_name='triagevitalsigns',
-            name='assessment',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='vital_signs', to='cymed_clinic_triage.triageassessment'),
+            model_name="triagevitalsigns",
+            name="assessment",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="vital_signs",
+                to="cymed_clinic_triage.triageassessment",
+            ),
         ),
     ]

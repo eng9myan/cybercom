@@ -5,85 +5,92 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_portal_wallet', '0001_initial'),
+        ("cymed_portal_wallet", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='digitalcard',
-            new_name='cymed_porta_wallet__2b385a_idx',
-            old_name='cymed_portal_dcard_wallet_idx',
+            model_name="digitalcard",
+            new_name="cymed_porta_wallet__2b385a_idx",
+            old_name="cymed_portal_dcard_wallet_idx",
         ),
         migrations.RenameIndex(
-            model_name='healthpass',
-            new_name='cymed_porta_account_24e802_idx',
-            old_name='cymed_portal_hpass_acct_idx',
+            model_name="healthpass",
+            new_name="cymed_porta_account_24e802_idx",
+            old_name="cymed_portal_hpass_acct_idx",
         ),
         migrations.RenameIndex(
-            model_name='vaccinationrecord',
-            new_name='cymed_porta_account_db8dcd_idx',
-            old_name='cymed_portal_vacc_acct_idx',
+            model_name="vaccinationrecord",
+            new_name="cymed_porta_account_db8dcd_idx",
+            old_name="cymed_portal_vacc_acct_idx",
         ),
         migrations.AlterField(
-            model_name='digitalcard',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="digitalcard",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='digitalcard',
-            name='tenant_id',
+            model_name="digitalcard",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='digitalcard',
-            name='updated_at',
+            model_name="digitalcard",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='healthpass',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="healthpass",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='healthpass',
-            name='tenant_id',
+            model_name="healthpass",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='healthpass',
-            name='updated_at',
+            model_name="healthpass",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='healthwallet',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="healthwallet",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='healthwallet',
-            name='tenant_id',
+            model_name="healthwallet",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='healthwallet',
-            name='updated_at',
+            model_name="healthwallet",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='vaccinationrecord',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="vaccinationrecord",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='vaccinationrecord',
-            name='tenant_id',
+            model_name="vaccinationrecord",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='vaccinationrecord',
-            name='updated_at',
+            model_name="vaccinationrecord",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

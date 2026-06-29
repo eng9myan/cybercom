@@ -11,11 +11,14 @@ Features:
 - CollectionService
 - RevenueAnalyticsService
 """
+
 from __future__ import annotations
-import uuid
+
 import logging
-from typing import Any, Dict, List, Optional
+import uuid
 from decimal import Decimal
+from typing import Any
+
 from django.db import transaction
 from django.utils import timezone
 
@@ -26,6 +29,7 @@ def _emit_outbox_event(tenant_id: str, topic: str, event_type: str, payload: dic
     """Helper to write to the platform transactional outbox."""
     try:
         from platform.events.models import OutboxEvent
+
         OutboxEvent.objects.create(
             tenant_id=uuid.UUID(str(tenant_id)),
             topic=topic,
@@ -39,6 +43,7 @@ def _emit_outbox_event(tenant_id: str, topic: str, event_type: str, payload: dic
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. EligibilityService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class EligibilityService:
     """
@@ -59,7 +64,7 @@ class EligibilityService:
         Sends an eligibility request to the insurance plan / payer and returns coverage details.
         """
         from products.cymed.rcm.eligibility.models import EligibilityRequest, EligibilityResponse
-        from products.cymed.rcm.insurance.models import InsuranceMember, InsurancePlan
+        from products.cymed.rcm.insurance.models import InsuranceMember
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         patient_uuid = uuid.UUID(str(patient_id))
@@ -120,13 +125,15 @@ class EligibilityService:
         }
 
     @classmethod
-    def verify_benefits(cls, tenant_id: str, patient_id: str, payer_id: str, cpt_codes: list) -> dict:
+    def verify_benefits(
+        cls, tenant_id: str, patient_id: str, payer_id: str, cpt_codes: list
+    ) -> dict:
         """
         Verifies specific code coverage details.
         """
         return {
             "covered": True,
-            "cpt_codes": {code: "covered" for code in cpt_codes},
+            "cpt_codes": dict.fromkeys(cpt_codes, "covered"),
             "coinsurance_pct": 20.0,
         }
 
@@ -136,6 +143,7 @@ class EligibilityService:
         Retrieves log of recent eligibility checks.
         """
         from products.cymed.rcm.eligibility.models import EligibilityRequest
+
         tenant_uuid = uuid.UUID(str(tenant_id))
         patient_uuid = uuid.UUID(str(patient_id))
 
@@ -155,6 +163,7 @@ class EligibilityService:
 # 2. BillingService
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class BillingService:
     """
     Handles clinical charge captures, patient accounts, invoice splits, and payments.
@@ -170,15 +179,15 @@ class BillingService:
         cpt_code: str,
         icd_codes: list,
         units: int = 1,
-        modifier: Optional[str] = None,
-        provider_id: Optional[str] = None,
-        facility_id: Optional[str] = None,
+        modifier: str | None = None,
+        provider_id: str | None = None,
+        facility_id: str | None = None,
     ) -> dict:
         """
         Captures a CPT/ICD charge, prices it via Fee schedules, and assigns to Encounter billing.
         """
-        from products.cymed.rcm.billing.models import PatientAccount, EncounterBilling, InvoiceLine
         from products.cymed.core.patients.models import Patient
+        from products.cymed.rcm.billing.models import EncounterBilling, PatientAccount
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         patient_uuid = uuid.UUID(str(patient_id))
@@ -196,7 +205,7 @@ class BillingService:
                 "account_status": "active",
                 "outstanding_balance": Decimal("0.00"),
                 "credit_balance": Decimal("0.00"),
-            }
+            },
         )
 
         # 2. Get or Create EncounterBilling
@@ -212,7 +221,7 @@ class BillingService:
                 "billing_status": "open",
                 "total_charges": Decimal("0.00"),
                 "balance_due": Decimal("0.00"),
-            }
+            },
         )
 
         # Price calculation (mocked PricingService/FeeSchedule)
@@ -252,11 +261,18 @@ class BillingService:
 
     @classmethod
     @transaction.atomic
-    def generate_invoice(cls, tenant_id: str, patient_account_id: str, encounter_billing_id: str) -> dict:
+    def generate_invoice(
+        cls, tenant_id: str, patient_account_id: str, encounter_billing_id: str
+    ) -> dict:
         """
         Assembles billing lines and posts dual-responsibility splits (insurance vs patient portion).
         """
-        from products.cymed.rcm.billing.models import PatientAccount, EncounterBilling, Invoice, InvoiceLine
+        from products.cymed.rcm.billing.models import (
+            EncounterBilling,
+            Invoice,
+            InvoiceLine,
+            PatientAccount,
+        )
         from products.cymed.rcm.insurance.models import InsuranceMember
 
         tenant_uuid = uuid.UUID(str(tenant_id))
@@ -270,7 +286,9 @@ class BillingService:
         insurance_portion = 0.00
         patient_portion = float(billing.total_charges)
 
-        member = InsuranceMember.objects.filter(patient_id=account.patient_id, is_active=True, tenant_id=tenant_uuid).first()
+        member = InsuranceMember.objects.filter(
+            patient_id=account.patient_id, is_active=True, tenant_id=tenant_uuid
+        ).first()
         if member:
             # 80/20 insurance split after $25 copay (simulated)
             copay = 25.00
@@ -340,7 +358,7 @@ class BillingService:
         """
         Posts patient or insurance payments, adjusts invoice status, and ledger-synchronizes to CyCom.
         """
-        from products.cymed.rcm.billing.models import Invoice, PatientAccount
+        from products.cymed.rcm.billing.models import Invoice
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         invoice_uuid = uuid.UUID(str(invoice_id))
@@ -383,7 +401,9 @@ class BillingService:
         }
 
     @classmethod
-    def calculate_patient_responsibility(cls, tenant_id: str, encounter_id: str, payer_id: str) -> dict:
+    def calculate_patient_responsibility(
+        cls, tenant_id: str, encounter_id: str, payer_id: str
+    ) -> dict:
         """
         Estimates the patient's out-of-pocket costs.
         """
@@ -393,6 +413,7 @@ class BillingService:
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. ClaimsService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class ClaimsService:
     """
@@ -466,7 +487,9 @@ class ClaimsService:
 
     @classmethod
     @transaction.atomic
-    def submit_claim(cls, tenant_id: str, claim_id: str, submission_method: str = "electronic") -> dict:
+    def submit_claim(
+        cls, tenant_id: str, claim_id: str, submission_method: str = "electronic"
+    ) -> dict:
         """
         Sends the EDI/FHIR claim file, updates claim status, and logs submission records.
         """
@@ -509,8 +532,8 @@ class ClaimsService:
         """
         Processes remittance response and triggers denial workflows for partially paid/rejected claims.
         """
-        from products.cymed.rcm.claims.models import Claim, ClaimResponse
         from products.cymed.rcm.billing.models import EncounterBilling
+        from products.cymed.rcm.claims.models import Claim, ClaimResponse
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         claim_uuid = uuid.UUID(str(claim_id))
@@ -522,7 +545,7 @@ class ClaimsService:
         denied = float(claim.total_billed_amount) - paid
 
         # Response log
-        resp = ClaimResponse.objects.create(
+        ClaimResponse.objects.create(
             tenant_id=tenant_uuid,
             claim=claim,
             response_date=timezone.now(),
@@ -547,6 +570,7 @@ class ClaimsService:
         if denied > 0:
             billing.billing_status = "denied"
             from products.cymed.rcm.insurance.models import InsurancePlan
+
             plan = InsurancePlan.objects.get(id=claim.insurance_plan_id, tenant_id=tenant_uuid)
             DenialService.create_denial(
                 tenant_id=tenant_id,
@@ -571,6 +595,7 @@ class ClaimsService:
         Returns the latest status of a claim.
         """
         from products.cymed.rcm.claims.models import Claim
+
         tenant_uuid = uuid.UUID(str(tenant_id))
         claim = Claim.objects.get(id=uuid.UUID(str(claim_id)), tenant_id=tenant_uuid)
         return {"claim_id": str(claim.id), "status": claim.status}
@@ -579,6 +604,7 @@ class ClaimsService:
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. PreAuthService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class PreAuthService:
     """
@@ -599,13 +625,13 @@ class PreAuthService:
         """
         Files a prior authorization request.
         """
-        from products.cymed.rcm.preauthorization.models import Preauthorization
-        from products.cymed.rcm.insurance import models as ins_models
         from products.cymed.core.encounters.models import Encounter, EncounterParticipant
+        from products.cymed.rcm.insurance import models as ins_models
+        from products.cymed.rcm.preauthorization.models import Preauthorization
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         encounter_uuid = uuid.UUID(str(encounter_id))
-        payer_uuid = uuid.UUID(str(payer_id))
+        uuid.UUID(str(payer_id))
 
         encounter = Encounter.objects.get(id=encounter_uuid, tenant_id=tenant_uuid)
         member = ins_models.InsuranceMember.objects.filter(
@@ -650,9 +676,9 @@ class PreAuthService:
         auth_id: str,
         decision: str,
         auth_number: str = "",
-        units_approved: Optional[int] = None,
-        valid_from: Optional[Any] = None,
-        valid_to: Optional[Any] = None,
+        units_approved: int | None = None,
+        valid_from: Any | None = None,
+        valid_to: Any | None = None,
     ) -> dict:
         """
         Updates the pre-auth status from payer feedback.
@@ -689,6 +715,7 @@ class PreAuthService:
 # 5. DenialService
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class DenialService:
     """
     Tracks billing denials and manages clinical/administrative appeals.
@@ -707,12 +734,12 @@ class DenialService:
         """
         Registers a denial workflow for failed claim lines.
         """
-        from products.cymed.rcm.denials.models import Denial, DenialReason
         from products.cymed.rcm.claims.models import Claim
+        from products.cymed.rcm.denials.models import Denial, DenialReason
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         claim_uuid = uuid.UUID(str(claim_id))
-        payer_uuid = uuid.UUID(str(payer_id))
+        uuid.UUID(str(payer_id))
 
         claim = Claim.objects.get(id=claim_uuid, tenant_id=tenant_uuid)
 
@@ -724,7 +751,7 @@ class DenialService:
                 "description": denial_description,
                 "category": "authorization",
                 "is_active": True,
-            }
+            },
         )
 
         denial = Denial.objects.create(
@@ -763,7 +790,7 @@ class DenialService:
         """
         Registers an appeal package submission to the payer.
         """
-        from products.cymed.rcm.denials.models import Denial, Appeal
+        from products.cymed.rcm.denials.models import Appeal, Denial
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         denial_uuid = uuid.UUID(str(denial_id))
@@ -804,8 +831,8 @@ class DenialService:
         """
         Logs outcome details and recovers outstanding claim values upon success.
         """
-        from products.cymed.rcm.denials.models import Appeal, AppealOutcome
         from products.cymed.rcm.billing.models import EncounterBilling
+        from products.cymed.rcm.denials.models import Appeal, AppealOutcome
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         appeal_uuid = uuid.UUID(str(appeal_id))
@@ -815,7 +842,7 @@ class DenialService:
         appeal.save()
 
         # Appeal Outcome log
-        out = AppealOutcome.objects.create(
+        AppealOutcome.objects.create(
             tenant_id=tenant_uuid,
             appeal=appeal,
             outcome_date=timezone.now().date(),
@@ -832,8 +859,11 @@ class DenialService:
         # Adjust billing if recovered
         if amount_recovered > 0:
             from products.cymed.rcm.claims.models import Claim
+
             claim = Claim.objects.get(id=appeal.denial.claim_id, tenant_id=tenant_uuid)
-            billing = EncounterBilling.objects.get(id=claim.encounter_billing_id, tenant_id=tenant_uuid)
+            billing = EncounterBilling.objects.get(
+                id=claim.encounter_billing_id, tenant_id=tenant_uuid
+            )
             rec_decimal = Decimal(str(amount_recovered))
             billing.amount_paid += rec_decimal
             billing.balance_due -= rec_decimal
@@ -847,7 +877,9 @@ class DenialService:
         }
 
     @classmethod
-    def get_denial_analytics(cls, tenant_id: str, date_from: Optional[Any] = None, date_to: Optional[Any] = None) -> dict:
+    def get_denial_analytics(
+        cls, tenant_id: str, date_from: Any | None = None, date_to: Any | None = None
+    ) -> dict:
         """
         Returns denials stats.
         """
@@ -863,6 +895,7 @@ class DenialService:
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. CollectionService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class CollectionService:
     """
@@ -881,8 +914,8 @@ class CollectionService:
         """
         Creates a collection case for aged outstanding patient balances.
         """
-        from products.cymed.rcm.collections.models import CollectionCase
         from products.cymed.rcm.billing.models import PatientAccount
+        from products.cymed.rcm.collections.models import CollectionCase
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         account_uuid = uuid.UUID(str(patient_account_id))
@@ -909,11 +942,13 @@ class CollectionService:
 
     @classmethod
     @transaction.atomic
-    def add_collection_action(cls, tenant_id: str, case_id: str, action_type: str, performed_by: str, notes: str = "") -> dict:
+    def add_collection_action(
+        cls, tenant_id: str, case_id: str, action_type: str, performed_by: str, notes: str = ""
+    ) -> dict:
         """
         Records communication touches (e.g. phone call, SMS, notices).
         """
-        from products.cymed.rcm.collections.models import CollectionCase, CollectionAction
+        from products.cymed.rcm.collections.models import CollectionAction, CollectionCase
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         case_uuid = uuid.UUID(str(case_id))
@@ -981,7 +1016,9 @@ class CollectionService:
 
     @classmethod
     @transaction.atomic
-    def record_collection_outcome(cls, tenant_id: str, case_id: str, outcome_type: str, amount_collected: float = 0.0) -> dict:
+    def record_collection_outcome(
+        cls, tenant_id: str, case_id: str, outcome_type: str, amount_collected: float = 0.0
+    ) -> dict:
         """
         Settles or writes off the collection case.
         """
@@ -1010,13 +1047,14 @@ class CollectionService:
 # 7. RevenueAnalyticsService
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class RevenueAnalyticsService:
     """
     Rolls up key billing indicators and Aging breakdowns for reports.
     """
 
     @classmethod
-    def get_ar_dashboard(cls, tenant_id: str, facility_id: Optional[str] = None) -> dict:
+    def get_ar_dashboard(cls, tenant_id: str, facility_id: str | None = None) -> dict:
         """
         Retrieves AR totals, Days in AR, net recovery metrics, and Aging bucket counts.
         """
@@ -1032,18 +1070,38 @@ class RevenueAnalyticsService:
                 {"bucket": "61-90 days", "amount": 400000.00},
                 {"bucket": "91-120 days", "amount": 150000.00},
                 {"bucket": "120+ days", "amount": 50000.00},
-            ]
+            ],
         }
 
     @classmethod
-    def get_payer_performance(cls, tenant_id: str, date_from: Optional[Any] = None, date_to: Optional[Any] = None) -> list:
+    def get_payer_performance(
+        cls, tenant_id: str, date_from: Any | None = None, date_to: Any | None = None
+    ) -> list:
         """
         Summarizes approval/denial ratios and average reimbursement turnarounds per payer.
         """
         return [
-            {"payer_name": "Tawuniya", "paid_amount": 850000.00, "denied_amount": 35000.00, "avg_days_to_payment": 28.5, "denial_rate": 4.1},
-            {"payer_name": "Bupa Arabia", "paid_amount": 750000.00, "denied_amount": 50000.00, "avg_days_to_payment": 32.1, "denial_rate": 6.3},
-            {"payer_name": "Medgulf", "paid_amount": 300000.00, "denied_amount": 45000.00, "avg_days_to_payment": 45.0, "denial_rate": 13.0},
+            {
+                "payer_name": "Tawuniya",
+                "paid_amount": 850000.00,
+                "denied_amount": 35000.00,
+                "avg_days_to_payment": 28.5,
+                "denial_rate": 4.1,
+            },
+            {
+                "payer_name": "Bupa Arabia",
+                "paid_amount": 750000.00,
+                "denied_amount": 50000.00,
+                "avg_days_to_payment": 32.1,
+                "denial_rate": 6.3,
+            },
+            {
+                "payer_name": "Medgulf",
+                "paid_amount": 300000.00,
+                "denied_amount": 45000.00,
+                "avg_days_to_payment": 45.0,
+                "denial_rate": 13.0,
+            },
         ]
 
     @classmethod

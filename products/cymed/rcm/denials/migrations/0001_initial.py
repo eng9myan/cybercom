@@ -1,10 +1,10 @@
-﻿import uuid
+import uuid
+
 import django.db.models.deletion
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -50,9 +50,7 @@ class Migration(migrations.Migration):
                 ("common_resolution", models.TextField(blank=True)),
                 (
                     "appeal_success_rate",
-                    models.DecimalField(
-                        blank=True, decimal_places=2, max_digits=5, null=True
-                    ),
+                    models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
                 ),
                 ("is_active", models.BooleanField(default=True)),
             ],
@@ -140,9 +138,7 @@ class Migration(migrations.Migration):
                 ("ai_denial_prediction", models.BooleanField(default=False)),
                 (
                     "ai_prediction_confidence",
-                    models.DecimalField(
-                        blank=True, decimal_places=2, max_digits=5, null=True
-                    ),
+                    models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
                 ),
             ],
             options={
@@ -256,9 +252,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "recovered_amount",
-                    models.DecimalField(
-                        decimal_places=2, default=0, max_digits=12
-                    ),
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
                 ),
                 ("outcome_notes", models.TextField(blank=True)),
                 ("payer_reference", models.CharField(blank=True, max_length=200)),

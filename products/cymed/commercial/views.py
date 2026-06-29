@@ -1,4 +1,4 @@
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
 
@@ -10,6 +10,7 @@ class CommercialModelViewSet(viewsets.ModelViewSet):
     is applied by default — but subclasses can override get_queryset()
     to scope by customer_id or tenant_id as appropriate.
     """
+
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):

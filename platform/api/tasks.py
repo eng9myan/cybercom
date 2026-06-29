@@ -1,7 +1,9 @@
 """
 Celery tasks for API Framework. ADR-0030.
 """
+
 import logging
+
 from celery import shared_task
 from django.utils import timezone
 
@@ -11,9 +13,9 @@ log = logging.getLogger(__name__)
 @shared_task(name="platform.api.deliver_webhook")
 def deliver_webhook_task(delivery_id: str) -> dict:
     """Attempt HTTP delivery of a single webhook delivery record."""
-    import urllib.request
-    import urllib.error
     import json
+    import urllib.error
+    import urllib.request
 
     from .models import ApiWebhookDelivery, WebhookDeliveryStatus
 
@@ -74,6 +76,7 @@ def retry_dead_webhooks_task() -> dict:
 def reset_rate_limits_task() -> dict:
     """Hourly: clear in-memory rate limit windows for burst keys."""
     from .rate_limit import get_rate_limiter
+
     rl = get_rate_limiter()
     rl.reset_all()
     log.info("Rate limit windows reset")
@@ -83,8 +86,10 @@ def reset_rate_limits_task() -> dict:
 @shared_task(name="platform.api.aggregate_usage")
 def aggregate_usage_task() -> dict:
     """Daily: aggregate ApiUsage into summary buckets (placeholder for analytics pipeline)."""
+    from django.db.models import Avg, Count
+
     from .models import ApiUsage
-    from django.db.models import Count, Avg
+
     since = timezone.now() - __import__("datetime").timedelta(hours=24)
     agg = ApiUsage.objects.filter(timestamp__gte=since).aggregate(
         total=Count("id"),
@@ -98,6 +103,7 @@ def aggregate_usage_task() -> dict:
 def expire_api_keys_task() -> dict:
     """Hourly: mark expired ApiKeys."""
     from .models import ApiKey, ApiKeyStatus
+
     now = timezone.now()
     expired_count = ApiKey.objects.filter(
         status=ApiKeyStatus.ACTIVE,
@@ -111,6 +117,7 @@ def expire_api_keys_task() -> dict:
 def purge_idempotency_keys_task() -> dict:
     """Hourly: delete expired idempotency keys."""
     from .idempotency import IdempotencyService
+
     count = IdempotencyService().purge_expired()
     log.info("Purged %d expired idempotency keys", count)
     return {"purged": count}
@@ -119,7 +126,8 @@ def purge_idempotency_keys_task() -> dict:
 @shared_task(name="platform.api.disable_failed_webhooks")
 def disable_failed_webhooks_task() -> dict:
     """Daily: disable webhooks with too many consecutive dead-letter deliveries."""
-    from .models import ApiWebhook, ApiWebhookDelivery, WebhookStatus, WebhookDeliveryStatus
+    from .models import ApiWebhook, ApiWebhookDelivery, WebhookDeliveryStatus, WebhookStatus
+
     FAILURE_THRESHOLD = 50
     disabled = 0
     for wh in ApiWebhook.objects.filter(status=WebhookStatus.ACTIVE):

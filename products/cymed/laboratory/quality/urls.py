@@ -1,5 +1,12 @@
-﻿from rest_framework.routers import DefaultRouter
-from .views import QualityRuleViewSet, QualityControlViewSet, QualityRunViewSet, QualityFailureViewSet, ProficiencyTestViewSet
+from rest_framework.routers import DefaultRouter
+
+from .views import (
+    ProficiencyTestViewSet,
+    QualityControlViewSet,
+    QualityFailureViewSet,
+    QualityRuleViewSet,
+    QualityRunViewSet,
+)
 
 router = DefaultRouter()
 router.register("rules", QualityRuleViewSet, basename="lab-qc-rules")

@@ -5,18 +5,21 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('cymed_clinic_queues', '0001_initial'),
-        ('cymed_reception', '0001_initial'),
+        ("cymed_clinic_queues", "0001_initial"),
+        ("cymed_reception", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='queueentry',
-            name='ticket',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='queue_entries', to='cymed_reception.patientqueueticket'),
+            model_name="queueentry",
+            name="ticket",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="queue_entries",
+                to="cymed_reception.patientqueueticket",
+            ),
         ),
     ]

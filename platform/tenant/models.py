@@ -3,15 +3,16 @@ CyberCom Multi-Tenant Framework — Domain Models.
 ADR-0002: tiered multi-tenancy (T-Shared/T-Schema/T-DB/T-Cluster).
 ADR-0005: IAM integration via CyIdentity realm mapping.
 """
-import uuid
+
 from django.db import models
 from django.utils import timezone
-from platform.common.models import PlatformModel
 
+from platform.common.models import PlatformModel
 
 # ---------------------------------------------------------------------------
 # Enumerations
 # ---------------------------------------------------------------------------
+
 
 class TenantTier(models.TextChoices):
     SHARED = "shared", "Shared Schema + RLS"
@@ -86,20 +87,20 @@ class ComplianceFramework(models.TextChoices):
 # Tenant (central registry)
 # ---------------------------------------------------------------------------
 
+
 class Tenant(PlatformModel):
     """
     Central registry of all tenants. One row per organization.
     ADR-0002: source of truth for tenant identity and isolation tier.
     """
+
     name = models.CharField(max_length=200, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
     display_name = models.CharField(max_length=200, blank=True)
     tenant_type = models.CharField(
         max_length=30, choices=TenantType.choices, default=TenantType.SAAS
     )
-    tier = models.CharField(
-        max_length=20, choices=TenantTier.choices, default=TenantTier.SHARED
-    )
+    tier = models.CharField(max_length=20, choices=TenantTier.choices, default=TenantTier.SHARED)
     status = models.CharField(
         max_length=20, choices=TenantStatus.choices, default=TenantStatus.PROVISIONING
     )
@@ -170,8 +171,10 @@ class Tenant(PlatformModel):
 # TenantProfile
 # ---------------------------------------------------------------------------
 
+
 class TenantProfile(PlatformModel):
     """Extended organization profile — contact, legal, billing."""
+
     tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name="profile")
 
     legal_name = models.CharField(max_length=300, blank=True)
@@ -200,8 +203,10 @@ class TenantProfile(PlatformModel):
 # TenantConfiguration
 # ---------------------------------------------------------------------------
 
+
 class TenantConfiguration(PlatformModel):
     """Runtime configuration — features, limits, data residency."""
+
     tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name="configuration")
 
     max_users = models.PositiveIntegerField(default=100)
@@ -241,8 +246,10 @@ class TenantConfiguration(PlatformModel):
 # TenantBranding
 # ---------------------------------------------------------------------------
 
+
 class TenantBranding(PlatformModel):
     """White-label branding — logos, colors, themes, RTL support."""
+
     tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name="branding")
 
     primary_color = models.CharField(max_length=7, default="#1B4F8A")
@@ -258,9 +265,11 @@ class TenantBranding(PlatformModel):
     app_name = models.CharField(max_length=100, blank=True)
     tagline = models.CharField(max_length=200, blank=True)
 
-    theme = models.CharField(max_length=20, default="light", choices=[
-        ("light", "Light"), ("dark", "Dark"), ("auto", "Auto")
-    ])
+    theme = models.CharField(
+        max_length=20,
+        default="light",
+        choices=[("light", "Light"), ("dark", "Dark"), ("auto", "Auto")],
+    )
     rtl_default = models.BooleanField(default=False)
     default_language = models.CharField(max_length=10, default="ar")
     supported_languages = models.JSONField(default=list)
@@ -281,8 +290,10 @@ class TenantBranding(PlatformModel):
 # TenantSubscription
 # ---------------------------------------------------------------------------
 
+
 class TenantSubscription(PlatformModel):
     """Active subscription plan and billing cycle."""
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="subscriptions")
 
     plan = models.CharField(max_length=30, choices=SubscriptionPlan.choices)
@@ -321,8 +332,10 @@ class TenantSubscription(PlatformModel):
 # TenantLicense
 # ---------------------------------------------------------------------------
 
+
 class TenantLicense(PlatformModel):
     """Module licensing — what the tenant is licensed to run."""
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="licenses")
 
     module = models.CharField(max_length=100)
@@ -360,11 +373,13 @@ class TenantLicense(PlatformModel):
 # TenantEnvironment
 # ---------------------------------------------------------------------------
 
+
 class TenantEnvironment(PlatformModel):
     """
     Per-tenant environment instance (prod, staging, dev, etc.).
     ADR-0012: dev/test/stage/prod topology mirroring.
     """
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="environments")
 
     env_type = models.CharField(max_length=20, choices=EnvironmentType.choices)
@@ -395,8 +410,10 @@ class TenantEnvironment(PlatformModel):
 # TenantRegion
 # ---------------------------------------------------------------------------
 
+
 class TenantRegion(PlatformModel):
     """Data residency region assignments for a tenant."""
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="regions")
 
     region_code = models.CharField(max_length=50)
@@ -423,9 +440,13 @@ class TenantRegion(PlatformModel):
 # TenantDeploymentProfile
 # ---------------------------------------------------------------------------
 
+
 class TenantDeploymentProfile(PlatformModel):
     """Kubernetes / infrastructure deployment parameters for the tenant."""
-    tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name="deployment_profile")
+
+    tenant = models.OneToOneField(
+        Tenant, on_delete=models.CASCADE, related_name="deployment_profile"
+    )
 
     helm_values = models.JSONField(default=dict, blank=True)
     resource_cpu_request = models.CharField(max_length=20, default="250m")
@@ -455,8 +476,10 @@ class TenantDeploymentProfile(PlatformModel):
 # TenantFeatureFlag
 # ---------------------------------------------------------------------------
 
+
 class TenantFeatureFlag(PlatformModel):
     """Per-tenant feature toggles — module enablement, beta features."""
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="feature_flags")
 
     key = models.CharField(max_length=200)
@@ -495,8 +518,10 @@ class TenantFeatureFlag(PlatformModel):
 # TenantDomain
 # ---------------------------------------------------------------------------
 
+
 class TenantDomain(PlatformModel):
     """Custom domains mapped to the tenant (for CNAME / TLS termination)."""
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="domains")
 
     domain = models.CharField(max_length=253, unique=True)
@@ -530,8 +555,10 @@ class TenantDomain(PlatformModel):
 # TenantSSOConfiguration
 # ---------------------------------------------------------------------------
 
+
 class TenantSSOConfiguration(PlatformModel):
     """Identity federation / SSO per tenant."""
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="sso_configurations")
 
     protocol = models.CharField(max_length=10, choices=SSOProtocol.choices)
@@ -572,8 +599,10 @@ class TenantSSOConfiguration(PlatformModel):
 # TenantStoragePolicy
 # ---------------------------------------------------------------------------
 
+
 class TenantStoragePolicy(PlatformModel):
     """Storage limits, quotas, and data residency for tenant data."""
+
     tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name="storage_policy")
 
     max_storage_gb = models.PositiveIntegerField(default=50)
@@ -599,20 +628,28 @@ class TenantStoragePolicy(PlatformModel):
 # TenantRetentionPolicy
 # ---------------------------------------------------------------------------
 
+
 class TenantRetentionPolicy(PlatformModel):
     """Data retention schedule per data category and compliance requirement."""
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="retention_policies")
 
     data_category = models.CharField(max_length=100)
     retention_days = models.PositiveIntegerField()
-    deletion_strategy = models.CharField(max_length=50, default="hard_delete", choices=[
-        ("hard_delete", "Hard Delete"),
-        ("soft_delete", "Soft Delete"),
-        ("anonymize", "Anonymize"),
-        ("archive", "Archive to Cold Storage"),
-    ])
+    deletion_strategy = models.CharField(
+        max_length=50,
+        default="hard_delete",
+        choices=[
+            ("hard_delete", "Hard Delete"),
+            ("soft_delete", "Soft Delete"),
+            ("anonymize", "Anonymize"),
+            ("archive", "Archive to Cold Storage"),
+        ],
+    )
     legal_hold = models.BooleanField(default=False)
-    compliance_basis = models.CharField(max_length=50, choices=ComplianceFramework.choices, blank=True)
+    compliance_basis = models.CharField(
+        max_length=50, choices=ComplianceFramework.choices, blank=True
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -627,8 +664,10 @@ class TenantRetentionPolicy(PlatformModel):
 # TenantComplianceProfile
 # ---------------------------------------------------------------------------
 
+
 class TenantComplianceProfile(PlatformModel):
     """Active compliance frameworks and certification status."""
+
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name="compliance_profiles")
 
     framework = models.CharField(max_length=20, choices=ComplianceFramework.choices)
@@ -662,9 +701,13 @@ class TenantComplianceProfile(PlatformModel):
 # TenantAuditConfiguration
 # ---------------------------------------------------------------------------
 
+
 class TenantAuditConfiguration(PlatformModel):
     """Per-tenant audit logging settings — what to capture, where to ship."""
-    tenant = models.OneToOneField(Tenant, on_delete=models.CASCADE, related_name="audit_configuration")
+
+    tenant = models.OneToOneField(
+        Tenant, on_delete=models.CASCADE, related_name="audit_configuration"
+    )
 
     capture_login_events = models.BooleanField(default=True)
     capture_data_access = models.BooleanField(default=True)
@@ -677,9 +720,11 @@ class TenantAuditConfiguration(PlatformModel):
 
     siem_enabled = models.BooleanField(default=False)
     siem_endpoint = models.URLField(blank=True)
-    siem_format = models.CharField(max_length=20, default="json", choices=[
-        ("json", "JSON"), ("cef", "CEF"), ("leef", "LEEF"), ("syslog", "Syslog")
-    ])
+    siem_format = models.CharField(
+        max_length=20,
+        default="json",
+        choices=[("json", "JSON"), ("cef", "CEF"), ("leef", "LEEF"), ("syslog", "Syslog")],
+    )
     siem_token_hint = models.CharField(max_length=4, blank=True)
 
     export_enabled = models.BooleanField(default=False)

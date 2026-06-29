@@ -1,25 +1,26 @@
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from platform.cydata.models import (
+    CDCPipelineLog,
     DataAsset,
     DataLineage,
     DataQualityRule,
     MasterDataMap,
-    CDCPipelineLog
 )
 from platform.cydata.serializers import (
+    CDCPipelineLogSerializer,
     DataAssetSerializer,
     DataLineageSerializer,
+    DataQualityEvaluateRequestSerializer,
     DataQualityRuleSerializer,
     MasterDataMapSerializer,
-    CDCPipelineLogSerializer,
-    DataQualityEvaluateRequestSerializer,
-    MasterDataMatchRequestSerializer
+    MasterDataMatchRequestSerializer,
 )
-from platform.cydata.services import DataQualityEngine, MasterDataReconciler, CDCPipelineClient
+from platform.cydata.services import CDCPipelineClient, DataQualityEngine, MasterDataReconciler
+
 
 class DataAssetViewSet(viewsets.ModelViewSet):
     queryset = DataAsset.objects.all().order_by("name")
@@ -33,8 +34,7 @@ class DataAssetViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         res = DataQualityEngine.evaluate_asset(
-            asset=asset,
-            records=serializer.validated_data["records"]
+            asset=asset, records=serializer.validated_data["records"]
         )
         return Response(res, status=status.HTTP_200_OK)
 
@@ -65,7 +65,7 @@ class MasterDataMapViewSet(viewsets.ModelViewSet):
             entity_type=serializer.validated_data["entity_type"],
             source_system=serializer.validated_data["source_system"],
             source_id=serializer.validated_data["source_id"],
-            matching_fields=serializer.validated_data["matching_fields"]
+            matching_fields=serializer.validated_data["matching_fields"],
         )
         return Response(MasterDataMapSerializer(mapping).data, status=status.HTTP_200_OK)
 
@@ -82,11 +82,12 @@ class CDCPipelineLogViewSet(viewsets.ModelViewSet):
         records_count = request.data.get("records_count", 0)
 
         if not tenant_id or not table_name:
-            return Response({"detail": "tenant_id and table_name are required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "tenant_id and table_name are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         log = CDCPipelineClient.trigger_cdc_sync(
-            tenant_id=tenant_id,
-            table_name=table_name,
-            records_count=int(records_count)
+            tenant_id=tenant_id, table_name=table_name, records_count=int(records_count)
         )
         return Response(CDCPipelineLogSerializer(log).data, status=status.HTTP_201_CREATED)

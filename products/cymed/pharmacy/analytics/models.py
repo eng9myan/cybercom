@@ -7,7 +7,9 @@ CyCom ERP owns actual inventory/finance data.
 CyAI provides medication safety analytics and predictive insights.
 This module provides pharmacy-domain aggregations and metrics.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -16,6 +18,7 @@ class PharmacyDashboardSnapshot(BaseModel):
     Point-in-time pharmacy operations snapshot.
     Pre-computed metrics for dashboard performance.
     """
+
     SNAPSHOT_TYPES = [
         ("hourly", "Hourly"),
         ("daily", "Daily"),
@@ -68,6 +71,7 @@ class MedicationSafetyEvent(BaseModel):
     Medication safety event tracking (near-misses, errors, adverse events).
     Feeds into the Medication Safety Dashboard.
     """
+
     EVENT_TYPES = [
         ("near_miss", "Near Miss"),
         ("prescribing_error", "Prescribing Error"),
@@ -116,6 +120,7 @@ class MedicationSafetyEvent(BaseModel):
 
 class PharmacyAnalyticsConfig(BaseModel):
     """Configuration for pharmacy analytics and dashboard settings."""
+
     dashboard_type = models.CharField(
         max_length=30,
         choices=[
@@ -123,7 +128,7 @@ class PharmacyAnalyticsConfig(BaseModel):
             ("clinical", "Clinical Pharmacy"),
             ("safety", "Medication Safety"),
             ("executive", "Executive"),
-        ]
+        ],
     )
     metrics_enabled = models.JSONField(default=list)
     alert_thresholds = models.JSONField(default=dict)

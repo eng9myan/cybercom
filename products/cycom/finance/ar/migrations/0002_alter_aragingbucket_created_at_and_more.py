@@ -5,60 +5,69 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cycom_finance_ar', '0001_initial'),
+        ("cycom_finance_ar", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='aragingbucket',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="aragingbucket",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='aragingbucket',
-            name='updated_at',
+            model_name="aragingbucket",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='customer',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="customer",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='customer',
-            name='updated_at',
+            model_name="customer",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='invoice',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="invoice",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='invoice',
-            name='updated_at',
+            model_name="invoice",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='invoiceline',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="invoiceline",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='invoiceline',
-            name='updated_at',
+            model_name="invoiceline",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='payment',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="payment",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='payment',
-            name='updated_at',
+            model_name="payment",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

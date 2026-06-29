@@ -1,9 +1,10 @@
 from rest_framework import serializers
+
 from .models import (
-    ProviderMobileDevice,
-    MobileSession,
     MobilePreferences,
     MobilePushNotification,
+    MobileSession,
+    ProviderMobileDevice,
 )
 
 

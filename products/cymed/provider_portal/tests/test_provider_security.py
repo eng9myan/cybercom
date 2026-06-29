@@ -1,9 +1,11 @@
 """
 CyMed Provider Portal — Security, Analytics, Mobile, AI Guardrails Tests (Phase 3.7)
 """
+
 import uuid
+from datetime import date, timedelta
+
 import pytest
-from datetime import date, timedelta, time
 from django.utils import timezone
 
 TENANT = uuid.uuid4()
@@ -17,20 +19,28 @@ UNIT_ID = uuid.uuid4()
 # ANALYTICS TESTS
 # ──────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestProviderAnalytics:
     def test_productivity_snapshot(self):
         from products.cymed.provider_portal.analytics.models import ProviderProductivitySnapshot
+
         snapshot = ProviderProductivitySnapshot.objects.create(
             tenant_id=TENANT,
-            provider_id=PROVIDER, provider_name="Dr. Hassan",
+            provider_id=PROVIDER,
+            provider_name="Dr. Hassan",
             provider_type="physician",
             snapshot_date=date.today(),
             snapshot_period="daily",
-            patients_seen=12, notes_completed=10, notes_pending=2,
-            orders_placed=45, results_reviewed=28,
-            tasks_completed=8, tasks_pending=3,
-            messages_sent=15, telemedicine_sessions=2,
+            patients_seen=12,
+            notes_completed=10,
+            notes_pending=2,
+            orders_placed=45,
+            results_reviewed=28,
+            tasks_completed=8,
+            tasks_pending=3,
+            messages_sent=15,
+            telemedicine_sessions=2,
             avg_documentation_time_minutes=12.5,
         )
         assert snapshot.patients_seen == 12
@@ -39,6 +49,7 @@ class TestProviderAnalytics:
 
     def test_clinical_quality_metric(self):
         from products.cymed.provider_portal.analytics.models import ClinicalQualityMetric
+
         metric = ClinicalQualityMetric.objects.create(
             tenant_id=TENANT,
             metric_type="documentation_completion",
@@ -47,8 +58,10 @@ class TestProviderAnalytics:
             scope_type="provider",
             scope_id=PROVIDER,
             scope_name="Dr. Hassan Al-Ahmad",
-            numerator=90, denominator=100,
-            rate=90.0, target_rate=95.0,
+            numerator=90,
+            denominator=100,
+            rate=90.0,
+            target_rate=95.0,
             meets_target=False,
         )
         assert metric.rate == 90.0
@@ -56,15 +69,22 @@ class TestProviderAnalytics:
 
     def test_workforce_dashboard_snapshot(self):
         from products.cymed.provider_portal.analytics.models import WorkforceDashboardSnapshot
+
         snapshot = WorkforceDashboardSnapshot.objects.create(
             tenant_id=TENANT,
-            unit_id=UNIT_ID, unit_name="Cardiology Ward 4B",
+            unit_id=UNIT_ID,
+            unit_name="Cardiology Ward 4B",
             snapshot_date=date.today(),
-            total_providers=20, providers_on_duty=15,
-            providers_on_leave=2, providers_on_call=3,
-            unfilled_shifts=1, credential_expiry_alerts=3,
-            pending_leave_requests=2, open_tasks=45,
-            critical_alerts_pending=2, patient_census=24,
+            total_providers=20,
+            providers_on_duty=15,
+            providers_on_leave=2,
+            providers_on_call=3,
+            unfilled_shifts=1,
+            credential_expiry_alerts=3,
+            pending_leave_requests=2,
+            open_tasks=45,
+            critical_alerts_pending=2,
+            patient_census=24,
             staff_patient_ratio=1.6,
         )
         assert snapshot.providers_on_duty == 15
@@ -73,9 +93,11 @@ class TestProviderAnalytics:
     def test_ai_insight_advisory_only(self):
         """AI insights must always be advisory — cannot alter records."""
         from products.cymed.provider_portal.analytics.models import ProviderAIInsight
+
         insight = ProviderAIInsight.objects.create(
             tenant_id=TENANT,
-            provider_id=PROVIDER, patient_id=PATIENT,
+            provider_id=PROVIDER,
+            patient_id=PATIENT,
             insight_type="care_gap",
             insight_title="Statin therapy gap identified",
             insight_body="Patient with established CAD has no active statin prescription. Consider initiating high-intensity statin therapy.",
@@ -89,11 +111,13 @@ class TestProviderAnalytics:
 
     def test_executive_dashboard_metric(self):
         from products.cymed.provider_portal.analytics.models import ExecutiveDashboardMetric
+
         metric = ExecutiveDashboardMetric.objects.create(
             tenant_id=TENANT,
             metric_category="clinical_quality",
             metric_name="30-Day Readmission Rate",
-            metric_value=8.5, metric_unit="%",
+            metric_value=8.5,
+            metric_unit="%",
             metric_date=date.today(),
             department="Cardiology",
             comparison_value=10.2,
@@ -109,10 +133,12 @@ class TestProviderAnalytics:
 # MOBILE TESTS
 # ──────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestProviderMobile:
     def test_register_mobile_device(self):
         from products.cymed.provider_portal.mobile.models import ProviderMobileDevice
+
         device = ProviderMobileDevice.objects.create(
             tenant_id=TENANT,
             provider_id=PROVIDER,
@@ -122,20 +148,25 @@ class TestProviderMobile:
             device_fingerprint="fp-hash-abc",
             platform_version="17.4",
             app_version="3.7.0",
-            is_active=True, is_trusted=True,
+            is_active=True,
+            is_trusted=True,
         )
         assert device.device_type == "ios"
         assert device.is_trusted is True
 
     def test_mobile_session(self):
-        from products.cymed.provider_portal.mobile.models import ProviderMobileDevice, MobileSession
+        from products.cymed.provider_portal.mobile.models import MobileSession, ProviderMobileDevice
+
         device = ProviderMobileDevice.objects.create(
-            tenant_id=TENANT, provider_id=PROVIDER,
-            device_name="Samsung Galaxy S24", device_type="android",
+            tenant_id=TENANT,
+            provider_id=PROVIDER,
+            device_name="Samsung Galaxy S24",
+            device_type="android",
             is_active=True,
         )
         session = MobileSession.objects.create(
-            tenant_id=TENANT, device=device,
+            tenant_id=TENANT,
+            device=device,
             provider_id=PROVIDER,
             session_token="mob-sess-tok-001",
             is_active=True,
@@ -146,14 +177,21 @@ class TestProviderMobile:
         assert device.sessions.count() == 1
 
     def test_mobile_preferences(self):
-        from products.cymed.provider_portal.mobile.models import ProviderMobileDevice, MobilePreferences
+        from products.cymed.provider_portal.mobile.models import (
+            MobilePreferences,
+            ProviderMobileDevice,
+        )
+
         device = ProviderMobileDevice.objects.create(
-            tenant_id=TENANT, provider_id=PROVIDER,
-            device_name="iPad Pro", device_type="tablet",
+            tenant_id=TENANT,
+            provider_id=PROVIDER,
+            device_name="iPad Pro",
+            device_type="tablet",
             is_active=True,
         )
         prefs = MobilePreferences.objects.create(
-            tenant_id=TENANT, device=device,
+            tenant_id=TENANT,
+            device=device,
             provider_id=PROVIDER,
             home_tab="patient_lists",
             push_critical_results=True,
@@ -169,6 +207,7 @@ class TestProviderMobile:
 
     def test_mobile_push_notification(self):
         from products.cymed.provider_portal.mobile.models import MobilePushNotification
+
         notif = MobilePushNotification.objects.create(
             tenant_id=TENANT,
             provider_id=PROVIDER,
@@ -190,25 +229,33 @@ class TestProviderMobile:
 # TENANT ISOLATION TESTS
 # ──────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestProviderTenantIsolation:
     def test_workspace_isolation(self):
         from products.cymed.provider_portal.workspace.models import ProviderWorkspace
+
         ProviderWorkspace.objects.create(
-            tenant_id=TENANT, provider_id=uuid.uuid4(),
-            provider_type="physician", cyidentity_user_id=uuid.uuid4(),
+            tenant_id=TENANT,
+            provider_id=uuid.uuid4(),
+            provider_type="physician",
+            cyidentity_user_id=uuid.uuid4(),
         )
         ProviderWorkspace.objects.create(
-            tenant_id=OTHER_TENANT, provider_id=uuid.uuid4(),
-            provider_type="nurse", cyidentity_user_id=uuid.uuid4(),
+            tenant_id=OTHER_TENANT,
+            provider_id=uuid.uuid4(),
+            provider_type="nurse",
+            cyidentity_user_id=uuid.uuid4(),
         )
         assert ProviderWorkspace.objects.filter(tenant_id=TENANT).count() == 1
         assert ProviderWorkspace.objects.filter(tenant_id=OTHER_TENANT).count() == 1
 
     def test_approval_isolation(self):
         from products.cymed.provider_portal.approvals.models import ApprovalRequest
+
         ApprovalRequest.objects.create(
-            tenant_id=TENANT, approval_type="leave_request",
+            tenant_id=TENANT,
+            approval_type="leave_request",
             title="T1 Leave Request",
             requested_by_provider_id=uuid.uuid4(),
             requested_by_name="T1 Provider",
@@ -217,7 +264,8 @@ class TestProviderTenantIsolation:
             status="pending",
         )
         ApprovalRequest.objects.create(
-            tenant_id=OTHER_TENANT, approval_type="leave_request",
+            tenant_id=OTHER_TENANT,
+            approval_type="leave_request",
             title="T2 Leave Request",
             requested_by_provider_id=uuid.uuid4(),
             requested_by_name="T2 Provider",
@@ -230,19 +278,24 @@ class TestProviderTenantIsolation:
 
     def test_result_isolation(self):
         from products.cymed.provider_portal.results.models import ProviderResultView
+
         ProviderResultView.objects.create(
-            tenant_id=TENANT, patient_id=PATIENT,
+            tenant_id=TENANT,
+            patient_id=PATIENT,
             result_type="laboratory",
             result_source_id=uuid.uuid4(),
             result_source_type="lab_result",
-            result_name="T1 CBC", result_date=date.today(),
+            result_name="T1 CBC",
+            result_date=date.today(),
         )
         ProviderResultView.objects.create(
-            tenant_id=OTHER_TENANT, patient_id=uuid.uuid4(),
+            tenant_id=OTHER_TENANT,
+            patient_id=uuid.uuid4(),
             result_type="laboratory",
             result_source_id=uuid.uuid4(),
             result_source_type="lab_result",
-            result_name="T2 CBC", result_date=date.today(),
+            result_name="T2 CBC",
+            result_date=date.today(),
         )
         assert ProviderResultView.objects.filter(tenant_id=TENANT).count() == 1
         assert ProviderResultView.objects.filter(tenant_id=OTHER_TENANT).count() == 1
@@ -252,15 +305,22 @@ class TestProviderTenantIsolation:
 # AI GUARDRAILS TESTS
 # ──────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestAIGuardrails:
     def test_ai_cannot_sign_documentation(self):
         """AI can populate ai_summary on ProviderClinicalNote — cannot set signed_by."""
-        from products.cymed.provider_portal.clinical_documentation.models import ProviderClinicalNote
+        from products.cymed.provider_portal.clinical_documentation.models import (
+            ProviderClinicalNote,
+        )
+
         note = ProviderClinicalNote.objects.create(
-            tenant_id=TENANT, patient_id=PATIENT,
-            author_provider_id=PROVIDER, author_name="Dr. Hassan",
-            author_type="physician", note_type="progress",
+            tenant_id=TENANT,
+            patient_id=PATIENT,
+            author_provider_id=PROVIDER,
+            author_name="Dr. Hassan",
+            author_type="physician",
+            note_type="progress",
             note_body="Progress note.",
             ai_summary="Patient stable. Continue current management.",
             status="draft",
@@ -272,8 +332,11 @@ class TestAIGuardrails:
     def test_ai_insight_requires_provider_action(self):
         """AI insight stays pending_review until provider acts — AI cannot self-acknowledge."""
         from products.cymed.provider_portal.analytics.models import ProviderAIInsight
+
         insight = ProviderAIInsight.objects.create(
-            tenant_id=TENANT, provider_id=PROVIDER, patient_id=PATIENT,
+            tenant_id=TENANT,
+            provider_id=PROVIDER,
+            patient_id=PATIENT,
             insight_type="order_suggestion",
             insight_title="Consider DVT prophylaxis",
             insight_body="Patient immobilized >72h post-op. DVT risk score 4. Consider enoxaparin.",
@@ -288,13 +351,16 @@ class TestAIGuardrails:
     def test_ai_cannot_prescribe(self):
         """Orders must be created by a provider — ordering_provider_id cannot be null."""
         from products.cymed.provider_portal.orders.models import ProviderOrderRequest
+
         order = ProviderOrderRequest.objects.create(
-            tenant_id=TENANT, patient_id=PATIENT,
+            tenant_id=TENANT,
+            patient_id=PATIENT,
             ordering_provider_id=PROVIDER,
             ordering_provider_name="Dr. Hassan",
             order_category="medication",
             order_name="Enoxaparin 40mg SC daily",
-            priority="routine", status="submitted",
+            priority="routine",
+            status="submitted",
         )
         assert order.ordering_provider_id == PROVIDER
 
@@ -302,6 +368,7 @@ class TestAIGuardrails:
 # ──────────────────────────────────────────────────
 # END-TO-END PROVIDER WORKFLOW TEST
 # ──────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 class TestProviderWorkflow:
@@ -316,53 +383,81 @@ class TestProviderWorkflow:
         6. Provider acknowledges result
         7. Task created for follow-up
         """
-        from products.cymed.provider_portal.workspace.models import ProviderWorkspace
-        from products.cymed.provider_portal.patient_lists.models import PatientList, PatientAssignment
-        from products.cymed.provider_portal.rounding.models import ClinicalRound, RoundFinding, RoundAction
-        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
-        from products.cymed.provider_portal.results.models import ProviderResultView, CriticalResultAlert
         from products.cymed.provider_portal.clinical_tasks.models import ClinicalTask
+        from products.cymed.provider_portal.orders.models import ProviderOrderRequest
+        from products.cymed.provider_portal.patient_lists.models import (
+            PatientAssignment,
+            PatientList,
+        )
+        from products.cymed.provider_portal.results.models import (
+            CriticalResultAlert,
+            ProviderResultView,
+        )
+        from products.cymed.provider_portal.rounding.models import (
+            ClinicalRound,
+            RoundAction,
+            RoundFinding,
+        )
+        from products.cymed.provider_portal.workspace.models import ProviderWorkspace
 
         # Step 1: Workspace
         ws = ProviderWorkspace.objects.create(
-            tenant_id=TENANT, provider_id=PROVIDER,
-            provider_type="physician", cyidentity_user_id=uuid.uuid4(),
+            tenant_id=TENANT,
+            provider_id=PROVIDER,
+            provider_type="physician",
+            cyidentity_user_id=uuid.uuid4(),
             preferred_specialty="internal_medicine",
         )
         assert ws.provider_type == "physician"
 
         # Step 2: Patient list
         pl = PatientList.objects.create(
-            tenant_id=TENANT, name="Morning Patient List",
-            list_type="my_patients", workspace_id=ws.id,
+            tenant_id=TENANT,
+            name="Morning Patient List",
+            list_type="my_patients",
+            workspace_id=ws.id,
         )
         PatientAssignment.objects.create(
-            tenant_id=TENANT, patient_list=pl,
-            patient_id=PATIENT, bed_number="4B-08",
+            tenant_id=TENANT,
+            patient_list=pl,
+            patient_id=PATIENT,
+            bed_number="4B-08",
             unit_name="Internal Medicine Ward 4B",
-            acuity_score=3, is_active=True,
+            acuity_score=3,
+            is_active=True,
         )
         assert pl.assignments.count() == 1
 
         # Step 3: Morning round
         rnd = ClinicalRound.objects.create(
-            tenant_id=TENANT, round_type="ward",
-            unit_id=UNIT_ID, unit_name="Ward 4B",
-            attending_provider_id=PROVIDER, attending_name="Dr. Hassan",
-            round_date=date.today(), status="in_progress",
+            tenant_id=TENANT,
+            round_type="ward",
+            unit_id=UNIT_ID,
+            unit_name="Ward 4B",
+            attending_provider_id=PROVIDER,
+            attending_name="Dr. Hassan",
+            round_date=date.today(),
+            status="in_progress",
         )
 
         # Step 4: Finding → action
         finding = RoundFinding.objects.create(
-            tenant_id=TENANT, round=rnd, patient_id=PATIENT,
+            tenant_id=TENANT,
+            round=rnd,
+            patient_id=PATIENT,
             finding_type="lab_result",
             finding_text="Creatinine elevated: 2.3 mg/dL (baseline 1.0). AKI stage 1.",
-            severity="urgent", recorded_by_provider_id=PROVIDER,
-            recorded_by_name="Dr. Hassan", requires_action=True,
+            severity="urgent",
+            recorded_by_provider_id=PROVIDER,
+            recorded_by_name="Dr. Hassan",
+            requires_action=True,
         )
         action = RoundAction.objects.create(
-            tenant_id=TENANT, round=rnd, finding=finding,
-            patient_id=PATIENT, action_type="order_placed",
+            tenant_id=TENANT,
+            round=rnd,
+            finding=finding,
+            patient_id=PATIENT,
+            action_type="order_placed",
             action_description="Ordered IV fluids and nephrology consult.",
             status="pending",
         )
@@ -370,27 +465,33 @@ class TestProviderWorkflow:
 
         # Step 5: Order placed
         order = ProviderOrderRequest.objects.create(
-            tenant_id=TENANT, patient_id=PATIENT,
+            tenant_id=TENANT,
+            patient_id=PATIENT,
             ordering_provider_id=PROVIDER,
             ordering_provider_name="Dr. Hassan",
             order_category="laboratory",
             order_name="Renal Function Panel",
-            priority="urgent", status="submitted",
+            priority="urgent",
+            status="submitted",
         )
         assert order.status == "submitted"
 
         # Step 6: Critical result returns
         result = ProviderResultView.objects.create(
-            tenant_id=TENANT, patient_id=PATIENT,
+            tenant_id=TENANT,
+            patient_id=PATIENT,
             result_type="laboratory",
             result_source_id=uuid.uuid4(),
             result_source_type="lab_result",
-            result_name="Creatinine", result_date=date.today(),
-            result_status="final", is_critical=True,
+            result_name="Creatinine",
+            result_date=date.today(),
+            result_status="final",
+            is_critical=True,
             ordering_provider_id=PROVIDER,
         )
         alert = CriticalResultAlert.objects.create(
-            tenant_id=TENANT, result=result,
+            tenant_id=TENANT,
+            result=result,
             patient_id=PATIENT,
             alerted_provider_id=PROVIDER,
             alerted_provider_name="Dr. Hassan",
@@ -403,13 +504,17 @@ class TestProviderWorkflow:
 
         # Step 7: Follow-up task
         task = ClinicalTask.objects.create(
-            tenant_id=TENANT, task_type="lab_follow_up",
+            tenant_id=TENANT,
+            task_type="lab_follow_up",
             title="Monitor renal function — repeat in 6 hours",
-            patient_id=PATIENT, priority="urgent", status="pending",
+            patient_id=PATIENT,
+            priority="urgent",
+            status="pending",
             assigned_to_provider_id=PROVIDER,
             assigned_to_type="physician",
             created_by_provider_id=PROVIDER,
-            source_type="lab_result", source_id=result.id,
+            source_type="lab_result",
+            source_id=result.id,
             due_at=timezone.now() + timedelta(hours=6),
         )
         assert task.status == "pending"

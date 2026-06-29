@@ -1,6 +1,15 @@
 from rest_framework import serializers
-from products.cymed.hospital.bed_management.models import BedAssignment, BedOccupancy, BedReservation, BedCleaning, BedMaintenance, BedBlocking
+
 from platform.events.models import OutboxEvent
+from products.cymed.hospital.bed_management.models import (
+    BedAssignment,
+    BedBlocking,
+    BedCleaning,
+    BedMaintenance,
+    BedOccupancy,
+    BedReservation,
+)
+
 
 class BedAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,8 +35,8 @@ class BedAssignmentSerializer(serializers.ModelSerializer):
                 "bed_assignment_id": str(assignment.id),
                 "patient_id": str(assignment.patient.id),
                 "bed_id": str(assignment.bed.id),
-                "assigned_at": assignment.assigned_at.isoformat()
-            }
+                "assigned_at": assignment.assigned_at.isoformat(),
+            },
         )
 
         # Trigger ERP Billing Charge Event
@@ -40,31 +49,36 @@ class BedAssignmentSerializer(serializers.ModelSerializer):
                 "charge_type": "bed_occupancy",
                 "amount": 300.00,
                 "currency": "AED",
-                "service_code": "BED-OCC-01"
-            }
+                "service_code": "BED-OCC-01",
+            },
         )
 
         return assignment
+
 
 class BedOccupancySerializer(serializers.ModelSerializer):
     class Meta:
         model = BedOccupancy
         fields = "__all__"
 
+
 class BedReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = BedReservation
         fields = "__all__"
+
 
 class BedCleaningSerializer(serializers.ModelSerializer):
     class Meta:
         model = BedCleaning
         fields = "__all__"
 
+
 class BedMaintenanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = BedMaintenance
         fields = "__all__"
+
 
 class BedBlockingSerializer(serializers.ModelSerializer):
     class Meta:

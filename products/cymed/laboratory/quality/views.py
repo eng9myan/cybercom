@@ -1,8 +1,17 @@
-﻿from decimal import Decimal, InvalidOperation
+from decimal import Decimal
+
 from platform.events.models import OutboxEvent
-from .models import QualityRule, QualityControl, QualityRun, QualityFailure, ProficiencyTest
-from .serializers import QualityRuleSerializer, QualityControlSerializer, QualityRunSerializer, QualityFailureSerializer, ProficiencyTestSerializer
+
 from ..views import LaboratoryModelViewSet
+from .models import ProficiencyTest, QualityControl, QualityFailure, QualityRule, QualityRun
+from .serializers import (
+    ProficiencyTestSerializer,
+    QualityControlSerializer,
+    QualityFailureSerializer,
+    QualityRuleSerializer,
+    QualityRunSerializer,
+)
+
 
 class QualityRuleViewSet(LaboratoryModelViewSet):
     queryset = QualityRule.objects.all()
@@ -10,11 +19,13 @@ class QualityRuleViewSet(LaboratoryModelViewSet):
     required_feature = "lab.quality"
     filterset_fields = ["rule_type", "is_active", "is_rejection"]
 
+
 class QualityControlViewSet(LaboratoryModelViewSet):
     queryset = QualityControl.objects.all()
     serializer_class = QualityControlSerializer
     required_feature = "lab.quality"
     filterset_fields = ["test", "level", "is_active"]
+
 
 class QualityRunViewSet(LaboratoryModelViewSet):
     queryset = QualityRun.objects.select_related("qc")
@@ -38,21 +49,34 @@ class QualityRunViewSet(LaboratoryModelViewSet):
             rules_triggered.append("13s")
         elif is_warning:
             rules_triggered.append("12s")
-        obj = serializer.save(tenant_id=tenant_id, z_score=z_score, passed=passed, is_warning=is_warning, is_rejection=is_rejection, rules_triggered=rules_triggered)
+        obj = serializer.save(
+            tenant_id=tenant_id,
+            z_score=z_score,
+            passed=passed,
+            is_warning=is_warning,
+            is_rejection=is_rejection,
+            rules_triggered=rules_triggered,
+        )
         if is_rejection:
             QualityFailure.objects.create(tenant_id=tenant_id, qc_run=obj)
             OutboxEvent.objects.create(
                 tenant_id=str(tenant_id) if tenant_id else None,
                 topic="cymed.lab.qc.failed",
                 event_type="cymed.lab.qc.failed",
-                payload={"qc_run_id": str(obj.id), "z_score": str(z_score), "rules": rules_triggered},
+                payload={
+                    "qc_run_id": str(obj.id),
+                    "z_score": str(z_score),
+                    "rules": rules_triggered,
+                },
             )
+
 
 class QualityFailureViewSet(LaboratoryModelViewSet):
     queryset = QualityFailure.objects.all()
     serializer_class = QualityFailureSerializer
     required_feature = "lab.quality"
     filterset_fields = ["status", "patient_results_affected"]
+
 
 class ProficiencyTestViewSet(LaboratoryModelViewSet):
     queryset = ProficiencyTest.objects.all()

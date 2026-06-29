@@ -1,12 +1,13 @@
-﻿"""
+"""
 CyMed Population Health — Risk Management
 Covers: RiskScore, RiskFactor, RiskCategory, RiskAssessment
 AI-generated scores are advisory only (is_advisory_only=True, editable=False).
 Terminology: ICD-11 codes resolved via TerminologyService.
 """
-from django.db import models
-from platform.common.models import BaseModel
 
+from django.db import models
+
+from platform.common.models import BaseModel
 
 RISK_CATEGORY_CHOICES = [
     ("readmission", "Readmission"),
@@ -53,6 +54,7 @@ class RiskScore(BaseModel):
 
 class RiskFactor(BaseModel):
     """An individual factor contributing to a patient risk score."""
+
     FACTOR_TYPE_CHOICES = [
         ("clinical", "Clinical"),
         ("demographic", "Demographic"),
@@ -61,15 +63,11 @@ class RiskFactor(BaseModel):
         ("historical", "Historical"),
     ]
 
-    risk_score = models.ForeignKey(
-        RiskScore, on_delete=models.CASCADE, related_name="factors"
-    )
+    risk_score = models.ForeignKey(RiskScore, on_delete=models.CASCADE, related_name="factors")
     factor_name = models.CharField(max_length=200)
     factor_type = models.CharField(max_length=30, choices=FACTOR_TYPE_CHOICES)
     factor_value = models.CharField(max_length=200, blank=True)
-    contribution_weight = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True
-    )
+    contribution_weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     icd11_code = models.CharField(max_length=20, blank=True)
 
     class Meta:
@@ -101,6 +99,7 @@ class RiskCategory(BaseModel):
 
 class RiskAssessment(BaseModel):
     """A holistic risk assessment for a patient combining multiple risk scores."""
+
     ASSESSMENT_TYPE_CHOICES = [
         ("automated", "Automated"),
         ("manual", "Manual"),
@@ -119,17 +118,13 @@ class RiskAssessment(BaseModel):
     )
     assessment_date = models.DateField()
     overall_risk_level = models.CharField(max_length=15, choices=RISK_LEVEL_CHOICES)
-    overall_score = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True
-    )
+    overall_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     assessor_user_id = models.UUIDField(null=True, blank=True)
     recommendations = models.JSONField(default=list)
     next_assessment_date = models.DateField(null=True, blank=True)
     is_ai_generated = models.BooleanField(default=False)
     is_advisory_only = models.BooleanField(default=True, editable=False)
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="pending_review"
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending_review")
     acknowledged_by_user_id = models.UUIDField(null=True, blank=True)
 
     class Meta:

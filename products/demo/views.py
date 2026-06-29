@@ -1,15 +1,26 @@
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import DemoEnvironment, DemoTenant, DemoScenario, DemoSession, DemoResetRequest, ProductTour
+from .models import (
+    DemoEnvironment,
+    DemoResetRequest,
+    DemoScenario,
+    DemoSession,
+    DemoTenant,
+    ProductTour,
+)
 from .serializers import (
-    DemoEnvironmentSerializer, DemoTenantSerializer, DemoScenarioSerializer,
-    DemoSessionSerializer, DemoResetRequestSerializer, ProductTourSerializer,
+    DemoEnvironmentSerializer,
+    DemoResetRequestSerializer,
+    DemoScenarioSerializer,
+    DemoSessionSerializer,
+    DemoTenantSerializer,
+    ProductTourSerializer,
 )
 
 
@@ -88,7 +99,13 @@ class DemoTenantViewSet(BaseViewSet):
 class DemoScenarioViewSet(BaseViewSet):
     queryset = DemoScenario.objects.select_related("environment")
     serializer_class = DemoScenarioSerializer
-    filterset_fields = ["environment", "scenario_type", "is_interactive", "is_active", "ai_narration_enabled"]
+    filterset_fields = [
+        "environment",
+        "scenario_type",
+        "is_interactive",
+        "is_active",
+        "ai_narration_enabled",
+    ]
     search_fields = ["title", "description"]
     ordering_fields = ["title", "estimated_duration_minutes", "created_at"]
 
@@ -106,7 +123,15 @@ class DemoSessionViewSet(BaseViewSet):
         session.feedback_score = request.data.get("feedback_score")
         session.feedback_notes = request.data.get("feedback_notes", "")
         session.follow_up_action = request.data.get("follow_up_action", "")
-        session.save(update_fields=["ended_at", "feedback_score", "feedback_notes", "follow_up_action", "updated_at"])
+        session.save(
+            update_fields=[
+                "ended_at",
+                "feedback_score",
+                "feedback_notes",
+                "follow_up_action",
+                "updated_at",
+            ]
+        )
         return Response({"status": "ended", "id": str(session.id)})
 
 

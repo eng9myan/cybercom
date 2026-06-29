@@ -1,6 +1,6 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 
 
 class ClinicModelViewSet(viewsets.ModelViewSet):
@@ -11,6 +11,7 @@ class ClinicModelViewSet(viewsets.ModelViewSet):
     All feature evaluation delegates to FeatureFlagService — no
     hardcoded logic in application code.
     """
+
     permission_classes = [IsAuthenticated]
     required_feature: str = ""
 
@@ -27,8 +28,11 @@ class ClinicModelViewSet(viewsets.ModelViewSet):
 
     def _check_feature(self, request, feature_code: str) -> None:
         from products.cymed.commercial.feature_flags.services import FeatureFlagService
+
         tenant_id = getattr(request, "tenant_id", None)
-        if not FeatureFlagService.is_enabled(feature_code, tenant_id=str(tenant_id) if tenant_id else None):
+        if not FeatureFlagService.is_enabled(
+            feature_code, tenant_id=str(tenant_id) if tenant_id else None
+        ):
             raise PermissionDenied(
                 detail=f"Feature '{feature_code}' is not enabled for your edition."
             )

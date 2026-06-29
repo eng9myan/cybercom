@@ -13,6 +13,7 @@ elif "" in sys.path:
     sys_path_removed = True
 
 import platform as std_platform
+
 platform_pkg_path = os.path.join(script_dir, "platform")
 if not hasattr(std_platform, "__path__") or std_platform.__path__ is None:
     std_platform.__path__ = [platform_pkg_path]
@@ -23,6 +24,6 @@ if sys_path_removed:
     sys.path.insert(0, script_dir)
 
 from django.core.asgi import get_asgi_application
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
-application = get_asgi_application()
 
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
+application = get_asgi_application()

@@ -1,9 +1,11 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class ProductVersion(BaseModel):
     """Version history for a product in the catalog."""
+
     product_code = models.CharField(max_length=100)
     version = models.CharField(max_length=50)
     release_date = models.DateField()
@@ -18,6 +20,7 @@ class ProductVersion(BaseModel):
 
 class ProductLicenseMapping(BaseModel):
     """Maps a product+edition to licensing rules and capabilities."""
+
     product_code = models.CharField(max_length=100)
     edition_code = models.CharField(max_length=100)
     license_types_allowed = models.JSONField(default=list)
@@ -33,6 +36,7 @@ class ProductLicenseMapping(BaseModel):
 
 class ProductFeatureMatrix(BaseModel):
     """Cross-product feature availability matrix."""
+
     product_code = models.CharField(max_length=100)
     edition_code = models.CharField(max_length=100)
     feature_code = models.CharField(max_length=200)

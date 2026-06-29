@@ -1,9 +1,11 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class PartnerType(BaseModel):
     """Catalog of partner categories."""
+
     code = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -18,6 +20,7 @@ class PartnerType(BaseModel):
 
 class Partner(BaseModel):
     """CyMed channel partner (reseller, SI, distributor, government)."""
+
     STATUS_CHOICES = [
         ("prospect", "Prospect"),
         ("onboarding", "Onboarding"),
@@ -30,11 +33,11 @@ class Partner(BaseModel):
     name = models.CharField(max_length=255)
     partner_type = models.ForeignKey(PartnerType, on_delete=models.PROTECT, related_name="partners")
     country_code = models.CharField(max_length=10)
-    regions_covered = models.JSONField(default=list)    # ["JO", "SA", "AE"]
+    regions_covered = models.JSONField(default=list)  # ["JO", "SA", "AE"]
     contact_email = models.EmailField(blank=True)
     contact_phone = models.CharField(max_length=50, blank=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="prospect")
-    partner_level = models.CharField(max_length=50, default="silver")   # silver, gold, platinum
+    partner_level = models.CharField(max_length=50, default="silver")  # silver, gold, platinum
 
     class Meta:
         db_table = "cymed_commercial_partners"
@@ -45,12 +48,15 @@ class Partner(BaseModel):
 
 class ResellerAgreement(BaseModel):
     """Reseller agreement with discount tiers and territory rights."""
-    partner = models.OneToOneField(Partner, on_delete=models.CASCADE, related_name="reseller_agreement")
+
+    partner = models.OneToOneField(
+        Partner, on_delete=models.CASCADE, related_name="reseller_agreement"
+    )
     agreement_number = models.CharField(max_length=100, unique=True)
     signed_date = models.DateField(null=True, blank=True)
     valid_until = models.DateField(null=True, blank=True)
-    territory = models.JSONField(default=list)           # ["JO", "IQ"]
-    products_authorized = models.JSONField(default=list) # ["cymed_clinic", "cymed_hospital"]
+    territory = models.JSONField(default=list)  # ["JO", "IQ"]
+    products_authorized = models.JSONField(default=list)  # ["cymed_clinic", "cymed_hospital"]
     discount_rate_pct = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     payment_terms_days = models.PositiveIntegerField(default=30)
     min_annual_commitment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -63,11 +69,14 @@ class ResellerAgreement(BaseModel):
 
 class DistributorAgreement(BaseModel):
     """Distributor agreement for regional distribution rights."""
-    partner = models.OneToOneField(Partner, on_delete=models.CASCADE, related_name="distributor_agreement")
+
+    partner = models.OneToOneField(
+        Partner, on_delete=models.CASCADE, related_name="distributor_agreement"
+    )
     agreement_number = models.CharField(max_length=100, unique=True)
     signed_date = models.DateField(null=True, blank=True)
     valid_until = models.DateField(null=True, blank=True)
-    exclusive_territory = models.JSONField(default=list)   # ["SA"] = exclusive in Saudi Arabia
+    exclusive_territory = models.JSONField(default=list)  # ["SA"] = exclusive in Saudi Arabia
     sub_reseller_rights = models.BooleanField(default=False)
     localization_rights = models.BooleanField(default=False)
     government_bid_rights = models.BooleanField(default=False)

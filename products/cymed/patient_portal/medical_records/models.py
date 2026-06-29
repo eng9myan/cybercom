@@ -1,41 +1,39 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class MedicalRecordAccess(BaseModel):
     RECORD_TYPE_CHOICES = [
-        ('diagnosis', 'Diagnosis'),
-        ('condition', 'Condition'),
-        ('allergy', 'Allergy'),
-        ('immunization', 'Immunization'),
-        ('care_plan', 'Care Plan'),
-        ('clinical_note', 'Clinical Note'),
-        ('discharge_summary', 'Discharge Summary'),
-        ('visit_history', 'Visit History'),
-        ('document', 'Document'),
+        ("diagnosis", "Diagnosis"),
+        ("condition", "Condition"),
+        ("allergy", "Allergy"),
+        ("immunization", "Immunization"),
+        ("care_plan", "Care Plan"),
+        ("clinical_note", "Clinical Note"),
+        ("discharge_summary", "Discharge Summary"),
+        ("visit_history", "Visit History"),
+        ("document", "Document"),
     ]
     ACCESS_TYPE_CHOICES = [
-        ('view', 'View'),
-        ('download', 'Download'),
-        ('share', 'Share'),
+        ("view", "View"),
+        ("download", "Download"),
+        ("share", "Share"),
     ]
 
     account_id = models.UUIDField(db_index=True)
     patient_id = models.UUIDField(db_index=True)
     record_type = models.CharField(max_length=30, choices=RECORD_TYPE_CHOICES)
     record_id = models.UUIDField(db_index=True)
-    access_type = models.CharField(
-        max_length=20, choices=ACCESS_TYPE_CHOICES, default='view'
-    )
+    access_type = models.CharField(max_length=20, choices=ACCESS_TYPE_CHOICES, default="view")
     accessed_at = models.DateTimeField(auto_now_add=True)
     access_context = models.CharField(max_length=100, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_record_access'
+        db_table = "cymed_portal_record_access"
         indexes = [
-            models.Index(fields=['account_id', 'record_type']),
-            models.Index(fields=['patient_id', 'accessed_at']),
+            models.Index(fields=["account_id", "record_type"]),
+            models.Index(fields=["patient_id", "accessed_at"]),
         ]
 
     def __str__(self):
@@ -44,11 +42,11 @@ class MedicalRecordAccess(BaseModel):
 
 class SharedRecord(BaseModel):
     SHARED_WITH_TYPE_CHOICES = [
-        ('provider', 'Provider'),
-        ('family_member', 'Family Member'),
-        ('employer', 'Employer'),
-        ('insurer', 'Insurer'),
-        ('other', 'Other'),
+        ("provider", "Provider"),
+        ("family_member", "Family Member"),
+        ("employer", "Employer"),
+        ("insurer", "Insurer"),
+        ("other", "Other"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -68,9 +66,9 @@ class SharedRecord(BaseModel):
     revoked_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_shared_records'
+        db_table = "cymed_portal_shared_records"
         indexes = [
-            models.Index(fields=['account_id', 'is_revoked']),
+            models.Index(fields=["account_id", "is_revoked"]),
         ]
 
     def __str__(self):
@@ -79,10 +77,10 @@ class SharedRecord(BaseModel):
 
 class RecordDownloadHistory(BaseModel):
     DOWNLOAD_FORMAT_CHOICES = [
-        ('pdf', 'PDF'),
-        ('json', 'JSON'),
-        ('fhir', 'FHIR'),
-        ('csv', 'CSV'),
+        ("pdf", "PDF"),
+        ("json", "JSON"),
+        ("fhir", "FHIR"),
+        ("csv", "CSV"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -91,16 +89,16 @@ class RecordDownloadHistory(BaseModel):
     record_id = models.UUIDField()
     record_title = models.CharField(max_length=255)
     download_format = models.CharField(
-        max_length=10, choices=DOWNLOAD_FORMAT_CHOICES, default='pdf'
+        max_length=10, choices=DOWNLOAD_FORMAT_CHOICES, default="pdf"
     )
     downloaded_at = models.DateTimeField(auto_now_add=True)
     file_size_bytes = models.PositiveBigIntegerField(default=0)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_download_history'
+        db_table = "cymed_portal_download_history"
         indexes = [
-            models.Index(fields=['account_id', 'downloaded_at']),
+            models.Index(fields=["account_id", "downloaded_at"]),
         ]
 
     def __str__(self):
@@ -109,20 +107,20 @@ class RecordDownloadHistory(BaseModel):
 
 class PatientDocument(BaseModel):
     DOCUMENT_TYPE_CHOICES = [
-        ('report', 'Report'),
-        ('prescription', 'Prescription'),
-        ('insurance_card', 'Insurance Card'),
-        ('id_document', 'ID Document'),
-        ('lab_result', 'Lab Result'),
-        ('imaging', 'Imaging'),
-        ('referral', 'Referral'),
-        ('discharge_summary', 'Discharge Summary'),
-        ('other', 'Other'),
+        ("report", "Report"),
+        ("prescription", "Prescription"),
+        ("insurance_card", "Insurance Card"),
+        ("id_document", "ID Document"),
+        ("lab_result", "Lab Result"),
+        ("imaging", "Imaging"),
+        ("referral", "Referral"),
+        ("discharge_summary", "Discharge Summary"),
+        ("other", "Other"),
     ]
     SOURCE_CHOICES = [
-        ('uploaded_by_patient', 'Uploaded by Patient'),
-        ('received_from_provider', 'Received from Provider'),
-        ('generated_by_system', 'Generated by System'),
+        ("uploaded_by_patient", "Uploaded by Patient"),
+        ("received_from_provider", "Received from Provider"),
+        ("generated_by_system", "Generated by System"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -135,17 +133,15 @@ class PatientDocument(BaseModel):
     file_size_bytes = models.PositiveBigIntegerField(default=0)
     file_type = models.CharField(max_length=50)
     document_date = models.DateField(null=True, blank=True)
-    source = models.CharField(
-        max_length=30, choices=SOURCE_CHOICES, default='uploaded_by_patient'
-    )
+    source = models.CharField(max_length=30, choices=SOURCE_CHOICES, default="uploaded_by_patient")
     provider_name = models.CharField(max_length=255, blank=True)
     is_shared = models.BooleanField(default=False)
     tags = models.JSONField(default=list)
 
     class Meta:
-        db_table = 'cymed_portal_patient_documents'
+        db_table = "cymed_portal_patient_documents"
         indexes = [
-            models.Index(fields=['account_id', 'document_type']),
+            models.Index(fields=["account_id", "document_type"]),
         ]
 
     def __str__(self):

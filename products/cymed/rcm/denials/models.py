@@ -1,5 +1,5 @@
-﻿import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -20,9 +20,7 @@ class DenialReason(BaseModel):
     description = models.CharField(max_length=500)
     category = models.CharField(max_length=30, choices=CATEGORY_CHOICES)
     common_resolution = models.TextField(blank=True)
-    appeal_success_rate = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True
-    )
+    appeal_success_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -97,9 +95,7 @@ class Appeal(BaseModel):
         ("withdrawn", "Withdrawn"),
     ]
 
-    denial = models.ForeignKey(
-        Denial, on_delete=models.PROTECT, related_name="appeals"
-    )
+    denial = models.ForeignKey(Denial, on_delete=models.PROTECT, related_name="appeals")
     appeal_level = models.PositiveSmallIntegerField(default=1)
     appeal_date = models.DateField()
     submitted_by_user_id = models.UUIDField()
@@ -126,14 +122,10 @@ class AppealOutcome(BaseModel):
         ("withdrawn", "Withdrawn"),
     ]
 
-    appeal = models.OneToOneField(
-        Appeal, on_delete=models.CASCADE, related_name="outcome"
-    )
+    appeal = models.OneToOneField(Appeal, on_delete=models.CASCADE, related_name="outcome")
     outcome_date = models.DateField()
     outcome = models.CharField(max_length=30, choices=OUTCOME_CHOICES)
-    recovered_amount = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0
-    )
+    recovered_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     outcome_notes = models.TextField(blank=True)
     payer_reference = models.CharField(max_length=200, blank=True)
 
@@ -162,17 +154,13 @@ class CorrectiveAction(BaseModel):
         ("cancelled", "Cancelled"),
     ]
 
-    denial = models.ForeignKey(
-        Denial, on_delete=models.CASCADE, related_name="corrective_actions"
-    )
+    denial = models.ForeignKey(Denial, on_delete=models.CASCADE, related_name="corrective_actions")
     action_type = models.CharField(max_length=30, choices=ACTION_TYPE_CHOICES)
     description = models.TextField()
     assigned_to_user_id = models.UUIDField()
     due_date = models.DateField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="pending"
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
 
     class Meta:
         db_table = "cymed_rcm_denial_corrective_actions"

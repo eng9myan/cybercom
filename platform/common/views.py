@@ -1,8 +1,10 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from platform.common.security.vault import VaultClient
+
 from platform.common.security.opa import OPAPolicyEngine
+from platform.common.security.vault import VaultClient
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -46,6 +48,6 @@ def platform_dashboard_metrics(request):
             "kafka_messages_backlog": 0,
             "system_cpu_utilization": "14.2%",
             "active_kubernetes_nodes": 6,
-        }
+        },
     }
     return Response(metrics)

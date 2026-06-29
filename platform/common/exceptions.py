@@ -2,8 +2,9 @@
 Standardized exception classes for CyberCom platform. ADR-0003 (API strategy).
 All exceptions serialize to RFC 7807 Problem Detail format.
 """
-from rest_framework.exceptions import APIException
+
 from rest_framework import status
+from rest_framework.exceptions import APIException
 
 
 class CyberComAPIException(APIException):

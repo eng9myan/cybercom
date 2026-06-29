@@ -1,7 +1,12 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    PartnerViewSet, PartnerApplicationViewSet, PartnerCertificationViewSet,
-    LeadRegistrationViewSet, MarketplaceExtensionViewSet, PartnerPortalAccessViewSet,
+    LeadRegistrationViewSet,
+    MarketplaceExtensionViewSet,
+    PartnerApplicationViewSet,
+    PartnerCertificationViewSet,
+    PartnerPortalAccessViewSet,
+    PartnerViewSet,
 )
 
 router = DefaultRouter()

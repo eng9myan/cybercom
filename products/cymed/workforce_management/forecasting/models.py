@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 FORECAST_STATUS_CHOICES = [
     ("pending", "Pending"),

@@ -1,11 +1,26 @@
 from rest_framework import serializers
-from products.cymed.hospital.icu.models import ICUStay, ICURound, ICUAssessment, VentilatorRecord, CriticalEvent
+
 from platform.events.models import OutboxEvent
+from products.cymed.hospital.icu.models import (
+    CriticalEvent,
+    ICUAssessment,
+    ICURound,
+    ICUStay,
+    VentilatorRecord,
+)
+
 
 class ICUStaySerializer(serializers.ModelSerializer):
     class Meta:
         model = ICUStay
-        fields = ["id", "stay", "icu_admitted_at", "icu_released_at", "ventilator_status", "invasive_lines_count"]
+        fields = [
+            "id",
+            "stay",
+            "icu_admitted_at",
+            "icu_released_at",
+            "ventilator_status",
+            "invasive_lines_count",
+        ]
         read_only_fields = ["icu_admitted_at"]
 
     def create(self, validated_data):
@@ -22,16 +37,18 @@ class ICUStaySerializer(serializers.ModelSerializer):
                 "charge_type": "icu_room",
                 "amount": 1200.00,
                 "currency": "AED",
-                "service_code": "ICU-RM-01"
-            }
+                "service_code": "ICU-RM-01",
+            },
         )
 
         return icu_stay
+
 
 class ICURoundSerializer(serializers.ModelSerializer):
     class Meta:
         model = ICURound
         fields = "__all__"
+
 
 class ICUAssessmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -52,11 +69,12 @@ class ICUAssessmentSerializer(serializers.ModelSerializer):
                     "icu_stay_id": str(assess.icu_stay.id),
                     "patient_id": str(assess.icu_stay.stay.admission.encounter.patient.id),
                     "alert_type": "high_sofa_score",
-                    "description": f"Critical organ failure alert. SOFA Score: {assess.sofa_score}"
-                }
+                    "description": f"Critical organ failure alert. SOFA Score: {assess.sofa_score}",
+                },
             )
 
         return assess
+
 
 class VentilatorRecordSerializer(serializers.ModelSerializer):
     class Meta:
@@ -78,8 +96,8 @@ class VentilatorRecordSerializer(serializers.ModelSerializer):
                     "icu_stay_id": str(vent.icu_stay.id),
                     "patient_id": str(vent.icu_stay.stay.admission.encounter.patient.id),
                     "alert_type": "critical_ventilator_settings",
-                    "description": f"Attending critical ventilator FiO2 levels: {vent.fio2_pct}%"
-                }
+                    "description": f"Attending critical ventilator FiO2 levels: {vent.fio2_pct}%",
+                },
             )
 
         # Trigger Ventilator Charge Event
@@ -92,11 +110,12 @@ class VentilatorRecordSerializer(serializers.ModelSerializer):
                 "charge_type": "ventilator_use",
                 "amount": 450.00,
                 "currency": "AED",
-                "service_code": "ICU-VENT-02"
-            }
+                "service_code": "ICU-VENT-02",
+            },
         )
 
         return vent
+
 
 class CriticalEventSerializer(serializers.ModelSerializer):
     class Meta:
@@ -117,8 +136,8 @@ class CriticalEventSerializer(serializers.ModelSerializer):
                 "icu_stay_id": str(evt.icu_stay.id),
                 "patient_id": str(evt.icu_stay.stay.admission.encounter.patient.id),
                 "alert_type": f"critical_event_{evt.event_type}",
-                "description": f"Critical Event: {evt.details}"
-            }
+                "description": f"Critical Event: {evt.details}",
+            },
         )
 
         return evt

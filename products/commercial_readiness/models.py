@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel, PlatformModel
 
+from platform.common.models import BaseModel, PlatformModel
 
 PLAN_TYPE_CHOICES = [
     ("per_user", "Per User"),
@@ -195,7 +195,7 @@ class CompetitiveBenchmark(BaseModel):
 # Program 6 – Commercial Platform Models
 # ============================================================
 
-from django.utils import timezone as tz
+from django.utils import timezone as tz  # noqa: E402
 
 LICENSE_TYPE_CHOICES = [
     ("perpetual", "Perpetual"),
@@ -242,7 +242,9 @@ EDITION_CODE_CHOICES = [
 
 
 class License(BaseModel):
-    license_type = models.CharField(max_length=20, choices=LICENSE_TYPE_CHOICES, default="subscription")
+    license_type = models.CharField(
+        max_length=20, choices=LICENSE_TYPE_CHOICES, default="subscription"
+    )
     license_scope = models.CharField(max_length=20, choices=LICENSE_SCOPE_CHOICES, default="tenant")
     status = models.CharField(max_length=20, choices=LICENSE_STATUS_CHOICES, default="pending")
     product_code = models.CharField(max_length=50, db_index=True)
@@ -263,7 +265,9 @@ class License(BaseModel):
     activated_at = models.DateTimeField(null=True, blank=True)
     last_checked_at = models.DateTimeField(null=True, blank=True)
     auto_renew = models.BooleanField(default=False)
-    parent_license = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="sub_licenses")
+    parent_license = models.ForeignKey(
+        "self", on_delete=models.CASCADE, null=True, blank=True, related_name="sub_licenses"
+    )
     notes = models.TextField(blank=True)
 
     class Meta:
@@ -286,6 +290,7 @@ class License(BaseModel):
     def generate_offline_token(self):
         import hashlib
         import json
+
         payload = {
             "license_key": self.license_key,
             "product_code": self.product_code,
@@ -302,8 +307,12 @@ class License(BaseModel):
 class Subscription(BaseModel):
     license = models.OneToOneField(License, on_delete=models.CASCADE, related_name="subscription")
     plan = models.ForeignKey(PricingPlan, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(max_length=20, choices=SUBSCRIPTION_STATUS_CHOICES, default="trialing")
-    billing_cycle = models.CharField(max_length=20, choices=BILLING_CYCLE_CHOICES, default="monthly")
+    status = models.CharField(
+        max_length=20, choices=SUBSCRIPTION_STATUS_CHOICES, default="trialing"
+    )
+    billing_cycle = models.CharField(
+        max_length=20, choices=BILLING_CYCLE_CHOICES, default="monthly"
+    )
     amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     currency = models.CharField(max_length=10, default="USD")
     current_period_start = models.DateField()
@@ -396,7 +405,9 @@ class WhiteLabelConfig(BaseModel):
 
 
 class ConcurrentLicenseSession(BaseModel):
-    license = models.ForeignKey(License, on_delete=models.CASCADE, related_name="concurrent_sessions")
+    license = models.ForeignKey(
+        License, on_delete=models.CASCADE, related_name="concurrent_sessions"
+    )
     user_id = models.UUIDField(db_index=True)
     device_fingerprint = models.CharField(max_length=200, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
@@ -493,7 +504,12 @@ class MarketplaceListing(PlatformModel):
     documentation_url = models.URLField(blank=True)
     price_model = models.CharField(
         max_length=20,
-        choices=[("free", "Free"), ("one_time", "One Time"), ("subscription", "Subscription"), ("usage", "Usage Based")],
+        choices=[
+            ("free", "Free"),
+            ("one_time", "One Time"),
+            ("subscription", "Subscription"),
+            ("usage", "Usage Based"),
+        ],
         default="free",
     )
     price_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -517,7 +533,9 @@ class MarketplaceListing(PlatformModel):
 
 
 class MarketplaceInstallation(BaseModel):
-    listing = models.ForeignKey(MarketplaceListing, on_delete=models.CASCADE, related_name="installations")
+    listing = models.ForeignKey(
+        MarketplaceListing, on_delete=models.CASCADE, related_name="installations"
+    )
     installed_by_id = models.UUIDField()
     installed_version = models.CharField(max_length=20, blank=True)
     is_active = models.BooleanField(default=True)

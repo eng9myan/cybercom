@@ -2,6 +2,7 @@
 Feature-flag middleware: attaches enabled feature codes to request.enabled_features
 so any view can call request.feature_enabled("FLAG_CODE") without extra DB hits.
 """
+
 from django.core.cache import cache
 
 
@@ -26,15 +27,18 @@ class FeatureFlagMiddleware:
         if cached is not None:
             return cached
         try:
-            from products.cymed.commercial.feature_flags.models import TenantFeature, FeatureFlag
+            from products.cymed.commercial.feature_flags.models import FeatureFlag, TenantFeature
+
             # Start with globally-default-enabled flags
             enabled = set(
                 FeatureFlag.objects.filter(default_enabled=True).values_list("code", flat=True)
             )
             # Apply tenant overrides
-            overrides = TenantFeature.objects.filter(
-                tenant_id=tenant_id
-            ).select_related("feature").values_list("feature__code", "is_enabled")
+            overrides = (
+                TenantFeature.objects.filter(tenant_id=tenant_id)
+                .select_related("feature")
+                .values_list("feature__code", "is_enabled")
+            )
             for code, is_on in overrides:
                 if is_on:
                     enabled.add(code)

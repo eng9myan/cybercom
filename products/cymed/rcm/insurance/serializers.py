@@ -1,12 +1,13 @@
-﻿from rest_framework import serializers
+from rest_framework import serializers
+
 from .models import (
-    InsuranceCompany,
-    InsurancePlan,
-    InsuranceMember,
-    Coverage,
     Benefit,
+    Coverage,
     CoverageRule,
     InsuranceCard,
+    InsuranceCompany,
+    InsuranceMember,
+    InsurancePlan,
 )
 
 
@@ -26,6 +27,7 @@ class InsurancePlanSerializer(serializers.ModelSerializer):
 
 class InsurancePlanNestedSerializer(serializers.ModelSerializer):
     """Lightweight nested representation of InsurancePlan."""
+
     company_name = serializers.CharField(source="company.name", read_only=True)
 
     class Meta:

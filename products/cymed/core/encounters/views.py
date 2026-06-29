@@ -1,12 +1,13 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
+from platform.events.models import OutboxEvent
 from products.cymed.core.encounters.models import Encounter, EpisodeOfCare
 from products.cymed.core.encounters.serializers import EncounterSerializer, EpisodeOfCareSerializer
-from platform.events.models import OutboxEvent
+
 
 class EncounterViewSet(viewsets.ModelViewSet):
     queryset = Encounter.objects.all()
@@ -32,7 +33,7 @@ class EncounterViewSet(viewsets.ModelViewSet):
             tenant_id=enc.tenant_id,
             topic="cymed.encounter.events",
             event_type="cymed.encounter.started",
-            payload={"encounter_id": str(enc.id), "started_at": enc.start_time.isoformat()}
+            payload={"encounter_id": str(enc.id), "started_at": enc.start_time.isoformat()},
         )
 
         return Response({"status": enc.status, "start_time": enc.start_time})
@@ -50,7 +51,7 @@ class EncounterViewSet(viewsets.ModelViewSet):
             tenant_id=enc.tenant_id,
             topic="cymed.encounter.events",
             event_type="cymed.encounter.closed",
-            payload={"encounter_id": str(enc.id), "closed_at": enc.end_time.isoformat()}
+            payload={"encounter_id": str(enc.id), "closed_at": enc.end_time.isoformat()},
         )
 
         return Response({"status": enc.status, "end_time": enc.end_time})

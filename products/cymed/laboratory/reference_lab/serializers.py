@@ -1,5 +1,7 @@
-﻿from rest_framework import serializers
-from .models import ReferenceLab, ReferenceLabRouting, ReferenceLabOrder, ReferenceLabResult
+from rest_framework import serializers
+
+from .models import ReferenceLab, ReferenceLabOrder, ReferenceLabResult, ReferenceLabRouting
+
 
 class ReferenceLabSerializer(serializers.ModelSerializer):
     class Meta:
@@ -7,17 +9,20 @@ class ReferenceLabSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
 
+
 class ReferenceLabRoutingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReferenceLabRouting
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
 
+
 class ReferenceLabOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReferenceLabOrder
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
 
 class ReferenceLabResultSerializer(serializers.ModelSerializer):
     class Meta:

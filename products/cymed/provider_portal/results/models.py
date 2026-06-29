@@ -1,4 +1,5 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -57,8 +58,12 @@ class ResultTrend(BaseModel):
     loinc_code = models.CharField(max_length=50, blank=True)
     unit = models.CharField(max_length=50, blank=True)
     datapoints = models.JSONField(default=list)
-    reference_range_low = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
-    reference_range_high = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    reference_range_low = models.DecimalField(
+        max_digits=12, decimal_places=4, null=True, blank=True
+    )
+    reference_range_high = models.DecimalField(
+        max_digits=12, decimal_places=4, null=True, blank=True
+    )
 
     class Meta:
         db_table = "cymed_prov_result_trends"

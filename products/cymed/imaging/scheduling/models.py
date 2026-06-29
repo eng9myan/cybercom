@@ -1,4 +1,5 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 APPOINTMENT_STATUSES = [
@@ -35,16 +36,22 @@ class ImagingAppointment(BaseModel):
         app_label = "img_scheduling"
         db_table = "cymed_img_appointments"
 
-    order_item = models.OneToOneField("img_orders.ImagingOrderItem", on_delete=models.CASCADE, related_name="appointment")
+    order_item = models.OneToOneField(
+        "img_orders.ImagingOrderItem", on_delete=models.CASCADE, related_name="appointment"
+    )
     patient_id = models.UUIDField(db_index=True)
     modality = models.ForeignKey("img_worklist.Modality", on_delete=models.PROTECT)
     radiologist_id = models.UUIDField(null=True, blank=True)
     technologist_id = models.UUIDField(null=True, blank=True)
-    room = models.ForeignKey("img_scheduling.ImagingRoom", null=True, blank=True, on_delete=models.SET_NULL)
+    room = models.ForeignKey(
+        "img_scheduling.ImagingRoom", null=True, blank=True, on_delete=models.SET_NULL
+    )
     scheduled_start = models.DateTimeField(db_index=True)
     scheduled_end = models.DateTimeField()
     duration_minutes = models.PositiveIntegerField()
-    status = models.CharField(max_length=20, choices=APPOINTMENT_STATUSES, default="scheduled", db_index=True)
+    status = models.CharField(
+        max_length=20, choices=APPOINTMENT_STATUSES, default="scheduled", db_index=True
+    )
     patient_arrived_at = models.DateTimeField(null=True, blank=True)
     exam_started_at = models.DateTimeField(null=True, blank=True)
     exam_completed_at = models.DateTimeField(null=True, blank=True)
@@ -63,7 +70,9 @@ class ModalitySchedule(BaseModel):
         db_table = "cymed_img_modality_schedule"
         unique_together = [("modality", "schedule_date")]
 
-    modality = models.ForeignKey("img_worklist.Modality", on_delete=models.CASCADE, related_name="schedules")
+    modality = models.ForeignKey(
+        "img_worklist.Modality", on_delete=models.CASCADE, related_name="schedules"
+    )
     schedule_date = models.DateField(db_index=True)
     start_time = models.TimeField()
     end_time = models.TimeField()

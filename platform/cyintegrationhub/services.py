@@ -1,16 +1,22 @@
-import time
-import re
 import logging
-from typing import Any, Dict, List, Optional
+import re
+import time
+from typing import Any
+
 from django.utils import timezone
-from platform.cyintegrationhub.models import IntegrationPartner, TransformationMapping, MessageAuditLog
-from platform.events.publisher import KafkaEventPublisher
+
+from platform.cyintegrationhub.models import (
+    IntegrationPartner,
+    MessageAuditLog,
+    TransformationMapping,
+)
 
 logger = logging.getLogger("cybercom.integration")
 
 
 class CircuitBreakerOpenException(Exception):
     """Raised when the circuit breaker is open and requests are blocked."""
+
     pass
 
 
@@ -18,6 +24,7 @@ class CircuitBreaker:
     """
     A simple in-memory circuit breaker to prevent cascading failures.
     """
+
     def __init__(self, failure_threshold: int = 5, recovery_timeout: float = 30.0):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
@@ -34,7 +41,9 @@ class CircuitBreaker:
         if self.failure_count >= self.failure_threshold:
             self.state = "OPEN"
             self.last_state_change = time.time()
-            logger.warning(f"Circuit breaker tripped to OPEN state. Timeout: {self.recovery_timeout}s")
+            logger.warning(
+                f"Circuit breaker tripped to OPEN state. Timeout: {self.recovery_timeout}s"
+            )
 
     def allow_request(self) -> bool:
         if self.state == "CLOSED":
@@ -49,7 +58,8 @@ class CircuitBreaker:
 
 
 # In-memory registry of circuit breakers per partner name
-_BREAKER_REGISTRY: Dict[str, CircuitBreaker] = {}
+_BREAKER_REGISTRY: dict[str, CircuitBreaker] = {}
+
 
 def get_breaker(partner_name: str) -> CircuitBreaker:
     if partner_name not in _BREAKER_REGISTRY:
@@ -61,12 +71,15 @@ def resilient_call(partner_name: str, max_retries: int = 3, backoff_seconds: flo
     """
     Decorator/wrapper that enforces retries and circuit breaker policies on external requests.
     """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             breaker = get_breaker(partner_name)
             if not breaker.allow_request():
-                raise CircuitBreakerOpenException(f"Circuit breaker is OPEN for partner: {partner_name}")
-            
+                raise CircuitBreakerOpenException(
+                    f"Circuit breaker is OPEN for partner: {partner_name}"
+                )
+
             last_exception = None
             for attempt in range(1, max_retries + 1):
                 try:
@@ -76,15 +89,17 @@ def resilient_call(partner_name: str, max_retries: int = 3, backoff_seconds: flo
                 except Exception as exc:
                     last_exception = exc
                     logger.warning(
-                        f"Attempt {attempt} failed for partner '{partner_name}': {str(exc)}. Retrying..."
+                        f"Attempt {attempt} failed for partner '{partner_name}': {exc!s}. Retrying..."
                     )
                     if attempt < max_retries:
                         time.sleep(attempt * backoff_seconds)
-            
+
             # If all attempts failed
             breaker.record_failure()
             raise last_exception
+
         return wrapper
+
     return decorator
 
 
@@ -92,8 +107,9 @@ class TransformationEngine:
     """
     Transforms payloads from source formats (e.g. HL7v2 or SOAP XML) to standard JSON.
     """
+
     @classmethod
-    def transform(cls, data: str, source_format: str) -> Dict[str, Any]:
+    def transform(cls, data: str, source_format: str) -> dict[str, Any]:
         source_format = source_format.lower()
         if source_format == "hl7v2":
             parsed = cls._parse_hl7(data)
@@ -114,21 +130,21 @@ class TransformationEngine:
         return {"data": data}
 
     @classmethod
-    def _parse_hl7(cls, data: str) -> Dict[str, Any]:
+    def _parse_hl7(cls, data: str) -> dict[str, Any]:
         """
         Parses actual HL7 v2 segment payloads (split by \r or \n).
         """
         segments = re.split(r"[\r\n]+", data.strip())
-        parsed: Dict[str, Any] = {}
-        patient_info: Dict[str, Any] = {}
-        visit_info: Dict[str, Any] = {}
-        observations: List[Dict[str, Any]] = []
+        parsed: dict[str, Any] = {}
+        patient_info: dict[str, Any] = {}
+        visit_info: dict[str, Any] = {}
+        observations: list[dict[str, Any]] = []
 
         for seg in segments:
             parts = seg.split("|")
             if not parts or not parts[0]:
                 continue
-            
+
             seg_name = parts[0].upper()
             if seg_name == "MSH":
                 # Message Header
@@ -143,36 +159,42 @@ class TransformationEngine:
             elif seg_name == "PID":
                 # Patient Identification
                 patient_info["patient_id"] = parts[3].split("^")[0] if len(parts) > 3 else ""
-                
+
                 # Check PID-5 (index 5) or fallback to PID-4 (index 4) if index 5 is empty
                 name_idx = 5
                 if len(parts) > 5 and parts[5]:
                     name_idx = 5
                 elif len(parts) > 4 and parts[4]:
                     name_idx = 4
-                
+
                 if len(parts) > name_idx and parts[name_idx]:
                     name_parts = parts[name_idx].split("^")
                     patient_info["last_name"] = name_parts[0]
                     patient_info["first_name"] = name_parts[1] if len(name_parts) > 1 else ""
                     patient_info["middle_name"] = name_parts[2] if len(name_parts) > 2 else ""
-                
+
                 # Determine indices for other fields based on name index fallback
                 offset = 0 if name_idx == 5 else -1
-                
+
                 dob_idx = 7 + offset
                 gender_idx = 8 + offset
                 nat_idx = 19 + offset
-                
+
                 patient_info["dob"] = parts[dob_idx] if len(parts) > dob_idx else ""
                 patient_info["gender"] = parts[gender_idx] if len(parts) > gender_idx else ""
-                patient_info["national_id"] = parts[nat_idx].split("^")[0] if len(parts) > nat_idx else ""
+                patient_info["national_id"] = (
+                    parts[nat_idx].split("^")[0] if len(parts) > nat_idx else ""
+                )
 
             elif seg_name == "PV1":
                 # Patient Visit
                 visit_info["patient_class"] = parts[2] if len(parts) > 2 else ""
                 visit_info["assigned_location"] = parts[3] if len(parts) > 3 else ""
-                visit_info["attending_doctor"] = parts[7].split("^")[1] if len(parts) > 7 and "^" in parts[7] else (parts[7] if len(parts) > 7 else "")
+                visit_info["attending_doctor"] = (
+                    parts[7].split("^")[1]
+                    if len(parts) > 7 and "^" in parts[7]
+                    else (parts[7] if len(parts) > 7 else "")
+                )
                 # Encounter ID: prefer PV1-19 (index 19), fall back to PV1-18 (index 18),
                 # then scan backwards for last non-empty field after the attending physician field.
                 enc_id = ""
@@ -211,7 +233,7 @@ class TransformationEngine:
         return parsed
 
     @classmethod
-    def _parse_xml(cls, data: str) -> Dict[str, Any]:
+    def _parse_xml(cls, data: str) -> dict[str, Any]:
         """
         Parses basic XML structures dynamically.
         """
@@ -228,8 +250,11 @@ class MappingEngine:
     """
     Applies schema rules to map source dicts to standard target schemas.
     """
+
     @classmethod
-    def map_fields(cls, source_data: Dict[str, Any], mapping: TransformationMapping) -> Dict[str, Any]:
+    def map_fields(
+        cls, source_data: dict[str, Any], mapping: TransformationMapping
+    ) -> dict[str, Any]:
         rules = mapping.mapping_rules
         target_data = {}
         for source_key, target_key in rules.items():
@@ -242,16 +267,20 @@ class RoutingEngine:
     """
     Routes transformed and mapped messages to events or target destinations.
     """
+
     @classmethod
-    def route_message(cls, tenant_id: str, topic: str, event_type: str, payload: Dict[str, Any]) -> bool:
+    def route_message(
+        cls, tenant_id: str, topic: str, event_type: str, payload: dict[str, Any]
+    ) -> bool:
         from platform.events.models import OutboxEvent
+
         try:
             OutboxEvent.objects.create(
                 tenant_id=tenant_id,
                 topic=topic,
                 event_type=event_type,
                 payload=payload,
-                status="pending"
+                status="pending",
             )
             return True
         except Exception:
@@ -263,6 +292,7 @@ class ConnectorFramework:
     Executes connections to external systems (FHIR, HL7, LDAP, SOAP, Keycloak, SMTP, etc.)
     and records execution logs.
     """
+
     @classmethod
     def execute_connector(
         cls,
@@ -270,8 +300,8 @@ class ConnectorFramework:
         partner: IntegrationPartner,
         connector_type: str,
         action: str,
-        payload: Any
-    ) -> Dict[str, Any]:
+        payload: Any,
+    ) -> dict[str, Any]:
         start_time = time.monotonic()
         status = "success"
         error_msg = ""
@@ -283,25 +313,25 @@ class ConnectorFramework:
             conn_type = connector_type.lower()
             if conn_type == "fhir":
                 return {"fhir_status": "synced", "records_found": 12, "resource": "Patient"}
-            
+
             elif conn_type == "hl7v2":
                 transformed = TransformationEngine.transform(payload, "hl7v2")
                 return {"hl7_status": "processed", "data": transformed}
-            
+
             elif conn_type == "dicom":
                 metadata = cls.parse_dicom_metadata(payload)
                 return {"dicom_status": "archived", **metadata}
-            
+
             elif conn_type in ("ldap", "active_directory"):
                 return {"ldap_status": "authenticated", "dn": "uid=admin,ou=users,dc=cybercom"}
-            
+
             elif conn_type == "smtp":
                 return {"smtp_status": "delivered", "message_id": "<mail.123@cybercom.io>"}
-            
+
             elif conn_type == "soap":
                 transformed = TransformationEngine.transform(payload, "xml")
                 return {"soap_status": "response_received", "data": transformed}
-            
+
             else:
                 return {"status": "default_processed", "payload": payload}
 
@@ -313,7 +343,7 @@ class ConnectorFramework:
             result = {"error": error_msg}
 
         elapsed_ms = int((time.monotonic() - start_time) * 1000)
-        
+
         # Log delivery/execution details to MessageAuditLog
         MessageAuditLog.objects.create(
             tenant_id=tenant_id,
@@ -323,22 +353,22 @@ class ConnectorFramework:
             payload_size_bytes=len(str(payload)),
             status=status,
             error_message=error_msg,
-            duration_ms=elapsed_ms
+            duration_ms=elapsed_ms,
         )
 
         return result
 
     @classmethod
-    def parse_dicom_metadata(cls, payload: Any) -> Dict[str, Any]:
+    def parse_dicom_metadata(cls, payload: Any) -> dict[str, Any]:
         """
         Parses binary bytes or string representing DICOM files to extract tags (SOP Instance, Patient Name).
         """
         metadata = {
             "sop_instance_uid": "1.2.840.10008.5.1.4.1.1.2",
             "patient_name": "Unknown Patient",
-            "study_date": timezone.now().date().isoformat()
+            "study_date": timezone.now().date().isoformat(),
         }
-        
+
         if isinstance(payload, bytes):
             if len(payload) > 132 and payload[128:132] == b"DICM":
                 metadata["patient_name"] = "John Doe"
@@ -348,5 +378,5 @@ class ConnectorFramework:
                 metadata["sop_instance_uid"] = "1.2.840.10008.5.1.4.1.1.2.888"
             if "PatientName" in payload:
                 metadata["patient_name"] = "Jane Smith"
-        
+
         return metadata

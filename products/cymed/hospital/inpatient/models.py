@@ -1,6 +1,8 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 from products.cymed.hospital.adt.models import Admission
+
 
 class HospitalStay(BaseModel):
     admission = models.OneToOneField(Admission, on_delete=models.CASCADE, related_name="stay")
@@ -10,6 +12,7 @@ class HospitalStay(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_stays"
+
 
 class DailyRound(BaseModel):
     stay = models.ForeignKey(HospitalStay, on_delete=models.CASCADE, related_name="rounds")
@@ -23,6 +26,7 @@ class DailyRound(BaseModel):
     class Meta:
         db_table = "cymed_hospital_daily_rounds"
 
+
 class ProgressReview(BaseModel):
     stay = models.ForeignKey(HospitalStay, on_delete=models.CASCADE)
     reviewed_at = models.DateTimeField(auto_now_add=True)
@@ -31,6 +35,7 @@ class ProgressReview(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_progress_reviews"
+
 
 class InpatientCarePlan(BaseModel):
     stay = models.ForeignKey(HospitalStay, on_delete=models.CASCADE)
@@ -41,8 +46,11 @@ class InpatientCarePlan(BaseModel):
     class Meta:
         db_table = "cymed_hospital_inpatient_careplans"
 
+
 class DischargePlanning(BaseModel):
-    stay = models.OneToOneField(HospitalStay, on_delete=models.CASCADE, related_name="discharge_plan")
+    stay = models.OneToOneField(
+        HospitalStay, on_delete=models.CASCADE, related_name="discharge_plan"
+    )
     target_discharge_date = models.DateField()
     barriers_to_discharge = models.TextField(blank=True)
     is_cleared = models.BooleanField(default=False)

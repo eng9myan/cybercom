@@ -1,19 +1,19 @@
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework import viewsets
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.permissions import IsAuthenticated
 
 from products.cymed.provider_portal.results.models import (
-    ProviderResultView,
-    ResultTrend,
     CriticalResultAlert,
+    ProviderResultView,
     ResultAcknowledgement,
+    ResultTrend,
 )
 from products.cymed.provider_portal.results.serializers import (
-    ProviderResultViewSerializer,
-    ResultTrendSerializer,
     CriticalResultAlertSerializer,
+    ProviderResultViewSerializer,
     ResultAcknowledgementSerializer,
+    ResultTrendSerializer,
 )
 
 
@@ -23,8 +23,13 @@ class ProviderResultViewViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = [
-        "patient_id", "result_type", "result_status", "is_critical",
-        "is_reviewed", "is_acknowledged", "ordering_provider_id",
+        "patient_id",
+        "result_type",
+        "result_status",
+        "is_critical",
+        "is_reviewed",
+        "is_acknowledged",
+        "ordering_provider_id",
     ]
     search_fields = ["result_name", "loinc_code", "result_summary", "fhir_diagnostic_report_id"]
     ordering_fields = ["result_date", "created_at"]
@@ -60,7 +65,12 @@ class CriticalResultAlertViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ["result", "patient_id", "alerted_provider_id", "alert_type", "status"]
-    search_fields = ["alerted_provider_name", "result_value", "clinical_significance", "action_taken"]
+    search_fields = [
+        "alerted_provider_name",
+        "result_value",
+        "clinical_significance",
+        "action_taken",
+    ]
     ordering_fields = ["created_at"]
     ordering = ["-created_at"]
 

@@ -1,11 +1,18 @@
-from products.cymed.commercial.views import CommercialModelViewSet
 from products.cymed.commercial.branding.models import (
-    Brand, BrandTheme, BrandAsset, BrandDomain, BrandLocalization
+    Brand,
+    BrandAsset,
+    BrandDomain,
+    BrandLocalization,
+    BrandTheme,
 )
 from products.cymed.commercial.branding.serializers import (
-    BrandSerializer, BrandThemeSerializer, BrandAssetSerializer,
-    BrandDomainSerializer, BrandLocalizationSerializer
+    BrandAssetSerializer,
+    BrandDomainSerializer,
+    BrandLocalizationSerializer,
+    BrandSerializer,
+    BrandThemeSerializer,
 )
+from products.cymed.commercial.views import CommercialModelViewSet
 
 
 class BrandViewSet(CommercialModelViewSet):

@@ -1,8 +1,13 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.hospital.nursing.views import (
-    NursingShiftViewSet, NursingAssignmentViewSet, NursingAssessmentViewSet,
-    NursingCarePlanViewSet, NursingTaskViewSet, NursingHandoverViewSet
+    NursingAssessmentViewSet,
+    NursingAssignmentViewSet,
+    NursingCarePlanViewSet,
+    NursingHandoverViewSet,
+    NursingShiftViewSet,
+    NursingTaskViewSet,
 )
 
 router = DefaultRouter()

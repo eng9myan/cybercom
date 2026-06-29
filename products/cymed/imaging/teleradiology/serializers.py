@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import ReadingQueue, TeleradiologyCase, ReadingAssignment, SecondOpinion
+
+from .models import ReadingAssignment, ReadingQueue, SecondOpinion, TeleradiologyCase
 
 
 class ReadingQueueSerializer(serializers.ModelSerializer):

@@ -1,7 +1,9 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+
 from products.cymed.core.organizations.models import Organization
 from products.cymed.core.organizations.serializers import OrganizationSerializer
+
 
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.filter(is_active=True)

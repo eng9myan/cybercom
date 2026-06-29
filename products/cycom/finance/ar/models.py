@@ -1,4 +1,5 @@
-﻿from django.db import models
+from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -28,9 +29,7 @@ class Invoice(BaseModel):
         ("cancelled", "Cancelled"),
     ]
 
-    customer = models.ForeignKey(
-        Customer, on_delete=models.PROTECT, related_name="invoices"
-    )
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name="invoices")
     invoice_number = models.CharField(max_length=50)
     invoice_date = models.DateField()
     due_date = models.DateField()
@@ -49,9 +48,7 @@ class Invoice(BaseModel):
 
 
 class InvoiceLine(BaseModel):
-    invoice = models.ForeignKey(
-        Invoice, on_delete=models.CASCADE, related_name="lines"
-    )
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="lines")
     description = models.CharField(max_length=500)
     quantity = models.DecimalField(max_digits=10, decimal_places=3, default=1)
     unit_price = models.DecimalField(max_digits=18, decimal_places=2)
@@ -74,9 +71,7 @@ class Payment(BaseModel):
         ("wallet", "Wallet"),
     ]
 
-    customer = models.ForeignKey(
-        Customer, on_delete=models.PROTECT, related_name="payments"
-    )
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name="payments")
     invoice = models.ForeignKey(
         Invoice,
         null=True,
@@ -106,9 +101,7 @@ class ARAgingBucket(BaseModel):
         ("90+", "90+ Days"),
     ]
 
-    customer = models.ForeignKey(
-        Customer, on_delete=models.PROTECT, related_name="aging_buckets"
-    )
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name="aging_buckets")
     bucket_label = models.CharField(max_length=10, choices=BUCKET_CHOICES)
     amount = models.DecimalField(max_digits=18, decimal_places=2, default=0)
 

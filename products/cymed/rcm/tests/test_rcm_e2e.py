@@ -1,23 +1,23 @@
 import uuid
+
 import pytest
 from django.utils import timezone
-from django.db import transaction
 
-from products.cymed.core.patients.models import Patient
 from products.cymed.core.encounters.models import Encounter
+from products.cymed.core.facilities.models import Facility
 from products.cymed.core.organizations.models import Organization
-from products.cymed.core.facilities.models import Facility, Department, Ward, Room, Bed
-
-from products.cymed.rcm.billing.models import PatientAccount, EncounterBilling, Invoice, InvoiceLine
-from products.cymed.rcm.claims.models import Claim, ClaimLine, ClaimSubmission, ClaimResponse
-from products.cymed.rcm.denials.models import Denial, DenialReason, Appeal, AppealOutcome
-from products.cymed.rcm.eligibility.models import EligibilityRequest, EligibilityResponse
-from products.cymed.rcm.preauthorization.models import Preauthorization
-from products.cymed.rcm.insurance.models import InsuranceCompany, InsurancePlan, InsuranceMember
-from platform.events.models import OutboxEvent
-
+from products.cymed.core.patients.models import Patient
+from products.cymed.rcm.billing.models import PatientAccount
+from products.cymed.rcm.denials.models import Denial
+from products.cymed.rcm.insurance.models import InsuranceCompany, InsuranceMember, InsurancePlan
 from products.cymed.rcm.services import (
-    EligibilityService, BillingService, ClaimsService, PreAuthService, DenialService, CollectionService, RevenueAnalyticsService
+    BillingService,
+    ClaimsService,
+    CollectionService,
+    DenialService,
+    EligibilityService,
+    PreAuthService,
+    RevenueAnalyticsService,
 )
 
 
@@ -35,22 +35,45 @@ def setup_rcm_base_data(test_tenant_id):
         tenant_id=test_tenant_id, organization=org, name="Main Hospital Facility", code="MAIN-HOSP"
     )
     patient = Patient.objects.create(
-        tenant_id=test_tenant_id, first_name="Mariam", last_name="Al-Rashid", dob="1990-08-20", mrn="MRN-RCM-001"
+        tenant_id=test_tenant_id,
+        first_name="Mariam",
+        last_name="Al-Rashid",
+        dob="1990-08-20",
+        mrn="MRN-RCM-001",
     )
     encounter = Encounter.objects.create(
-        tenant_id=test_tenant_id, patient=patient, encounter_type="inpatient",
-        status="in_progress", organization=org, facility=facility
+        tenant_id=test_tenant_id,
+        patient=patient,
+        encounter_type="inpatient",
+        status="in_progress",
+        organization=org,
+        facility=facility,
     )
-    
+
     # Create Payer and Plan
     company = InsuranceCompany.objects.create(
-        tenant_id=test_tenant_id, name="Bupa Arabia", short_name="Bupa", payer_id="PAYER-BUPA", company_type="private"
+        tenant_id=test_tenant_id,
+        name="Bupa Arabia",
+        short_name="Bupa",
+        payer_id="PAYER-BUPA",
+        company_type="private",
     )
     plan = InsurancePlan.objects.create(
-        tenant_id=test_tenant_id, company=company, plan_name="Premium Corporate", plan_code="BUPA-PREM", plan_type="corporate", network_type="in_network", coverage_category="premium"
+        tenant_id=test_tenant_id,
+        company=company,
+        plan_name="Premium Corporate",
+        plan_code="BUPA-PREM",
+        plan_type="corporate",
+        network_type="in_network",
+        coverage_category="premium",
     )
     member = InsuranceMember.objects.create(
-        tenant_id=test_tenant_id, patient_id=patient.id, insurance_plan=plan, member_id="MEM-84729", member_relationship="self", effective_date=timezone.now().date()
+        tenant_id=test_tenant_id,
+        patient_id=patient.id,
+        insurance_plan=plan,
+        member_id="MEM-84729",
+        member_relationship="self",
+        effective_date=timezone.now().date(),
     )
 
     # Link primary member ID
@@ -60,7 +83,7 @@ def setup_rcm_base_data(test_tenant_id):
         patient_id=patient.id,
         account_number=acc_num,
         primary_insurance_member_id=member.id,
-        account_status="active"
+        account_status="active",
     )
 
     return {
@@ -77,7 +100,6 @@ def setup_rcm_base_data(test_tenant_id):
 
 @pytest.mark.django_db
 class TestRCMEndToEndWorkflow:
-
     def test_full_revenue_cycle_encounter_to_payment(self, test_tenant_id, setup_rcm_base_data):
         patient = setup_rcm_base_data["patient"]
         encounter = setup_rcm_base_data["encounter"]
@@ -152,7 +174,9 @@ class TestRCMEndToEndWorkflow:
         assert remit_res["denied_amount"] > 0
 
         # Verify denial was created
-        denial = Denial.objects.filter(claim_id=claim_res["claim_id"], tenant_id=test_tenant_id).first()
+        denial = Denial.objects.filter(
+            claim_id=claim_res["claim_id"], tenant_id=test_tenant_id
+        ).first()
         assert denial is not None
         assert denial.status == "open"
 
@@ -253,7 +277,7 @@ class TestRCMEndToEndWorkflow:
             case_id=case["case_id"],
             action_type="phone_call",
             performed_by=str(uuid.uuid4()),
-            notes="Called patient, left voicemail."
+            notes="Called patient, left voicemail.",
         )
         assert act["action_id"] is not None
 

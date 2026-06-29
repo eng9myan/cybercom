@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import FloatPoolMember, FloatDeployment, AgencyStaffRegistration, StaffingShortageAlert
+
+from .models import AgencyStaffRegistration, FloatDeployment, FloatPoolMember, StaffingShortageAlert
 
 
 class FloatPoolMemberSerializer(serializers.ModelSerializer):

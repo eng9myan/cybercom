@@ -1,5 +1,11 @@
 from rest_framework.routers import DefaultRouter
-from .views import ReadingQueueViewSet, TeleradiologyCaseViewSet, ReadingAssignmentViewSet, SecondOpinionViewSet
+
+from .views import (
+    ReadingAssignmentViewSet,
+    ReadingQueueViewSet,
+    SecondOpinionViewSet,
+    TeleradiologyCaseViewSet,
+)
 
 router = DefaultRouter()
 router.register("queues", ReadingQueueViewSet, basename="reading-queue")

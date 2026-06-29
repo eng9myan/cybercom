@@ -1,12 +1,27 @@
 """
 Audit & Compliance DRF serializers.
 """
+
 from rest_framework import serializers
+
 from .models import (
-    AuditArchive, AuditCategory, AuditChain, AuditEntry, AuditEvent, AuditExport,
-    AuditLog, AuditRetentionPolicy, AuditSignature,
-    ComplianceAssessment, ComplianceProfile, ComplianceReport, ComplianceRule, ComplianceViolation,
-    EvidencePackage, EvidenceRecord, LegalHold,
+    AuditArchive,
+    AuditCategory,
+    AuditChain,
+    AuditEntry,
+    AuditEvent,
+    AuditExport,
+    AuditLog,
+    AuditRetentionPolicy,
+    AuditSignature,
+    ComplianceAssessment,
+    ComplianceProfile,
+    ComplianceReport,
+    ComplianceRule,
+    ComplianceViolation,
+    EvidencePackage,
+    EvidenceRecord,
+    LegalHold,
 )
 
 
@@ -156,7 +171,14 @@ class EvidencePackageSerializer(serializers.ModelSerializer):
     class Meta:
         model = EvidencePackage
         fields = "__all__"
-        read_only_fields = ["is_sealed", "sealed_at", "sealed_by", "package_hash", "created_at", "updated_at"]
+        read_only_fields = [
+            "is_sealed",
+            "sealed_at",
+            "sealed_by",
+            "package_hash",
+            "created_at",
+            "updated_at",
+        ]
 
     def get_record_count(self, obj) -> int:
         return obj.records.count()

@@ -5,70 +5,77 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_portal_laboratory_results', '0001_initial'),
+        ("cymed_portal_laboratory_results", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='criticalresultacknowledgement',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="criticalresultacknowledgement",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='criticalresultacknowledgement',
-            name='tenant_id',
+            model_name="criticalresultacknowledgement",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='criticalresultacknowledgement',
-            name='updated_at',
+            model_name="criticalresultacknowledgement",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='labresultsharelink',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="labresultsharelink",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='labresultsharelink',
-            name='tenant_id',
+            model_name="labresultsharelink",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='labresultsharelink',
-            name='updated_at',
+            model_name="labresultsharelink",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='labresulttrend',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="labresulttrend",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='labresulttrend',
-            name='tenant_id',
+            model_name="labresulttrend",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='labresulttrend',
-            name='updated_at',
+            model_name="labresulttrend",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='labresultview',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="labresultview",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='labresultview',
-            name='tenant_id',
+            model_name="labresultview",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='labresultview',
-            name='updated_at',
+            model_name="labresultview",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

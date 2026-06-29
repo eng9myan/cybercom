@@ -1,10 +1,15 @@
 """Prescriptions app URL routing."""
-from django.urls import path, include
+
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    PrescriptionViewSet, PrescriptionItemViewSet, MedicationOrderViewSet,
-    MedicationRenewalViewSet, MedicationRefillViewSet,
-    PrescriptionAttachmentViewSet, MedicationHistoryViewSet
+    MedicationHistoryViewSet,
+    MedicationOrderViewSet,
+    MedicationRefillViewSet,
+    MedicationRenewalViewSet,
+    PrescriptionAttachmentViewSet,
+    PrescriptionItemViewSet,
+    PrescriptionViewSet,
 )
 
 router = DefaultRouter()

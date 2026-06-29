@@ -1,7 +1,6 @@
-﻿import uuid
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 PERIOD_CHOICES = [
     ("daily", "Daily"),
@@ -71,7 +70,9 @@ class ClaimMetricsSnapshot(BaseModel):
 
     class Meta:
         db_table = "cymed_rcm_ana_claim_metrics"
-        unique_together = [["tenant_id", "snapshot_date", "snapshot_period", "insurance_company_id"]]
+        unique_together = [
+            ["tenant_id", "snapshot_date", "snapshot_period", "insurance_company_id"]
+        ]
         ordering = ["-snapshot_date", "snapshot_period"]
         verbose_name = "Claim Metrics Snapshot"
         verbose_name_plural = "Claim Metrics Snapshots"
@@ -156,13 +157,13 @@ class PayerPerformanceSnapshot(BaseModel):
         blank=True,
         help_text="Composite performance score 0-100",
     )
-    trend_direction = models.CharField(
-        max_length=10, choices=TREND_CHOICES, default="unknown"
-    )
+    trend_direction = models.CharField(max_length=10, choices=TREND_CHOICES, default="unknown")
 
     class Meta:
         db_table = "cymed_rcm_ana_payer_performance"
-        unique_together = [["tenant_id", "snapshot_date", "snapshot_period", "insurance_company_id"]]
+        unique_together = [
+            ["tenant_id", "snapshot_date", "snapshot_period", "insurance_company_id"]
+        ]
         ordering = ["-snapshot_date", "snapshot_period"]
         verbose_name = "Payer Performance Snapshot"
         verbose_name_plural = "Payer Performance Snapshots"
@@ -210,7 +211,10 @@ class RCMAIInsight(BaseModel):
     insight_detail = models.TextField()
 
     confidence_score = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True,
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
         help_text="Model confidence 0.00-1.00",
     )
     estimated_impact_amount = models.DecimalField(
@@ -220,9 +224,7 @@ class RCMAIInsight(BaseModel):
     # Governance: AI insights are always advisory
     is_advisory_only = models.BooleanField(default=True, editable=False)
 
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="pending_review"
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending_review")
     acknowledged_by_user_id = models.UUIDField(null=True, blank=True)
     acknowledged_at = models.DateTimeField(null=True, blank=True)
 
@@ -263,9 +265,7 @@ class RevenueLeakageAlert(BaseModel):
     leakage_type = models.CharField(max_length=30, choices=LEAKAGE_TYPE_CHOICES)
     encounter_id = models.UUIDField(null=True, blank=True)
     patient_id = models.UUIDField(null=True, blank=True)
-    estimated_leakage_amount = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0
-    )
+    estimated_leakage_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
     assigned_to_user_id = models.UUIDField(null=True, blank=True)
     resolution_notes = models.TextField(blank=True)

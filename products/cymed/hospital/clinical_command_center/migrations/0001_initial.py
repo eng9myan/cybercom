@@ -1,6 +1,7 @@
+import uuid
+
 import django.db.models.deletion
 import django.utils.timezone
-import uuid
 from django.db import migrations, models
 
 
@@ -13,7 +14,12 @@ class Migration(migrations.Migration):
             name="CommandCenterSnapshot",
             fields=[
                 ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False, db_index=True)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False, db_index=True
+                    ),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
                 ("tenant_id", models.UUIDField(db_index=True, editable=False)),
                 ("snapshot_time", models.DateTimeField(auto_now_add=True, db_index=True)),
@@ -31,30 +37,82 @@ class Migration(migrations.Migration):
                 ("pending_discharges", models.PositiveIntegerField(default=0)),
                 ("pending_transfers", models.PositiveIntegerField(default=0)),
                 ("occupancy_pct", models.DecimalField(decimal_places=2, default=0, max_digits=5)),
-                ("icu_occupancy_pct", models.DecimalField(decimal_places=2, default=0, max_digits=5)),
-                ("capacity_status", models.CharField(choices=[("normal","Normal"),("elevated","Elevated"),("high","High"),("critical","Critical"),("diversion","Diversion")], default="normal", max_length=20)),
+                (
+                    "icu_occupancy_pct",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=5),
+                ),
+                (
+                    "capacity_status",
+                    models.CharField(
+                        choices=[
+                            ("normal", "Normal"),
+                            ("elevated", "Elevated"),
+                            ("high", "High"),
+                            ("critical", "Critical"),
+                            ("diversion", "Diversion"),
+                        ],
+                        default="normal",
+                        max_length=20,
+                    ),
+                ),
                 ("rn_on_duty", models.PositiveIntegerField(default=0)),
                 ("md_on_duty", models.PositiveIntegerField(default=0)),
                 ("hap_infections_mtd", models.PositiveIntegerField(default=0)),
                 ("falls_mtd", models.PositiveIntegerField(default=0)),
                 ("pressure_injuries_mtd", models.PositiveIntegerField(default=0)),
-                ("patient_satisfaction_score", models.DecimalField(decimal_places=2, max_digits=4, null=True, blank=True)),
+                (
+                    "patient_satisfaction_score",
+                    models.DecimalField(decimal_places=2, max_digits=4, null=True, blank=True),
+                ),
             ],
-            options={"db_table": "cymed_hospital_command_center_snapshots", "ordering": ["-snapshot_time"]},
+            options={
+                "db_table": "cymed_hospital_command_center_snapshots",
+                "ordering": ["-snapshot_time"],
+            },
         ),
         migrations.CreateModel(
             name="CommandCenterAlert",
             fields=[
                 ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False, db_index=True)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False, db_index=True
+                    ),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
                 ("tenant_id", models.UUIDField(db_index=True, editable=False)),
                 ("alert_code", models.CharField(db_index=True, max_length=100)),
                 ("title", models.CharField(max_length=255)),
                 ("title_ar", models.CharField(blank=True, max_length=255)),
                 ("description", models.TextField(blank=True)),
-                ("severity", models.CharField(choices=[("critical","Critical"),("high","High"),("medium","Medium"),("low","Low"),("info","Info")], default="medium", max_length=20)),
-                ("status", models.CharField(choices=[("active","Active"),("acknowledged","Acknowledged"),("escalated","Escalated"),("resolved","Resolved")], default="active", max_length=20)),
+                (
+                    "severity",
+                    models.CharField(
+                        choices=[
+                            ("critical", "Critical"),
+                            ("high", "High"),
+                            ("medium", "Medium"),
+                            ("low", "Low"),
+                            ("info", "Info"),
+                        ],
+                        default="medium",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("active", "Active"),
+                            ("acknowledged", "Acknowledged"),
+                            ("escalated", "Escalated"),
+                            ("resolved", "Resolved"),
+                        ],
+                        default="active",
+                        max_length=20,
+                    ),
+                ),
                 ("category", models.CharField(blank=True, max_length=100)),
                 ("department", models.CharField(blank=True, max_length=200)),
                 ("location", models.CharField(blank=True, max_length=255)),
@@ -68,21 +126,38 @@ class Migration(migrations.Migration):
                 ("escalated_to", models.CharField(blank=True, max_length=255)),
                 ("metadata", models.JSONField(blank=True, default=dict)),
             ],
-            options={"db_table": "cymed_hospital_command_center_alerts", "ordering": ["-triggered_at"]},
+            options={
+                "db_table": "cymed_hospital_command_center_alerts",
+                "ordering": ["-triggered_at"],
+            },
         ),
         migrations.CreateModel(
             name="CapacityThreshold",
             fields=[
                 ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False, db_index=True)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False, db_index=True
+                    ),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
                 ("tenant_id", models.UUIDField(db_index=True, editable=False)),
                 ("unit_name", models.CharField(max_length=255)),
                 ("unit_code", models.CharField(blank=True, max_length=50)),
                 ("total_capacity", models.PositiveIntegerField()),
-                ("elevated_threshold_pct", models.DecimalField(decimal_places=2, default=75, max_digits=5)),
-                ("high_threshold_pct", models.DecimalField(decimal_places=2, default=85, max_digits=5)),
-                ("critical_threshold_pct", models.DecimalField(decimal_places=2, default=95, max_digits=5)),
+                (
+                    "elevated_threshold_pct",
+                    models.DecimalField(decimal_places=2, default=75, max_digits=5),
+                ),
+                (
+                    "high_threshold_pct",
+                    models.DecimalField(decimal_places=2, default=85, max_digits=5),
+                ),
+                (
+                    "critical_threshold_pct",
+                    models.DecimalField(decimal_places=2, default=95, max_digits=5),
+                ),
                 ("auto_alert_enabled", models.BooleanField(default=True)),
                 ("is_active", models.BooleanField(default=True)),
             ],
@@ -92,10 +167,26 @@ class Migration(migrations.Migration):
             name="HospitalDiversionStatus",
             fields=[
                 ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False, db_index=True)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False, db_index=True
+                    ),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
                 ("tenant_id", models.UUIDField(db_index=True, editable=False)),
-                ("diversion_type", models.CharField(choices=[("ambulance","Ambulance Diversion"),("ed","ED Diversion"),("specialty","Specialty Diversion"),("full","Full Diversion")], max_length=30)),
+                (
+                    "diversion_type",
+                    models.CharField(
+                        choices=[
+                            ("ambulance", "Ambulance Diversion"),
+                            ("ed", "ED Diversion"),
+                            ("specialty", "Specialty Diversion"),
+                            ("full", "Full Diversion"),
+                        ],
+                        max_length=30,
+                    ),
+                ),
                 ("started_at", models.DateTimeField()),
                 ("ended_at", models.DateTimeField(null=True, blank=True)),
                 ("reason", models.TextField()),
@@ -109,7 +200,12 @@ class Migration(migrations.Migration):
             name="BedTurnoverLog",
             fields=[
                 ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False, db_index=True)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False, db_index=True
+                    ),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
                 ("tenant_id", models.UUIDField(db_index=True, editable=False)),
                 ("bed_id", models.CharField(max_length=255)),
@@ -120,20 +216,31 @@ class Migration(migrations.Migration):
                 ("next_patient_admitted_time", models.DateTimeField(null=True, blank=True)),
                 ("turnaround_minutes", models.PositiveIntegerField(null=True, blank=True)),
             ],
-            options={"db_table": "cymed_hospital_bed_turnover_logs", "ordering": ["-patient_discharge_time"]},
+            options={
+                "db_table": "cymed_hospital_bed_turnover_logs",
+                "ordering": ["-patient_discharge_time"],
+            },
         ),
         migrations.CreateModel(
             name="CommandCenterKPI",
             fields=[
                 ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False, db_index=True)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False, db_index=True
+                    ),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True, db_index=True)),
                 ("tenant_id", models.UUIDField(db_index=True, editable=False)),
                 ("kpi_date", models.DateField(db_index=True)),
                 ("kpi_name", models.CharField(db_index=True, max_length=200)),
                 ("kpi_value", models.DecimalField(decimal_places=4, max_digits=12)),
                 ("kpi_unit", models.CharField(blank=True, max_length=50)),
-                ("target_value", models.DecimalField(decimal_places=4, max_digits=12, null=True, blank=True)),
+                (
+                    "target_value",
+                    models.DecimalField(decimal_places=4, max_digits=12, null=True, blank=True),
+                ),
                 ("department", models.CharField(blank=True, max_length=200)),
                 ("metadata", models.JSONField(blank=True, default=dict)),
             ],
@@ -141,15 +248,21 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="commandcentersnapshot",
-            index=models.Index(fields=["tenant_id", "snapshot_time"], name="ccc_snapshot_tenant_time_idx"),
+            index=models.Index(
+                fields=["tenant_id", "snapshot_time"], name="ccc_snapshot_tenant_time_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="commandcenteralert",
-            index=models.Index(fields=["tenant_id", "status", "severity"], name="ccc_alert_tenant_status_idx"),
+            index=models.Index(
+                fields=["tenant_id", "status", "severity"], name="ccc_alert_tenant_status_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="commandcenteralert",
-            index=models.Index(fields=["tenant_id", "triggered_at"], name="ccc_alert_tenant_time_idx"),
+            index=models.Index(
+                fields=["tenant_id", "triggered_at"], name="ccc_alert_tenant_time_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
             name="capacitythreshold",

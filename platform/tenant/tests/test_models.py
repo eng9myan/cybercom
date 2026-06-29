@@ -1,6 +1,8 @@
 """Tests for Tenant model."""
+
 import pytest
-from platform.tenant.models import Tenant, TenantStatus, TenantTier
+
+from platform.tenant.models import TenantStatus, TenantTier
 
 
 @pytest.mark.unit

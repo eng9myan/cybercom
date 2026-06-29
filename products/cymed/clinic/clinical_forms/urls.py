@@ -1,8 +1,12 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.clinic.clinical_forms.views import (
-    ClinicalFormViewSet, ClinicalFormSectionViewSet, ClinicalFormFieldViewSet,
-    ClinicalFormTemplateViewSet, ClinicalFormSubmissionViewSet
+    ClinicalFormFieldViewSet,
+    ClinicalFormSectionViewSet,
+    ClinicalFormSubmissionViewSet,
+    ClinicalFormTemplateViewSet,
+    ClinicalFormViewSet,
 )
 
 router = DefaultRouter()

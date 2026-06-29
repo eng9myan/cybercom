@@ -1,22 +1,30 @@
 from rest_framework import serializers
+
 from products.cymed.core.organizations.models import (
-    Organization, OrganizationAddress, OrganizationContact, OrganizationRelationship
+    Organization,
+    OrganizationAddress,
+    OrganizationContact,
+    OrganizationRelationship,
 )
+
 
 class OrganizationAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrganizationAddress
         fields = ["id", "line1", "line2", "city", "state", "postal_code", "country"]
 
+
 class OrganizationContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrganizationContact
         fields = ["id", "telecom_system", "telecom_value"]
 
+
 class OrganizationRelationshipSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrganizationRelationship
         fields = ["id", "source_organization", "target_organization", "relationship_type"]
+
 
 class OrganizationSerializer(serializers.ModelSerializer):
     addresses = OrganizationAddressSerializer(many=True, required=False)
@@ -24,7 +32,17 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Organization
-        fields = ["id", "name", "slug", "organization_type", "is_active", "addresses", "contacts", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "organization_type",
+            "is_active",
+            "addresses",
+            "contacts",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
     def create(self, validated_data):

@@ -1,8 +1,23 @@
-﻿from django.utils import timezone
 from platform.events.models import OutboxEvent
-from .models import LabResult, ResultValue, ReferenceRange, ResultInterpretation, CriticalResult, ResultCorrection, ResultApproval
-from .serializers import LabResultSerializer, ResultValueSerializer, ReferenceRangeSerializer, ResultInterpretationSerializer, CriticalResultSerializer, ResultCorrectionSerializer, ResultApprovalSerializer
+
 from ..views import LaboratoryModelViewSet
+from .models import (
+    CriticalResult,
+    LabResult,
+    ReferenceRange,
+    ResultApproval,
+    ResultCorrection,
+    ResultValue,
+)
+from .serializers import (
+    CriticalResultSerializer,
+    LabResultSerializer,
+    ReferenceRangeSerializer,
+    ResultApprovalSerializer,
+    ResultCorrectionSerializer,
+    ResultValueSerializer,
+)
+
 
 class LabResultViewSet(LaboratoryModelViewSet):
     queryset = LabResult.objects.prefetch_related("values")
@@ -20,6 +35,7 @@ class LabResultViewSet(LaboratoryModelViewSet):
             payload={"result_id": str(obj.id), "status": obj.status},
         )
 
+
 class ResultValueViewSet(LaboratoryModelViewSet):
     queryset = ResultValue.objects.all()
     serializer_class = ResultValueSerializer
@@ -31,15 +47,19 @@ class ResultValueViewSet(LaboratoryModelViewSet):
         obj = serializer.save(tenant_id=tenant_id)
         if obj.is_critical:
             CriticalResult.objects.get_or_create(
-                result_value=obj,
-                defaults={"tenant_id": tenant_id}
+                result_value=obj, defaults={"tenant_id": tenant_id}
             )
             OutboxEvent.objects.create(
                 tenant_id=str(tenant_id) if tenant_id else None,
                 topic="cymed.lab.critical_result.created",
                 event_type="cymed.lab.critical_result.created",
-                payload={"result_value_id": str(obj.id), "analyte": obj.analyte_name, "value": str(obj.value_numeric or obj.value_text)},
+                payload={
+                    "result_value_id": str(obj.id),
+                    "analyte": obj.analyte_name,
+                    "value": str(obj.value_numeric or obj.value_text),
+                },
             )
+
 
 class ReferenceRangeViewSet(LaboratoryModelViewSet):
     queryset = ReferenceRange.objects.all()
@@ -47,16 +67,19 @@ class ReferenceRangeViewSet(LaboratoryModelViewSet):
     required_feature = "lab.results"
     filterset_fields = ["test", "sex", "is_active"]
 
+
 class CriticalResultViewSet(LaboratoryModelViewSet):
     queryset = CriticalResult.objects.all()
     serializer_class = CriticalResultSerializer
     required_feature = "lab.results"
     filterset_fields = ["notification_status"]
 
+
 class ResultCorrectionViewSet(LaboratoryModelViewSet):
     queryset = ResultCorrection.objects.all()
     serializer_class = ResultCorrectionSerializer
     required_feature = "lab.results"
+
 
 class ResultApprovalViewSet(LaboratoryModelViewSet):
     queryset = ResultApproval.objects.all()

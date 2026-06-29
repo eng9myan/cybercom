@@ -1,16 +1,16 @@
-﻿from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
 from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Account, JournalEntry, JournalLine
 from .serializers import AccountSerializer, JournalEntrySerializer, JournalLineSerializer
 
-
 # ---------------------------------------------------------------------------
 # Account
 # ---------------------------------------------------------------------------
+
 
 class AccountListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -70,14 +70,14 @@ class AccountDetailView(APIView):
 # JournalEntry
 # ---------------------------------------------------------------------------
 
+
 class JournalEntryListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         queryset = (
-            JournalEntry.objects
-            .filter(tenant_id=tenant_id)
+            JournalEntry.objects.filter(tenant_id=tenant_id)
             .prefetch_related("lines__account")
             .order_by("-entry_date", "-created_at")
         )
@@ -133,14 +133,14 @@ class JournalEntryDetailView(APIView):
 # JournalLine
 # ---------------------------------------------------------------------------
 
+
 class JournalLineListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         queryset = (
-            JournalLine.objects
-            .filter(tenant_id=tenant_id)
+            JournalLine.objects.filter(tenant_id=tenant_id)
             .select_related("journal", "account")
             .order_by("journal__entry_date", "created_at")
         )

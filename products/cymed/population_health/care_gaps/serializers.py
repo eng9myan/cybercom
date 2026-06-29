@@ -1,5 +1,6 @@
-﻿from rest_framework import serializers
-from .models import CareGap, CareGapRule, CareGapRecommendation, CareGapResolution
+from rest_framework import serializers
+
+from .models import CareGap, CareGapRecommendation, CareGapResolution, CareGapRule
 
 
 class CareGapSerializer(serializers.ModelSerializer):

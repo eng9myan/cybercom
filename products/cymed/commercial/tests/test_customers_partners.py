@@ -1,16 +1,25 @@
 """
 Tests for CyMed Commercial — Customer and Partner Management.
 """
+
 import uuid
-import pytest
-from decimal import Decimal
 from datetime import date
+from decimal import Decimal
+
+import pytest
 
 from products.cymed.commercial.customer_management.models import (
-    Customer, CustomerOrganization, CustomerContract, CustomerDeployment, CustomerSuccessPlan
+    Customer,
+    CustomerContract,
+    CustomerDeployment,
+    CustomerOrganization,
+    CustomerSuccessPlan,
 )
 from products.cymed.commercial.partner_management.models import (
-    Partner, PartnerType, ResellerAgreement, DistributorAgreement
+    DistributorAgreement,
+    Partner,
+    PartnerType,
+    ResellerAgreement,
 )
 
 TENANT = uuid.UUID("00000001-0000-0000-0000-000000000001")
@@ -59,6 +68,7 @@ class TestCustomerModel:
 
     def test_unique_customer_number(self, db, customer):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             Customer.objects.create(
                 tenant_id=TENANT,

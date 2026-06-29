@@ -1,10 +1,11 @@
-﻿from rest_framework import serializers
+from rest_framework import serializers
+
 from .models import (
-    PatientAccount,
+    BillingAdjustment,
     EncounterBilling,
     Invoice,
     InvoiceLine,
-    BillingAdjustment,
+    PatientAccount,
     Refund,
 )
 

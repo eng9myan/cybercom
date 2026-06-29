@@ -1,10 +1,15 @@
 """
 Tests for CyMed Commercial — Product Catalog.
 """
+
 import uuid
+
 import pytest
+
 from products.cymed.commercial.product_catalog.models import (
-    ProductVersion, ProductLicenseMapping, ProductFeatureMatrix
+    ProductFeatureMatrix,
+    ProductLicenseMapping,
+    ProductVersion,
 )
 
 TENANT = uuid.UUID("20000000-0000-0000-0000-000000000001")
@@ -53,6 +58,7 @@ class TestProductVersion:
 
     def test_unique_product_version(self, db, product_version):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             ProductVersion.objects.create(
                 tenant_id=TENANT,
@@ -72,6 +78,7 @@ class TestProductLicenseMapping:
 
     def test_unique_product_edition(self, db, license_mapping):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             ProductLicenseMapping.objects.create(
                 tenant_id=TENANT,
@@ -87,6 +94,7 @@ class TestProductFeatureMatrix:
 
     def test_unique_product_edition_feature(self, db, feature_matrix):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             ProductFeatureMatrix.objects.create(
                 tenant_id=TENANT,

@@ -1,5 +1,6 @@
 from rest_framework.routers import DefaultRouter
-from .views import PriceListViewSet, ServicePriceViewSet, PackagePriceViewSet, DiscountRuleViewSet
+
+from .views import DiscountRuleViewSet, PackagePriceViewSet, PriceListViewSet, ServicePriceViewSet
 
 router = DefaultRouter()
 router.register(r"lists", PriceListViewSet, basename="price-list")

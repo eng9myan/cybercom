@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Department, Employee, Attendance, LeaveRequest, PerformanceReview
+
+from .models import Attendance, Department, Employee, LeaveRequest, PerformanceReview
 
 
 class DepartmentSerializer(serializers.ModelSerializer):

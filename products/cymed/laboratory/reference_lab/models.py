@@ -1,8 +1,10 @@
-﻿"""
+"""
 CyMed Laboratory â€” Reference Lab Network
 Cross-lab routing, referral testing, multi-lab operations, national network.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -16,7 +18,12 @@ class IntegrationType(models.TextChoices):
 
 class ReferenceLab(BaseModel):
     """External or internal reference laboratory for test referral."""
-    STATUS_CHOICES = [("active", "Active"), ("inactive", "Inactive"), ("pending", "Pending Onboarding")]
+
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("inactive", "Inactive"),
+        ("pending", "Pending Onboarding"),
+    ]
 
     code = models.CharField(max_length=50, unique=True)
     name = models.CharField(max_length=255)
@@ -35,7 +42,7 @@ class ReferenceLab(BaseModel):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
     is_national = models.BooleanField(default=False)
     is_government = models.BooleanField(default=False)
-    certifications = models.JSONField(default=list)    # ["ISO15189", "CAP", "MOH"]
+    certifications = models.JSONField(default=list)  # ["ISO15189", "CAP", "MOH"]
 
     class Meta:
         db_table = "cymed_lab_reference_labs"
@@ -46,12 +53,17 @@ class ReferenceLab(BaseModel):
 
 class ReferenceLabRouting(BaseModel):
     """Rule: route a specific test to a specific reference lab when conditions are met."""
+
     test = models.ForeignKey(
         "lab_orders.LabTest", on_delete=models.CASCADE, related_name="routing_rules"
     )
-    reference_lab = models.ForeignKey(ReferenceLab, on_delete=models.CASCADE, related_name="routing_rules")
+    reference_lab = models.ForeignKey(
+        ReferenceLab, on_delete=models.CASCADE, related_name="routing_rules"
+    )
     is_default = models.BooleanField(default=False)
-    conditions = models.JSONField(default=dict)     # {"priority": "stat", "test_unavailable_locally": true}
+    conditions = models.JSONField(
+        default=dict
+    )  # {"priority": "stat", "test_unavailable_locally": true}
     estimated_tat_hours = models.PositiveIntegerField(null=True, blank=True)
     priority_order = models.PositiveSmallIntegerField(default=0)
     is_active = models.BooleanField(default=True)
@@ -65,6 +77,7 @@ class ReferenceLabRouting(BaseModel):
 
 class ReferenceLabOrder(BaseModel):
     """A test order sent to a reference lab for processing."""
+
     STATUS_CHOICES = [
         ("pending", "Pending Dispatch"),
         ("sent", "Sent to Reference Lab"),
@@ -97,6 +110,7 @@ class ReferenceLabOrder(BaseModel):
 
 class ReferenceLabResult(BaseModel):
     """Result received from a reference lab, parsed and ready for import."""
+
     STATUS_CHOICES = [
         ("received", "Raw Result Received"),
         ("parsed", "Parsed Successfully"),
@@ -108,7 +122,7 @@ class ReferenceLabResult(BaseModel):
     reference_lab_order = models.OneToOneField(
         ReferenceLabOrder, on_delete=models.CASCADE, related_name="result"
     )
-    raw_result = models.JSONField(default=dict)          # raw payload from reference lab
+    raw_result = models.JSONField(default=dict)  # raw payload from reference lab
     raw_format = models.CharField(max_length=20, blank=True)  # fhir, hl7, json, pdf
     received_at = models.DateTimeField(auto_now_add=True)
     parsed_at = models.DateTimeField(null=True, blank=True)

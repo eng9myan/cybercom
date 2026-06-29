@@ -5,123 +5,162 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_rcm_preauthorization', '0001_initial'),
+        ("cymed_rcm_preauthorization", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='authorizationappeal',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="authorizationappeal",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='authorizationappeal',
-            name='tenant_id',
+            model_name="authorizationappeal",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='authorizationappeal',
-            name='updated_at',
+            model_name="authorizationappeal",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='authorizationdecision',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="authorizationdecision",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='authorizationdecision',
-            name='decision',
-            field=models.CharField(choices=[('approved', 'Approved'), ('partially_approved', 'Partially Approved'), ('denied', 'Denied'), ('pending_info', 'Pending Information'), ('referred_to_committee', 'Referred to Committee')], max_length=30),
+            model_name="authorizationdecision",
+            name="decision",
+            field=models.CharField(
+                choices=[
+                    ("approved", "Approved"),
+                    ("partially_approved", "Partially Approved"),
+                    ("denied", "Denied"),
+                    ("pending_info", "Pending Information"),
+                    ("referred_to_committee", "Referred to Committee"),
+                ],
+                max_length=30,
+            ),
         ),
         migrations.AlterField(
-            model_name='authorizationdecision',
-            name='tenant_id',
+            model_name="authorizationdecision",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='authorizationdecision',
-            name='updated_at',
+            model_name="authorizationdecision",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='authorizationrequest',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="authorizationrequest",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='authorizationrequest',
-            name='tenant_id',
+            model_name="authorizationrequest",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='authorizationrequest',
-            name='updated_at',
+            model_name="authorizationrequest",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='preauthorization',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="preauthorization",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='preauthorization',
-            name='tenant_id',
+            model_name="preauthorization",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='preauthorization',
-            name='updated_at',
+            model_name="preauthorization",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AddIndex(
-            model_name='authorizationappeal',
-            index=models.Index(fields=['tenant_id', 'preauthorization_id'], name='cymed_rcm_a_tenant__67b09a_idx'),
+            model_name="authorizationappeal",
+            index=models.Index(
+                fields=["tenant_id", "preauthorization_id"], name="cymed_rcm_a_tenant__67b09a_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='authorizationappeal',
-            index=models.Index(fields=['tenant_id', 'status'], name='cymed_rcm_a_tenant__972f41_idx'),
+            model_name="authorizationappeal",
+            index=models.Index(
+                fields=["tenant_id", "status"], name="cymed_rcm_a_tenant__972f41_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='authorizationappeal',
-            index=models.Index(fields=['tenant_id', 'appeal_level'], name='cymed_rcm_a_tenant__8f6bb5_idx'),
+            model_name="authorizationappeal",
+            index=models.Index(
+                fields=["tenant_id", "appeal_level"], name="cymed_rcm_a_tenant__8f6bb5_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='authorizationdecision',
-            index=models.Index(fields=['tenant_id', 'preauthorization_id'], name='cymed_rcm_a_tenant__02de0e_idx'),
+            model_name="authorizationdecision",
+            index=models.Index(
+                fields=["tenant_id", "preauthorization_id"], name="cymed_rcm_a_tenant__02de0e_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='authorizationdecision',
-            index=models.Index(fields=['tenant_id', 'decision'], name='cymed_rcm_a_tenant__3264d5_idx'),
+            model_name="authorizationdecision",
+            index=models.Index(
+                fields=["tenant_id", "decision"], name="cymed_rcm_a_tenant__3264d5_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='authorizationrequest',
-            index=models.Index(fields=['tenant_id', 'preauthorization_id'], name='cymed_rcm_a_tenant__f25b74_idx'),
+            model_name="authorizationrequest",
+            index=models.Index(
+                fields=["tenant_id", "preauthorization_id"], name="cymed_rcm_a_tenant__f25b74_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='preauthorization',
-            index=models.Index(fields=['tenant_id', 'patient_id'], name='cymed_rcm_p_tenant__7966f2_idx'),
+            model_name="preauthorization",
+            index=models.Index(
+                fields=["tenant_id", "patient_id"], name="cymed_rcm_p_tenant__7966f2_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='preauthorization',
-            index=models.Index(fields=['tenant_id', 'status'], name='cymed_rcm_p_tenant__b2fd85_idx'),
+            model_name="preauthorization",
+            index=models.Index(
+                fields=["tenant_id", "status"], name="cymed_rcm_p_tenant__b2fd85_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='preauthorization',
-            index=models.Index(fields=['tenant_id', 'authorization_type'], name='cymed_rcm_p_tenant__71baba_idx'),
+            model_name="preauthorization",
+            index=models.Index(
+                fields=["tenant_id", "authorization_type"], name="cymed_rcm_p_tenant__71baba_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='preauthorization',
-            index=models.Index(fields=['tenant_id', 'insurance_plan_id'], name='cymed_rcm_p_tenant__268788_idx'),
+            model_name="preauthorization",
+            index=models.Index(
+                fields=["tenant_id", "insurance_plan_id"], name="cymed_rcm_p_tenant__268788_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='preauthorization',
-            index=models.Index(fields=['tenant_id', 'requesting_provider_id'], name='cymed_rcm_p_tenant__fb83d3_idx'),
+            model_name="preauthorization",
+            index=models.Index(
+                fields=["tenant_id", "requesting_provider_id"],
+                name="cymed_rcm_p_tenant__fb83d3_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='preauthorization',
-            index=models.Index(fields=['auth_number'], name='cymed_rcm_p_auth_nu_f7bd65_idx'),
+            model_name="preauthorization",
+            index=models.Index(fields=["auth_number"], name="cymed_rcm_p_auth_nu_f7bd65_idx"),
         ),
     ]

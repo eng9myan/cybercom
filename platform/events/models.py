@@ -3,7 +3,9 @@ Transactional Outbox pattern implementation. ADR-0004: Event-driven architecture
 Services write business records AND outbox events in one atomic transaction.
 Debezium CDC reads WAL and publishes to Kafka.
 """
+
 import uuid
+
 from django.db import models
 from django.utils import timezone
 
@@ -19,6 +21,7 @@ class OutboxEvent(models.Model):
     Transactional outbox table. Written atomically with business records.
     Debezium monitors this table via PostgreSQL WAL CDC.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     topic = models.CharField(max_length=500, db_index=True)
@@ -26,8 +29,10 @@ class OutboxEvent(models.Model):
     payload = models.JSONField()
     headers = models.JSONField(default=dict, blank=True)
     status = models.CharField(
-        max_length=20, choices=OutboxEventStatus.choices,
-        default=OutboxEventStatus.PENDING, db_index=True
+        max_length=20,
+        choices=OutboxEventStatus.choices,
+        default=OutboxEventStatus.PENDING,
+        db_index=True,
     )
     created_at = models.DateTimeField(default=timezone.now, editable=False, db_index=True)
     published_at = models.DateTimeField(null=True, blank=True)
@@ -61,6 +66,7 @@ class EventDeliveryLog(models.Model):
     """
     Logs delivery of events to specific consumer groups / subscriptions.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event_id = models.UUIDField(db_index=True)
     consumer_group = models.CharField(max_length=200, db_index=True)
@@ -77,6 +83,7 @@ class DeadLetterEvent(models.Model):
     """
     Captures toxic events that failed validation or processing after multiple retries.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     original_event_id = models.UUIDField(null=True, blank=True)
     tenant_id = models.UUIDField(db_index=True)
@@ -95,7 +102,10 @@ class EventSignature(models.Model):
     """
     Stores cryptographic signatures of outbox events for integrity checking and non-repudiation.
     """
-    event = models.OneToOneField(OutboxEvent, on_delete=models.CASCADE, related_name="signature_record")
+
+    event = models.OneToOneField(
+        OutboxEvent, on_delete=models.CASCADE, related_name="signature_record"
+    )
     signature = models.TextField()
     signed_at = models.DateTimeField(default=timezone.now)
 

@@ -1,6 +1,8 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 from products.cymed.core.patients.models import Patient
+
 
 class Payer(BaseModel):
     name = models.CharField(max_length=255)
@@ -13,6 +15,7 @@ class Payer(BaseModel):
     def __str__(self) -> str:
         return self.name
 
+
 class InsurancePlan(BaseModel):
     payer = models.ForeignKey(Payer, on_delete=models.CASCADE, related_name="plans")
     plan_name = models.CharField(max_length=255)
@@ -23,8 +26,11 @@ class InsurancePlan(BaseModel):
         db_table = "cymed_clinic_insurance_plans"
         unique_together = [("payer", "plan_code")]
 
+
 class EligibilityCheck(BaseModel):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="eligibility_checks")
+    patient = models.ForeignKey(
+        Patient, on_delete=models.CASCADE, related_name="eligibility_checks"
+    )
     plan = models.ForeignKey(InsurancePlan, on_delete=models.CASCADE)
     checked_at = models.DateTimeField(auto_now_add=True)
     is_eligible = models.BooleanField(default=False)
@@ -33,20 +39,26 @@ class EligibilityCheck(BaseModel):
     class Meta:
         db_table = "cymed_clinic_insurance_eligibility"
 
+
 class AuthorizationRequest(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     plan = models.ForeignKey(InsurancePlan, on_delete=models.CASCADE)
     requested_service = models.CharField(max_length=255)
     clinical_justification = models.TextField()
-    status = models.CharField(max_length=50, choices=[
-        ("pending", "Pending"), ("approved", "Approved"), ("denied", "Denied")
-    ], default="pending")
+    status = models.CharField(
+        max_length=50,
+        choices=[("pending", "Pending"), ("approved", "Approved"), ("denied", "Denied")],
+        default="pending",
+    )
 
     class Meta:
         db_table = "cymed_clinic_insurance_auth_requests"
 
+
 class AuthorizationResponse(BaseModel):
-    request = models.OneToOneField(AuthorizationRequest, on_delete=models.CASCADE, related_name="response")
+    request = models.OneToOneField(
+        AuthorizationRequest, on_delete=models.CASCADE, related_name="response"
+    )
     decision_date = models.DateTimeField(auto_now_add=True)
     authorization_number = models.CharField(max_length=100, blank=True)
     denial_reason = models.TextField(blank=True)

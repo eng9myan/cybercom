@@ -1,7 +1,9 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+
 from products.cymed.core.facilities.models import Facility
 from products.cymed.core.facilities.serializers import FacilitySerializer
+
 
 class FacilityViewSet(viewsets.ModelViewSet):
     queryset = Facility.objects.filter(is_active=True)

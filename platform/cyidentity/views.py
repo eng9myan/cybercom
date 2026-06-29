@@ -22,6 +22,7 @@ Routers exposed under `/api/v1/identity/`:
   - /break-glass/                             — emergency access lifecycle
   - /service-principals/                      — M2M workload identities
 """
+
 from __future__ import annotations
 
 import logging
@@ -30,13 +31,12 @@ from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from platform.cyidentity.models import (
     ApplicationClient,
     BreakGlassAccess,
-    BreakGlassStatus,
     ClientSecret,
     DeviceRegistration,
     Group,
@@ -89,7 +89,6 @@ from platform.cyidentity.serializers import (
 from platform.cyidentity.services import (
     BreakGlassService,
     ClientService,
-    JWKSCache,
     KeycloakError,
     RealmService,
     SessionService,
@@ -138,17 +137,25 @@ def token_validate(request):
             serializer.validated_data["token"],
             audience=serializer.validated_data.get("audience") or None,
         )
-        return Response(TokenValidateResponseSerializer({
-            "valid": True,
-            "subject": claims.get("sub", ""),
-            "issuer": claims.get("iss", ""),
-            "audience": claims.get("aud", "") if isinstance(claims.get("aud"), str) else (claims.get("aud", [""])[0] if claims.get("aud") else ""),
-            "expires_at": claims.get("exp", 0),
-            "scope": claims.get("scope", ""),
-        }).data)
-    except TokenValidationError as exc:
         return Response(
-            TokenValidateResponseSerializer({"valid": False, "subject": "", "issuer": "", "audience": "", "scope": ""}).data,
+            TokenValidateResponseSerializer(
+                {
+                    "valid": True,
+                    "subject": claims.get("sub", ""),
+                    "issuer": claims.get("iss", ""),
+                    "audience": claims.get("aud", "")
+                    if isinstance(claims.get("aud"), str)
+                    else (claims.get("aud", [""])[0] if claims.get("aud") else ""),
+                    "expires_at": claims.get("exp", 0),
+                    "scope": claims.get("scope", ""),
+                }
+            ).data
+        )
+    except TokenValidationError:
+        return Response(
+            TokenValidateResponseSerializer(
+                {"valid": False, "subject": "", "issuer": "", "audience": "", "scope": ""}
+            ).data,
             status=status.HTTP_401_UNAUTHORIZED,
         )
 
@@ -173,7 +180,10 @@ class IdentityRealmViewSet(viewsets.ModelViewSet):
         try:
             realm = RealmService().provision(**serializer.validated_data)
         except KeycloakError as exc:
-            return Response({"detail": str(exc), "keycloak_status": exc.status_code}, status=status.HTTP_502_BAD_GATEWAY)
+            return Response(
+                {"detail": str(exc), "keycloak_status": exc.status_code},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
         return Response(IdentityRealmSerializer(realm).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
@@ -227,7 +237,9 @@ class ApplicationClientViewSet(viewsets.ModelViewSet):
             realm = IdentityRealm.objects.get(pk=serializer.validated_data["realm_id"])
         except IdentityRealm.DoesNotExist:
             return Response({"detail": "Realm not found"}, status=status.HTTP_404_NOT_FOUND)
-        client = ClientService().register(realm, **{k: v for k, v in serializer.validated_data.items() if k != "realm_id"})
+        client = ClientService().register(
+            realm, **{k: v for k, v in serializer.validated_data.items() if k != "realm_id"}
+        )
         return Response(ApplicationClientSerializer(client).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], url_path="rotate-secret")
@@ -235,14 +247,19 @@ class ApplicationClientViewSet(viewsets.ModelViewSet):
         client = self.get_object()
         created_by = request.data.get("created_by", "") or "api"
         row, cleartext = ClientService().rotate_secret(client, created_by=created_by)
-        return Response(ClientSecretCreateResponseSerializer({
-            "id": row.id,
-            "client_id": client.client_id,
-            "cleartext": cleartext,
-            "secret_hint": row.secret_hint,
-            "expires_at": row.expires_at,
-            "rotated_at": timezone.now(),
-        }).data, status=status.HTTP_201_CREATED)
+        return Response(
+            ClientSecretCreateResponseSerializer(
+                {
+                    "id": row.id,
+                    "client_id": client.client_id,
+                    "cleartext": cleartext,
+                    "secret_hint": row.secret_hint,
+                    "expires_at": row.expires_at,
+                    "rotated_at": timezone.now(),
+                }
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class ClientSecretViewSet(viewsets.ReadOnlyModelViewSet):
@@ -304,9 +321,14 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         except IdentityRealm.DoesNotExist:
             return Response({"detail": "Realm not found"}, status=status.HTTP_404_NOT_FOUND)
         try:
-            user = UserProvisioningService().provision_user(realm, **{k: v for k, v in serializer.validated_data.items() if k != "realm_id"})
+            user = UserProvisioningService().provision_user(
+                realm, **{k: v for k, v in serializer.validated_data.items() if k != "realm_id"}
+            )
         except KeycloakError as exc:
-            return Response({"detail": str(exc), "keycloak_status": exc.status_code}, status=status.HTTP_502_BAD_GATEWAY)
+            return Response(
+                {"detail": str(exc), "keycloak_status": exc.status_code},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
         return Response(UserProfileSerializer(user).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"])
@@ -404,18 +426,22 @@ class BreakGlassAccessViewSet(viewsets.ModelViewSet):
         access = self.get_object()
         serializer = BreakGlassApproveSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response(BreakGlassAccessSerializer(
-            BreakGlassService().approve(access, **serializer.validated_data)
-        ).data)
+        return Response(
+            BreakGlassAccessSerializer(
+                BreakGlassService().approve(access, **serializer.validated_data)
+            ).data
+        )
 
     @action(detail=True, methods=["post"])
     def activate(self, request, pk=None):
         access = self.get_object()
         serializer = BreakGlassActivateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response(BreakGlassAccessSerializer(
-            BreakGlassService().activate(access, **serializer.validated_data)
-        ).data)
+        return Response(
+            BreakGlassAccessSerializer(
+                BreakGlassService().activate(access, **serializer.validated_data)
+            ).data
+        )
 
     @action(detail=True, methods=["post"])
     def revoke(self, request, pk=None):

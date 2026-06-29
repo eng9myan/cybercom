@@ -1,9 +1,11 @@
-﻿"""
+"""
 CyMed Laboratory â€” Pathology
 Surgical pathology case management: gross, microscopic, diagnosis workflow.
 Diagnosis codes from SNOMED-CT + ICD-11 via TerminologyService.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -21,6 +23,7 @@ class PathologyCaseStatus(models.TextChoices):
 
 class PathologyCase(BaseModel):
     """Surgical pathology case â€” tracks tissue from receipt through final diagnosis."""
+
     order_item = models.ForeignKey(
         "lab_orders.LabOrderItem", on_delete=models.CASCADE, related_name="pathology_cases"
     )
@@ -50,14 +53,19 @@ class PathologyCase(BaseModel):
 
 class PathologySpecimen(BaseModel):
     """Individual tissue specimen within a pathology case."""
+
     case = models.ForeignKey(PathologyCase, on_delete=models.CASCADE, related_name="specimens")
     specimen = models.ForeignKey(
-        "lab_specimens.Specimen", on_delete=models.PROTECT, null=True, blank=True, related_name="pathology_specimens"
+        "lab_specimens.Specimen",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="pathology_specimens",
     )
-    part_label = models.CharField(max_length=10)     # A, B, C, etc.
+    part_label = models.CharField(max_length=10)  # A, B, C, etc.
     description = models.CharField(max_length=500)
     specimen_site = models.CharField(max_length=255, blank=True)
-    snomed_site_code = models.CharField(max_length=50, blank=True)   # via TerminologyService
+    snomed_site_code = models.CharField(max_length=50, blank=True)  # via TerminologyService
     fixative = models.CharField(max_length=100, default="formalin")
     cassettes_submitted = models.PositiveSmallIntegerField(default=0)
     weight_grams = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
@@ -70,7 +78,10 @@ class PathologySpecimen(BaseModel):
 
 class GrossExamination(BaseModel):
     """Macroscopic/gross description of a pathology specimen."""
-    case = models.ForeignKey(PathologyCase, on_delete=models.CASCADE, related_name="gross_examinations")
+
+    case = models.ForeignKey(
+        PathologyCase, on_delete=models.CASCADE, related_name="gross_examinations"
+    )
     pathology_specimen = models.OneToOneField(
         PathologySpecimen, on_delete=models.CASCADE, related_name="gross_examination"
     )
@@ -89,14 +100,17 @@ class GrossExamination(BaseModel):
 
 class MicroscopicExamination(BaseModel):
     """Histological microscopic examination findings by pathologist."""
-    case = models.ForeignKey(PathologyCase, on_delete=models.CASCADE, related_name="microscopic_examinations")
+
+    case = models.ForeignKey(
+        PathologyCase, on_delete=models.CASCADE, related_name="microscopic_examinations"
+    )
     pathology_specimen = models.ForeignKey(
         PathologySpecimen, on_delete=models.CASCADE, related_name="microscopic_examinations"
     )
     microscopic_description = models.TextField()
-    stains_used = models.JSONField(default=list)          # ["H&E", "PAS", "ZN", "Reticulin"]
+    stains_used = models.JSONField(default=list)  # ["H&E", "PAS", "ZN", "Reticulin"]
     special_stains = models.JSONField(default=list)
-    ihc_markers = models.JSONField(default=dict)          # {"ER": "Positive 90%", "PR": "Negative"}
+    ihc_markers = models.JSONField(default=dict)  # {"ER": "Positive 90%", "PR": "Negative"}
     examined_by = models.UUIDField()
     examined_at = models.DateTimeField()
 
@@ -106,6 +120,7 @@ class MicroscopicExamination(BaseModel):
 
 class PathologyDiagnosis(BaseModel):
     """Final pathological diagnosis for a case part."""
+
     DIAGNOSIS_CATEGORIES = [
         ("benign", "Benign"),
         ("malignant", "Malignant"),
@@ -120,8 +135,8 @@ class PathologyDiagnosis(BaseModel):
     pathology_specimen = models.ForeignKey(
         PathologySpecimen, on_delete=models.CASCADE, related_name="diagnoses", null=True, blank=True
     )
-    snomed_code = models.CharField(max_length=50, blank=True)       # SNOMED-CT via TerminologyService
-    icd11_code = models.CharField(max_length=20, blank=True)         # ICD-11 via TerminologyService
+    snomed_code = models.CharField(max_length=50, blank=True)  # SNOMED-CT via TerminologyService
+    icd11_code = models.CharField(max_length=20, blank=True)  # ICD-11 via TerminologyService
     diagnosis_text = models.TextField()
     diagnosis_category = models.CharField(max_length=20, choices=DIAGNOSIS_CATEGORIES, blank=True)
     tnm_staging = models.CharField(max_length=50, blank=True)

@@ -6,57 +6,74 @@ patient journeys, clinical workflows, RCM billing, and ERP integration.
 
 All model field names are validated against the actual Django model definitions.
 """
-import uuid
+
 import datetime
+import uuid
+
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 from django.db import transaction
+from django.utils import timezone
 
 # Tenant
 from platform.tenant.models import Tenant
-
-# Core Cymed Models
-from products.cymed.core.organizations.models import Organization
-from products.cymed.core.facilities.models import Facility, Department as CymedDepartment, Ward, Room, Bed
-from products.cymed.core.patients.models import Patient, PatientAddress, PatientContact
-from products.cymed.core.providers.models import Provider, ProviderSpecialty, ProviderCredential
-from products.cymed.core.encounters.models import Encounter, EpisodeOfCare, EncounterParticipant, EncounterDiagnosis, EncounterReason
-
-# Lab
-from products.cymed.laboratory.orders.models import LabTest, LabOrder, LabOrderItem, LabPriority
-from products.cymed.laboratory.specimens.models import Specimen, SpecimenStatus
-from products.cymed.laboratory.results.models import LabResult, ResultStatus, ResultValue, ReferenceRange
-from products.cymed.laboratory.worklists.models import LabWorklist, WorklistItem
-
-# Imaging
-from products.cymed.imaging.orders.models import ImagingProtocol, ImagingProcedure, ImagingOrder, ImagingOrderItem
-from products.cymed.imaging.radiology_reporting.models import RadiologyReport, RadiologyFinding, RadiologyImpression
-
-# Pharmacy
-from products.cymed.pharmacy.prescriptions.models import Prescription, PrescriptionItem
-from products.cymed.pharmacy.dispensing.models import DispenseOrder, DispenseItem, DispenseStatus
-from products.cymed.pharmacy.formulary.models import Formulary, FormularyDrug
-
-# RCM
-from products.cymed.rcm.billing.models import PatientAccount, EncounterBilling, Invoice as RcmInvoice, InvoiceLine as RcmInvoiceLine
-from products.cymed.rcm.claims.models import Claim, ClaimLine, ClaimSubmission, ClaimResponse
-from products.cymed.rcm.denials.models import Denial, DenialReason
-from products.cymed.rcm.insurance.models import InsuranceCompany, InsurancePlan, InsuranceMember
-
-# HWM (Workforce)
-from products.cymed.workforce_management.workforce_profiles.models import WorkforceProfile
-from products.cymed.workforce_management.scheduling.models import ShiftTemplate, RosterCycle, RosterSlot
-
-# CyCom ERP Models
-from products.cycom.hr.models import Employee, Department as CycomDepartment
-from products.cycom.payroll.models import PayrollRun, Payslip
-from products.cycom.inventory.models import Warehouse, StockItem, StockMovement
 from products.cycom.assets.models import Asset, AssetDepreciation
 from products.cycom.bi.models import BIReport, DashboardMetric
 from products.cycom.finance.gl.models import Account, JournalEntry, JournalLine
-from products.cycom.finance.ap.models import Vendor, Bill, BillLine, VendorPayment
-from products.cycom.finance.ar.models import Customer, Invoice as ArInvoice, InvoiceLine as ArInvoiceLine, Payment as ArPayment
-from products.cycom.procurement.purchase_orders.models import PurchaseOrder, POLine, GoodsReceipt, GoodsReceiptLine
+from products.cycom.hr.models import Department as CycomDepartment
+
+# CyCom ERP Models
+from products.cycom.hr.models import Employee
+from products.cycom.inventory.models import StockItem, StockMovement, Warehouse
+from products.cycom.payroll.models import PayrollRun, Payslip
+from products.cymed.core.encounters.models import (
+    Encounter,
+    EncounterDiagnosis,
+    EncounterParticipant,
+    EncounterReason,
+    EpisodeOfCare,
+)
+from products.cymed.core.facilities.models import Bed, Facility, Room, Ward
+from products.cymed.core.facilities.models import Department as CymedDepartment
+
+# Core Cymed Models
+from products.cymed.core.organizations.models import Organization
+from products.cymed.core.patients.models import Patient, PatientAddress, PatientContact
+from products.cymed.core.providers.models import Provider, ProviderCredential, ProviderSpecialty
+
+# Imaging
+from products.cymed.imaging.orders.models import (
+    ImagingOrder,
+    ImagingOrderItem,
+    ImagingProcedure,
+)
+from products.cymed.imaging.radiology_reporting.models import (
+    RadiologyReport,
+)
+
+# Lab
+from products.cymed.laboratory.orders.models import LabOrder, LabOrderItem, LabPriority, LabTest
+from products.cymed.laboratory.results.models import (
+    LabResult,
+    ReferenceRange,
+    ResultStatus,
+    ResultValue,
+)
+from products.cymed.laboratory.specimens.models import Specimen, SpecimenStatus
+from products.cymed.pharmacy.dispensing.models import DispenseItem, DispenseOrder, DispenseStatus
+from products.cymed.pharmacy.formulary.models import Formulary, FormularyDrug
+
+# Pharmacy
+from products.cymed.pharmacy.prescriptions.models import Prescription, PrescriptionItem
+
+# RCM
+from products.cymed.rcm.billing.models import EncounterBilling, PatientAccount
+from products.cymed.rcm.billing.models import Invoice as RcmInvoice
+from products.cymed.rcm.billing.models import InvoiceLine as RcmInvoiceLine
+from products.cymed.rcm.claims.models import Claim, ClaimLine
+from products.cymed.rcm.insurance.models import InsuranceCompany, InsuranceMember, InsurancePlan
+
+# HWM (Workforce)
+from products.cymed.workforce_management.workforce_profiles.models import WorkforceProfile
 
 
 class Command(BaseCommand):
@@ -82,7 +99,7 @@ class Command(BaseCommand):
                         "display_name": "CyberCom Care Network",
                         "tenant_type": "saas",
                         "status": "active",
-                    }
+                    },
                 )
                 t_id = tenant.id
 
@@ -97,7 +114,7 @@ class Command(BaseCommand):
                     defaults={
                         "name": "CyberCom Healthcare Network",
                         "organization_type": "hospital",
-                    }
+                    },
                 )
 
                 # Facilities mapping
@@ -121,7 +138,7 @@ class Command(BaseCommand):
                             "organization": org,
                             "name": name,
                             "is_active": True,
-                        }
+                        },
                     )
                     facilities[code] = fac
 
@@ -131,25 +148,25 @@ class Command(BaseCommand):
                     tenant_id=t_id,
                     facility=hosp,
                     code="DEPT-ER",
-                    defaults={"name": "Emergency Room"}
+                    defaults={"name": "Emergency Room"},
                 )
                 ward_er, _ = Ward.objects.get_or_create(
                     tenant_id=t_id,
                     department=dept_er,
                     code="WARD-ER",
-                    defaults={"name": "Emergency Ward"}
+                    defaults={"name": "Emergency Ward"},
                 )
                 room_er, _ = Room.objects.get_or_create(
                     tenant_id=t_id,
                     ward=ward_er,
                     room_number="ER-101",
-                    defaults={"room_type": "exam"}
+                    defaults={"room_type": "exam"},
                 )
                 bed_er, _ = Bed.objects.get_or_create(
                     tenant_id=t_id,
                     room=room_er,
                     bed_number="ER-BED-1",
-                    defaults={"status": "available"}
+                    defaults={"status": "available"},
                 )
 
                 # Create department and ward for inpatient
@@ -157,25 +174,25 @@ class Command(BaseCommand):
                     tenant_id=t_id,
                     facility=hosp,
                     code="DEPT-INPATIENT",
-                    defaults={"name": "Inpatient Medicine"}
+                    defaults={"name": "Inpatient Medicine"},
                 )
                 ward_med, _ = Ward.objects.get_or_create(
                     tenant_id=t_id,
                     department=dept_inpatient,
                     code="WARD-MED",
-                    defaults={"name": "Medical Ward"}
+                    defaults={"name": "Medical Ward"},
                 )
                 room_med, _ = Room.objects.get_or_create(
                     tenant_id=t_id,
                     ward=ward_med,
                     room_number="MED-202",
-                    defaults={"room_type": "standard"}
+                    defaults={"room_type": "standard"},
                 )
                 bed_med, _ = Bed.objects.get_or_create(
                     tenant_id=t_id,
                     room=room_med,
                     bed_number="MED-BED-2",
-                    defaults={"status": "available"}
+                    defaults={"status": "available"},
                 )
 
                 # ---------------------------------------------------------------------------
@@ -185,16 +202,26 @@ class Command(BaseCommand):
 
                 # CyCom Departments for HR
                 cycom_depts = {}
-                for code, name in [("HR", "Human Resources"), ("FIN", "Finance & AP/AR"), ("CLIN", "Clinical Operations")]:
+                for code, name in [
+                    ("HR", "Human Resources"),
+                    ("FIN", "Finance & AP/AR"),
+                    ("CLIN", "Clinical Operations"),
+                ]:
                     dept, _ = CycomDepartment.objects.get_or_create(
-                        tenant_id=t_id,
-                        code=code,
-                        defaults={"name": name}
+                        tenant_id=t_id, code=code, defaults={"name": name}
                     )
                     cycom_depts[code] = dept
 
                 # Helper to create Provider & Employee
-                def create_staff(first_name, last_name, role_type, npi, facility, specialty=None, credential_title=None):
+                def create_staff(
+                    first_name,
+                    last_name,
+                    role_type,
+                    npi,
+                    facility,
+                    specialty=None,
+                    credential_title=None,
+                ):
                     user_uuid = uuid.uuid4()
 
                     # 1. CyMed Clinical Provider
@@ -207,7 +234,7 @@ class Command(BaseCommand):
                             "last_name": last_name,
                             "provider_type": role_type,
                             "is_active": True,
-                        }
+                        },
                     )
 
                     if specialty:
@@ -215,7 +242,7 @@ class Command(BaseCommand):
                             tenant_id=t_id,
                             provider=prov,
                             specialty_code=specialty.upper().replace(" ", "_"),
-                            defaults={"specialty_display": specialty}
+                            defaults={"specialty_display": specialty},
                         )
                     if credential_title:
                         ProviderCredential.objects.get_or_create(
@@ -225,7 +252,7 @@ class Command(BaseCommand):
                             defaults={
                                 "issuer": "Saudi Commission for Health Specialties",
                                 "date_issued": datetime.date(2022, 1, 1),
-                            }
+                            },
                         )
 
                     # 2. CyCom ERP Employee
@@ -240,7 +267,7 @@ class Command(BaseCommand):
                             "job_title": role_type.title(),
                             "hire_date": datetime.date(2023, 1, 15),
                             "status": "active",
-                        }
+                        },
                     )
 
                     # 3. CyMed Workforce Profile (HWM)
@@ -253,18 +280,60 @@ class Command(BaseCommand):
                             "role_type": role_type,
                             "clinical_category": "nursing" if role_type == "nurse" else "physician",
                             "specialty": specialty or "General Practice",
-                        }
+                        },
                     )
 
                     return prov, emp
 
                 # Create key roles across facilities
-                phys_er, emp_phys_er = create_staff("Khalid", "Mansour", "physician", "NPI-PHYS-001", hosp, "Emergency Medicine", "MD")
-                nurse_er, emp_nurse_er = create_staff("Sarah", "Jordan", "nurse", "NPI-NURSE-001", hosp, "Critical Care", "RN")
-                phys_clinic, _ = create_staff("Ahmad", "Hameed", "physician", "NPI-PHYS-002", facilities["CLIN-PRIMARY"], "Primary Care", "MD")
-                rad, _ = create_staff("Tareq", "Saleh", "radiologist", "NPI-RAD-001", facilities["IMG-ADVANCED"], "Diagnostic Radiology", "MD")
-                pharmacist, _ = create_staff("Rania", "Badawi", "pharmacist", "NPI-PHARM-001", facilities["PHARM-AMAL"], "Clinical Pharmacy", "PharmD")
-                lab_tech, _ = create_staff("Yousef", "Naser", "lab_technician", "NPI-LAB-001", facilities["LAB-CENTRAL"], "Medical Lab Science", "BSc")
+                phys_er, emp_phys_er = create_staff(
+                    "Khalid",
+                    "Mansour",
+                    "physician",
+                    "NPI-PHYS-001",
+                    hosp,
+                    "Emergency Medicine",
+                    "MD",
+                )
+                nurse_er, emp_nurse_er = create_staff(
+                    "Sarah", "Jordan", "nurse", "NPI-NURSE-001", hosp, "Critical Care", "RN"
+                )
+                phys_clinic, _ = create_staff(
+                    "Ahmad",
+                    "Hameed",
+                    "physician",
+                    "NPI-PHYS-002",
+                    facilities["CLIN-PRIMARY"],
+                    "Primary Care",
+                    "MD",
+                )
+                rad, _ = create_staff(
+                    "Tareq",
+                    "Saleh",
+                    "radiologist",
+                    "NPI-RAD-001",
+                    facilities["IMG-ADVANCED"],
+                    "Diagnostic Radiology",
+                    "MD",
+                )
+                pharmacist, _ = create_staff(
+                    "Rania",
+                    "Badawi",
+                    "pharmacist",
+                    "NPI-PHARM-001",
+                    facilities["PHARM-AMAL"],
+                    "Clinical Pharmacy",
+                    "PharmD",
+                )
+                lab_tech, _ = create_staff(
+                    "Yousef",
+                    "Naser",
+                    "lab_technician",
+                    "NPI-LAB-001",
+                    facilities["LAB-CENTRAL"],
+                    "Medical Lab Science",
+                    "BSc",
+                )
 
                 # ---------------------------------------------------------------------------
                 # Phase 3: Seeding Patients and Interconnected Workflows
@@ -281,7 +350,7 @@ class Command(BaseCommand):
                         "dob": datetime.date(1988, 4, 12),
                         "gender": "female",
                         "national_id": "1098765432",
-                    }
+                    },
                 )
                 PatientAddress.objects.get_or_create(
                     tenant_id=t_id,
@@ -291,13 +360,13 @@ class Command(BaseCommand):
                         "line1": "King Fahd Road",
                         "city": "Riyadh",
                         "country": "Saudi Arabia",
-                    }
+                    },
                 )
                 PatientContact.objects.get_or_create(
                     tenant_id=t_id,
                     patient=pat_aisha,
                     telecom_system="phone",
-                    defaults={"telecom_value": "+966 50 123 4567"}
+                    defaults={"telecom_value": "+966 50 123 4567"},
                 )
 
                 # Faisal (Emergency Inpatient workflow)
@@ -310,7 +379,7 @@ class Command(BaseCommand):
                         "dob": datetime.date(1975, 11, 22),
                         "gender": "male",
                         "national_id": "1087654321",
-                    }
+                    },
                 )
 
                 # --- Setup Insurance Coverage ---
@@ -321,7 +390,7 @@ class Command(BaseCommand):
                         "name": "Bupa Arabia",
                         "short_name": "Bupa",
                         "company_type": "private",
-                    }
+                    },
                 )
                 plan, _ = InsurancePlan.objects.get_or_create(
                     plan_code="BUPA-PREM",
@@ -332,7 +401,7 @@ class Command(BaseCommand):
                         "plan_type": "corporate",
                         "network_type": "in_network",
                         "coverage_category": "premium",
-                    }
+                    },
                 )
                 ins_member, _ = InsuranceMember.objects.get_or_create(
                     member_id="MEM-84729",
@@ -342,7 +411,7 @@ class Command(BaseCommand):
                         "insurance_plan": plan,
                         "member_relationship": "self",
                         "effective_date": timezone.now().date(),
-                    }
+                    },
                 )
 
                 # Patient account linking
@@ -353,16 +422,13 @@ class Command(BaseCommand):
                         "patient_id": pat_aisha.id,
                         "primary_insurance_member_id": ins_member.id,
                         "account_status": "active",
-                    }
+                    },
                 )
 
                 # --- Workflow 1 execution ---
                 # 1. Outpatient Clinic Consultation
                 ep_care = EpisodeOfCare.objects.create(
-                    tenant_id=t_id,
-                    patient=pat_aisha,
-                    status="active",
-                    managing_organization=org
+                    tenant_id=t_id, patient=pat_aisha, status="active", managing_organization=org
                 )
                 enc_clinic = Encounter.objects.create(
                     tenant_id=t_id,
@@ -376,23 +442,20 @@ class Command(BaseCommand):
                     end_time=timezone.now() - datetime.timedelta(hours=3),
                 )
                 EncounterParticipant.objects.create(
-                    tenant_id=t_id,
-                    encounter=enc_clinic,
-                    provider=phys_clinic,
-                    role="lead"
+                    tenant_id=t_id, encounter=enc_clinic, provider=phys_clinic, role="lead"
                 )
                 EncounterReason.objects.create(
                     tenant_id=t_id,
                     encounter=enc_clinic,
                     reason_code="R53",
-                    reason_text="Chronic fatigue and abdominal discomfort"
+                    reason_text="Chronic fatigue and abdominal discomfort",
                 )
                 EncounterDiagnosis.objects.create(
                     tenant_id=t_id,
                     encounter=enc_clinic,
                     condition_code="E55.9",
                     display="Vitamin D deficiency, unspecified",
-                    use="chief_complaint"
+                    use="chief_complaint",
                 )
 
                 # 2. Lab order, specimen collection, analysis, and results
@@ -402,10 +465,10 @@ class Command(BaseCommand):
                     defaults={
                         "tenant_id": t_id,
                         "name": "25-Hydroxy Vitamin D Test",
-                        "category": "chemistry",      # LabTestCategory.CHEMISTRY
+                        "category": "chemistry",  # LabTestCategory.CHEMISTRY
                         "loinc_code": "62292-8",
                         "unit": "ng/mL",
-                    }
+                    },
                 )
                 # Create the reference range as a separate ReferenceRange record
                 ReferenceRange.objects.get_or_create(
@@ -420,7 +483,7 @@ class Command(BaseCommand):
                         "unit": "ng/mL",
                         "text_range": "30.0 - 100.0 ng/mL",
                         "is_active": True,
-                    }
+                    },
                 )
 
                 # LabOrder — uses patient_id (UUID), encounter_id (UUID), ordered_by (UUID)
@@ -477,9 +540,9 @@ class Command(BaseCommand):
                     analyte_name="25-Hydroxy Vitamin D",
                     loinc_code="62292-8",
                     value_type="numeric",
-                    value_numeric=12.5,     # Deficient level
+                    value_numeric=12.5,  # Deficient level
                     unit="ng/mL",
-                    interpretation="L",    # Low
+                    interpretation="L",  # Low
                     is_abnormal=True,
                     sequence=1,
                 )
@@ -493,7 +556,7 @@ class Command(BaseCommand):
                         "modality": "us",
                         "body_part": "abdomen",
                         "loinc_code": "3070-9",
-                    }
+                    },
                 )
                 # ImagingOrder — uses patient_id (UUID), encounter_id (UUID), ordered_by (UUID)
                 img_order = ImagingOrder.objects.create(
@@ -510,7 +573,7 @@ class Command(BaseCommand):
                     procedure=img_proc,
                     status="completed",
                 )
-                rad_report = RadiologyReport.objects.create(
+                RadiologyReport.objects.create(
                     tenant_id=t_id,
                     order_item=img_item,
                     patient_id=pat_aisha.id,
@@ -525,11 +588,11 @@ class Command(BaseCommand):
                 # 4. Prescription & Medication Dispensing
                 formulary, _ = Formulary.objects.get_or_create(
                     name="National Formulary - Saudi Arabia",
-                    defaults={"tenant_id": t_id, "is_active": True}
+                    defaults={"tenant_id": t_id, "is_active": True},
                 )
                 form_drug, _ = FormularyDrug.objects.get_or_create(
                     formulary=formulary,
-                    drug_code="RXCUI-197399",   # Alfacalcidol RxNorm
+                    drug_code="RXCUI-197399",  # Alfacalcidol RxNorm
                     defaults={
                         "tenant_id": t_id,
                         "drug_name": "One-Alpha Vitamin D3",
@@ -537,7 +600,7 @@ class Command(BaseCommand):
                         "atc_code": "A11CC03",
                         "status": "preferred",
                         "tier": 1,
-                    }
+                    },
                 )
 
                 # Prescription — uses patient_id (UUID), encounter_id (UUID), prescriber_id (UUID)
@@ -633,11 +696,14 @@ class Command(BaseCommand):
                     currency="SAR",
                 )
                 # Invoice lines
-                for line_num, (desc, amount) in enumerate([
-                    ("General Practice Consultation", 150.00),
-                    ("25-Hydroxy Vitamin D Test", 100.00),
-                    ("Ultrasound Abdomen", 200.00),
-                ], start=1):
+                for line_num, (desc, amount) in enumerate(
+                    [
+                        ("General Practice Consultation", 150.00),
+                        ("25-Hydroxy Vitamin D Test", 100.00),
+                        ("Ultrasound Abdomen", 200.00),
+                    ],
+                    start=1,
+                ):
                     RcmInvoiceLine.objects.create(
                         tenant_id=t_id,
                         invoice=rcm_inv,
@@ -701,16 +767,13 @@ class Command(BaseCommand):
                     end_time=timezone.now() - datetime.timedelta(days=1, hours=-2),
                 )
                 EncounterParticipant.objects.create(
-                    tenant_id=t_id,
-                    encounter=enc_er,
-                    provider=phys_er,
-                    role="lead"
+                    tenant_id=t_id, encounter=enc_er, provider=phys_er, role="lead"
                 )
                 EncounterReason.objects.create(
                     tenant_id=t_id,
                     encounter=enc_er,
                     reason_code="I20.9",
-                    reason_text="Acute substernal chest pain, radiating to left arm"
+                    reason_text="Acute substernal chest pain, radiating to left arm",
                 )
 
                 # Inpatient Stay Admission
@@ -724,10 +787,7 @@ class Command(BaseCommand):
                     start_time=timezone.now() - datetime.timedelta(hours=22),
                 )
                 EncounterParticipant.objects.create(
-                    tenant_id=t_id,
-                    encounter=enc_inpatient,
-                    provider=phys_er,
-                    role="lead"
+                    tenant_id=t_id, encounter=enc_inpatient, provider=phys_er, role="lead"
                 )
 
                 # ---------------------------------------------------------------------------
@@ -758,7 +818,7 @@ class Command(BaseCommand):
                             "account_type": acc_type,
                             "is_active": True,
                             "currency": "SAR",
-                        }
+                        },
                     )
                     gl_accounts[code] = acc
 
@@ -840,7 +900,7 @@ class Command(BaseCommand):
                         "tenant_id": t_id,
                         "name": "Central Pharmacy Warehouse",
                         "location": "Al-Amal Hospital Basement",
-                    }
+                    },
                 )
                 stock_item, _ = StockItem.objects.get_or_create(
                     sku="DRUG-VITD-001",
@@ -851,7 +911,7 @@ class Command(BaseCommand):
                         "quantity": 1000.00,
                         "unit": "capsule",
                         "unit_cost": 2.50,
-                    }
+                    },
                 )
                 # Stock Movement (receipt of 500 capsules)
                 StockMovement.objects.create(
@@ -874,7 +934,7 @@ class Command(BaseCommand):
                         "salvage_value": 50000.00,
                         "useful_life_years": 7,
                         "status": "active",
-                    }
+                    },
                 )
                 # Depreciate
                 AssetDepreciation.objects.create(
@@ -894,7 +954,7 @@ class Command(BaseCommand):
                         "report_type": "operations",
                         "query_definition": "SELECT COUNT(*) FROM cymed_encounters",
                         "active": True,
-                    }
+                    },
                 )
                 DashboardMetric.objects.get_or_create(
                     name="average_er_wait_time_minutes",
@@ -903,7 +963,7 @@ class Command(BaseCommand):
                         "metric_value": 24.50,
                         "period": "daily",
                         "dimensions": {"facility": "HOSP-AMAL"},
-                    }
+                    },
                 )
                 DashboardMetric.objects.get_or_create(
                     name="monthly_gross_revenue_sar",
@@ -912,7 +972,7 @@ class Command(BaseCommand):
                         "metric_value": 450.00,
                         "period": "monthly",
                         "dimensions": {"department": "CLIN"},
-                    }
+                    },
                 )
 
             self.stdout.write(self.style.SUCCESS("Demo database successfully seeded!"))

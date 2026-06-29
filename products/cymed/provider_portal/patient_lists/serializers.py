@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
 from products.cymed.provider_portal.patient_lists.models import (
-    PatientList,
     PatientAssignment,
-    ProviderAssignment,
     PatientCensus,
+    PatientList,
+    ProviderAssignment,
 )
 
 

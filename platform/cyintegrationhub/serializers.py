@@ -1,30 +1,36 @@
 from rest_framework import serializers
+
 from platform.cyintegrationhub.models import (
-    IntegrationPartner,
     ConnectorConfig,
+    IntegrationPartner,
+    MessageAuditLog,
     TransformationMapping,
-    MessageAuditLog
 )
+
 
 class IntegrationPartnerSerializer(serializers.ModelSerializer):
     class Meta:
         model = IntegrationPartner
         fields = "__all__"
 
+
 class ConnectorConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConnectorConfig
         fields = "__all__"
+
 
 class TransformationMappingSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransformationMapping
         fields = "__all__"
 
+
 class MessageAuditLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = MessageAuditLog
         fields = "__all__"
+
 
 class ConnectorExecutionRequestSerializer(serializers.Serializer):
     tenant_id = serializers.UUIDField()

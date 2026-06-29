@@ -1,5 +1,6 @@
-﻿from rest_framework import serializers
-from .models import NationalReport, ReportTemplate, GovernmentSubmission, ReportSchedule
+from rest_framework import serializers
+
+from .models import GovernmentSubmission, NationalReport, ReportSchedule, ReportTemplate
 
 
 class NationalReportSerializer(serializers.ModelSerializer):

@@ -1,6 +1,11 @@
 from products.cymed.imaging.views import ImagingModelViewSet
-from .models import ImagingResult, StructuredMeasurement, ResultCommunication
-from .serializers import ImagingResultSerializer, StructuredMeasurementSerializer, ResultCommunicationSerializer
+
+from .models import ImagingResult, ResultCommunication, StructuredMeasurement
+from .serializers import (
+    ImagingResultSerializer,
+    ResultCommunicationSerializer,
+    StructuredMeasurementSerializer,
+)
 
 
 class ImagingResultViewSet(ImagingModelViewSet):

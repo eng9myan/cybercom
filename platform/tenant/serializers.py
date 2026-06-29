@@ -1,13 +1,26 @@
 """
 CyberCom Multi-Tenant Framework — DRF Serializers.
 """
+
 from rest_framework import serializers
+
 from .models import (
-    Tenant, TenantProfile, TenantConfiguration, TenantBranding,
-    TenantSubscription, TenantLicense, TenantEnvironment, TenantRegion,
-    TenantDeploymentProfile, TenantFeatureFlag, TenantDomain,
-    TenantSSOConfiguration, TenantStoragePolicy, TenantRetentionPolicy,
-    TenantComplianceProfile, TenantAuditConfiguration,
+    Tenant,
+    TenantAuditConfiguration,
+    TenantBranding,
+    TenantComplianceProfile,
+    TenantConfiguration,
+    TenantDeploymentProfile,
+    TenantDomain,
+    TenantEnvironment,
+    TenantFeatureFlag,
+    TenantLicense,
+    TenantProfile,
+    TenantRegion,
+    TenantRetentionPolicy,
+    TenantSSOConfiguration,
+    TenantStoragePolicy,
+    TenantSubscription,
 )
 
 
@@ -40,17 +53,40 @@ class TenantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tenant
         fields = [
-            "id", "name", "slug", "display_name", "tenant_type", "tier",
-            "status", "country_code", "timezone", "locale", "home_region",
-            "identity_realm_id", "keycloak_realm_name",
-            "activated_at", "suspended_at", "archived_at",
-            "terminated_at", "decommissioned_at", "metadata",
-            "created_at", "updated_at",
-            "profile", "configuration", "branding",
+            "id",
+            "name",
+            "slug",
+            "display_name",
+            "tenant_type",
+            "tier",
+            "status",
+            "country_code",
+            "timezone",
+            "locale",
+            "home_region",
+            "identity_realm_id",
+            "keycloak_realm_name",
+            "activated_at",
+            "suspended_at",
+            "archived_at",
+            "terminated_at",
+            "decommissioned_at",
+            "metadata",
+            "created_at",
+            "updated_at",
+            "profile",
+            "configuration",
+            "branding",
         ]
         read_only_fields = [
-            "id", "activated_at", "suspended_at", "archived_at",
-            "terminated_at", "decommissioned_at", "created_at", "updated_at",
+            "id",
+            "activated_at",
+            "suspended_at",
+            "archived_at",
+            "terminated_at",
+            "decommissioned_at",
+            "created_at",
+            "updated_at",
         ]
 
 
@@ -58,8 +94,16 @@ class TenantCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tenant
         fields = [
-            "name", "slug", "display_name", "tenant_type", "tier",
-            "country_code", "timezone", "locale", "home_region", "metadata",
+            "name",
+            "slug",
+            "display_name",
+            "tenant_type",
+            "tier",
+            "country_code",
+            "timezone",
+            "locale",
+            "home_region",
+            "metadata",
         ]
 
 
@@ -117,8 +161,12 @@ class TenantDomainSerializer(serializers.ModelSerializer):
         model = TenantDomain
         fields = "__all__"
         read_only_fields = [
-            "id", "created_at", "updated_at",
-            "verification_token", "verified_at", "is_verified",
+            "id",
+            "created_at",
+            "updated_at",
+            "verification_token",
+            "verified_at",
+            "is_verified",
         ]
 
 
@@ -168,6 +216,7 @@ class TenantAuditConfigurationSerializer(serializers.ModelSerializer):
 # Action serializers
 # ---------------------------------------------------------------------------
 
+
 class TenantBootstrapSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=200)
     slug = serializers.SlugField(max_length=100)
@@ -177,8 +226,12 @@ class TenantBootstrapSerializer(serializers.Serializer):
     country_code = serializers.CharField(max_length=2, default="SA")
     locale = serializers.CharField(max_length=10, default="ar")
     home_region = serializers.CharField(max_length=50, default="me-central-1")
-    plan = serializers.ChoiceField(choices=TenantSubscription.plan.field.choices, default="professional")
-    compliance_frameworks = serializers.ListField(child=serializers.CharField(), required=False, default=list)
+    plan = serializers.ChoiceField(
+        choices=TenantSubscription.plan.field.choices, default="professional"
+    )
+    compliance_frameworks = serializers.ListField(
+        child=serializers.CharField(), required=False, default=list
+    )
     contact_email = serializers.EmailField(required=False, allow_blank=True)
 
 

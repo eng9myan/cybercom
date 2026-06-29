@@ -1,10 +1,13 @@
 from rest_framework import serializers
+
 from products.cymed.core.registries.models import CohortRegistry, RegistryEntry
+
 
 class RegistryEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = RegistryEntry
         fields = ["id", "registry", "patient", "joined_at", "status"]
+
 
 class CohortRegistrySerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,28 +1,32 @@
 import uuid
-import json
-import pytest
-from unittest.mock import patch
-from rest_framework.test import APIClient
+
 import jwt
+import pytest
+from rest_framework.test import APIClient
 
 from platform.terminology.models import TerminologyAuditLog
-from platform.terminology.providers.registry import TerminologyProviderRegistry
 from platform.terminology.providers.base import TerminologyProvider
-from platform.terminology.providers.icd11 import ICD11Provider
-from platform.terminology.providers.snomed import SNOMEDProvider
-from platform.terminology.providers.loinc import LOINCProvider
-from platform.terminology.providers.icf import ICFProvider
 from platform.terminology.providers.fhir import FHIRTerminologyProvider
+from platform.terminology.providers.icd11 import ICD11Provider
+from platform.terminology.providers.icf import ICFProvider
+from platform.terminology.providers.loinc import LOINCProvider
+from platform.terminology.providers.registry import TerminologyProviderRegistry
+from platform.terminology.providers.snomed import SNOMEDProvider
 from platform.terminology.services import TerminologyService
+
 
 # Dummy RxNorm provider for hot-swapping verification
 class RxNormProvider(TerminologyProvider):
     def search(self, query: str, limit: int = 10, **kwargs):
         return [{"code": "863671", "display": "Lisinopril 10 MG Oral Tablet", "type": "drug"}]
-    
+
     def lookup(self, code: str, **kwargs):
         if code == "863671":
-            return {"code": "863671", "display": "Lisinopril 10 MG Oral Tablet", "definition": "Mock RxNorm drug details"}
+            return {
+                "code": "863671",
+                "display": "Lisinopril 10 MG Oral Tablet",
+                "definition": "Mock RxNorm drug details",
+            }
         return None
 
     def validate(self, code: str, **kwargs) -> bool:
@@ -80,11 +84,11 @@ class TestTerminologyRegistry:
         # Default providers should be registered automatically via apps.py
         # But we can test manual registration too
         registry = TerminologyProviderRegistry()
-        
+
         # Test default registration retrieval
         icd11 = registry.get_provider("icd11")
         assert isinstance(icd11, ICD11Provider)
-        
+
         # Test error for unregistered provider
         with pytest.raises(ValueError, match="is not registered"):
             registry.get_provider("invalid-provider")
@@ -92,16 +96,16 @@ class TestTerminologyRegistry:
         # Test hot-swapping a custom provider (RxNorm)
         rxnorm = RxNormProvider()
         registry.register_provider("rxnorm", rxnorm)
-        
+
         provider = registry.get_provider("rxnorm")
         assert isinstance(provider, RxNormProvider)
         assert provider.get_version() == "2025-RxNorm"
-        
+
         # Test list providers
         providers_list = registry.list_providers()
         assert "rxnorm" in providers_list
         assert "icd11" in providers_list
-        
+
         # Test deregister provider
         registry.deregister_provider("rxnorm")
         with pytest.raises(ValueError):
@@ -112,7 +116,7 @@ class TestTerminologyRegistry:
 class TestICD11Provider:
     def test_icd11_operations(self):
         provider = ICD11Provider()
-        
+
         # Search
         results = provider.search("diabetes")
         assert len(results) >= 2
@@ -177,7 +181,7 @@ class TestSNOMEDProvider:
         # Search
         results = provider.search("diabetes")
         assert len(results) >= 2
-        
+
         # Lookup
         details = provider.lookup("111553001")
         assert details is not None
@@ -267,16 +271,28 @@ class TestFHIRTerminologyProvider:
 
         # Validate ($validate-code)
         assert provider.validate("male", system="http://hl7.org/fhir/administrative-gender") is True
-        assert provider.validate("invalid", system="http://hl7.org/fhir/administrative-gender") is False
-        assert provider.validate("male", value_set="http://hl7.org/fhir/ValueSet/administrative-gender") is True
+        assert (
+            provider.validate("invalid", system="http://hl7.org/fhir/administrative-gender")
+            is False
+        )
+        assert (
+            provider.validate(
+                "male", value_set="http://hl7.org/fhir/ValueSet/administrative-gender"
+            )
+            is True
+        )
 
         # Translate ($translate)
-        translation = provider.translate("male", "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender")
+        translation = provider.translate(
+            "male", "http://terminology.hl7.org/CodeSystem/v3-AdministrativeGender"
+        )
         assert translation is not None
         assert translation["code"] == "M"
 
         # Expand ($expand)
-        expansion = provider.expand("http://hl7.org/fhir/ValueSet/administrative-gender", filter_str="female")
+        expansion = provider.expand(
+            "http://hl7.org/fhir/ValueSet/administrative-gender", filter_str="female"
+        )
         assert len(expansion) == 1
         assert expansion[0]["code"] == "female"
 
@@ -295,7 +311,7 @@ class TestTerminologyService:
             provider="icd11",
             query="common cold",
             tenant_id=str(test_tenant_id),
-            requested_by="test-user"
+            requested_by="test-user",
         )
         assert len(results) == 1
         assert results[0]["code"] == "CA00"
@@ -311,55 +327,70 @@ class TestTerminologyService:
 
         # Test service lookup
         details = TerminologyService.lookup(
-            provider="snomed",
-            code="111553001",
-            tenant_id=str(test_tenant_id)
+            provider="snomed", code="111553001", tenant_id=str(test_tenant_id)
         )
         assert details is not None
         assert "Type 1 diabetes" in details["display"]
-        assert TerminologyAuditLog.objects.filter(tenant_id=test_tenant_id, operation="lookup").count() == 1
+        assert (
+            TerminologyAuditLog.objects.filter(tenant_id=test_tenant_id, operation="lookup").count()
+            == 1
+        )
 
         # Test service validate
         is_valid = TerminologyService.validate(
-            provider="loinc",
-            code="2339-0",
-            tenant_id=str(test_tenant_id)
+            provider="loinc", code="2339-0", tenant_id=str(test_tenant_id)
         )
         assert is_valid is True
-        assert TerminologyAuditLog.objects.filter(tenant_id=test_tenant_id, operation="validate").count() == 1
+        assert (
+            TerminologyAuditLog.objects.filter(
+                tenant_id=test_tenant_id, operation="validate"
+            ).count()
+            == 1
+        )
 
         # Test service translate
         translation = TerminologyService.translate(
-            provider="icf",
-            code="d450",
-            target_system="whodas",
-            tenant_id=str(test_tenant_id)
+            provider="icf", code="d450", target_system="whodas", tenant_id=str(test_tenant_id)
         )
         assert translation is not None
         assert translation["code"] == "WHODAS-D4.1"
-        assert TerminologyAuditLog.objects.filter(tenant_id=test_tenant_id, operation="translate").count() == 1
+        assert (
+            TerminologyAuditLog.objects.filter(
+                tenant_id=test_tenant_id, operation="translate"
+            ).count()
+            == 1
+        )
 
         # Test service expand
         expansion = TerminologyService.expand(
             provider="fhir",
             value_set="http://hl7.org/fhir/ValueSet/administrative-gender",
-            tenant_id=str(test_tenant_id)
+            tenant_id=str(test_tenant_id),
         )
         assert len(expansion) == 4
-        assert TerminologyAuditLog.objects.filter(tenant_id=test_tenant_id, operation="expand").count() == 1
+        assert (
+            TerminologyAuditLog.objects.filter(tenant_id=test_tenant_id, operation="expand").count()
+            == 1
+        )
 
         # Test service subsumes
         outcome = TerminologyService.subsumes(
             provider="fhir",
             code_a="parent-concept",
             code_b="child-concept",
-            tenant_id=str(test_tenant_id)
+            tenant_id=str(test_tenant_id),
         )
         assert outcome == "subsumes"
-        assert TerminologyAuditLog.objects.filter(tenant_id=test_tenant_id, operation="subsumes").count() == 1
+        assert (
+            TerminologyAuditLog.objects.filter(
+                tenant_id=test_tenant_id, operation="subsumes"
+            ).count()
+            == 1
+        )
 
         # Verify OutboxEvents were published (Event Driven)
         from platform.events.models import OutboxEvent
+
         events = OutboxEvent.objects.filter(tenant_id=test_tenant_id)
         assert events.count() == 6
         assert events.filter(event_type="cyterminology.search.executed").count() == 1
@@ -370,12 +401,11 @@ class TestTerminologyService:
         assert events.filter(event_type="cyterminology.subsumes.executed").count() == 1
 
 
-
 @pytest.mark.django_db
 class TestTerminologyAPIs:
     def test_endpoints_unauthenticated(self):
         client = APIClient()
-        
+
         # Test unauthenticated access returns 401
         assert client.post("/api/v1/terminology/search/", {}).status_code == 401
         assert client.post("/api/v1/terminology/lookup/", {}).status_code == 401
@@ -392,9 +422,9 @@ class TestTerminologyAPIs:
                 "provider": "icd11",
                 "tenant_id": str(test_tenant_id),
                 "query": "common cold",
-                "limit": 5
+                "limit": 5,
             },
-            format="json"
+            format="json",
         )
         assert resp.status_code == 200
         assert len(resp.data) == 1
@@ -403,12 +433,8 @@ class TestTerminologyAPIs:
     def test_lookup_endpoint(self, auth_client, test_tenant_id):
         resp = auth_client.post(
             "/api/v1/terminology/lookup/",
-            {
-                "provider": "snomed",
-                "tenant_id": str(test_tenant_id),
-                "code": "111553001"
-            },
-            format="json"
+            {"provider": "snomed", "tenant_id": str(test_tenant_id), "code": "111553001"},
+            format="json",
         )
         assert resp.status_code == 200
         assert "Type 1 diabetes" in resp.data["display"]
@@ -416,24 +442,16 @@ class TestTerminologyAPIs:
         # Concept not found
         resp_404 = auth_client.post(
             "/api/v1/terminology/lookup/",
-            {
-                "provider": "snomed",
-                "tenant_id": str(test_tenant_id),
-                "code": "invalid-code"
-            },
-            format="json"
+            {"provider": "snomed", "tenant_id": str(test_tenant_id), "code": "invalid-code"},
+            format="json",
         )
         assert resp_404.status_code == 404
 
     def test_validate_endpoint(self, auth_client, test_tenant_id):
         resp = auth_client.post(
             "/api/v1/terminology/validate/",
-            {
-                "provider": "loinc",
-                "tenant_id": str(test_tenant_id),
-                "code": "2339-0"
-            },
-            format="json"
+            {"provider": "loinc", "tenant_id": str(test_tenant_id), "code": "2339-0"},
+            format="json",
         )
         assert resp.status_code == 200
         assert resp.data["valid"] is True
@@ -445,9 +463,9 @@ class TestTerminologyAPIs:
                 "provider": "icf",
                 "tenant_id": str(test_tenant_id),
                 "code": "d450",
-                "target_system": "whodas"
+                "target_system": "whodas",
             },
-            format="json"
+            format="json",
         )
         assert resp.status_code == 200
         assert resp.data["code"] == "WHODAS-D4.1"
@@ -459,9 +477,9 @@ class TestTerminologyAPIs:
                 "provider": "icf",
                 "tenant_id": str(test_tenant_id),
                 "code": "d450",
-                "target_system": "invalid-target"
+                "target_system": "invalid-target",
             },
-            format="json"
+            format="json",
         )
         assert resp_404.status_code == 404
 
@@ -472,9 +490,9 @@ class TestTerminologyAPIs:
                 "provider": "fhir",
                 "tenant_id": str(test_tenant_id),
                 "value_set": "http://hl7.org/fhir/ValueSet/administrative-gender",
-                "filter_str": "female"
+                "filter_str": "female",
             },
-            format="json"
+            format="json",
         )
         assert resp.status_code == 200
         assert len(resp.data) == 1
@@ -487,9 +505,9 @@ class TestTerminologyAPIs:
                 "provider": "fhir",
                 "tenant_id": str(test_tenant_id),
                 "code_a": "parent-concept",
-                "code_b": "child-concept"
+                "code_b": "child-concept",
             },
-            format="json"
+            format="json",
         )
         assert resp.status_code == 200
         assert resp.data["outcome"] == "subsumes"
@@ -500,7 +518,7 @@ class TestTerminologyAPIs:
             provider="icd11",
             query="diabetes",
             tenant_id=str(test_tenant_id),
-            requested_by="test-user"
+            requested_by="test-user",
         )
 
         resp = auth_client.get("/api/v1/terminology/logs/")
@@ -518,9 +536,7 @@ class TestTerminologyHotSwapping:
 
         # Query custom RxNorm provider through the service layer
         results = TerminologyService.search(
-            provider="rxnorm",
-            query="Lisinopril",
-            tenant_id=str(test_tenant_id)
+            provider="rxnorm", query="Lisinopril", tenant_id=str(test_tenant_id)
         )
         assert len(results) == 1
         assert results[0]["code"] == "863671"

@@ -1,4 +1,5 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -48,7 +49,9 @@ class StockMovement(BaseModel):
     )
     movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPE_CHOICES)
     quantity = models.DecimalField(max_digits=12, decimal_places=3)
-    reference_id = models.UUIDField(null=True, blank=True)  # Can refer to PO line, Invoice line, etc.
+    reference_id = models.UUIDField(
+        null=True, blank=True
+    )  # Can refer to PO line, Invoice line, etc.
     movement_date = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True)
 

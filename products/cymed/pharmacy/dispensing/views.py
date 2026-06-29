@@ -1,21 +1,32 @@
 """
 CyMed Pharmacy — Dispensing Views
 """
+
 import uuid
+
 import django.utils.timezone as tz
+from rest_framework import status as http_status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import status as http_status
+
 from platform.events.models import OutboxEvent
+
+from ..views import PharmacyModelViewSet
 from .models import (
-    DispenseOrder, DispenseItem, DispenseBatch,
-    DispenseVerification, DispenseAudit, DispenseStatus
+    DispenseAudit,
+    DispenseBatch,
+    DispenseItem,
+    DispenseOrder,
+    DispenseStatus,
+    DispenseVerification,
 )
 from .serializers import (
-    DispenseOrderSerializer, DispenseItemSerializer, DispenseBatchSerializer,
-    DispenseVerificationSerializer, DispenseAuditSerializer
+    DispenseAuditSerializer,
+    DispenseBatchSerializer,
+    DispenseItemSerializer,
+    DispenseOrderSerializer,
+    DispenseVerificationSerializer,
 )
-from ..views import PharmacyModelViewSet
 
 
 class DispenseOrderViewSet(PharmacyModelViewSet):
@@ -32,7 +43,8 @@ class DispenseOrderViewSet(PharmacyModelViewSet):
         dispense_number = f"DSP-{str(uuid.uuid4()).upper()[:12]}"
         obj = serializer.save(tenant_id=tenant_id, dispense_number=dispense_number)
         DispenseAudit.objects.create(
-            tenant_id=tenant_id, dispense_order=obj,
+            tenant_id=tenant_id,
+            dispense_order=obj,
             action="created",
             performed_by=self.request.user.id if hasattr(self.request, "user") else uuid.uuid4(),
             details={"dispense_number": obj.dispense_number},
@@ -45,7 +57,7 @@ class DispenseOrderViewSet(PharmacyModelViewSet):
         if dispense.status not in (DispenseStatus.VERIFICATION_PENDING, DispenseStatus.QUEUED):
             return Response(
                 {"detail": "Order is not pending verification."},
-                status=http_status.HTTP_400_BAD_REQUEST
+                status=http_status.HTTP_400_BAD_REQUEST,
             )
         pharmacist_id = request.user.id if hasattr(request, "user") else None
         dispense.status = DispenseStatus.VERIFIED
@@ -54,8 +66,10 @@ class DispenseOrderViewSet(PharmacyModelViewSet):
         dispense.save(update_fields=["status", "verified_by", "verified_at", "updated_at"])
 
         DispenseAudit.objects.create(
-            tenant_id=dispense.tenant_id, dispense_order=dispense,
-            action="verified", performed_by=pharmacist_id or uuid.uuid4(),
+            tenant_id=dispense.tenant_id,
+            dispense_order=dispense,
+            action="verified",
+            performed_by=pharmacist_id or uuid.uuid4(),
             details={"verified_at": str(dispense.verified_at)},
         )
         return Response(DispenseOrderSerializer(dispense).data)
@@ -67,7 +81,7 @@ class DispenseOrderViewSet(PharmacyModelViewSet):
         if dispense.status != DispenseStatus.VERIFIED:
             return Response(
                 {"detail": "Order must be pharmacist-verified before dispensing."},
-                status=http_status.HTTP_400_BAD_REQUEST
+                status=http_status.HTTP_400_BAD_REQUEST,
             )
         pharmacist_id = request.user.id if hasattr(request, "user") else None
         dispense.status = DispenseStatus.DISPENSED
@@ -81,9 +95,14 @@ class DispenseOrderViewSet(PharmacyModelViewSet):
         dispense.save()
 
         DispenseAudit.objects.create(
-            tenant_id=dispense.tenant_id, dispense_order=dispense,
-            action="dispensed", performed_by=pharmacist_id or uuid.uuid4(),
-            details={"dispensed_at": str(dispense.dispensed_at), "picked_up_by": dispense.picked_up_by},
+            tenant_id=dispense.tenant_id,
+            dispense_order=dispense,
+            action="dispensed",
+            performed_by=pharmacist_id or uuid.uuid4(),
+            details={
+                "dispensed_at": str(dispense.dispensed_at),
+                "picked_up_by": dispense.picked_up_by,
+            },
         )
         OutboxEvent.objects.create(
             tenant_id=str(dispense.tenant_id) if dispense.tenant_id else None,
@@ -91,7 +110,9 @@ class DispenseOrderViewSet(PharmacyModelViewSet):
             event_type="cymed.pharmacy.dispense.completed",
             payload={
                 "dispense_id": str(dispense.id),
-                "prescription_id": str(dispense.prescription_id) if dispense.prescription_id else None,
+                "prescription_id": str(dispense.prescription_id)
+                if dispense.prescription_id
+                else None,
                 "patient_id": str(dispense.patient_id),
             },
         )
@@ -117,15 +138,26 @@ class DispenseOrderViewSet(PharmacyModelViewSet):
 
         if item.ndc_code and item.ndc_code != ndc_scanned:
             return Response(
-                {"detail": "Barcode mismatch. Wrong medication.", "expected": item.ndc_code, "scanned": ndc_scanned},
-                status=http_status.HTTP_400_BAD_REQUEST
+                {
+                    "detail": "Barcode mismatch. Wrong medication.",
+                    "expected": item.ndc_code,
+                    "scanned": ndc_scanned,
+                },
+                status=http_status.HTTP_400_BAD_REQUEST,
             )
         pharmacist_id = request.user.id if hasattr(request, "user") else None
         item.barcode_verified = True
         item.barcode_verified_by = pharmacist_id
         item.barcode_verified_at = tz.now()
         item.status = "barcode_verified"
-        item.save(update_fields=["barcode_verified", "barcode_verified_by", "barcode_verified_at", "status"])
+        item.save(
+            update_fields=[
+                "barcode_verified",
+                "barcode_verified_by",
+                "barcode_verified_at",
+                "status",
+            ]
+        )
         return Response({"verified": True, "item_id": str(item.id)})
 
 
@@ -171,4 +203,4 @@ class DispenseAuditViewSet(PharmacyModelViewSet):
     serializer_class = DispenseAuditSerializer
     required_feature = "pharmacy.dispensing"
     filterset_fields = ["action", "is_override"]
-    http_method_names = ["get", "head", "options"]   # Audit is read-only
+    http_method_names = ["get", "head", "options"]  # Audit is read-only

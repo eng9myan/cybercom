@@ -13,7 +13,9 @@ Validates:
 - API key / ServicePrincipal models
 - Data classification model
 """
+
 import uuid
+
 import pytest
 from django.utils import timezone
 
@@ -25,7 +27,8 @@ SERVICE_ACCOUNT = uuid.uuid4()
 
 
 def _make_realm(tenant_id=None):
-    from platform.cyidentity.models import IdentityRealm, RealmType, RealmStatus
+    from platform.cyidentity.models import IdentityRealm, RealmStatus, RealmType
+
     tid = tenant_id or uuid.uuid4()
     return IdentityRealm.objects.create(
         tenant_id=tid,
@@ -40,6 +43,7 @@ def _make_realm(tenant_id=None):
 
 def _make_user_profile(realm):
     from platform.cyidentity.models import UserProfile
+
     return UserProfile.objects.create(
         tenant_id=realm.tenant_id,
         realm=realm,
@@ -54,9 +58,9 @@ def _make_user_profile(realm):
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db
 class TestIdentityModels:
-
     def test_identity_realm_lifecycle(self):
-        from platform.cyidentity.models import IdentityRealm, RealmType, RealmStatus
+        from platform.cyidentity.models import IdentityRealm, RealmStatus, RealmType
+
         realm = IdentityRealm.objects.create(
             tenant_id=TENANT_A,
             realm_name="cybercom-care-workforce",
@@ -73,12 +77,14 @@ class TestIdentityModels:
 
     def test_mfa_method_choices_complete(self):
         from platform.cyidentity.models import MFAMethod
+
         expected = {"none", "totp", "webauthn", "sms", "email", "push"}
         actual = {c[0] for c in MFAMethod.choices}
         assert expected == actual, f"MFA method set mismatch: {actual}"
 
     def test_application_client_creates(self):
         from platform.cyidentity.models import ApplicationClient, ClientProtocol
+
         realm = _make_realm()
         client = ApplicationClient.objects.create(
             realm=realm,
@@ -93,6 +99,7 @@ class TestIdentityModels:
 
     def test_service_principal_creates(self):
         from platform.cyidentity.models import ServicePrincipal
+
         realm = _make_realm()
         sp = ServicePrincipal.objects.create(
             name="cyintegrationhub-service",
@@ -105,6 +112,7 @@ class TestIdentityModels:
 
     def test_webauthn_credential_model(self):
         from platform.cyidentity.models import WebAuthnCredential
+
         realm = _make_realm()
         user = _make_user_profile(realm)
         cred = WebAuthnCredential.objects.create(
@@ -119,7 +127,8 @@ class TestIdentityModels:
         assert cred.is_active is True
 
     def test_user_session_revocation(self):
-        from platform.cyidentity.models import UserSession, SessionStatus
+        from platform.cyidentity.models import SessionStatus, UserSession
+
         realm = _make_realm()
         user = _make_user_profile(realm)
         session = UserSession.objects.create(
@@ -137,6 +146,7 @@ class TestIdentityModels:
 
     def test_login_audit_creates(self):
         from platform.cyidentity.models import LoginAudit
+
         realm = _make_realm()
         user = _make_user_profile(realm)
         record = LoginAudit.objects.create(
@@ -158,9 +168,9 @@ class TestIdentityModels:
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db
 class TestRBAC:
-
     def test_role_creates(self):
         from platform.cyidentity.models import Role
+
         realm = _make_realm()
         role = Role.objects.create(
             realm=realm,
@@ -171,6 +181,7 @@ class TestRBAC:
 
     def test_permission_creates(self):
         from platform.cyidentity.models import Permission
+
         perm = Permission.objects.create(
             scope="prescriptions",
             action="override_interaction",
@@ -180,7 +191,8 @@ class TestRBAC:
         assert perm.action == "override_interaction"
 
     def test_role_assignment_creates(self):
-        from platform.cyidentity.models import Role, Permission, RoleAssignment
+        from platform.cyidentity.models import Permission, Role, RoleAssignment
+
         realm = _make_realm()
         role = Role.objects.create(
             realm=realm,
@@ -203,6 +215,7 @@ class TestRBAC:
 
     def test_default_roles_are_flagged(self):
         from platform.cyidentity.models import Role
+
         realm = _make_realm()
         role = Role.objects.create(
             realm=realm,
@@ -218,9 +231,9 @@ class TestRBAC:
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db
 class TestTenantIsolation:
-
     def test_tenant_model_creates(self):
         from platform.tenant.models import Tenant
+
         t = Tenant.objects.create(
             name="Al-Noor Hospital Group",
             slug="al-noor-hospital-group",
@@ -233,7 +246,8 @@ class TestTenantIsolation:
         Validates that scoped querysets by tenant_id filter correctly.
         A record created for TENANT_A must not be visible when filtering by TENANT_B.
         """
-        from platform.audit.models import AuditLog, AuditAction, AuditStatus
+        from platform.audit.models import AuditAction, AuditLog, AuditStatus
+
         AuditLog.objects.create(
             tenant_id=TENANT_A,
             user_id=str(ADMIN_USER),
@@ -249,7 +263,8 @@ class TestTenantIsolation:
         assert qs.count() == 0, "Cross-tenant data leakage detected"
 
     def test_tenant_scoped_audit_isolation(self):
-        from platform.audit.models import AuditLog, AuditAction, AuditStatus
+        from platform.audit.models import AuditAction, AuditLog, AuditStatus
+
         AuditLog.objects.create(
             tenant_id=TENANT_A,
             user_id=str(uuid.uuid4()),
@@ -279,9 +294,9 @@ class TestTenantIsolation:
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db
 class TestBreakGlass:
-
     def test_break_glass_access_creates(self):
-        from platform.cyidentity.models import BreakGlassAccess, BreakGlassStatus, BreakGlassReason
+        from platform.cyidentity.models import BreakGlassAccess, BreakGlassReason, BreakGlassStatus
+
         realm = _make_realm()
         user = _make_user_profile(realm)
         bg = BreakGlassAccess.objects.create(
@@ -298,7 +313,8 @@ class TestBreakGlass:
         assert bg.status == BreakGlassStatus.REQUESTED
 
     def test_break_glass_approval_workflow(self):
-        from platform.cyidentity.models import BreakGlassAccess, BreakGlassStatus, BreakGlassReason
+        from platform.cyidentity.models import BreakGlassAccess, BreakGlassReason, BreakGlassStatus
+
         realm = _make_realm()
         user = _make_user_profile(realm)
         bg = BreakGlassAccess.objects.create(
@@ -317,8 +333,10 @@ class TestBreakGlass:
         assert refreshed.approved_by == str(ADMIN_USER)
 
     def test_break_glass_expiry_tracking(self):
-        from platform.cyidentity.models import BreakGlassAccess, BreakGlassStatus, BreakGlassReason
         from datetime import timedelta
+
+        from platform.cyidentity.models import BreakGlassAccess, BreakGlassReason, BreakGlassStatus
+
         realm = _make_realm()
         user = _make_user_profile(realm)
         bg = BreakGlassAccess.objects.create(
@@ -336,7 +354,8 @@ class TestBreakGlass:
         assert bg.is_expired() is True
 
     def test_break_glass_denial_logged(self):
-        from platform.cyidentity.models import BreakGlassAccess, BreakGlassStatus, BreakGlassReason
+        from platform.cyidentity.models import BreakGlassAccess, BreakGlassReason, BreakGlassStatus
+
         realm = _make_realm()
         user = _make_user_profile(realm)
         bg = BreakGlassAccess.objects.create(
@@ -359,9 +378,15 @@ class TestBreakGlass:
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db
 class TestAuditTrail:
-
     def test_audit_event_creates_with_category(self):
-        from platform.audit.models import AuditEvent, AuditAction, AuditStatus, AuditCategoryCode, DataClassification
+        from platform.audit.models import (
+            AuditAction,
+            AuditCategoryCode,
+            AuditEvent,
+            AuditStatus,
+            DataClassification,
+        )
+
         event = AuditEvent.objects.create(
             tenant_id=TENANT_A,
             actor_user_id=str(ADMIN_USER),
@@ -379,7 +404,14 @@ class TestAuditTrail:
         assert event.category == AuditCategoryCode.AUTHENTICATION
 
     def test_audit_event_break_glass_action(self):
-        from platform.audit.models import AuditEvent, AuditAction, AuditStatus, AuditCategoryCode, DataClassification
+        from platform.audit.models import (
+            AuditAction,
+            AuditCategoryCode,
+            AuditEvent,
+            AuditStatus,
+            DataClassification,
+        )
+
         event = AuditEvent.objects.create(
             tenant_id=TENANT_A,
             actor_user_id=str(CLINICAL_USER),
@@ -397,7 +429,14 @@ class TestAuditTrail:
         assert event.data_classification == DataClassification.RESTRICTED
 
     def test_audit_event_permission_denied(self):
-        from platform.audit.models import AuditEvent, AuditAction, AuditStatus, AuditCategoryCode, DataClassification
+        from platform.audit.models import (
+            AuditAction,
+            AuditCategoryCode,
+            AuditEvent,
+            AuditStatus,
+            DataClassification,
+        )
+
         event = AuditEvent.objects.create(
             tenant_id=TENANT_A,
             actor_user_id=str(CLINICAL_USER),
@@ -414,6 +453,7 @@ class TestAuditTrail:
 
     def test_audit_log_hash_chain_field_exists(self):
         from platform.audit.models import AuditLog
+
         fields = {f.name for f in AuditLog._meta.get_fields()}
         chain_fields = {"entry_hash", "previous_hash", "chain_hash", "content_hash"}
         has_chain = bool(fields & chain_fields)
@@ -421,6 +461,7 @@ class TestAuditTrail:
 
     def test_audit_categories_complete(self):
         from platform.audit.models import AuditCategoryCode
+
         required = {"authentication", "authorization", "clinical", "security", "ai", "identity"}
         actual = {c[0] for c in AuditCategoryCode.choices}
         missing = required - actual
@@ -428,6 +469,7 @@ class TestAuditTrail:
 
     def test_data_classification_levels_complete(self):
         from platform.audit.models import DataClassification
+
         required = {"public", "internal", "confidential", "restricted"}
         actual = {c[0] for c in DataClassification.choices}
         missing = required - actual
@@ -439,9 +481,9 @@ class TestAuditTrail:
 # ---------------------------------------------------------------------------
 @pytest.mark.django_db
 class TestDeviceRegistration:
-
     def test_device_registers(self):
         from platform.cyidentity.models import DeviceRegistration
+
         realm = _make_realm()
         user = _make_user_profile(realm)
         device = DeviceRegistration.objects.create(
@@ -457,6 +499,7 @@ class TestDeviceRegistration:
 
     def test_untrusted_device_tracked(self):
         from platform.cyidentity.models import DeviceRegistration
+
         realm = _make_realm()
         user = _make_user_profile(realm)
         device = DeviceRegistration.objects.create(

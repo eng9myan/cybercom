@@ -2,23 +2,26 @@
 Licensing Service — validates, activates, and manages CyMed licenses.
 Supports online, offline, and air-gapped delivery modes.
 """
+
+import base64
 import hashlib
 import hmac
-import base64
 import json
 import uuid
 from datetime import date, timedelta
-from django.utils import timezone
+
 from django.conf import settings
+from django.utils import timezone
 
 from products.cymed.commercial.licensing.models import (
-    License, LicenseKey, LicenseActivation, LicenseAudit,
-    LicenseUsage, OfflineActivationPackage
+    License,
+    LicenseAudit,
+    LicenseUsage,
+    OfflineActivationPackage,
 )
 
 
 class LicensingService:
-
     @staticmethod
     def generate_license_number(product_code: str, edition_code: str) -> str:
         uid = uuid.uuid4().hex[:12].upper()
@@ -31,7 +34,7 @@ class LicensingService:
         raw = f"{license_number}:{index}:{uuid.uuid4().hex}"
         digest = hashlib.sha256(raw.encode()).hexdigest().upper()
         # Format XXXX-XXXX-XXXX-XXXX-XXXX
-        return "-".join(digest[i:i+5] for i in range(0, 25, 5))
+        return "-".join(digest[i : i + 5] for i in range(0, 25, 5))
 
     @staticmethod
     def check_compliance(license: License) -> dict:
@@ -53,7 +56,9 @@ class LicensingService:
         return result
 
     @staticmethod
-    def create_offline_package(license: License, machine_fingerprint: str, validity_days: int = 365) -> OfflineActivationPackage:
+    def create_offline_package(
+        license: License, machine_fingerprint: str, validity_days: int = 365
+    ) -> OfflineActivationPackage:
         """Generate a signed offline activation bundle for air-gapped deployments."""
         payload = {
             "license_number": license.license_number,
@@ -93,10 +98,10 @@ class LicensingService:
                 "api_calls": metrics.get("api_calls", 0),
                 "storage_gb": metrics.get("storage_gb", 0),
                 "is_over_limit": (
-                    (license.max_users > 0 and metrics.get("active_users", 0) > license.max_users) or
-                    (license.max_beds > 0 and metrics.get("active_beds", 0) > license.max_beds)
+                    (license.max_users > 0 and metrics.get("active_users", 0) > license.max_users)
+                    or (license.max_beds > 0 and metrics.get("active_beds", 0) > license.max_beds)
                 ),
-            }
+            },
         )
         return usage
 

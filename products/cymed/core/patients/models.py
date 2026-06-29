@@ -1,13 +1,15 @@
-import uuid
 from django.db import models
 from django.utils import timezone
+
 from platform.common.models import BaseModel, SoftDeleteMixin
+
 
 class GenderType(models.TextChoices):
     MALE = "male", "Male"
     FEMALE = "female", "Female"
     OTHER = "other", "Other"
     UNKNOWN = "unknown", "Unknown"
+
 
 class Patient(BaseModel, SoftDeleteMixin):
     first_name = models.CharField(max_length=150)
@@ -18,7 +20,9 @@ class Patient(BaseModel, SoftDeleteMixin):
     national_id = models.CharField(max_length=100, null=True, blank=True, unique=True)
     passport_number = models.CharField(max_length=100, null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    merged_into = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="merged_patients")
+    merged_into = models.ForeignKey(
+        "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="merged_patients"
+    )
 
     class Meta:
         db_table = "cymed_patients"
@@ -32,9 +36,11 @@ class PatientIdentifier(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="identifiers")
     system = models.CharField(max_length=255)  # e.g., "national-id", "passport"
     value = models.CharField(max_length=255)
-    use = models.CharField(max_length=30, choices=[
-        ("official", "Official"), ("secondary", "Secondary"), ("temp", "Temporary")
-    ], default="official")
+    use = models.CharField(
+        max_length=30,
+        choices=[("official", "Official"), ("secondary", "Secondary"), ("temp", "Temporary")],
+        default="official",
+    )
 
     class Meta:
         db_table = "cymed_patient_identifiers"
@@ -43,14 +49,23 @@ class PatientIdentifier(BaseModel):
 
 class PatientContact(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="contacts")
-    telecom_system = models.CharField(max_length=20, choices=[
-        ("phone", "Phone"), ("fax", "Fax"), ("email", "Email"),
-        ("pager", "Pager"), ("url", "URL"), ("sms", "SMS")
-    ])
+    telecom_system = models.CharField(
+        max_length=20,
+        choices=[
+            ("phone", "Phone"),
+            ("fax", "Fax"),
+            ("email", "Email"),
+            ("pager", "Pager"),
+            ("url", "URL"),
+            ("sms", "SMS"),
+        ],
+    )
     telecom_value = models.CharField(max_length=255)
-    use = models.CharField(max_length=20, choices=[
-        ("home", "Home"), ("work", "Work"), ("mobile", "Mobile"), ("old", "Old")
-    ], default="home")
+    use = models.CharField(
+        max_length=20,
+        choices=[("home", "Home"), ("work", "Work"), ("mobile", "Mobile"), ("old", "Old")],
+        default="home",
+    )
 
     class Meta:
         db_table = "cymed_patient_contacts"
@@ -64,9 +79,11 @@ class PatientAddress(BaseModel):
     state = models.CharField(max_length=100, blank=True)
     postal_code = models.CharField(max_length=20, blank=True)
     country = models.CharField(max_length=100)
-    use = models.CharField(max_length=20, choices=[
-        ("home", "Home"), ("work", "Work"), ("billing", "Billing"), ("temp", "Temporary")
-    ], default="home")
+    use = models.CharField(
+        max_length=20,
+        choices=[("home", "Home"), ("work", "Work"), ("billing", "Billing"), ("temp", "Temporary")],
+        default="home",
+    )
 
     class Meta:
         db_table = "cymed_patient_addresses"
@@ -83,7 +100,9 @@ class PatientCommunication(BaseModel):
 
 
 class PatientEmergencyContact(BaseModel):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="emergency_contacts")
+    patient = models.ForeignKey(
+        Patient, on_delete=models.CASCADE, related_name="emergency_contacts"
+    )
     name = models.CharField(max_length=255)
     relationship_code = models.CharField(max_length=100)  # e.g., "spouse", "parent"
     phone = models.CharField(max_length=50)
@@ -105,7 +124,9 @@ class PatientRelationship(BaseModel):
 
 
 class PatientConsentReference(BaseModel):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="consent_references")
+    patient = models.ForeignKey(
+        Patient, on_delete=models.CASCADE, related_name="consent_references"
+    )
     consent_id = models.UUIDField()
 
     class Meta:
@@ -113,8 +134,12 @@ class PatientConsentReference(BaseModel):
 
 
 class PatientMergeHistory(BaseModel):
-    merged_patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="merged_from_history")
-    target_patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="merged_to_history")
+    merged_patient = models.ForeignKey(
+        Patient, on_delete=models.CASCADE, related_name="merged_from_history"
+    )
+    target_patient = models.ForeignKey(
+        Patient, on_delete=models.CASCADE, related_name="merged_to_history"
+    )
     merged_at = models.DateTimeField(default=timezone.now)
     merged_by = models.CharField(max_length=255)
     unmerged_at = models.DateTimeField(null=True, blank=True)

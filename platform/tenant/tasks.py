@@ -1,7 +1,9 @@
 """
 CyberCom Multi-Tenant Framework — Celery Async Tasks.
 """
+
 import logging
+
 from celery import shared_task
 from django.utils import timezone
 
@@ -11,7 +13,7 @@ log = logging.getLogger(__name__)
 @shared_task(name="tenant.check_subscription_expiry")
 def check_subscription_expiry_task():
     """Suspend tenants with expired subscriptions."""
-    from platform.tenant.models import Tenant, TenantSubscription, TenantStatus
+    from platform.tenant.models import TenantStatus, TenantSubscription
     from platform.tenant.services import TenantLifecycleService
 
     now = timezone.now()

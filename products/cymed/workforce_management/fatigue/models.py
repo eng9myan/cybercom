@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 VIOLATION_TYPE_CHOICES = [
     ("max_weekly_hours", "Maximum Weekly Hours Exceeded"),
@@ -56,7 +56,9 @@ class WeeklyHoursSummary(BaseModel):
     consecutive_days_worked = models.PositiveSmallIntegerField(default=0)
     is_resident = models.BooleanField(default=False)
     # ACGME: rolling 4-week average for residents
-    rolling_4wk_avg_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    rolling_4wk_avg_hours = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
 
     def __str__(self):
         return f"Weekly summary {self.workforce_profile_id} w/o {self.week_start}"

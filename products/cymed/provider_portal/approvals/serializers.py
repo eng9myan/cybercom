@@ -1,23 +1,23 @@
 from rest_framework import serializers
 
 from .models import (
+    ApprovalAuditLog,
+    ApprovalDecision,
     ApprovalRequest,
     ApprovalWorkflow,
-    ApprovalDecision,
-    ApprovalAuditLog,
 )
 
 
 class ApprovalDecisionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ApprovalDecision
-        fields = '__all__'
+        fields = "__all__"
 
 
 class ApprovalAuditLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ApprovalAuditLog
-        fields = '__all__'
+        fields = "__all__"
 
 
 class ApprovalRequestSerializer(serializers.ModelSerializer):
@@ -26,10 +26,10 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ApprovalRequest
-        fields = '__all__'
+        fields = "__all__"
 
 
 class ApprovalWorkflowSerializer(serializers.ModelSerializer):
     class Meta:
         model = ApprovalWorkflow
-        fields = '__all__'
+        fields = "__all__"

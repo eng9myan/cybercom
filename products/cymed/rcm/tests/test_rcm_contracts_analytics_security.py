@@ -2,32 +2,47 @@
 Tests for CyMed RCM — Contracts, Pricing, Revenue Analytics, Payer Portal,
 Tenant Isolation, CyCom Integration, AI Guardrails.
 """
+
 import uuid
 from decimal import Decimal
+
 from django.test import TestCase
 from django.utils import timezone
 
+from products.cymed.rcm.collections.models import CollectionCase
 from products.cymed.rcm.contracts.models import (
-    PayerContract, ContractRate, ContractRule, ReimbursementRule,
-)
-from products.cymed.rcm.pricing.models import (
-    PriceList, ServicePrice, PackagePrice, DiscountRule,
-)
-from products.cymed.rcm.revenue_analytics.models import (
-    RevenueDashboardSnapshot, ClaimMetricsSnapshot, DenialAnalyticsSnapshot,
-    PayerPerformanceSnapshot, RCMAIInsight, RevenueLeakageAlert,
+    ContractRate,
+    ContractRule,
+    PayerContract,
+    ReimbursementRule,
 )
 from products.cymed.rcm.payer_portal.models import (
-    PayerPortalAccount, PayerDashboard, PayerClaimReview, PayerAuthorizationReview,
+    PayerAuthorizationReview,
+    PayerClaimReview,
+    PayerDashboard,
+    PayerPortalAccount,
 )
-from products.cymed.rcm.collections.models import CollectionCase
-
+from products.cymed.rcm.pricing.models import (
+    DiscountRule,
+    PackagePrice,
+    PriceList,
+    ServicePrice,
+)
+from products.cymed.rcm.revenue_analytics.models import (
+    ClaimMetricsSnapshot,
+    DenialAnalyticsSnapshot,
+    PayerPerformanceSnapshot,
+    RCMAIInsight,
+    RevenueDashboardSnapshot,
+    RevenueLeakageAlert,
+)
 
 TENANT_A = uuid.uuid4()
 TENANT_B = uuid.uuid4()
 
 
 # ─── Contracts ────────────────────────────────────────────────────────────────
+
 
 class ContractsTest(TestCase):
     def setUp(self):
@@ -114,6 +129,7 @@ class ContractsTest(TestCase):
 
 # ─── Pricing ──────────────────────────────────────────────────────────────────
 
+
 class PricingTest(TestCase):
     def test_price_list_creation(self):
         pl = PriceList.objects.create(
@@ -195,6 +211,7 @@ class PricingTest(TestCase):
 
 
 # ─── Revenue Analytics ────────────────────────────────────────────────────────
+
 
 class RevenueAnalyticsTest(TestCase):
     def test_revenue_dashboard_snapshot(self):
@@ -283,6 +300,7 @@ class RevenueAnalyticsTest(TestCase):
 
 # ─── Payer Portal ─────────────────────────────────────────────────────────────
 
+
 class PayerPortalTest(TestCase):
     def setUp(self):
         self.ins_co_id = uuid.uuid4()
@@ -355,6 +373,7 @@ class PayerPortalTest(TestCase):
 
 # ─── Tenant Isolation ─────────────────────────────────────────────────────────
 
+
 class TenantIsolationTest(TestCase):
     def test_price_lists_isolated_by_tenant(self):
         PriceList.objects.create(
@@ -396,6 +415,7 @@ class TenantIsolationTest(TestCase):
 
 # ─── AI Guardrails ────────────────────────────────────────────────────────────
 
+
 class AIGuardrailsTest(TestCase):
     def test_ai_insight_is_advisory_only_non_editable(self):
         field = RCMAIInsight._meta.get_field("is_advisory_only")
@@ -425,8 +445,9 @@ class AIGuardrailsTest(TestCase):
 
     def test_ai_cannot_submit_claims(self):
         """Claims submission requires human user_id — AI cannot submit."""
-        from products.cymed.rcm.claims.models import ClaimSubmission
         from products.cymed.rcm.billing.models import PatientAccount
+        from products.cymed.rcm.claims.models import ClaimSubmission
+
         acct = PatientAccount.objects.create(
             tenant_id=TENANT_A,
             patient_id=uuid.uuid4(),
@@ -434,10 +455,10 @@ class AIGuardrailsTest(TestCase):
             account_status="active",
             guarantor_type="self",
         )
-        claim = ClaimSubmission.__bases__  # just verify class exists
         # ClaimSubmission requires a non-null submitted_by_user_id (human)
         with self.assertRaises(Exception):
             from products.cymed.rcm.claims.models import Claim
+
             cl = Claim.objects.create(
                 tenant_id=TENANT_A,
                 claim_number=f"CLM-{uuid.uuid4().hex[:8].upper()}",
@@ -464,23 +485,26 @@ class AIGuardrailsTest(TestCase):
 
 # ─── CyCom Integration Boundary ───────────────────────────────────────────────
 
+
 class CyComIntegrationTest(TestCase):
     def test_no_shared_tables_with_cycom(self):
         """Verify RCM models use cymed_rcm_* tables, not cycom_* tables."""
         from products.cymed.rcm.billing.models import Invoice
         from products.cymed.rcm.claims.models import Claim
+
         self.assertTrue(Invoice._meta.db_table.startswith("cymed_rcm_"))
         self.assertTrue(Claim._meta.db_table.startswith("cymed_rcm_"))
 
     def test_invoice_approved_signal_targets_integrationhub(self):
         """CyCom finance receives invoice data via CyIntegrationHub signal, not direct ORM."""
         from products.cymed.rcm.signals import _push_to_cycom
+
         # Verify function exists and is callable
         self.assertTrue(callable(_push_to_cycom))
 
     def test_revenue_analytics_isolation_from_cycom(self):
         """Revenue analytics snapshots are CyMed-owned; CyCom gets summaries via hub."""
-        snap = RevenueDashboardSnapshot.objects.create(
+        RevenueDashboardSnapshot.objects.create(
             tenant_id=TENANT_A,
             snapshot_date=timezone.now().date(),
             snapshot_period="monthly",

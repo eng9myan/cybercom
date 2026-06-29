@@ -2,6 +2,7 @@
 CyMed Laboratory — Base ViewSet
 Tenant isolation + feature flag gating for all laboratory endpoints.
 """
+
 from rest_framework import viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -24,6 +25,7 @@ class LaboratoryModelViewSet(viewsets.ModelViewSet):
 
     def _check_feature(self, request, feature_code: str) -> None:
         from products.cymed.commercial.feature_flags.services import FeatureFlagService
+
         tenant_id = getattr(request, "tenant_id", None)
         if not FeatureFlagService.is_enabled(
             feature_code, tenant_id=str(tenant_id) if tenant_id else None

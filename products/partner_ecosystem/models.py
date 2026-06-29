@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 PARTNER_TYPE_CHOICES = [
     ("reseller", "Reseller"),
@@ -152,14 +152,18 @@ class PartnerCertification(BaseModel):
     )
     product_code = models.CharField(max_length=50, db_index=True)
     certification_type = models.CharField(max_length=20, choices=CERTIFICATION_TYPE_CHOICES)
-    status = models.CharField(max_length=20, choices=CERTIFICATION_STATUS_CHOICES, default="in_progress")
+    status = models.CharField(
+        max_length=20, choices=CERTIFICATION_STATUS_CHOICES, default="in_progress"
+    )
     issued_at = models.DateField(null=True, blank=True)
     expires_at = models.DateField(null=True, blank=True)
     certificate_url = models.URLField(blank=True)
     certified_consultants = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f"{self.partner.name} — {self.product_code} {self.certification_type} ({self.status})"
+        return (
+            f"{self.partner.name} — {self.product_code} {self.certification_type} ({self.status})"
+        )
 
 
 class LeadRegistration(BaseModel):
@@ -227,7 +231,9 @@ class PartnerPortalAccess(BaseModel):
         related_name="portal_accesses",
     )
     user_id = models.UUIDField(db_index=True)
-    access_level = models.CharField(max_length=20, choices=PORTAL_ACCESS_LEVEL_CHOICES, default="standard")
+    access_level = models.CharField(
+        max_length=20, choices=PORTAL_ACCESS_LEVEL_CHOICES, default="standard"
+    )
     is_active = models.BooleanField(default=True)
     last_login_at = models.DateTimeField(null=True, blank=True)
     permissions = models.JSONField(default=list)

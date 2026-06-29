@@ -5,134 +5,181 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_rcm_revenue_analytics', '0001_initial'),
+        ("cymed_rcm_revenue_analytics", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='claimmetricssnapshot',
-            options={'ordering': ['-snapshot_date', 'snapshot_period'], 'verbose_name': 'Claim Metrics Snapshot', 'verbose_name_plural': 'Claim Metrics Snapshots'},
+            name="claimmetricssnapshot",
+            options={
+                "ordering": ["-snapshot_date", "snapshot_period"],
+                "verbose_name": "Claim Metrics Snapshot",
+                "verbose_name_plural": "Claim Metrics Snapshots",
+            },
         ),
         migrations.AlterModelOptions(
-            name='denialanalyticssnapshot',
-            options={'ordering': ['-snapshot_date', 'snapshot_period', 'denial_category'], 'verbose_name': 'Denial Analytics Snapshot', 'verbose_name_plural': 'Denial Analytics Snapshots'},
+            name="denialanalyticssnapshot",
+            options={
+                "ordering": ["-snapshot_date", "snapshot_period", "denial_category"],
+                "verbose_name": "Denial Analytics Snapshot",
+                "verbose_name_plural": "Denial Analytics Snapshots",
+            },
         ),
         migrations.AlterModelOptions(
-            name='payerperformancesnapshot',
-            options={'ordering': ['-snapshot_date', 'snapshot_period'], 'verbose_name': 'Payer Performance Snapshot', 'verbose_name_plural': 'Payer Performance Snapshots'},
+            name="payerperformancesnapshot",
+            options={
+                "ordering": ["-snapshot_date", "snapshot_period"],
+                "verbose_name": "Payer Performance Snapshot",
+                "verbose_name_plural": "Payer Performance Snapshots",
+            },
         ),
         migrations.AlterModelOptions(
-            name='rcmaiinsight',
-            options={'ordering': ['-created_at'], 'verbose_name': 'RCM AI Insight', 'verbose_name_plural': 'RCM AI Insights'},
+            name="rcmaiinsight",
+            options={
+                "ordering": ["-created_at"],
+                "verbose_name": "RCM AI Insight",
+                "verbose_name_plural": "RCM AI Insights",
+            },
         ),
         migrations.AlterModelOptions(
-            name='revenuedashboardsnapshot',
-            options={'ordering': ['-snapshot_date', 'snapshot_period'], 'verbose_name': 'Revenue Dashboard Snapshot', 'verbose_name_plural': 'Revenue Dashboard Snapshots'},
+            name="revenuedashboardsnapshot",
+            options={
+                "ordering": ["-snapshot_date", "snapshot_period"],
+                "verbose_name": "Revenue Dashboard Snapshot",
+                "verbose_name_plural": "Revenue Dashboard Snapshots",
+            },
         ),
         migrations.AlterModelOptions(
-            name='revenueleakagealert',
-            options={'ordering': ['-alert_date', '-created_at'], 'verbose_name': 'Revenue Leakage Alert', 'verbose_name_plural': 'Revenue Leakage Alerts'},
+            name="revenueleakagealert",
+            options={
+                "ordering": ["-alert_date", "-created_at"],
+                "verbose_name": "Revenue Leakage Alert",
+                "verbose_name_plural": "Revenue Leakage Alerts",
+            },
         ),
         migrations.AlterField(
-            model_name='claimmetricssnapshot',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="claimmetricssnapshot",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='claimmetricssnapshot',
-            name='tenant_id',
+            model_name="claimmetricssnapshot",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='claimmetricssnapshot',
-            name='updated_at',
+            model_name="claimmetricssnapshot",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='denialanalyticssnapshot',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="denialanalyticssnapshot",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='denialanalyticssnapshot',
-            name='tenant_id',
+            model_name="denialanalyticssnapshot",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='denialanalyticssnapshot',
-            name='updated_at',
+            model_name="denialanalyticssnapshot",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='payerperformancesnapshot',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="payerperformancesnapshot",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='payerperformancesnapshot',
-            name='performance_score',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='Composite performance score 0-100', max_digits=5, null=True),
+            model_name="payerperformancesnapshot",
+            name="performance_score",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="Composite performance score 0-100",
+                max_digits=5,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='payerperformancesnapshot',
-            name='tenant_id',
+            model_name="payerperformancesnapshot",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='payerperformancesnapshot',
-            name='updated_at',
+            model_name="payerperformancesnapshot",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='rcmaiinsight',
-            name='confidence_score',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='Model confidence 0.00-1.00', max_digits=5, null=True),
+            model_name="rcmaiinsight",
+            name="confidence_score",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="Model confidence 0.00-1.00",
+                max_digits=5,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='rcmaiinsight',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="rcmaiinsight",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='rcmaiinsight',
-            name='tenant_id',
+            model_name="rcmaiinsight",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='rcmaiinsight',
-            name='updated_at',
+            model_name="rcmaiinsight",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='revenuedashboardsnapshot',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="revenuedashboardsnapshot",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='revenuedashboardsnapshot',
-            name='tenant_id',
+            model_name="revenuedashboardsnapshot",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='revenuedashboardsnapshot',
-            name='updated_at',
+            model_name="revenuedashboardsnapshot",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='revenueleakagealert',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="revenueleakagealert",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='revenueleakagealert',
-            name='tenant_id',
+            model_name="revenueleakagealert",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='revenueleakagealert',
-            name='updated_at',
+            model_name="revenueleakagealert",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

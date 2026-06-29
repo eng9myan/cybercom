@@ -3,15 +3,17 @@ CyberCom Platform Audit & Compliance Framework — Domain Models.
 ADR-0028: immutable, hash-chained, tamper-evident audit sink.
 ADR-0002: multi-tenant. ADR-0005: identity integration.
 """
+
 import hashlib
 import uuid
+
 from django.db import models
 from django.utils import timezone
-
 
 # ---------------------------------------------------------------------------
 # Enumerations
 # ---------------------------------------------------------------------------
+
 
 class AuditAction(models.TextChoices):
     CREATE = "create", "Create"
@@ -117,11 +119,13 @@ class AssessmentResult(models.TextChoices):
 # AuditLog — base immutable record (backward compat, extended)
 # ---------------------------------------------------------------------------
 
+
 class AuditLog(models.Model):
     """
     Immutable platform audit log. Every sensitive operation emits one row.
     ADR-0028 S5: SHA-256 hash chain; no update/delete permitted.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     timestamp = models.DateTimeField(default=timezone.now, editable=False, db_index=True)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
@@ -131,7 +135,9 @@ class AuditLog(models.Model):
     action = models.CharField(max_length=30, choices=AuditAction.choices, db_index=True)
     resource_type = models.CharField(max_length=100, db_index=True)
     resource_id = models.CharField(max_length=255, blank=True, db_index=True)
-    status = models.CharField(max_length=20, choices=AuditStatus.choices, default=AuditStatus.SUCCESS)
+    status = models.CharField(
+        max_length=20, choices=AuditStatus.choices, default=AuditStatus.SUCCESS
+    )
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     request_path = models.CharField(max_length=500, blank=True)
@@ -171,8 +177,10 @@ class AuditLog(models.Model):
 # AuditCategory
 # ---------------------------------------------------------------------------
 
+
 class AuditCategory(models.Model):
     """Categorization metadata for audit event types."""
+
     code = models.CharField(max_length=50, choices=AuditCategoryCode.choices, unique=True)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
@@ -195,11 +203,13 @@ class AuditCategory(models.Model):
 # AuditEvent — rich structured event (ADR-0028 S5.2 canonical schema)
 # ---------------------------------------------------------------------------
 
+
 class AuditEvent(models.Model):
     """
     Rich audit event conforming to ADR-0028 canonical schema.
     Written by all bounded contexts via AuditService. Immutable.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     timestamp = models.DateTimeField(default=timezone.now, editable=False, db_index=True)
 
@@ -216,7 +226,10 @@ class AuditEvent(models.Model):
     action = models.CharField(max_length=200, db_index=True)
     action_verb = models.CharField(max_length=30, choices=AuditAction.choices)
     category = models.CharField(
-        max_length=50, choices=AuditCategoryCode.choices, default=AuditCategoryCode.SYSTEM, db_index=True
+        max_length=50,
+        choices=AuditCategoryCode.choices,
+        default=AuditCategoryCode.SYSTEM,
+        db_index=True,
     )
     data_classification = models.CharField(
         max_length=30, choices=DataClassification.choices, default=DataClassification.INTERNAL
@@ -231,7 +244,9 @@ class AuditEvent(models.Model):
     correlation_id = models.CharField(max_length=64, blank=True, db_index=True)
     trace_id = models.CharField(max_length=64, blank=True)
 
-    status = models.CharField(max_length=20, choices=AuditStatus.choices, default=AuditStatus.SUCCESS)
+    status = models.CharField(
+        max_length=20, choices=AuditStatus.choices, default=AuditStatus.SUCCESS
+    )
     outcome_description = models.TextField(blank=True)
     error_code = models.CharField(max_length=50, blank=True)
 
@@ -278,11 +293,13 @@ class AuditEvent(models.Model):
 # AuditChain — tracks hash chain state per tenant per period
 # ---------------------------------------------------------------------------
 
+
 class AuditChain(models.Model):
     """
     Tracks the current chain tip for tamper-evident audit logs.
     ADR-0028 S5.1: SHA-256 block hash links each event to its predecessor.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     chain_key = models.CharField(max_length=100, unique=True)
@@ -308,8 +325,10 @@ class AuditChain(models.Model):
 # AuditRetentionPolicy
 # ---------------------------------------------------------------------------
 
+
 class AuditRetentionPolicy(models.Model):
     """Retention schedule for audit events by category and tenant."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     category = models.CharField(max_length=50, choices=AuditCategoryCode.choices)
@@ -318,7 +337,9 @@ class AuditRetentionPolicy(models.Model):
     warm_retention_days = models.PositiveIntegerField(default=365)
     cold_retention_years = models.PositiveIntegerField(default=7)
     purge_after_cold = models.BooleanField(default=False)
-    compliance_basis = models.CharField(max_length=30, choices=ComplianceFrameworkCode.choices, blank=True)
+    compliance_basis = models.CharField(
+        max_length=30, choices=ComplianceFrameworkCode.choices, blank=True
+    )
     legal_hold_override = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -336,8 +357,10 @@ class AuditRetentionPolicy(models.Model):
 # AuditArchive
 # ---------------------------------------------------------------------------
 
+
 class AuditArchive(models.Model):
     """Record of audit events archived to cold storage (WORM)."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     archive_key = models.CharField(max_length=500, unique=True)
@@ -350,7 +373,9 @@ class AuditArchive(models.Model):
     storage_backend = models.CharField(max_length=50, default="s3")
     storage_bucket = models.CharField(max_length=200, blank=True)
     storage_path = models.CharField(max_length=500, blank=True)
-    status = models.CharField(max_length=20, choices=ArchiveStatus.choices, default=ArchiveStatus.PENDING)
+    status = models.CharField(
+        max_length=20, choices=ArchiveStatus.choices, default=ArchiveStatus.PENDING
+    )
     archived_at = models.DateTimeField(null=True, blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -367,11 +392,13 @@ class AuditArchive(models.Model):
 # AuditSignature
 # ---------------------------------------------------------------------------
 
+
 class AuditSignature(models.Model):
     """
     KMS/HSM digital signature for an audit chain block.
     ADR-0028 S5.1: periodic sealing with external KMS keys.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     chain = models.ForeignKey(AuditChain, on_delete=models.PROTECT, related_name="signatures")
     signed_at = models.DateTimeField(default=timezone.now)
@@ -396,8 +423,10 @@ class AuditSignature(models.Model):
 # AuditEntry
 # ---------------------------------------------------------------------------
 
+
 class AuditEntry(models.Model):
     """Enriched audit entry linking an AuditEvent to its chain position and category."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event = models.OneToOneField(AuditEvent, on_delete=models.PROTECT, related_name="entry")
     chain = models.ForeignKey(AuditChain, on_delete=models.PROTECT, related_name="entries")
@@ -422,8 +451,10 @@ class AuditEntry(models.Model):
 # AuditExport
 # ---------------------------------------------------------------------------
 
+
 class AuditExport(models.Model):
     """Record of audit log exports for compliance and investigation."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     requested_by = models.CharField(max_length=255)
@@ -432,15 +463,29 @@ class AuditExport(models.Model):
     period_start = models.DateTimeField(null=True, blank=True)
     period_end = models.DateTimeField(null=True, blank=True)
     event_count = models.PositiveIntegerField(default=0)
-    format = models.CharField(max_length=20, default="json", choices=[
-        ("json", "JSON"), ("csv", "CSV"), ("ndjson", "NDJSON"), ("parquet", "Parquet"),
-    ])
+    format = models.CharField(
+        max_length=20,
+        default="json",
+        choices=[
+            ("json", "JSON"),
+            ("csv", "CSV"),
+            ("ndjson", "NDJSON"),
+            ("parquet", "Parquet"),
+        ],
+    )
     download_url = models.URLField(blank=True)
     expires_at = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=20, default="pending", choices=[
-        ("pending", "Pending"), ("processing", "Processing"),
-        ("ready", "Ready"), ("failed", "Failed"), ("expired", "Expired"),
-    ])
+    status = models.CharField(
+        max_length=20,
+        default="pending",
+        choices=[
+            ("pending", "Pending"),
+            ("processing", "Processing"),
+            ("ready", "Ready"),
+            ("failed", "Failed"),
+            ("expired", "Expired"),
+        ],
+    )
     error_message = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -457,13 +502,17 @@ class AuditExport(models.Model):
 # LegalHold
 # ---------------------------------------------------------------------------
 
+
 class LegalHold(models.Model):
     """Legal hold: preserves records from deletion for litigation."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     name = models.CharField(max_length=300)
     description = models.TextField()
-    status = models.CharField(max_length=20, choices=LegalHoldStatus.choices, default=LegalHoldStatus.ACTIVE)
+    status = models.CharField(
+        max_length=20, choices=LegalHoldStatus.choices, default=LegalHoldStatus.ACTIVE
+    )
     case_reference = models.CharField(max_length=200, blank=True)
     custodians = models.JSONField(default=list)
     resource_types = models.JSONField(default=list)
@@ -493,7 +542,9 @@ class LegalHold(models.Model):
         self.released_at = timezone.now()
         self.released_by = released_by
         self.release_reason = reason
-        self.save(update_fields=["status", "released_at", "released_by", "release_reason", "updated_at"])
+        self.save(
+            update_fields=["status", "released_at", "released_by", "release_reason", "updated_at"]
+        )
 
     @property
     def is_active(self) -> bool:
@@ -508,8 +559,10 @@ class LegalHold(models.Model):
 # ComplianceProfile
 # ---------------------------------------------------------------------------
 
+
 class ComplianceProfile(models.Model):
     """Compliance framework configuration for a tenant or platform-wide."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     framework = models.CharField(max_length=30, choices=ComplianceFrameworkCode.choices)
@@ -536,8 +589,10 @@ class ComplianceProfile(models.Model):
 # ComplianceRule
 # ---------------------------------------------------------------------------
 
+
 class ComplianceRule(models.Model):
     """A single testable compliance control within a ComplianceProfile."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     profile = models.ForeignKey(ComplianceProfile, on_delete=models.CASCADE, related_name="rules")
     rule_id = models.CharField(max_length=50)
@@ -545,9 +600,15 @@ class ComplianceRule(models.Model):
     description = models.TextField()
     severity = models.CharField(max_length=20, choices=ComplianceRuleSeverity.choices)
     category = models.CharField(max_length=50, choices=AuditCategoryCode.choices, blank=True)
-    check_type = models.CharField(max_length=50, default="manual", choices=[
-        ("manual", "Manual"), ("automated", "Automated"), ("hybrid", "Hybrid"),
-    ])
+    check_type = models.CharField(
+        max_length=50,
+        default="manual",
+        choices=[
+            ("manual", "Manual"),
+            ("automated", "Automated"),
+            ("hybrid", "Hybrid"),
+        ],
+    )
     check_query = models.TextField(blank=True)
     remediation_guidance = models.TextField(blank=True)
     reference = models.CharField(max_length=500, blank=True)
@@ -568,12 +629,16 @@ class ComplianceRule(models.Model):
 # ComplianceViolation
 # ---------------------------------------------------------------------------
 
+
 class ComplianceViolation(models.Model):
     """A detected violation of a compliance rule."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     rule = models.ForeignKey(ComplianceRule, on_delete=models.CASCADE, related_name="violations")
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
-    status = models.CharField(max_length=20, choices=ViolationStatus.choices, default=ViolationStatus.OPEN)
+    status = models.CharField(
+        max_length=20, choices=ViolationStatus.choices, default=ViolationStatus.OPEN
+    )
     detected_at = models.DateTimeField(default=timezone.now)
     resource_type = models.CharField(max_length=100, blank=True)
     resource_id = models.CharField(max_length=255, blank=True)
@@ -599,7 +664,15 @@ class ComplianceViolation(models.Model):
         self.remediated_at = timezone.now()
         self.remediated_by = by
         self.remediation_notes = notes
-        self.save(update_fields=["status", "remediated_at", "remediated_by", "remediation_notes", "updated_at"])
+        self.save(
+            update_fields=[
+                "status",
+                "remediated_at",
+                "remediated_by",
+                "remediation_notes",
+                "updated_at",
+            ]
+        )
 
     def accept_risk(self, by: str, reason: str) -> None:
         self.status = ViolationStatus.ACCEPTED_RISK
@@ -612,14 +685,20 @@ class ComplianceViolation(models.Model):
 # ComplianceAssessment
 # ---------------------------------------------------------------------------
 
+
 class ComplianceAssessment(models.Model):
     """Periodic compliance assessment run against a ComplianceProfile."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    profile = models.ForeignKey(ComplianceProfile, on_delete=models.CASCADE, related_name="assessments")
+    profile = models.ForeignKey(
+        ComplianceProfile, on_delete=models.CASCADE, related_name="assessments"
+    )
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     assessed_at = models.DateTimeField(default=timezone.now)
     assessed_by = models.CharField(max_length=255, blank=True, default="system")
-    result = models.CharField(max_length=20, choices=AssessmentResult.choices, default=AssessmentResult.PENDING)
+    result = models.CharField(
+        max_length=20, choices=AssessmentResult.choices, default=AssessmentResult.PENDING
+    )
     total_rules = models.PositiveIntegerField(default=0)
     passed_rules = models.PositiveIntegerField(default=0)
     failed_rules = models.PositiveIntegerField(default=0)
@@ -646,8 +725,10 @@ class ComplianceAssessment(models.Model):
 # ComplianceReport
 # ---------------------------------------------------------------------------
 
+
 class ComplianceReport(models.Model):
     """Generated compliance report for a period."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     title = models.CharField(max_length=300)
@@ -658,7 +739,9 @@ class ComplianceReport(models.Model):
     generated_at = models.DateTimeField(default=timezone.now)
     summary = models.TextField(blank=True)
     overall_score = models.PositiveSmallIntegerField(default=0)
-    overall_result = models.CharField(max_length=20, choices=AssessmentResult.choices, default=AssessmentResult.PENDING)
+    overall_result = models.CharField(
+        max_length=20, choices=AssessmentResult.choices, default=AssessmentResult.PENDING
+    )
     total_controls = models.PositiveIntegerField(default=0)
     passing_controls = models.PositiveIntegerField(default=0)
     open_violations = models.PositiveIntegerField(default=0)
@@ -680,17 +763,25 @@ class ComplianceReport(models.Model):
 # EvidenceRecord
 # ---------------------------------------------------------------------------
 
+
 class EvidenceRecord(models.Model):
     """A single piece of evidence for compliance or legal proceedings."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True)
-    evidence_type = models.CharField(max_length=50, choices=[
-        ("audit_log", "Audit Log"), ("screenshot", "Screenshot"),
-        ("document", "Document"), ("export", "Data Export"),
-        ("attestation", "Attestation"), ("system_config", "System Configuration"),
-    ])
+    evidence_type = models.CharField(
+        max_length=50,
+        choices=[
+            ("audit_log", "Audit Log"),
+            ("screenshot", "Screenshot"),
+            ("document", "Document"),
+            ("export", "Data Export"),
+            ("attestation", "Attestation"),
+            ("system_config", "System Configuration"),
+        ],
+    )
     source_system = models.CharField(max_length=100, blank=True)
     reference_id = models.CharField(max_length=255, blank=True)
     content = models.JSONField(default=dict, blank=True)
@@ -722,22 +813,31 @@ class EvidenceRecord(models.Model):
 # EvidencePackage
 # ---------------------------------------------------------------------------
 
+
 class EvidencePackage(models.Model):
     """Bundle of EvidenceRecords for a legal case or compliance audit."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     name = models.CharField(max_length=300)
     description = models.TextField(blank=True)
-    purpose = models.CharField(max_length=50, choices=[
-        ("legal_proceeding", "Legal Proceeding"),
-        ("regulatory_audit", "Regulatory Audit"),
-        ("internal_investigation", "Internal Investigation"),
-        ("compliance_certification", "Compliance Certification"),
-    ])
+    purpose = models.CharField(
+        max_length=50,
+        choices=[
+            ("legal_proceeding", "Legal Proceeding"),
+            ("regulatory_audit", "Regulatory Audit"),
+            ("internal_investigation", "Internal Investigation"),
+            ("compliance_certification", "Compliance Certification"),
+        ],
+    )
     case_reference = models.CharField(max_length=200, blank=True)
     records = models.ManyToManyField(EvidenceRecord, blank=True, related_name="packages")
     legal_hold = models.ForeignKey(
-        LegalHold, on_delete=models.SET_NULL, null=True, blank=True, related_name="evidence_packages"
+        LegalHold,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="evidence_packages",
     )
     created_by = models.CharField(max_length=255)
     sealed_at = models.DateTimeField(null=True, blank=True)
@@ -765,5 +865,7 @@ class EvidencePackage(models.Model):
         self.package_hash = hashlib.sha256(
             str(sorted([str(r) for r in record_ids])).encode()
         ).hexdigest()
-        self.save(update_fields=["is_sealed", "sealed_at", "sealed_by", "package_hash", "updated_at"])
+        self.save(
+            update_fields=["is_sealed", "sealed_at", "sealed_by", "package_hash", "updated_at"]
+        )
         self.records.all().update(is_locked=True)

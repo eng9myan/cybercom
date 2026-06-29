@@ -1,9 +1,13 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 from products.cymed.core.organizations.models import Organization
 
+
 class Facility(BaseModel):
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="facilities")
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="facilities"
+    )
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=50, unique=True, db_index=True)
     is_active = models.BooleanField(default=True)
@@ -55,13 +59,17 @@ class Ward(BaseModel):
 class Room(BaseModel):
     ward = models.ForeignKey(Ward, on_delete=models.CASCADE, related_name="rooms")
     room_number = models.CharField(max_length=50)
-    room_type = models.CharField(max_length=50, choices=[
-        ("icu", "Intensive Care Unit"),
-        ("operating", "Operating Room"),
-        ("recovery", "Recovery Room"),
-        ("standard", "Standard Patient Room"),
-        ("exam", "Examination Room")
-    ], default="standard")
+    room_type = models.CharField(
+        max_length=50,
+        choices=[
+            ("icu", "Intensive Care Unit"),
+            ("operating", "Operating Room"),
+            ("recovery", "Recovery Room"),
+            ("standard", "Standard Patient Room"),
+            ("exam", "Examination Room"),
+        ],
+        default="standard",
+    )
 
     class Meta:
         db_table = "cymed_facility_rooms"
@@ -70,12 +78,16 @@ class Room(BaseModel):
 class Bed(BaseModel):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="beds")
     bed_number = models.CharField(max_length=50)
-    status = models.CharField(max_length=30, choices=[
-        ("available", "Available"),
-        ("occupied", "Occupied"),
-        ("maintenance", "Maintenance"),
-        ("reserved", "Reserved")
-    ], default="available")
+    status = models.CharField(
+        max_length=30,
+        choices=[
+            ("available", "Available"),
+            ("occupied", "Occupied"),
+            ("maintenance", "Maintenance"),
+            ("reserved", "Reserved"),
+        ],
+        default="available",
+    )
 
     class Meta:
         db_table = "cymed_facility_beds"

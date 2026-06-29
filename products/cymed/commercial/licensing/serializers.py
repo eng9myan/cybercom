@@ -1,7 +1,14 @@
 from rest_framework import serializers
+
 from products.cymed.commercial.licensing.models import (
-    License, LicenseKey, LicenseActivation, LicenseFeature,
-    LicenseAudit, LicenseUsage, LicenseServer, OfflineActivationPackage
+    License,
+    LicenseActivation,
+    LicenseAudit,
+    LicenseFeature,
+    LicenseKey,
+    LicenseServer,
+    LicenseUsage,
+    OfflineActivationPackage,
 )
 
 
@@ -55,6 +62,7 @@ class OfflineActivationPackageSerializer(serializers.ModelSerializer):
 
 class LicenseActivateSerializer(serializers.Serializer):
     """Used for the /activate/ action."""
+
     license_key = serializers.CharField()
     machine_fingerprint = serializers.CharField(required=False, allow_blank=True)
     deployment_profile_code = serializers.CharField(required=False, allow_blank=True)
@@ -63,5 +71,6 @@ class LicenseActivateSerializer(serializers.Serializer):
 
 class LicenseValidateSerializer(serializers.Serializer):
     """Used for the /validate/ action — checks if a license is active."""
+
     license_number = serializers.CharField()
     product_code = serializers.CharField()

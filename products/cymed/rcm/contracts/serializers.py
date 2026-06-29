@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import PayerContract, ContractRate, ContractRule, ReimbursementRule
+
+from .models import ContractRate, ContractRule, PayerContract, ReimbursementRule
 
 
 class PayerContractSerializer(serializers.ModelSerializer):

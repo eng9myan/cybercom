@@ -1,110 +1,127 @@
 """
 Tests for CyMed RCM — Billing, Claims, Denials, Collections.
 """
+
 import uuid
 from decimal import Decimal
+
 from django.test import TestCase
 from django.utils import timezone
 
 from products.cymed.rcm.billing.models import (
-    PatientAccount, EncounterBilling, Invoice, InvoiceLine, BillingAdjustment, Refund,
+    BillingAdjustment,
+    EncounterBilling,
+    Invoice,
+    InvoiceLine,
+    PatientAccount,
+    Refund,
 )
 from products.cymed.rcm.claims.models import (
-    Claim, ClaimLine, ClaimSubmission, ClaimResponse, ClaimStatus, ClaimAttachment,
-)
-from products.cymed.rcm.denials.models import (
-    Denial, DenialReason, Appeal, AppealOutcome, CorrectiveAction,
+    Claim,
+    ClaimLine,
+    ClaimResponse,
+    ClaimStatus,
+    ClaimSubmission,
 )
 from products.cymed.rcm.collections.models import (
-    CollectionCase, CollectionAction, PaymentPlan, CollectionOutcome,
+    CollectionAction,
+    CollectionCase,
+    CollectionOutcome,
+    PaymentPlan,
 )
-
+from products.cymed.rcm.denials.models import (
+    Appeal,
+    CorrectiveAction,
+    Denial,
+    DenialReason,
+)
 
 TENANT = uuid.uuid4()
 
 
 def make_patient_account(**kwargs):
-    defaults = dict(
-        tenant_id=TENANT,
-        patient_id=uuid.uuid4(),
-        account_number=f"ACC-{uuid.uuid4().hex[:8].upper()}",
-        account_status="active",
-        guarantor_type="self",
-        credit_balance=Decimal("0"),
-        outstanding_balance=Decimal("0"),
-    )
+    defaults = {
+        "tenant_id": TENANT,
+        "patient_id": uuid.uuid4(),
+        "account_number": f"ACC-{uuid.uuid4().hex[:8].upper()}",
+        "account_status": "active",
+        "guarantor_type": "self",
+        "credit_balance": Decimal("0"),
+        "outstanding_balance": Decimal("0"),
+    }
     defaults.update(kwargs)
     return PatientAccount.objects.create(**defaults)
 
 
 def make_encounter_billing(account, **kwargs):
-    defaults = dict(
-        tenant_id=TENANT,
-        patient_account=account,
-        encounter_id=uuid.uuid4(),
-        encounter_type="outpatient",
-        encounter_date=timezone.now().date(),
-        facility_id=uuid.uuid4(),
-        attending_provider_id=uuid.uuid4(),
-        billing_status="open",
-        total_charges=Decimal("500.00"),
-        insurance_expected=Decimal("400.00"),
-        patient_responsibility=Decimal("100.00"),
-        amount_paid=Decimal("0"),
-        balance_due=Decimal("500.00"),
-    )
+    defaults = {
+        "tenant_id": TENANT,
+        "patient_account": account,
+        "encounter_id": uuid.uuid4(),
+        "encounter_type": "outpatient",
+        "encounter_date": timezone.now().date(),
+        "facility_id": uuid.uuid4(),
+        "attending_provider_id": uuid.uuid4(),
+        "billing_status": "open",
+        "total_charges": Decimal("500.00"),
+        "insurance_expected": Decimal("400.00"),
+        "patient_responsibility": Decimal("100.00"),
+        "amount_paid": Decimal("0"),
+        "balance_due": Decimal("500.00"),
+    }
     defaults.update(kwargs)
     return EncounterBilling.objects.create(**defaults)
 
 
 def make_invoice(account, enc=None, **kwargs):
-    defaults = dict(
-        tenant_id=TENANT,
-        patient_account=account,
-        encounter_billing=enc,
-        invoice_number=f"INV-{uuid.uuid4().hex[:8].upper()}",
-        invoice_type="insurance",
-        invoice_date=timezone.now().date(),
-        due_date=timezone.now().date(),
-        billing_party_type="insurance",
-        status="draft",
-        amount_subtotal=Decimal("500.00"),
-        amount_tax=Decimal("75.00"),
-        amount_discount=Decimal("0"),
-        amount_total=Decimal("575.00"),
-        amount_paid=Decimal("0"),
-        amount_outstanding=Decimal("575.00"),
-        currency="SAR",
-    )
+    defaults = {
+        "tenant_id": TENANT,
+        "patient_account": account,
+        "encounter_billing": enc,
+        "invoice_number": f"INV-{uuid.uuid4().hex[:8].upper()}",
+        "invoice_type": "insurance",
+        "invoice_date": timezone.now().date(),
+        "due_date": timezone.now().date(),
+        "billing_party_type": "insurance",
+        "status": "draft",
+        "amount_subtotal": Decimal("500.00"),
+        "amount_tax": Decimal("75.00"),
+        "amount_discount": Decimal("0"),
+        "amount_total": Decimal("575.00"),
+        "amount_paid": Decimal("0"),
+        "amount_outstanding": Decimal("575.00"),
+        "currency": "SAR",
+    }
     defaults.update(kwargs)
     return Invoice.objects.create(**defaults)
 
 
 def make_claim(patient_account, **kwargs):
-    defaults = dict(
-        tenant_id=TENANT,
-        claim_number=f"CLM-{uuid.uuid4().hex[:8].upper()}",
-        patient_id=patient_account.patient_id,
-        insurance_member_id=uuid.uuid4(),
-        insurance_plan_id=uuid.uuid4(),
-        encounter_billing_id=uuid.uuid4(),
-        claim_type="professional",
-        claim_date=timezone.now().date(),
-        service_from_date=timezone.now().date(),
-        service_to_date=timezone.now().date(),
-        facility_id=uuid.uuid4(),
-        rendering_provider_id=uuid.uuid4(),
-        status="draft",
-        total_billed_amount=Decimal("500.00"),
-        total_approved_amount=Decimal("0"),
-        total_paid_amount=Decimal("0"),
-        patient_responsibility=Decimal("100.00"),
-    )
+    defaults = {
+        "tenant_id": TENANT,
+        "claim_number": f"CLM-{uuid.uuid4().hex[:8].upper()}",
+        "patient_id": patient_account.patient_id,
+        "insurance_member_id": uuid.uuid4(),
+        "insurance_plan_id": uuid.uuid4(),
+        "encounter_billing_id": uuid.uuid4(),
+        "claim_type": "professional",
+        "claim_date": timezone.now().date(),
+        "service_from_date": timezone.now().date(),
+        "service_to_date": timezone.now().date(),
+        "facility_id": uuid.uuid4(),
+        "rendering_provider_id": uuid.uuid4(),
+        "status": "draft",
+        "total_billed_amount": Decimal("500.00"),
+        "total_approved_amount": Decimal("0"),
+        "total_paid_amount": Decimal("0"),
+        "patient_responsibility": Decimal("100.00"),
+    }
     defaults.update(kwargs)
     return Claim.objects.create(**defaults)
 
 
 # ─── Billing ──────────────────────────────────────────────────────────────────
+
 
 class PatientAccountTest(TestCase):
     def test_patient_account_creation(self):
@@ -169,7 +186,9 @@ class PatientAccountTest(TestCase):
 
     def test_refund_processing(self):
         acct = make_patient_account()
-        inv = make_invoice(acct, amount_paid=Decimal("575.00"), amount_outstanding=Decimal("0"), status="paid")
+        inv = make_invoice(
+            acct, amount_paid=Decimal("575.00"), amount_outstanding=Decimal("0"), status="paid"
+        )
         refund = Refund.objects.create(
             tenant_id=TENANT,
             invoice=inv,
@@ -185,6 +204,7 @@ class PatientAccountTest(TestCase):
 
 
 # ─── Claims ───────────────────────────────────────────────────────────────────
+
 
 class ClaimsTest(TestCase):
     def setUp(self):
@@ -277,6 +297,7 @@ class ClaimsTest(TestCase):
 
 # ─── Denials ──────────────────────────────────────────────────────────────────
 
+
 class DenialsTest(TestCase):
     def setUp(self):
         self.acct = make_patient_account()
@@ -362,6 +383,7 @@ class DenialsTest(TestCase):
 
 
 # ─── Collections ──────────────────────────────────────────────────────────────
+
 
 class CollectionsTest(TestCase):
     def setUp(self):

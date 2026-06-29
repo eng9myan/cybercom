@@ -2,27 +2,54 @@
 Program 2.3 — Audit & Compliance Framework tests.
 90% coverage target. SQLite in-memory via core.test_settings.
 """
+
 import hashlib
 import uuid
 from datetime import timedelta
-from unittest.mock import patch
 
 import pytest
 from django.utils import timezone
 
 from platform.audit.models import (
-    AuditAction, AuditArchive, AuditCategory, AuditCategoryCode, AuditChain,
-    AuditEntry, AuditEvent, AuditExport, AuditLog, AuditRetentionPolicy,
-    AuditSignature, AuditStatus, AssessmentResult, ComplianceAssessment,
-    ComplianceFrameworkCode, ComplianceProfile, ComplianceReport, ComplianceRule,
-    ComplianceRuleSeverity, ComplianceViolation, DataClassification,
-    EvidencePackage, EvidenceRecord, LegalHold, LegalHoldStatus,
+    AssessmentResult,
+    AuditAction,
+    AuditArchive,
+    AuditCategory,
+    AuditCategoryCode,
+    AuditChain,
+    AuditEntry,
+    AuditEvent,
+    AuditExport,
+    AuditLog,
+    AuditRetentionPolicy,
+    AuditSignature,
+    AuditStatus,
+    ComplianceAssessment,
+    ComplianceFrameworkCode,
+    ComplianceProfile,
+    ComplianceReport,
+    ComplianceRule,
+    ComplianceRuleSeverity,
+    ComplianceViolation,
+    DataClassification,
+    EvidencePackage,
+    EvidenceRecord,
+    LegalHold,
+    LegalHoldStatus,
     ViolationStatus,
 )
 from platform.audit.services import (
-    AuditChainVerifier, AuditExportService, AuditMetrics, AuditSearchService,
-    AuditService, ComplianceAssessmentService, ComplianceProfileService,
-    EvidenceService, LegalHoldService, RetentionService, ViolationService,
+    AuditChainVerifier,
+    AuditExportService,
+    AuditMetrics,
+    AuditSearchService,
+    AuditService,
+    ComplianceAssessmentService,
+    ComplianceProfileService,
+    EvidenceService,
+    LegalHoldService,
+    RetentionService,
+    ViolationService,
 )
 
 pytestmark = pytest.mark.django_db
@@ -32,17 +59,18 @@ pytestmark = pytest.mark.django_db
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def make_audit_event(**kwargs):
-    defaults = dict(
-        action="test.resource.read",
-        action_verb=AuditAction.READ,
-        resource_type="test_resource",
-        resource_id=str(uuid.uuid4()),
-        category=AuditCategoryCode.SYSTEM,
-        data_classification=DataClassification.INTERNAL,
-        status=AuditStatus.SUCCESS,
-        entry_hash=hashlib.sha256(b"test").hexdigest(),
-    )
+    defaults = {
+        "action": "test.resource.read",
+        "action_verb": AuditAction.READ,
+        "resource_type": "test_resource",
+        "resource_id": str(uuid.uuid4()),
+        "category": AuditCategoryCode.SYSTEM,
+        "data_classification": DataClassification.INTERNAL,
+        "status": AuditStatus.SUCCESS,
+        "entry_hash": hashlib.sha256(b"test").hexdigest(),
+    }
     defaults.update(kwargs)
     return AuditEvent.objects.create(**defaults)
 
@@ -64,6 +92,7 @@ def make_chain(key="test:chain"):
 # ---------------------------------------------------------------------------
 # AuditLog
 # ---------------------------------------------------------------------------
+
 
 class TestAuditLog:
     def test_create(self):
@@ -109,6 +138,7 @@ class TestAuditLog:
 # ---------------------------------------------------------------------------
 # AuditEvent
 # ---------------------------------------------------------------------------
+
 
 class TestAuditEvent:
     def test_create_basic(self):
@@ -158,6 +188,7 @@ class TestAuditEvent:
 # AuditChain
 # ---------------------------------------------------------------------------
 
+
 class TestAuditChain:
     def test_create(self):
         chain = AuditChain.objects.create(chain_key="t1:chain")
@@ -170,7 +201,6 @@ class TestAuditChain:
 
     def test_unique_key(self):
         AuditChain.objects.create(chain_key="unique:key")
-        from django.db import IntegrityError
         with pytest.raises(Exception):
             AuditChain.objects.create(chain_key="unique:key")
 
@@ -178,6 +208,7 @@ class TestAuditChain:
 # ---------------------------------------------------------------------------
 # AuditCategory
 # ---------------------------------------------------------------------------
+
 
 class TestAuditCategory:
     def test_create(self):
@@ -196,6 +227,7 @@ class TestAuditCategory:
 # ---------------------------------------------------------------------------
 # AuditRetentionPolicy
 # ---------------------------------------------------------------------------
+
 
 class TestAuditRetentionPolicy:
     def test_create(self):
@@ -221,6 +253,7 @@ class TestAuditRetentionPolicy:
 # AuditSignature
 # ---------------------------------------------------------------------------
 
+
 class TestAuditSignature:
     def test_create(self):
         chain = make_chain("sig:chain")
@@ -236,8 +269,11 @@ class TestAuditSignature:
     def test_str(self):
         chain = make_chain("sig2:chain")
         sig = AuditSignature.objects.create(
-            chain=chain, sequence_from=1, sequence_to=50,
-            block_hash="a" * 64, signature="sig",
+            chain=chain,
+            sequence_from=1,
+            sequence_to=50,
+            block_hash="a" * 64,
+            signature="sig",
         )
         assert "sig2:chain" in str(sig)
 
@@ -246,13 +282,18 @@ class TestAuditSignature:
 # AuditEntry
 # ---------------------------------------------------------------------------
 
+
 class TestAuditEntry:
     def test_create(self):
         chain = make_chain("entry:chain")
         ev = make_audit_event()
         entry = AuditEntry.objects.create(
-            event=ev, chain=chain, sequence=1,
-            compliance_tags=["hipaa"], is_high_risk=True, risk_score=80,
+            event=ev,
+            chain=chain,
+            sequence=1,
+            compliance_tags=["hipaa"],
+            is_high_risk=True,
+            risk_score=80,
         )
         assert entry.is_high_risk is True
         assert "hipaa" in entry.compliance_tags
@@ -267,6 +308,7 @@ class TestAuditEntry:
 # ---------------------------------------------------------------------------
 # AuditExport
 # ---------------------------------------------------------------------------
+
 
 class TestAuditExport:
     def test_create(self):
@@ -285,6 +327,7 @@ class TestAuditExport:
 # ---------------------------------------------------------------------------
 # AuditArchive
 # ---------------------------------------------------------------------------
+
 
 class TestAuditArchive:
     def test_create(self):
@@ -310,6 +353,7 @@ class TestAuditArchive:
 # ---------------------------------------------------------------------------
 # LegalHold
 # ---------------------------------------------------------------------------
+
 
 class TestLegalHold:
     def test_create(self):
@@ -342,21 +386,22 @@ class TestLegalHold:
 
     def test_is_active_false_when_expired(self):
         hold = LegalHold.objects.create(
-            name="Expired Hold", description="test", created_by="legal@x.com",
+            name="Expired Hold",
+            description="test",
+            created_by="legal@x.com",
             expires_at=timezone.now() - timedelta(hours=1),
         )
         assert hold.is_active is False
 
     def test_str(self):
-        hold = LegalHold.objects.create(
-            name="Test Hold", description="test", created_by="x"
-        )
+        hold = LegalHold.objects.create(name="Test Hold", description="test", created_by="x")
         assert "Test Hold" in str(hold)
 
 
 # ---------------------------------------------------------------------------
 # ComplianceProfile
 # ---------------------------------------------------------------------------
+
 
 class TestComplianceProfile:
     def test_create(self):
@@ -367,7 +412,6 @@ class TestComplianceProfile:
     def test_unique_per_tenant_framework(self):
         tenant_id = uuid.uuid4()
         make_compliance_profile(tenant_id=tenant_id)
-        from django.db import IntegrityError
         with pytest.raises(Exception):
             make_compliance_profile(tenant_id=tenant_id)
 
@@ -379,6 +423,7 @@ class TestComplianceProfile:
 # ---------------------------------------------------------------------------
 # ComplianceRule
 # ---------------------------------------------------------------------------
+
 
 class TestComplianceRule:
     def test_create(self):
@@ -395,8 +440,11 @@ class TestComplianceRule:
     def test_str(self):
         profile = make_compliance_profile()
         rule = ComplianceRule.objects.create(
-            profile=profile, rule_id="R-1", name="Rule 1",
-            description="desc", severity=ComplianceRuleSeverity.HIGH,
+            profile=profile,
+            rule_id="R-1",
+            name="Rule 1",
+            description="desc",
+            severity=ComplianceRuleSeverity.HIGH,
         )
         assert "R-1" in str(rule)
 
@@ -405,12 +453,16 @@ class TestComplianceRule:
 # ComplianceViolation
 # ---------------------------------------------------------------------------
 
+
 class TestComplianceViolation:
     def _make_rule(self):
         profile = make_compliance_profile(framework=ComplianceFrameworkCode.SOC2)
         return ComplianceRule.objects.create(
-            profile=profile, rule_id="V-1", name="Violation Rule",
-            description="d", severity=ComplianceRuleSeverity.HIGH,
+            profile=profile,
+            rule_id="V-1",
+            name="Violation Rule",
+            description="d",
+            severity=ComplianceRuleSeverity.HIGH,
         )
 
     def test_create(self):
@@ -441,31 +493,41 @@ class TestComplianceViolation:
 # ComplianceAssessment
 # ---------------------------------------------------------------------------
 
+
 class TestComplianceAssessment:
     def test_create(self):
         profile = make_compliance_profile()
         assessment = ComplianceAssessment.objects.create(
-            profile=profile, total_rules=10, passed_rules=9,
-            failed_rules=1, score=90, result=AssessmentResult.PASSED,
+            profile=profile,
+            total_rules=10,
+            passed_rules=9,
+            failed_rules=1,
+            score=90,
+            result=AssessmentResult.PASSED,
         )
         assert assessment.passed is True
 
     def test_not_passed_below_threshold(self):
         profile = make_compliance_profile()
         assessment = ComplianceAssessment.objects.create(
-            profile=profile, score=70, result=AssessmentResult.FAILED,
+            profile=profile,
+            score=70,
+            result=AssessmentResult.FAILED,
         )
         assert assessment.passed is False
 
     def test_str(self):
         profile = make_compliance_profile()
-        a = ComplianceAssessment.objects.create(profile=profile, score=85, result=AssessmentResult.PASSED)
+        a = ComplianceAssessment.objects.create(
+            profile=profile, score=85, result=AssessmentResult.PASSED
+        )
         assert "hipaa" in str(a)
 
 
 # ---------------------------------------------------------------------------
 # ComplianceReport
 # ---------------------------------------------------------------------------
+
 
 class TestComplianceReport:
     def test_create(self):
@@ -495,6 +557,7 @@ class TestComplianceReport:
 # EvidenceRecord
 # ---------------------------------------------------------------------------
 
+
 class TestEvidenceRecord:
     def test_create(self):
         rec = EvidenceRecord.objects.create(
@@ -505,9 +568,7 @@ class TestEvidenceRecord:
         assert rec.is_locked is False
 
     def test_lock(self):
-        rec = EvidenceRecord.objects.create(
-            title="Screenshot", evidence_type="screenshot"
-        )
+        rec = EvidenceRecord.objects.create(title="Screenshot", evidence_type="screenshot")
         rec.lock()
         assert rec.is_locked is True
         assert rec.locked_at is not None
@@ -520,6 +581,7 @@ class TestEvidenceRecord:
 # ---------------------------------------------------------------------------
 # EvidencePackage
 # ---------------------------------------------------------------------------
+
 
 class TestEvidencePackage:
     def test_create(self):
@@ -561,6 +623,7 @@ class TestEvidencePackage:
 # AuditService
 # ---------------------------------------------------------------------------
 
+
 class TestAuditService:
     def test_record_creates_event_and_entry(self):
         svc = AuditService()
@@ -582,10 +645,14 @@ class TestAuditService:
     def test_hash_chain_advances(self):
         svc = AuditService()
         tenant_id = uuid.uuid4()
-        svc.record(action="a.b", action_verb=AuditAction.READ, resource_type="x", tenant_id=tenant_id)
+        svc.record(
+            action="a.b", action_verb=AuditAction.READ, resource_type="x", tenant_id=tenant_id
+        )
         chain = AuditChain.objects.get(chain_key=f"tenant:{tenant_id}")
         assert chain.current_sequence == 1
-        svc.record(action="a.c", action_verb=AuditAction.READ, resource_type="x", tenant_id=tenant_id)
+        svc.record(
+            action="a.c", action_verb=AuditAction.READ, resource_type="x", tenant_id=tenant_id
+        )
         chain.refresh_from_db()
         assert chain.current_sequence == 2
 
@@ -628,7 +695,7 @@ class TestAuditService:
 
     def test_global_chain_when_no_tenant(self):
         svc = AuditService()
-        event = svc.record(action="sys.event", action_verb=AuditAction.CREATE, resource_type="system")
+        svc.record(action="sys.event", action_verb=AuditAction.CREATE, resource_type="system")
         chain = AuditChain.objects.get(chain_key="platform:global")
         assert chain is not None
 
@@ -636,6 +703,7 @@ class TestAuditService:
 # ---------------------------------------------------------------------------
 # AuditChainVerifier
 # ---------------------------------------------------------------------------
+
 
 class TestAuditChainVerifier:
     def test_verify_empty_chain(self):
@@ -653,8 +721,10 @@ class TestAuditChainVerifier:
         tenant_id = uuid.uuid4()
         for _ in range(3):
             svc.record(
-                action="verify.test", action_verb=AuditAction.READ,
-                resource_type="resource", tenant_id=tenant_id,
+                action="verify.test",
+                action_verb=AuditAction.READ,
+                resource_type="resource",
+                tenant_id=tenant_id,
             )
         chain_key = f"tenant:{tenant_id}"
         result = AuditChainVerifier().verify(chain_key)
@@ -672,18 +742,23 @@ class TestAuditChainVerifier:
 # AuditSearchService
 # ---------------------------------------------------------------------------
 
+
 class TestAuditSearchService:
     def setup_method(self):
         self.svc = AuditSearchService()
         self.tenant_id = uuid.uuid4()
         make_audit_event(
-            tenant_id=self.tenant_id, category=AuditCategoryCode.CLINICAL,
-            action="patient.chart.read", action_verb=AuditAction.READ,
+            tenant_id=self.tenant_id,
+            category=AuditCategoryCode.CLINICAL,
+            action="patient.chart.read",
+            action_verb=AuditAction.READ,
             data_classification=DataClassification.PHI,
         )
         make_audit_event(
-            tenant_id=self.tenant_id, category=AuditCategoryCode.AUTHENTICATION,
-            action="user.login", action_verb=AuditAction.LOGIN,
+            tenant_id=self.tenant_id,
+            category=AuditCategoryCode.AUTHENTICATION,
+            action="user.login",
+            action_verb=AuditAction.LOGIN,
         )
 
     def test_search_by_tenant(self):
@@ -691,7 +766,9 @@ class TestAuditSearchService:
         assert len(results) == 2
 
     def test_search_by_category(self):
-        results = list(self.svc.search(tenant_id=self.tenant_id, category=AuditCategoryCode.CLINICAL))
+        results = list(
+            self.svc.search(tenant_id=self.tenant_id, category=AuditCategoryCode.CLINICAL)
+        )
         assert len(results) == 1
         assert results[0].category == AuditCategoryCode.CLINICAL
 
@@ -714,12 +791,15 @@ class TestAuditSearchService:
 # AuditExportService
 # ---------------------------------------------------------------------------
 
+
 class TestAuditExportService:
     def test_create_export(self):
         svc = AuditExportService()
         export = svc.create_export(
-            tenant_id=None, requested_by="admin@x.com",
-            reason="SOC2 audit", format="json",
+            tenant_id=None,
+            requested_by="admin@x.com",
+            reason="SOC2 audit",
+            format="json",
         )
         assert export.status == "pending"
         assert export.reason == "SOC2 audit"
@@ -727,7 +807,9 @@ class TestAuditExportService:
     def test_complete_export(self):
         svc = AuditExportService()
         export = svc.create_export(tenant_id=None, requested_by="x", reason="y")
-        svc.complete_export(export, event_count=500, download_url="https://s3.example.com/export.json")
+        svc.complete_export(
+            export, event_count=500, download_url="https://s3.example.com/export.json"
+        )
         assert export.status == "ready"
         assert export.event_count == 500
 
@@ -743,13 +825,18 @@ class TestAuditExportService:
 # LegalHoldService
 # ---------------------------------------------------------------------------
 
+
 class TestLegalHoldService:
     def test_create_hold(self):
         svc = LegalHoldService()
         hold = svc.create(
-            tenant_id=None, name="Litigation Hold", description="Preserve records",
-            created_by="legal@x.com", case_reference="CASE-2026-001",
-            resource_types=["patient_record"], resource_ids=["rec-1"],
+            tenant_id=None,
+            name="Litigation Hold",
+            description="Preserve records",
+            created_by="legal@x.com",
+            case_reference="CASE-2026-001",
+            resource_types=["patient_record"],
+            resource_ids=["rec-1"],
         )
         assert hold.status == LegalHoldStatus.ACTIVE
         assert hold.case_reference == "CASE-2026-001"
@@ -765,8 +852,11 @@ class TestLegalHoldService:
         svc = LegalHoldService()
         tenant_id = uuid.uuid4()
         svc.create(
-            tenant_id=tenant_id, name="Hold3", description="d",
-            created_by="x", resource_types=["patient_record"],
+            tenant_id=tenant_id,
+            name="Hold3",
+            description="d",
+            created_by="x",
+            resource_types=["patient_record"],
         )
         assert svc.is_resource_held(tenant_id, "patient_record") is True
 
@@ -779,6 +869,7 @@ class TestLegalHoldService:
 # ---------------------------------------------------------------------------
 # ComplianceProfileService
 # ---------------------------------------------------------------------------
+
 
 class TestComplianceProfileService:
     def test_create_hipaa_profile_seeds_rules(self):
@@ -812,6 +903,7 @@ class TestComplianceProfileService:
 # ---------------------------------------------------------------------------
 # ComplianceAssessmentService
 # ---------------------------------------------------------------------------
+
 
 class TestComplianceAssessmentService:
     def test_assess_all_pass(self):
@@ -849,12 +941,16 @@ class TestComplianceAssessmentService:
 # ViolationService
 # ---------------------------------------------------------------------------
 
+
 class TestViolationService:
     def _make_rule(self):
         profile = make_compliance_profile(framework=ComplianceFrameworkCode.PCI_DSS)
         return ComplianceRule.objects.create(
-            profile=profile, rule_id="PCI-1", name="Card data encryption",
-            description="d", severity=ComplianceRuleSeverity.CRITICAL,
+            profile=profile,
+            rule_id="PCI-1",
+            name="Card data encryption",
+            description="d",
+            severity=ComplianceRuleSeverity.CRITICAL,
         )
 
     def test_record_violation(self):
@@ -882,12 +978,15 @@ class TestViolationService:
 # EvidenceService
 # ---------------------------------------------------------------------------
 
+
 class TestEvidenceService:
     def test_collect(self):
         svc = EvidenceService()
         rec = svc.collect(
-            tenant_id=None, title="Audit Log Jan-2026",
-            evidence_type="audit_log", collected_by="analyst@x.com",
+            tenant_id=None,
+            title="Audit Log Jan-2026",
+            evidence_type="audit_log",
+            collected_by="analyst@x.com",
         )
         assert rec.id is not None
 
@@ -895,8 +994,10 @@ class TestEvidenceService:
         svc = EvidenceService()
         rec = svc.collect(tenant_id=None, title="R1", evidence_type="document")
         pkg = svc.create_package(
-            tenant_id=None, name="Regulatory Package",
-            purpose="regulatory_audit", created_by="cco@x.com",
+            tenant_id=None,
+            name="Regulatory Package",
+            purpose="regulatory_audit",
+            created_by="cco@x.com",
             record_ids=[rec.id],
         )
         assert pkg.records.count() == 1
@@ -904,8 +1005,10 @@ class TestEvidenceService:
     def test_seal_package(self):
         svc = EvidenceService()
         pkg = svc.create_package(
-            tenant_id=None, name="Legal Bundle",
-            purpose="legal_proceeding", created_by="legal@x.com",
+            tenant_id=None,
+            name="Legal Bundle",
+            purpose="legal_proceeding",
+            created_by="legal@x.com",
         )
         svc.seal_package(pkg, sealed_by="judge@x.com")
         assert pkg.is_sealed is True
@@ -914,6 +1017,7 @@ class TestEvidenceService:
 # ---------------------------------------------------------------------------
 # RetentionService
 # ---------------------------------------------------------------------------
+
 
 class TestRetentionService:
     def test_seed_default_policies(self):
@@ -946,6 +1050,7 @@ class TestRetentionService:
 # AuditMetrics
 # ---------------------------------------------------------------------------
 
+
 class TestAuditMetrics:
     def test_render_prometheus(self):
         svc = AuditService()
@@ -968,9 +1073,11 @@ class TestAuditMetrics:
 # Tasks
 # ---------------------------------------------------------------------------
 
+
 class TestAuditTasks:
     def test_verify_chains_task(self):
         from platform.audit.tasks import verify_chains_task
+
         svc = AuditService()
         svc.record(action="task.test", action_verb=AuditAction.CREATE, resource_type="r")
         result = verify_chains_task()
@@ -979,13 +1086,17 @@ class TestAuditTasks:
 
     def test_archive_expired_task(self):
         from platform.audit.tasks import archive_expired_events_task
+
         result = archive_expired_events_task()
         assert "archived" in result
 
     def test_expire_legal_holds_task(self):
         from platform.audit.tasks import expire_legal_holds_task
+
         LegalHold.objects.create(
-            name="Exp Hold", description="d", created_by="x",
+            name="Exp Hold",
+            description="d",
+            created_by="x",
             expires_at=timezone.now() - timedelta(hours=1),
         )
         result = expire_legal_holds_task()
@@ -993,6 +1104,7 @@ class TestAuditTasks:
 
     def test_run_compliance_assessments_task(self):
         from platform.audit.tasks import run_compliance_assessments_task
+
         svc_p = ComplianceProfileService()
         svc_p.create_profile(ComplianceFrameworkCode.SOC2, seed_rules=True)
         result = run_compliance_assessments_task()
@@ -1000,8 +1112,11 @@ class TestAuditTasks:
 
     def test_expire_exports_task(self):
         from platform.audit.tasks import expire_exports_task
+
         AuditExport.objects.create(
-            requested_by="x", reason="y", status="ready",
+            requested_by="x",
+            reason="y",
+            status="ready",
             expires_at=timezone.now() - timedelta(hours=1),
         )
         result = expire_exports_task()
@@ -1012,11 +1127,10 @@ class TestAuditTasks:
 # Signals
 # ---------------------------------------------------------------------------
 
+
 class TestSignals:
     def test_legal_hold_status_change_audit(self):
-        hold = LegalHold.objects.create(
-            name="Signal Hold", description="d", created_by="x"
-        )
+        hold = LegalHold.objects.create(name="Signal Hold", description="d", created_by="x")
         initial_count = AuditLog.objects.count()
         hold.release(released_by="y@x.com", reason="done")
         assert AuditLog.objects.count() >= initial_count
@@ -1024,8 +1138,11 @@ class TestSignals:
     def test_violation_created_audit(self):
         profile = make_compliance_profile(framework=ComplianceFrameworkCode.NCA_ECC)
         rule = ComplianceRule.objects.create(
-            profile=profile, rule_id="SIG-1", name="Signal rule",
-            description="d", severity=ComplianceRuleSeverity.HIGH,
+            profile=profile,
+            rule_id="SIG-1",
+            name="Signal rule",
+            description="d",
+            severity=ComplianceRuleSeverity.HIGH,
         )
         initial_count = AuditLog.objects.count()
         ComplianceViolation.objects.create(rule=rule, description="gap")
@@ -1036,10 +1153,13 @@ class TestSignals:
 # Health API (functional)
 # ---------------------------------------------------------------------------
 
+
 class TestAuditHealthAPI:
     def test_health_view(self):
         from django.test import RequestFactory
+
         from platform.audit.views import audit_health
+
         rf = RequestFactory()
         request = rf.get("/api/v1/audit/healthz/")
         response = audit_health(request)
@@ -1047,7 +1167,9 @@ class TestAuditHealthAPI:
 
     def test_metrics_view(self):
         from django.test import RequestFactory
+
         from platform.audit.views import audit_metrics
+
         rf = RequestFactory()
         request = rf.get("/api/v1/audit/metrics")
         response = audit_metrics(request)

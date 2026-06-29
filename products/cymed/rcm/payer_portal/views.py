@@ -1,14 +1,16 @@
 from django.utils import timezone
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter
+from rest_framework.response import Response
 
-from .models import PayerPortalAccount, PayerDashboard, PayerClaimReview, PayerAuthorizationReview
+from .models import PayerAuthorizationReview, PayerClaimReview, PayerDashboard, PayerPortalAccount
 from .serializers import (
-    PayerPortalAccountSerializer, PayerDashboardSerializer,
-    PayerClaimReviewSerializer, PayerAuthorizationReviewSerializer,
+    PayerAuthorizationReviewSerializer,
+    PayerClaimReviewSerializer,
+    PayerDashboardSerializer,
+    PayerPortalAccountSerializer,
 )
 
 
@@ -57,7 +59,9 @@ class PayerClaimReviewViewSet(viewsets.ModelViewSet):
         review = self.get_object()
         decision = request.data.get("decision")
         if decision not in ("approved", "denied", "partial", "pending"):
-            return Response({"error": "Invalid decision value."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid decision value."}, status=status.HTTP_400_BAD_REQUEST
+            )
         review.decision = decision
         review.decision_date = timezone.now()
         review.review_status = "decision_made"
@@ -84,12 +88,16 @@ class PayerAuthorizationReviewViewSet(viewsets.ModelViewSet):
         review = self.get_object()
         decision = request.data.get("decision")
         if decision not in ("approved", "partially_approved", "denied", "pending_info"):
-            return Response({"error": "Invalid decision value."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid decision value."}, status=status.HTTP_400_BAD_REQUEST
+            )
         review.decision = decision
         review.decision_date = timezone.now()
         review.review_status = "decision_made"
         review.approved_units = request.data.get("approved_units", review.approved_units)
-        review.approved_start_date = request.data.get("approved_start_date", review.approved_start_date)
+        review.approved_start_date = request.data.get(
+            "approved_start_date", review.approved_start_date
+        )
         review.approved_end_date = request.data.get("approved_end_date", review.approved_end_date)
         review.reviewer_notes = request.data.get("reviewer_notes", review.reviewer_notes)
         review.save()

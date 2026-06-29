@@ -1,29 +1,27 @@
 import pytest
-from django.test import TestCase
 from django.core.management import call_command
+from django.test import TestCase
 
 from platform.tenant.models import Tenant
-from products.cymed.core.organizations.models import Organization
-from products.cymed.core.facilities.models import Facility, Department, Ward, Room, Bed
-from products.cymed.core.patients.models import Patient
-from products.cymed.core.providers.models import Provider
-from products.cymed.core.encounters.models import Encounter, EpisodeOfCare
-from products.cymed.laboratory.orders.models import LabOrder
-from products.cymed.imaging.orders.models import ImagingOrder
-from products.cymed.pharmacy.prescriptions.models import Prescription
-from products.cymed.rcm.billing.models import EncounterBilling, Invoice
-from products.cymed.rcm.claims.models import Claim
-from products.cycom.hr.models import Employee, Department as CycomDepartment
-from products.cycom.payroll.models import PayrollRun, Payslip
-from products.cycom.inventory.models import StockItem
 from products.cycom.assets.models import Asset
 from products.cycom.bi.models import DashboardMetric
 from products.cycom.finance.gl.models import Account, JournalEntry
+from products.cycom.hr.models import Employee
+from products.cycom.inventory.models import StockItem
+from products.cymed.core.encounters.models import Encounter
+from products.cymed.core.facilities.models import Bed, Department, Facility, Room, Ward
+from products.cymed.core.organizations.models import Organization
+from products.cymed.core.patients.models import Patient
+from products.cymed.core.providers.models import Provider
+from products.cymed.imaging.orders.models import ImagingOrder
+from products.cymed.laboratory.orders.models import LabOrder
+from products.cymed.pharmacy.prescriptions.models import Prescription
+from products.cymed.rcm.billing.models import EncounterBilling, Invoice
+from products.cymed.rcm.claims.models import Claim
 
 
 @pytest.mark.django_db
 class TestPopulateDemoCommand(TestCase):
-
     def test_populate_demo_seeds_network_and_workflows(self):
         # 1. Execute the management command
         call_command("populate_demo")
@@ -99,4 +97,6 @@ class TestPopulateDemoCommand(TestCase):
         self.assertTrue(Asset.objects.filter(code="AST-CT-001").exists())
 
         # BI Dashboard metrics
-        self.assertTrue(DashboardMetric.objects.filter(name="average_er_wait_time_minutes").exists())
+        self.assertTrue(
+            DashboardMetric.objects.filter(name="average_er_wait_time_minutes").exists()
+        )

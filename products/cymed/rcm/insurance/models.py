@@ -1,5 +1,5 @@
-﻿import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -219,7 +219,9 @@ class Coverage(BaseModel):
         ]
 
     def __str__(self):
-        return f"Coverage({self.insurance_member_id} | {self.coverage_type} | active={self.is_active})"
+        return (
+            f"Coverage({self.insurance_member_id} | {self.coverage_type} | active={self.is_active})"
+        )
 
 
 class Benefit(BaseModel):

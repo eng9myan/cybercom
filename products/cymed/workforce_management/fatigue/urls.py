@@ -1,5 +1,11 @@
 from rest_framework.routers import DefaultRouter
-from .views import DutyHourLogViewSet, WeeklyHoursSummaryViewSet, FatigueViolationViewSet, DisasterOverrideViewSet
+
+from .views import (
+    DisasterOverrideViewSet,
+    DutyHourLogViewSet,
+    FatigueViolationViewSet,
+    WeeklyHoursSummaryViewSet,
+)
 
 router = DefaultRouter()
 router.register("duty-logs", DutyHourLogViewSet, basename="duty-hour-log")

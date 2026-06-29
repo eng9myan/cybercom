@@ -5,108 +5,147 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_rcm_payer_portal', '0001_initial'),
+        ("cymed_rcm_payer_portal", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='payerauthorizationreview',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="payerauthorizationreview",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='payerauthorizationreview',
-            name='decision',
-            field=models.CharField(blank=True, choices=[('approved', 'Approved'), ('partially_approved', 'Partially Approved'), ('denied', 'Denied'), ('pending_info', 'Pending Info')], max_length=20),
+            model_name="payerauthorizationreview",
+            name="decision",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("approved", "Approved"),
+                    ("partially_approved", "Partially Approved"),
+                    ("denied", "Denied"),
+                    ("pending_info", "Pending Info"),
+                ],
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='payerauthorizationreview',
-            name='tenant_id',
+            model_name="payerauthorizationreview",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='payerauthorizationreview',
-            name='updated_at',
+            model_name="payerauthorizationreview",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='payerclaimreview',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="payerclaimreview",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='payerclaimreview',
-            name='decision',
-            field=models.CharField(blank=True, choices=[('approved', 'Approved'), ('denied', 'Denied'), ('partial', 'Partial'), ('pending', 'Pending')], max_length=20),
+            model_name="payerclaimreview",
+            name="decision",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("approved", "Approved"),
+                    ("denied", "Denied"),
+                    ("partial", "Partial"),
+                    ("pending", "Pending"),
+                ],
+                max_length=20,
+            ),
         ),
         migrations.AlterField(
-            model_name='payerclaimreview',
-            name='tenant_id',
+            model_name="payerclaimreview",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='payerclaimreview',
-            name='updated_at',
+            model_name="payerclaimreview",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='payerdashboard',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="payerdashboard",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='payerdashboard',
-            name='tenant_id',
+            model_name="payerdashboard",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='payerdashboard',
-            name='updated_at',
+            model_name="payerdashboard",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='payerportalaccount',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="payerportalaccount",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='payerportalaccount',
-            name='tenant_id',
+            model_name="payerportalaccount",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='payerportalaccount',
-            name='updated_at',
+            model_name="payerportalaccount",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterUniqueTogether(
-            name='payerportalaccount',
-            unique_together={('tenant_id', 'insurance_company_id', 'cyidentity_user_id')},
+            name="payerportalaccount",
+            unique_together={("tenant_id", "insurance_company_id", "cyidentity_user_id")},
         ),
         migrations.AddIndex(
-            model_name='payerauthorizationreview',
-            index=models.Index(fields=['tenant_id', 'payer_account_id', 'review_status'], name='cymed_rcm_p_tenant__3ee91f_idx'),
+            model_name="payerauthorizationreview",
+            index=models.Index(
+                fields=["tenant_id", "payer_account_id", "review_status"],
+                name="cymed_rcm_p_tenant__3ee91f_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='payerauthorizationreview',
-            index=models.Index(fields=['tenant_id', 'preauthorization_id'], name='cymed_rcm_p_tenant__70bb78_idx'),
+            model_name="payerauthorizationreview",
+            index=models.Index(
+                fields=["tenant_id", "preauthorization_id"], name="cymed_rcm_p_tenant__70bb78_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='payerclaimreview',
-            index=models.Index(fields=['tenant_id', 'payer_account_id', 'review_status'], name='cymed_rcm_p_tenant__ac900c_idx'),
+            model_name="payerclaimreview",
+            index=models.Index(
+                fields=["tenant_id", "payer_account_id", "review_status"],
+                name="cymed_rcm_p_tenant__ac900c_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='payerclaimreview',
-            index=models.Index(fields=['tenant_id', 'claim_id'], name='cymed_rcm_p_tenant__ef50bd_idx'),
+            model_name="payerclaimreview",
+            index=models.Index(
+                fields=["tenant_id", "claim_id"], name="cymed_rcm_p_tenant__ef50bd_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='payerportalaccount',
-            index=models.Index(fields=['tenant_id', 'insurance_company_id'], name='cymed_rcm_p_tenant__9d3e02_idx'),
+            model_name="payerportalaccount",
+            index=models.Index(
+                fields=["tenant_id", "insurance_company_id"], name="cymed_rcm_p_tenant__9d3e02_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='payerportalaccount',
-            index=models.Index(fields=['tenant_id', 'cyidentity_user_id'], name='cymed_rcm_p_tenant__afc4b7_idx'),
+            model_name="payerportalaccount",
+            index=models.Index(
+                fields=["tenant_id", "cyidentity_user_id"], name="cymed_rcm_p_tenant__afc4b7_idx"
+            ),
         ),
     ]

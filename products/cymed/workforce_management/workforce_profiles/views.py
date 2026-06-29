@@ -1,15 +1,15 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import WorkforceProfile, ClinicalCredential, CompetencyRecord
+from .models import ClinicalCredential, CompetencyRecord, WorkforceProfile
 from .serializers import (
-    WorkforceProfileSerializer,
     ClinicalCredentialSerializer,
     CompetencyRecordSerializer,
+    WorkforceProfileSerializer,
 )
 
 
@@ -31,7 +31,15 @@ class HWMModelViewSet(viewsets.ModelViewSet):
 class WorkforceProfileViewSet(HWMModelViewSet):
     queryset = WorkforceProfile.objects.all()
     serializer_class = WorkforceProfileSerializer
-    filterset_fields = ["facility_id", "department_id", "role_type", "clinical_category", "contract_type", "is_active", "is_float_eligible"]
+    filterset_fields = [
+        "facility_id",
+        "department_id",
+        "role_type",
+        "clinical_category",
+        "contract_type",
+        "is_active",
+        "is_float_eligible",
+    ]
     search_fields = ["display_name", "specialty", "sub_specialty"]
     ordering_fields = ["display_name", "role_type", "created_at"]
 

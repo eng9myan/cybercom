@@ -1,16 +1,17 @@
 """
 Usage Metering Service — collects and evaluates tenant usage metrics against license limits.
 """
+
 import uuid
-from django.utils import timezone
 from decimal import Decimal
 
-from products.cymed.commercial.usage_metering.models import UsageMeter, UsageAlert
+from django.utils import timezone
+
 from products.cymed.commercial.licensing.models import License
+from products.cymed.commercial.usage_metering.models import UsageAlert, UsageMeter
 
 
 class UsageMeteringService:
-
     ALERT_THRESHOLD_PCT = Decimal("80.0")
 
     @classmethod
@@ -49,6 +50,7 @@ class UsageMeteringService:
     @classmethod
     def _check_limits(cls, meter: UsageMeter, tenant_id, product_code: str) -> None:
         from django.core.exceptions import ObjectDoesNotExist
+
         try:
             license_obj = License.objects.get(
                 tenant_id=tenant_id, product_code=product_code, status__in=["active", "grace"]
@@ -64,7 +66,9 @@ class UsageMeteringService:
                 setattr(meter, over_field, True)
                 cls._create_alert(meter, "over_limit", "critical", resource, current, limit, pct)
             elif pct >= cls.ALERT_THRESHOLD_PCT:
-                cls._create_alert(meter, "approaching_limit", "warning", resource, current, limit, pct)
+                cls._create_alert(
+                    meter, "approaching_limit", "warning", resource, current, limit, pct
+                )
 
         _check("users", meter.active_users, license_obj.max_users, "is_over_user_limit")
         _check("beds", meter.occupied_beds, license_obj.max_beds, "is_over_bed_limit")

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import PayerPortalAccount, PayerDashboard, PayerClaimReview, PayerAuthorizationReview
+
+from .models import PayerAuthorizationReview, PayerClaimReview, PayerDashboard, PayerPortalAccount
 
 
 class PayerPortalAccountSerializer(serializers.ModelSerializer):

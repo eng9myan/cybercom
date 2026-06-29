@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 ROLE_TYPE_CHOICES = [
     # Physician grades
@@ -105,7 +105,9 @@ class WorkforceProfile(BaseModel):
     display_name = models.CharField(max_length=200)
     role_type = models.CharField(max_length=40, choices=ROLE_TYPE_CHOICES)
     clinical_category = models.CharField(max_length=30, choices=CLINICAL_CATEGORY_CHOICES)
-    contract_type = models.CharField(max_length=30, choices=CONTRACT_TYPE_CHOICES, default="full_time")
+    contract_type = models.CharField(
+        max_length=30, choices=CONTRACT_TYPE_CHOICES, default="full_time"
+    )
     specialty = models.CharField(max_length=100, blank=True)
     sub_specialty = models.CharField(max_length=100, blank=True)
 

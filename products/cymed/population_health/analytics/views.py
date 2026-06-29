@@ -1,27 +1,28 @@
-﻿"""
+"""
 CyMed Population Health — Analytics Views
 """
+
 import django.utils.timezone as timezone
-from rest_framework import viewsets, mixins
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
     NationalHealthSnapshot,
-    PopulationAnalyticsInsight,
-    QualityKPIDashboard,
     OutbreakForecast,
+    PopulationAnalyticsInsight,
     PopulationHealthDashboard,
+    QualityKPIDashboard,
 )
 from .serializers import (
     NationalHealthSnapshotSerializer,
-    PopulationAnalyticsInsightSerializer,
-    QualityKPIDashboardSerializer,
     OutbreakForecastSerializer,
+    PopulationAnalyticsInsightSerializer,
     PopulationHealthDashboardSerializer,
+    QualityKPIDashboardSerializer,
 )
 
 
@@ -100,7 +101,9 @@ class PopulationAnalyticsInsightViewSet(
         insight.status = "acknowledged"
         insight.acknowledged_by_user_id = user_id
         insight.acknowledged_at = timezone.now()
-        insight.save(update_fields=["status", "acknowledged_by_user_id", "acknowledged_at", "updated_at"])
+        insight.save(
+            update_fields=["status", "acknowledged_by_user_id", "acknowledged_at", "updated_at"]
+        )
         serializer = self.get_serializer(insight)
         return Response(serializer.data)
 

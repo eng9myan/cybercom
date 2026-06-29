@@ -5,80 +5,87 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_provider_approvals', '0001_initial'),
+        ("cymed_provider_approvals", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='approvalrequest',
-            new_name='cymed_prov__tenant__7b7868_idx',
-            old_name='cymed_prov_ar_tenant_approver_status_idx',
+            model_name="approvalrequest",
+            new_name="cymed_prov__tenant__7b7868_idx",
+            old_name="cymed_prov_ar_tenant_approver_status_idx",
         ),
         migrations.RenameIndex(
-            model_name='approvalrequest',
-            new_name='cymed_prov__tenant__39fe65_idx',
-            old_name='cymed_prov_ar_tenant_requester_status_idx',
+            model_name="approvalrequest",
+            new_name="cymed_prov__tenant__39fe65_idx",
+            old_name="cymed_prov_ar_tenant_requester_status_idx",
         ),
         migrations.AlterField(
-            model_name='approvalauditlog',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="approvalauditlog",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='approvalauditlog',
-            name='tenant_id',
+            model_name="approvalauditlog",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='approvalauditlog',
-            name='updated_at',
+            model_name="approvalauditlog",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='approvaldecision',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="approvaldecision",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='approvaldecision',
-            name='tenant_id',
+            model_name="approvaldecision",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='approvaldecision',
-            name='updated_at',
+            model_name="approvaldecision",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='approvalrequest',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="approvalrequest",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='approvalrequest',
-            name='tenant_id',
+            model_name="approvalrequest",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='approvalrequest',
-            name='updated_at',
+            model_name="approvalrequest",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='approvalworkflow',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="approvalworkflow",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='approvalworkflow',
-            name='tenant_id',
+            model_name="approvalworkflow",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='approvalworkflow',
-            name='updated_at',
+            model_name="approvalworkflow",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

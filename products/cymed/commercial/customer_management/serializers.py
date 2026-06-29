@@ -1,7 +1,11 @@
 from rest_framework import serializers
+
 from products.cymed.commercial.customer_management.models import (
-    Customer, CustomerOrganization, CustomerContract,
-    CustomerDeployment, CustomerSuccessPlan
+    Customer,
+    CustomerContract,
+    CustomerDeployment,
+    CustomerOrganization,
+    CustomerSuccessPlan,
 )
 
 

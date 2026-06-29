@@ -1,18 +1,28 @@
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
-    Course, CourseModule, Enrollment, Exam,
-    ExamAttempt, Certificate, LearningPath,
+    Certificate,
+    Course,
+    CourseModule,
+    Enrollment,
+    Exam,
+    ExamAttempt,
+    LearningPath,
 )
 from .serializers import (
-    CourseSerializer, CourseModuleSerializer, EnrollmentSerializer, ExamSerializer,
-    ExamAttemptSerializer, CertificateSerializer, LearningPathSerializer,
+    CertificateSerializer,
+    CourseModuleSerializer,
+    CourseSerializer,
+    EnrollmentSerializer,
+    ExamAttemptSerializer,
+    ExamSerializer,
+    LearningPathSerializer,
 )
 
 
@@ -104,7 +114,9 @@ class ExamAttemptViewSet(BaseViewSet):
             attempt.score_pct = score_pct
             attempt.passed = float(score_pct) >= attempt.exam.pass_score_pct
         attempt.save(update_fields=["submitted_at", "answers", "score_pct", "passed", "updated_at"])
-        return Response({"submitted_at": attempt.submitted_at, "passed": attempt.passed, "id": str(attempt.id)})
+        return Response(
+            {"submitted_at": attempt.submitted_at, "passed": attempt.passed, "id": str(attempt.id)}
+        )
 
 
 class CertificateViewSet(BaseViewSet):

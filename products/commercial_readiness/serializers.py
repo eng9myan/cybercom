@@ -1,11 +1,24 @@
 from rest_framework import serializers
+
 from .models import (
-    PricingPlan, Quotation, Proposal, LicenseKey,
-    ComplianceCertification, CompetitiveBenchmark,
-    License, Subscription, ProductEdition, FeatureFlag,
-    TenantFeatureFlagOverride, WhiteLabelConfig, ConcurrentLicenseSession,
-    CustomerPortalAccess, SupportTicket, MarketplaceListing,
-    MarketplaceInstallation, CommercialMetricsSnapshot,
+    CommercialMetricsSnapshot,
+    CompetitiveBenchmark,
+    ComplianceCertification,
+    ConcurrentLicenseSession,
+    CustomerPortalAccess,
+    FeatureFlag,
+    License,
+    LicenseKey,
+    MarketplaceInstallation,
+    MarketplaceListing,
+    PricingPlan,
+    ProductEdition,
+    Proposal,
+    Quotation,
+    Subscription,
+    SupportTicket,
+    TenantFeatureFlagOverride,
+    WhiteLabelConfig,
 )
 
 
@@ -97,7 +110,14 @@ class ConcurrentLicenseSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConcurrentLicenseSession
         fields = "__all__"
-        read_only_fields = ["id", "tenant_id", "started_at", "last_heartbeat_at", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "tenant_id",
+            "started_at",
+            "last_heartbeat_at",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class CustomerPortalAccessSerializer(serializers.ModelSerializer):
@@ -111,14 +131,28 @@ class SupportTicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportTicket
         fields = "__all__"
-        read_only_fields = ["id", "tenant_id", "ticket_number", "submitted_by_id", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "tenant_id",
+            "ticket_number",
+            "submitted_by_id",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class MarketplaceListingSerializer(serializers.ModelSerializer):
     class Meta:
         model = MarketplaceListing
         fields = "__all__"
-        read_only_fields = ["id", "install_count", "rating_avg", "rating_count", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "install_count",
+            "rating_avg",
+            "rating_count",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class MarketplaceInstallationSerializer(serializers.ModelSerializer):

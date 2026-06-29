@@ -1,21 +1,35 @@
 """
 API Framework service layer. ADR-0003 / ADR-0030.
 """
+
 import hashlib
 import hmac
 import json
 import logging
 import uuid
 from datetime import timedelta
-from typing import Optional
 
 from django.utils import timezone
 
 from .models import (
-    ApiApplication, ApiCatalog, ApiClassification, ApiContract, ApiEndpoint,
-    ApiKey, ApiKeyStatus, ApiPolicy, ApiRateLimit, ApiScope, ApiStatus,
-    ApiSubscription, ApiUsage, ApiVersion, ApiWebhook, ApiWebhookDelivery,
-    IdempotencyKey, RateLimitScope, VersionLifecycle, WebhookDeliveryStatus,
+    ApiApplication,
+    ApiCatalog,
+    ApiClassification,
+    ApiContract,
+    ApiEndpoint,
+    ApiKey,
+    ApiKeyStatus,
+    ApiRateLimit,
+    ApiScope,
+    ApiStatus,
+    ApiSubscription,
+    ApiUsage,
+    ApiVersion,
+    ApiWebhook,
+    ApiWebhookDelivery,
+    RateLimitScope,
+    VersionLifecycle,
+    WebhookDeliveryStatus,
     WebhookStatus,
 )
 
@@ -25,6 +39,7 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # ApiApplicationService
 # ---------------------------------------------------------------------------
+
 
 class ApiApplicationService:
     """Register and manage API consumer applications."""
@@ -58,6 +73,7 @@ class ApiApplicationService:
 # ApiKeyService
 # ---------------------------------------------------------------------------
 
+
 class ApiKeyService:
     """Generate, rotate, and revoke API keys."""
 
@@ -72,14 +88,18 @@ class ApiKeyService:
     ) -> tuple[ApiKey, str]:
         expires_at = timezone.now() + timedelta(days=expires_in_days) if expires_in_days else None
         return ApiKey.generate(
-            application=application, name=name, scopes=scopes or [],
-            tenant_id=tenant_id, created_by=created_by, expires_at=expires_at,
+            application=application,
+            name=name,
+            scopes=scopes or [],
+            tenant_id=tenant_id,
+            created_by=created_by,
+            expires_at=expires_at,
         )
 
     def revoke(self, key: ApiKey, revoked_by: str = "") -> None:
         key.revoke(revoked_by=revoked_by)
 
-    def verify(self, raw_key: str) -> Optional[ApiKey]:
+    def verify(self, raw_key: str) -> ApiKey | None:
         if not raw_key or not raw_key.startswith("ck_"):
             return None
         prefix = raw_key[:12]
@@ -112,6 +132,7 @@ class ApiKeyService:
 # ApiCatalogService
 # ---------------------------------------------------------------------------
 
+
 class ApiCatalogService:
     """Manage the API catalog registry."""
 
@@ -125,13 +146,22 @@ class ApiCatalogService:
         description: str = "",
         fhir_resource: str = "",
     ) -> ApiCatalog:
-        version = ApiVersion.objects.create(
-            major=1, minor=0, patch=0, lifecycle=VersionLifecycle.STABLE, is_current=True
-        ) if not ApiVersion.objects.exists() else ApiVersion.objects.filter(is_current=True).first()
+        version = (
+            ApiVersion.objects.create(
+                major=1, minor=0, patch=0, lifecycle=VersionLifecycle.STABLE, is_current=True
+            )
+            if not ApiVersion.objects.exists()
+            else ApiVersion.objects.filter(is_current=True).first()
+        )
         return ApiCatalog.objects.create(
-            name=name, slug=slug, classification=classification,
-            base_path=base_path, owner_team=owner_team, description=description,
-            fhir_resource=fhir_resource, current_version=version,
+            name=name,
+            slug=slug,
+            classification=classification,
+            base_path=base_path,
+            owner_team=owner_team,
+            description=description,
+            fhir_resource=fhir_resource,
+            current_version=version,
         )
 
     def publish(self, catalog: ApiCatalog) -> None:
@@ -140,23 +170,34 @@ class ApiCatalogService:
     def deprecate(self, catalog: ApiCatalog) -> None:
         catalog.deprecate()
 
-    def add_scope(self, catalog: ApiCatalog, name: str, description: str, is_sensitive: bool = False) -> ApiScope:
+    def add_scope(
+        self, catalog: ApiCatalog, name: str, description: str, is_sensitive: bool = False
+    ) -> ApiScope:
         return ApiScope.objects.create(
             catalog=catalog, name=name, description=description, is_sensitive=is_sensitive
         )
 
     def add_endpoint(
-        self, catalog: ApiCatalog, path: str, method: str, operation_id: str, required_scopes: list = None
+        self,
+        catalog: ApiCatalog,
+        path: str,
+        method: str,
+        operation_id: str,
+        required_scopes: list = None,
     ) -> ApiEndpoint:
         return ApiEndpoint.objects.create(
-            catalog=catalog, path=path, method=method,
-            operation_id=operation_id, required_scopes=required_scopes or [],
+            catalog=catalog,
+            path=path,
+            method=method,
+            operation_id=operation_id,
+            required_scopes=required_scopes or [],
         )
 
 
 # ---------------------------------------------------------------------------
 # ApiSubscriptionService
 # ---------------------------------------------------------------------------
+
 
 class ApiSubscriptionService:
     """Approve and manage application-to-catalog subscriptions."""
@@ -183,7 +224,15 @@ class ApiSubscriptionService:
             sub.approved_scopes = approved_scopes or sub.approved_scopes
             sub.approved_by = approved_by
             sub.approved_at = timezone.now()
-            sub.save(update_fields=["status", "approved_scopes", "approved_by", "approved_at", "updated_at"])
+            sub.save(
+                update_fields=[
+                    "status",
+                    "approved_scopes",
+                    "approved_by",
+                    "approved_at",
+                    "updated_at",
+                ]
+            )
         return sub
 
     def has_scope(self, application: ApiApplication, catalog: ApiCatalog, scope: str) -> bool:
@@ -197,6 +246,7 @@ class ApiSubscriptionService:
 # ---------------------------------------------------------------------------
 # ApiVersionService
 # ---------------------------------------------------------------------------
+
 
 class ApiVersionService:
     """Manage semantic versions and deprecation per ADR-0030 S3.4."""
@@ -229,6 +279,7 @@ class ApiVersionService:
 # WebhookService
 # ---------------------------------------------------------------------------
 
+
 class WebhookService:
     """Register webhooks, dispatch events, track deliveries."""
 
@@ -242,8 +293,12 @@ class WebhookService:
         headers: dict = None,
     ) -> ApiWebhook:
         return ApiWebhook.create_with_secret(
-            application=application, name=name, target_url=target_url,
-            events=events, tenant_id=tenant_id, headers=headers or {},
+            application=application,
+            name=name,
+            target_url=target_url,
+            events=events,
+            tenant_id=tenant_id,
+            headers=headers or {},
         )
 
     def dispatch(self, event_type: str, payload: dict, tenant_id=None) -> list[ApiWebhookDelivery]:
@@ -280,7 +335,14 @@ class WebhookService:
             wh.last_delivery_at = timezone.now()
             wh.last_delivery_status = "delivered"
             wh.failure_count = 0
-            wh.save(update_fields=["last_delivery_at", "last_delivery_status", "failure_count", "updated_at"])
+            wh.save(
+                update_fields=[
+                    "last_delivery_at",
+                    "last_delivery_status",
+                    "failure_count",
+                    "updated_at",
+                ]
+            )
         else:
             delivery.mark_failed("Connection refused", response_code=None)
             wh = delivery.webhook
@@ -297,6 +359,7 @@ class WebhookService:
 # ---------------------------------------------------------------------------
 # ApiContractService
 # ---------------------------------------------------------------------------
+
 
 class ApiContractService:
     """Contract testing and schema drift detection. ADR-0003 S7.3."""
@@ -325,18 +388,21 @@ class ApiContractService:
         results = []
         for contract in contracts:
             is_valid = contract.validate_against(catalog.openapi_schema)
-            results.append({
-                "contract": str(contract.id),
-                "consumer": contract.consumer_name,
-                "valid": is_valid,
-                "errors": contract.validation_errors,
-            })
+            results.append(
+                {
+                    "contract": str(contract.id),
+                    "consumer": contract.consumer_name,
+                    "valid": is_valid,
+                    "errors": contract.validation_errors,
+                }
+            )
         return results
 
 
 # ---------------------------------------------------------------------------
 # ApiUsageService
 # ---------------------------------------------------------------------------
+
 
 class ApiUsageService:
     """Usage analytics and quota tracking."""
@@ -363,13 +429,16 @@ class ApiUsageService:
         )
 
     def get_tenant_summary(self, tenant_id, days: int = 30) -> dict:
-        from django.db.models import Count, Avg
+        from django.db.models import Avg, Count
+
         since = timezone.now() - timedelta(days=days)
         qs = ApiUsage.objects.filter(tenant_id=tenant_id, timestamp__gte=since)
         return qs.aggregate(
             total_requests=Count("id"),
             avg_latency=Avg("latency_ms"),
-            error_count=Count("id", filter=__import__("django.db.models", fromlist=["Q"]).Q(is_error=True)),
+            error_count=Count(
+                "id", filter=__import__("django.db.models", fromlist=["Q"]).Q(is_error=True)
+            ),
         )
 
 
@@ -377,14 +446,22 @@ class ApiUsageService:
 # ApiRateLimitService
 # ---------------------------------------------------------------------------
 
+
 class ApiRateLimitService:
     """Manage rate limit configurations per catalog/application/tenant."""
 
     def set_tenant_limit(
-        self, tenant_id, requests_per_minute: int = 60, requests_per_day: int = 86400, burst_size: int = 20
+        self,
+        tenant_id,
+        requests_per_minute: int = 60,
+        requests_per_day: int = 86400,
+        burst_size: int = 20,
     ) -> ApiRateLimit:
         obj, _ = ApiRateLimit.objects.update_or_create(
-            tenant_id=tenant_id, scope=RateLimitScope.TENANT, catalog=None, application=None,
+            tenant_id=tenant_id,
+            scope=RateLimitScope.TENANT,
+            catalog=None,
+            application=None,
             defaults={
                 "requests_per_minute": requests_per_minute,
                 "requests_per_day": requests_per_day,
@@ -398,15 +475,23 @@ class ApiRateLimitService:
 # FHIRService — FHIR R4 resource helpers
 # ---------------------------------------------------------------------------
 
+
 class FHIRService:
     """
     FHIR R4 / R5 resource builder.
     In production, delegates to Go FHIR gateway (ADR-0034 S4.2).
     In this Django layer, provides the REST interface and audit trail.
     """
+
     SUPPORTED_RESOURCES = [
-        "Patient", "Encounter", "Practitioner", "Observation",
-        "MedicationRequest", "Appointment", "CarePlan", "DiagnosticReport",
+        "Patient",
+        "Encounter",
+        "Practitioner",
+        "Observation",
+        "MedicationRequest",
+        "Appointment",
+        "CarePlan",
+        "DiagnosticReport",
     ]
     SUPPORTED_VERSIONS = ["R4", "R5"]
 
@@ -461,6 +546,7 @@ class FHIRService:
 # ---------------------------------------------------------------------------
 # SDKGeneratorService
 # ---------------------------------------------------------------------------
+
 
 class SDKGeneratorService:
     """
@@ -544,14 +630,19 @@ class {name.title().replace("_", "")}Client:
                 "operationId": ep.operation_id,
                 "summary": ep.summary,
                 "security": [{"bearerAuth": ep.required_scopes}] if ep.requires_auth else [],
-                "responses": {"200": {"description": "Success"}, "default": {"description": "Error"}},
+                "responses": {
+                    "200": {"description": "Success"},
+                    "default": {"description": "Error"},
+                },
             }
 
         return {
             "openapi": "3.1.0",
             "info": {
                 "title": catalog.name,
-                "version": catalog.current_version.version_string if catalog.current_version else "v1.0.0",
+                "version": catalog.current_version.version_string
+                if catalog.current_version
+                else "v1.0.0",
                 "description": catalog.description,
             },
             "servers": [{"url": catalog.base_path}],
@@ -568,6 +659,7 @@ class {name.title().replace("_", "")}Client:
 # ApiMetrics
 # ---------------------------------------------------------------------------
 
+
 class ApiMetrics:
     """Prometheus metrics for the API framework."""
 
@@ -577,7 +669,9 @@ class ApiMetrics:
         rate_limited = ApiUsage.objects.filter(is_rate_limited=True).count()
         active_keys = ApiKey.objects.filter(status="active").count()
         active_webhooks = ApiWebhook.objects.filter(status="active").count()
-        dead_deliveries = ApiWebhookDelivery.objects.filter(status=WebhookDeliveryStatus.DEAD).count()
+        dead_deliveries = ApiWebhookDelivery.objects.filter(
+            status=WebhookDeliveryStatus.DEAD
+        ).count()
         active_apps = ApiApplication.objects.filter(status="active").count()
         active_catalogs = ApiCatalog.objects.filter(status="active").count()
 

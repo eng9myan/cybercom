@@ -5,6 +5,7 @@ from django.dispatch import receiver
 def _publish(tenant_id, event_type, payload):
     try:
         from platform.events.outbox import OutboxEvent
+
         OutboxEvent.publish(tenant_id=tenant_id, event_type=event_type, payload=payload)
     except Exception:
         pass

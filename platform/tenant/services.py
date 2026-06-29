@@ -2,24 +2,39 @@
 CyberCom Multi-Tenant Framework — Service Layer.
 ADR-0002: tiered multi-tenancy; ADR-0005: CyIdentity realm mapping.
 """
-import uuid
+
 import logging
+import uuid
 from dataclasses import dataclass, field
-from typing import Optional
+
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
-from platform.tenant.models import (
-    Tenant, TenantProfile, TenantConfiguration, TenantBranding,
-    TenantSubscription, TenantLicense, TenantEnvironment, TenantRegion,
-    TenantDeploymentProfile, TenantFeatureFlag, TenantDomain,
-    TenantSSOConfiguration, TenantStoragePolicy, TenantRetentionPolicy,
-    TenantComplianceProfile, TenantAuditConfiguration,
-    TenantStatus, TenantTier, TenantType, SubscriptionPlan,
-    LicenseType, EnvironmentType, ComplianceFramework,
-)
 from platform.events.models import OutboxEvent
+from platform.tenant.models import (
+    EnvironmentType,
+    SubscriptionPlan,
+    Tenant,
+    TenantAuditConfiguration,
+    TenantBranding,
+    TenantComplianceProfile,
+    TenantConfiguration,
+    TenantDeploymentProfile,
+    TenantDomain,
+    TenantEnvironment,
+    TenantFeatureFlag,
+    TenantLicense,
+    TenantProfile,
+    TenantRegion,
+    TenantRetentionPolicy,
+    TenantSSOConfiguration,
+    TenantStatus,
+    TenantStoragePolicy,
+    TenantSubscription,
+    TenantTier,
+    TenantType,
+)
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +42,7 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Tenant Metrics
 # ---------------------------------------------------------------------------
+
 
 class TenantMetrics:
     """In-process counters for Prometheus exposition."""
@@ -57,6 +73,7 @@ def render_prometheus() -> str:
 # Tenant Event Emitter
 # ---------------------------------------------------------------------------
 
+
 class TenantEventEmitter:
     @staticmethod
     def emit(event_type: str, tenant: Tenant, payload: dict) -> None:
@@ -74,6 +91,7 @@ class TenantEventEmitter:
 # ---------------------------------------------------------------------------
 # TenantBootstrapService — full provisioning wizard
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class TenantBootstrapRequest:
@@ -167,11 +185,15 @@ class TenantBootstrapService:
         self._seed_default_retention_policies(tenant, req.compliance_frameworks)
 
         _metrics.tenant_provisioned_total += 1
-        TenantEventEmitter.emit("tenant.provisioned", tenant, {
-            "tier": tenant.tier,
-            "tenant_type": tenant.tenant_type,
-            "created_by": created_by,
-        })
+        TenantEventEmitter.emit(
+            "tenant.provisioned",
+            tenant,
+            {
+                "tier": tenant.tier,
+                "tenant_type": tenant.tenant_type,
+                "created_by": created_by,
+            },
+        )
 
         log.info("Tenant %s provisioned (tier=%s)", tenant.slug, tenant.tier)
         return tenant
@@ -186,7 +208,8 @@ class TenantBootstrapService:
         ]
         for key, enabled in defaults:
             TenantFeatureFlag.objects.get_or_create(
-                tenant=tenant, key=key,
+                tenant=tenant,
+                key=key,
                 defaults={"enabled": enabled},
             )
 
@@ -199,8 +222,13 @@ class TenantBootstrapService:
         ]
         for category, days, strategy, basis in policies:
             TenantRetentionPolicy.objects.get_or_create(
-                tenant=tenant, data_category=category,
-                defaults={"retention_days": days, "deletion_strategy": strategy, "compliance_basis": basis},
+                tenant=tenant,
+                data_category=category,
+                defaults={
+                    "retention_days": days,
+                    "deletion_strategy": strategy,
+                    "compliance_basis": basis,
+                },
             )
 
 
@@ -208,8 +236,8 @@ class TenantBootstrapService:
 # TenantLifecycleService
 # ---------------------------------------------------------------------------
 
-class TenantLifecycleService:
 
+class TenantLifecycleService:
     def activate(self, tenant: Tenant, by: str = "") -> Tenant:
         tenant.activate()
         _metrics.tenant_activated_total += 1
@@ -249,13 +277,14 @@ class TenantLifecycleService:
 # TenantContextService — tenant resolution from request
 # ---------------------------------------------------------------------------
 
+
 class TenantContextService:
     """
     Resolves the active tenant from a request.
     Resolution order: JWT claim > X-Tenant-ID header > domain lookup > slug path.
     """
 
-    def resolve_from_claims(self, claims: dict) -> Optional[Tenant]:
+    def resolve_from_claims(self, claims: dict) -> Tenant | None:
         tenant_id = claims.get("tenant_id") or claims.get("tid")
         if not tenant_id:
             return None
@@ -264,7 +293,7 @@ class TenantContextService:
         except Tenant.DoesNotExist:
             return None
 
-    def resolve_from_header(self, header_value: str) -> Optional[Tenant]:
+    def resolve_from_header(self, header_value: str) -> Tenant | None:
         if not header_value:
             return None
         try:
@@ -272,10 +301,11 @@ class TenantContextService:
         except (Tenant.DoesNotExist, Exception):
             return None
 
-    def resolve_from_domain(self, host: str) -> Optional[Tenant]:
+    def resolve_from_domain(self, host: str) -> Tenant | None:
         if not host:
             return None
         from platform.tenant.models import TenantDomain
+
         try:
             td = TenantDomain.objects.select_related("tenant").get(
                 domain=host.lower(), is_verified=True, is_active=True
@@ -284,7 +314,7 @@ class TenantContextService:
         except TenantDomain.DoesNotExist:
             return None
 
-    def resolve_from_slug(self, slug: str) -> Optional[Tenant]:
+    def resolve_from_slug(self, slug: str) -> Tenant | None:
         try:
             return Tenant.objects.get(slug=slug, status=TenantStatus.ACTIVE)
         except Tenant.DoesNotExist:
@@ -295,6 +325,7 @@ class TenantContextService:
 # TenantRealmMappingService — CyIdentity integration
 # ---------------------------------------------------------------------------
 
+
 class TenantRealmMappingService:
     """Links a CyIdentity IdentityRealm to the tenant record."""
 
@@ -303,10 +334,14 @@ class TenantRealmMappingService:
         tenant.keycloak_realm_name = realm_name
         tenant.save(update_fields=["identity_realm_id", "keycloak_realm_name", "updated_at"])
         _metrics.realm_mapped_total += 1
-        TenantEventEmitter.emit("tenant.realm.created", tenant, {
-            "realm_id": str(realm_id),
-            "realm_name": realm_name,
-        })
+        TenantEventEmitter.emit(
+            "tenant.realm.created",
+            tenant,
+            {
+                "realm_id": str(realm_id),
+                "realm_name": realm_name,
+            },
+        )
         return tenant
 
     def get_realm_name(self, tenant: Tenant) -> str:
@@ -317,15 +352,20 @@ class TenantRealmMappingService:
 # TenantSSOService
 # ---------------------------------------------------------------------------
 
-class TenantSSOService:
 
-    def configure(self, tenant: Tenant, protocol: str, alias: str, **kwargs) -> TenantSSOConfiguration:
+class TenantSSOService:
+    def configure(
+        self, tenant: Tenant, protocol: str, alias: str, **kwargs
+    ) -> TenantSSOConfiguration:
         sso, _ = TenantSSOConfiguration.objects.update_or_create(
-            tenant=tenant, alias=alias,
+            tenant=tenant,
+            alias=alias,
             defaults={"protocol": protocol, **kwargs},
         )
         _metrics.sso_configured_total += 1
-        TenantEventEmitter.emit("tenant.sso.configured", tenant, {"alias": alias, "protocol": protocol})
+        TenantEventEmitter.emit(
+            "tenant.sso.configured", tenant, {"alias": alias, "protocol": protocol}
+        )
         return sso
 
     def disable(self, sso: TenantSSOConfiguration) -> TenantSSOConfiguration:
@@ -338,10 +378,11 @@ class TenantSSOService:
 # TenantDomainService
 # ---------------------------------------------------------------------------
 
-class TenantDomainService:
 
+class TenantDomainService:
     def add_domain(self, tenant: Tenant, domain: str, is_primary: bool = False) -> TenantDomain:
         import secrets
+
         token = secrets.token_urlsafe(32)
         td = TenantDomain.objects.create(
             tenant=tenant,
@@ -354,7 +395,9 @@ class TenantDomainService:
     def verify_domain(self, domain_obj: TenantDomain) -> TenantDomain:
         domain_obj.verify()
         _metrics.domain_verified_total += 1
-        TenantEventEmitter.emit("tenant.domain.verified", domain_obj.tenant, {"domain": domain_obj.domain})
+        TenantEventEmitter.emit(
+            "tenant.domain.verified", domain_obj.tenant, {"domain": domain_obj.domain}
+        )
         return domain_obj
 
 
@@ -362,8 +405,8 @@ class TenantDomainService:
 # TenantFeatureFlagService
 # ---------------------------------------------------------------------------
 
-class TenantFeatureFlagService:
 
+class TenantFeatureFlagService:
     def is_enabled(self, tenant: Tenant, key: str) -> bool:
         try:
             flag = TenantFeatureFlag.objects.get(tenant=tenant, key=key)
@@ -393,24 +436,36 @@ class TenantFeatureFlagService:
 # TenantLicenseService
 # ---------------------------------------------------------------------------
 
-class TenantLicenseService:
 
+class TenantLicenseService:
     def grant_license(
         self,
         tenant: Tenant,
         module: str,
         license_type: str,
         valid_until=None,
-        max_seats: Optional[int] = None,
+        max_seats: int | None = None,
         **kwargs,
     ) -> TenantLicense:
         lic, _ = TenantLicense.objects.update_or_create(
-            tenant=tenant, module=module, license_type=license_type,
-            defaults={"is_active": True, "valid_until": valid_until, "max_seats": max_seats, **kwargs},
+            tenant=tenant,
+            module=module,
+            license_type=license_type,
+            defaults={
+                "is_active": True,
+                "valid_until": valid_until,
+                "max_seats": max_seats,
+                **kwargs,
+            },
         )
-        TenantEventEmitter.emit("tenant.license.updated", tenant, {
-            "module": module, "license_type": license_type,
-        })
+        TenantEventEmitter.emit(
+            "tenant.license.updated",
+            tenant,
+            {
+                "module": module,
+                "license_type": license_type,
+            },
+        )
         return lic
 
     def revoke_license(self, lic: TenantLicense) -> TenantLicense:
@@ -420,22 +475,23 @@ class TenantLicenseService:
         return lic
 
     def has_license(self, tenant: Tenant, module: str) -> bool:
-        return TenantLicense.objects.filter(
-            tenant=tenant, module=module, is_active=True
-        ).filter(
-            Q(valid_until__isnull=True) | Q(valid_until__gt=timezone.now())
-        ).exists()
+        return (
+            TenantLicense.objects.filter(tenant=tenant, module=module, is_active=True)
+            .filter(Q(valid_until__isnull=True) | Q(valid_until__gt=timezone.now()))
+            .exists()
+        )
 
 
 # ---------------------------------------------------------------------------
 # TenantComplianceService
 # ---------------------------------------------------------------------------
 
-class TenantComplianceService:
 
+class TenantComplianceService:
     def add_framework(self, tenant: Tenant, framework: str, **kwargs) -> TenantComplianceProfile:
         profile, _ = TenantComplianceProfile.objects.update_or_create(
-            tenant=tenant, framework=framework,
+            tenant=tenant,
+            framework=framework,
             defaults={"is_active": True, **kwargs},
         )
         _metrics.compliance_profile_added_total += 1
@@ -444,11 +500,11 @@ class TenantComplianceService:
 
     def active_frameworks(self, tenant: Tenant) -> list:
         return list(
-            TenantComplianceProfile.objects.filter(tenant=tenant, is_active=True)
-            .values_list("framework", flat=True)
+            TenantComplianceProfile.objects.filter(tenant=tenant, is_active=True).values_list(
+                "framework", flat=True
+            )
         )
 
     def requires_data_residency(self, tenant: Tenant) -> bool:
         sensitive = {"hipaa", "gdpr", "pdpl", "uae_dp", "jordan_dp"}
         return bool(sensitive & set(self.active_frameworks(tenant)))
-

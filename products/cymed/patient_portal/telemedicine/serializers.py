@@ -1,31 +1,32 @@
 from rest_framework import serializers
+
 from .models import (
-    TelemedicineSession,
-    TelemedicineDocument,
     TelemedicineChat,
+    TelemedicineDocument,
     TelemedicineRating,
+    TelemedicineSession,
 )
 
 
 class TelemedicineDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = TelemedicineDocument
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at', 'uploaded_at']
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at", "uploaded_at"]
 
 
 class TelemedicineChatSerializer(serializers.ModelSerializer):
     class Meta:
         model = TelemedicineChat
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at', 'sent_at']
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at", "sent_at"]
 
 
 class TelemedicineRatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = TelemedicineRating
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class TelemedicineSessionSerializer(serializers.ModelSerializer):
@@ -35,12 +36,12 @@ class TelemedicineSessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TelemedicineSession
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class TelemedicineSessionWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = TelemedicineSession
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at"]

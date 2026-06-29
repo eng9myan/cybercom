@@ -1,32 +1,32 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class ApprovalRequest(BaseModel):
     APPROVAL_TYPE_CHOICES = [
-        ('medication_approval', 'Medication Approval'),
-        ('controlled_substance', 'Controlled Substance'),
-        ('leave_request', 'Leave Request'),
-        ('schedule_change', 'Schedule Change'),
-        ('procedure_authorization', 'Procedure Authorization'),
-        ('referral', 'Referral'),
-        ('discharge_override', 'Discharge Override'),
-        ('administrative', 'Administrative'),
-        ('clinical_protocol_deviation', 'Clinical Protocol Deviation'),
-        ('research', 'Research'),
+        ("medication_approval", "Medication Approval"),
+        ("controlled_substance", "Controlled Substance"),
+        ("leave_request", "Leave Request"),
+        ("schedule_change", "Schedule Change"),
+        ("procedure_authorization", "Procedure Authorization"),
+        ("referral", "Referral"),
+        ("discharge_override", "Discharge Override"),
+        ("administrative", "Administrative"),
+        ("clinical_protocol_deviation", "Clinical Protocol Deviation"),
+        ("research", "Research"),
     ]
     PRIORITY_CHOICES = [
-        ('routine', 'Routine'),
-        ('urgent', 'Urgent'),
-        ('stat', 'STAT'),
+        ("routine", "Routine"),
+        ("urgent", "Urgent"),
+        ("stat", "STAT"),
     ]
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-        ('cancelled', 'Cancelled'),
-        ('expired', 'Expired'),
+        ("pending", "Pending"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+        ("cancelled", "Cancelled"),
+        ("expired", "Expired"),
     ]
 
     approval_type = models.CharField(max_length=30, choices=APPROVAL_TYPE_CHOICES)
@@ -39,8 +39,8 @@ class ApprovalRequest(BaseModel):
     patient_id = models.UUIDField(null=True, blank=True, db_index=True)
     reference_id = models.UUIDField(null=True, blank=True)
     reference_type = models.CharField(max_length=100, blank=True)
-    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='routine')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="routine")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     due_by = models.DateTimeField(null=True, blank=True)
     decided_at = models.DateTimeField(null=True, blank=True)
     approval_notes = models.TextField(blank=True)
@@ -49,10 +49,10 @@ class ApprovalRequest(BaseModel):
     escalated_to = models.UUIDField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_prov_approval_requests'
+        db_table = "cymed_prov_approval_requests"
         indexes = [
-            models.Index(fields=['tenant_id', 'approver_id', 'status']),
-            models.Index(fields=['tenant_id', 'requested_by_provider_id', 'status']),
+            models.Index(fields=["tenant_id", "approver_id", "status"]),
+            models.Index(fields=["tenant_id", "requested_by_provider_id", "status"]),
         ]
 
     def __str__(self):
@@ -70,7 +70,7 @@ class ApprovalWorkflow(BaseModel):
     specialty = models.CharField(max_length=100, blank=True)
 
     class Meta:
-        db_table = 'cymed_prov_approval_workflows'
+        db_table = "cymed_prov_approval_workflows"
 
     def __str__(self):
         return f"{self.workflow_name} ({self.approval_type})"
@@ -78,16 +78,16 @@ class ApprovalWorkflow(BaseModel):
 
 class ApprovalDecision(BaseModel):
     DECISION_CHOICES = [
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-        ('requested_more_info', 'Requested More Info'),
-        ('delegated', 'Delegated'),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+        ("requested_more_info", "Requested More Info"),
+        ("delegated", "Delegated"),
     ]
 
     approval_request = models.ForeignKey(
         ApprovalRequest,
         on_delete=models.CASCADE,
-        related_name='decisions',
+        related_name="decisions",
     )
     decided_by_provider_id = models.UUIDField()
     decided_by_name = models.CharField(max_length=255)
@@ -98,7 +98,7 @@ class ApprovalDecision(BaseModel):
     step_order = models.PositiveSmallIntegerField(default=1)
 
     class Meta:
-        db_table = 'cymed_prov_approval_decisions'
+        db_table = "cymed_prov_approval_decisions"
 
     def __str__(self):
         return f"Decision '{self.decision}' by {self.decided_by_name} on request {self.approval_request_id}"
@@ -106,21 +106,21 @@ class ApprovalDecision(BaseModel):
 
 class ApprovalAuditLog(BaseModel):
     ACTION_CHOICES = [
-        ('created', 'Created'),
-        ('submitted', 'Submitted'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-        ('cancelled', 'Cancelled'),
-        ('escalated', 'Escalated'),
-        ('delegated', 'Delegated'),
-        ('expired', 'Expired'),
-        ('viewed', 'Viewed'),
+        ("created", "Created"),
+        ("submitted", "Submitted"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+        ("cancelled", "Cancelled"),
+        ("escalated", "Escalated"),
+        ("delegated", "Delegated"),
+        ("expired", "Expired"),
+        ("viewed", "Viewed"),
     ]
 
     approval_request = models.ForeignKey(
         ApprovalRequest,
         on_delete=models.CASCADE,
-        related_name='audit_log',
+        related_name="audit_log",
     )
     action = models.CharField(max_length=20, choices=ACTION_CHOICES)
     performed_by_provider_id = models.UUIDField()
@@ -129,7 +129,7 @@ class ApprovalAuditLog(BaseModel):
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_prov_approval_audit'
+        db_table = "cymed_prov_approval_audit"
 
     def __str__(self):
         return f"Audit: {self.action} on request {self.approval_request_id} by {self.performed_by_name}"

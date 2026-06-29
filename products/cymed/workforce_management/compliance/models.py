@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 COUNTRY_CODE_CHOICES = [
     ("USA", "United States"),

@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import include, path
 
 urlpatterns = [
     path("profiles/", include("products.cymed.workforce_management.workforce_profiles.urls")),

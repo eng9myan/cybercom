@@ -1,13 +1,16 @@
+import base64
 import hashlib
 import hmac
-import base64
+
 from django.conf import settings
+
 
 class EventSigner:
     """
     Handles cryptographic signing of outbox event payloads for integrity validation
     and cross-tenant protection.
     """
+
     @classmethod
     def sign_payload(cls, tenant_id: str, payload_bytes: bytes) -> str:
         # In production, this uses an RSA private key loaded from HashiCorp Vault.

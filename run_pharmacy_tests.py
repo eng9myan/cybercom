@@ -1,13 +1,15 @@
 """
 Pharmacy test runner that bypasses coverage addopts issue.
 """
-import sys
+
 import importlib
 import importlib.util
-from pathlib import Path
+import sys
 
 # ── Fix stdlib 'platform' shadowing ──────────────────────────────────────────
 import sysconfig
+from pathlib import Path
+
 stdlib_dir = sysconfig.get_paths()["stdlib"]
 _plat_spec = importlib.util.spec_from_file_location(
     "_stdlib_platform",
@@ -22,19 +24,29 @@ import pytest
 
 if __name__ == "__main__":
     import os
+
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings_test")
     os.environ.setdefault("DJANGO_DEBUG", "True")
     os.environ.setdefault("DJANGO_SECRET_KEY", "test-secret-key-pharmacy-2026")
     os.environ.setdefault("KEYCLOAK_ENABLED", "False")
 
-    test_paths = sys.argv[1:] if len(sys.argv) > 1 else [
-        "products/cymed/pharmacy/tests/",
-    ]
+    test_paths = (
+        sys.argv[1:]
+        if len(sys.argv) > 1
+        else [
+            "products/cymed/pharmacy/tests/",
+        ]
+    )
 
-    raise SystemExit(pytest.main([
-        *test_paths,
-        "-v",
-        "--tb=short",
-        "-p", "no:cacheprovider",
-        "--override-ini=addopts=--tb=short",
-    ]))
+    raise SystemExit(
+        pytest.main(
+            [
+                *test_paths,
+                "-v",
+                "--tb=short",
+                "-p",
+                "no:cacheprovider",
+                "--override-ini=addopts=--tb=short",
+            ]
+        )
+    )

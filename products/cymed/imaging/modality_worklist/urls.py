@@ -1,5 +1,6 @@
 from rest_framework.routers import DefaultRouter
-from .views import ModalityViewSet, ModalityWorklistViewSet, WorklistEntryViewSet, StudyQueueViewSet
+
+from .views import ModalityViewSet, ModalityWorklistViewSet, StudyQueueViewSet, WorklistEntryViewSet
 
 router = DefaultRouter()
 router.register("modalities", ModalityViewSet, basename="modality")

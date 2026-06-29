@@ -1,9 +1,10 @@
-﻿from rest_framework.routers import DefaultRouter
+from rest_framework.routers import DefaultRouter
+
 from .views import (
-    RiskScoreViewSet,
-    RiskFactorViewSet,
-    RiskCategoryViewSet,
     RiskAssessmentViewSet,
+    RiskCategoryViewSet,
+    RiskFactorViewSet,
+    RiskScoreViewSet,
 )
 
 router = DefaultRouter()

@@ -1,9 +1,11 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class DeploymentProfile(BaseModel):
     """Deployment profile defines how and where CyMed is deployed."""
+
     PROFILE_TYPES = [
         ("saas", "SaaS (CyMed Cloud)"),
         ("private_cloud", "Private Cloud"),
@@ -30,7 +32,10 @@ class DeploymentProfile(BaseModel):
 
 class DeploymentConfiguration(BaseModel):
     """Per-customer deployment configuration bound to a profile."""
-    profile = models.ForeignKey(DeploymentProfile, on_delete=models.PROTECT, related_name="configurations")
+
+    profile = models.ForeignKey(
+        DeploymentProfile, on_delete=models.PROTECT, related_name="configurations"
+    )
     customer_id = models.UUIDField()
     configuration_name = models.CharField(max_length=255)
 
@@ -55,8 +60,13 @@ class DeploymentConfiguration(BaseModel):
 
 class DeploymentCapability(BaseModel):
     """Defines what capabilities are available in a given deployment profile."""
-    profile = models.ForeignKey(DeploymentProfile, on_delete=models.CASCADE, related_name="capabilities")
-    capability_code = models.CharField(max_length=200)  # "online_activation", "auto_update", "telemetry"
+
+    profile = models.ForeignKey(
+        DeploymentProfile, on_delete=models.CASCADE, related_name="capabilities"
+    )
+    capability_code = models.CharField(
+        max_length=200
+    )  # "online_activation", "auto_update", "telemetry"
     is_supported = models.BooleanField(default=True)
     notes = models.CharField(max_length=255, blank=True)
 

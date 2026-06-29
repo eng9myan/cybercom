@@ -8,6 +8,7 @@ against the in-memory Keycloak fake. Verifies:
   - Break-glass full lifecycle via API
   - Session revoke
 """
+
 import uuid
 from unittest.mock import patch
 
@@ -15,8 +16,6 @@ import pytest
 from rest_framework.test import APIClient
 
 from platform.cyidentity.models import (
-    ApplicationClient,
-    BreakGlassAccess,
     BreakGlassStatus,
     IdentityRealm,
     RealmStatus,
@@ -28,6 +27,7 @@ from platform.cyidentity.models import (
 @pytest.fixture
 def admin_client():
     import jwt
+
     client = APIClient()
     payload = {
         "sub": "11111111-1111-1111-1111-111111111111",
@@ -86,9 +86,13 @@ class TestRealmIntegration:
 class TestClientIntegration:
     def _realm(self):
         return IdentityRealm.objects.create(
-            tenant_id=uuid.uuid4(), realm_name="c-int",
-            realm_type=RealmType.CUSTOMER, status=RealmStatus.ACTIVE,
-            issuer_url="http://x", jwks_uri="http://x/jwks", admin_api_url="http://x/admin",
+            tenant_id=uuid.uuid4(),
+            realm_name="c-int",
+            realm_type=RealmType.CUSTOMER,
+            status=RealmStatus.ACTIVE,
+            issuer_url="http://x",
+            jwks_uri="http://x/jwks",
+            admin_api_url="http://x/admin",
         )
 
     def test_register_and_rotate(self, admin_client, patch_keycloak_fake):
@@ -110,7 +114,8 @@ class TestClientIntegration:
         # Rotate
         resp = admin_client.post(
             f"/api/v1/identity/clients/{client_id}/rotate-secret/",
-            {"created_by": "tester"}, format="json",
+            {"created_by": "tester"},
+            format="json",
         )
         assert resp.status_code == 201, resp.content
         body = resp.json()
@@ -123,13 +128,18 @@ class TestClientIntegration:
 class TestUserAndRoleIntegration:
     def _realm(self):
         return IdentityRealm.objects.create(
-            tenant_id=uuid.uuid4(), realm_name="u-int",
-            realm_type=RealmType.CUSTOMER, status=RealmStatus.ACTIVE,
-            issuer_url="http://x", jwks_uri="http://x/jwks", admin_api_url="http://x/admin",
+            tenant_id=uuid.uuid4(),
+            realm_name="u-int",
+            realm_type=RealmType.CUSTOMER,
+            status=RealmStatus.ACTIVE,
+            issuer_url="http://x",
+            jwks_uri="http://x/jwks",
+            admin_api_url="http://x/admin",
         )
 
     def test_provision_user_then_assign_role(self, admin_client, patch_keycloak_fake):
         from platform.cyidentity.models import Role
+
         realm = self._realm()
         Role.objects.create(realm=realm, name="clinician", display_name="Clinician")
 
@@ -161,13 +171,20 @@ class TestUserAndRoleIntegration:
 class TestBreakGlassIntegration:
     def _realm_and_user(self):
         realm = IdentityRealm.objects.create(
-            tenant_id=uuid.uuid4(), realm_name="bg-int",
-            realm_type=RealmType.CUSTOMER, status=RealmStatus.ACTIVE,
-            issuer_url="http://x", jwks_uri="http://x/jwks", admin_api_url="http://x/admin",
+            tenant_id=uuid.uuid4(),
+            realm_name="bg-int",
+            realm_type=RealmType.CUSTOMER,
+            status=RealmStatus.ACTIVE,
+            issuer_url="http://x",
+            jwks_uri="http://x/jwks",
+            admin_api_url="http://x/admin",
         )
         user = UserProfile.objects.create(
-            tenant_id=realm.tenant_id, realm=realm,
-            keycloak_user_id=uuid.uuid4(), username="bguser", email="bg@x.io",
+            tenant_id=realm.tenant_id,
+            realm=realm,
+            keycloak_user_id=uuid.uuid4(),
+            username="bguser",
+            email="bg@x.io",
         )
         return realm, user
 
@@ -198,7 +215,8 @@ class TestBreakGlassIntegration:
 
         resp = admin_client.post(
             f"/api/v1/identity/break-glass/{bg_id}/activate/",
-            {"duration_seconds": 600}, format="json",
+            {"duration_seconds": 600},
+            format="json",
         )
         assert resp.status_code == 200, resp.content
         assert resp.json()["status"] == BreakGlassStatus.ACTIVE
@@ -224,7 +242,8 @@ class TestBreakGlassIntegration:
         bg_id = resp.json()["id"]
         resp = admin_client.post(
             f"/api/v1/identity/break-glass/{bg_id}/approve/",
-            {"approver": "chief1"}, format="json",
+            {"approver": "chief1"},
+            format="json",
         )
         assert resp.status_code == 403
 
@@ -233,17 +252,26 @@ class TestBreakGlassIntegration:
 class TestSessionIntegration:
     def _realm_and_session(self):
         realm = IdentityRealm.objects.create(
-            tenant_id=uuid.uuid4(), realm_name="s-int",
-            realm_type=RealmType.CUSTOMER, status=RealmStatus.ACTIVE,
-            issuer_url="http://x", jwks_uri="http://x/jwks", admin_api_url="http://x/admin",
+            tenant_id=uuid.uuid4(),
+            realm_name="s-int",
+            realm_type=RealmType.CUSTOMER,
+            status=RealmStatus.ACTIVE,
+            issuer_url="http://x",
+            jwks_uri="http://x/jwks",
+            admin_api_url="http://x/admin",
         )
         user = UserProfile.objects.create(
-            tenant_id=realm.tenant_id, realm=realm,
-            keycloak_user_id=uuid.uuid4(), username="suser", email="s@x.io",
+            tenant_id=realm.tenant_id,
+            realm=realm,
+            keycloak_user_id=uuid.uuid4(),
+            username="suser",
+            email="s@x.io",
         )
         from platform.cyidentity.models import UserSession
+
         s = UserSession.objects.create(
-            tenant_id=realm.tenant_id, user=user,
+            tenant_id=realm.tenant_id,
+            user=user,
             keycloak_session_id=str(uuid.uuid4()),
         )
         return realm, user, s
@@ -252,13 +280,15 @@ class TestSessionIntegration:
         _, _, s = self._realm_and_session()
         resp = admin_client.post(
             f"/api/v1/identity/sessions/{s.id}/revoke/",
-            {"reason": "user_request"}, format="json",
+            {"reason": "user_request"},
+            format="json",
         )
         assert resp.status_code == 200
         assert resp.json()["status"] == "revoked"
 
     def test_enforce_idle_timeout_via_api(self, admin_client):
         from django.utils import timezone
+
         realm, _, s = self._realm_and_session()
         s.last_activity_at = timezone.now() - timezone.timedelta(hours=2)
         s.save()

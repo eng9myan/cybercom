@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import CensusDataPoint, StaffingForecast, ForecastAdjustment, ForecastRosterMapping
+
+from .models import CensusDataPoint, ForecastAdjustment, ForecastRosterMapping, StaffingForecast
 
 
 class CensusDataPointSerializer(serializers.ModelSerializer):

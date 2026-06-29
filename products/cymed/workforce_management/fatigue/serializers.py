@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import DutyHourLog, WeeklyHoursSummary, FatigueViolation, DisasterOverride
+
+from .models import DisasterOverride, DutyHourLog, FatigueViolation, WeeklyHoursSummary
 
 
 class DutyHourLogSerializer(serializers.ModelSerializer):

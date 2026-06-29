@@ -1,18 +1,19 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+import json
 
-from platform.events.models import OutboxEvent, DeadLetterEvent, EventDeliveryLog
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from platform.events.models import DeadLetterEvent, EventDeliveryLog, OutboxEvent
+from platform.events.replay import EventReplayManager
 from platform.events.serializers import (
-    OutboxEventSerializer,
     DeadLetterEventSerializer,
     EventDeliveryLogSerializer,
-    EventReplaySerializer
+    EventReplaySerializer,
+    OutboxEventSerializer,
 )
-from platform.events.replay import EventReplayManager
 from platform.events.signing import EventSigner
-import json
 
 
 class OutboxEventViewSet(viewsets.ModelViewSet):
@@ -24,7 +25,7 @@ class OutboxEventViewSet(viewsets.ModelViewSet):
     def replay(self, request):
         serializer = EventReplaySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         count = EventReplayManager.replay_events(
             tenant_id=str(serializer.validated_data["tenant_id"]),
             topic=serializer.validated_data["topic"],
@@ -39,10 +40,7 @@ class OutboxEventViewSet(viewsets.ModelViewSet):
         event = self.get_object()
         payload_str = json.dumps(event.payload, sort_keys=True)
         signature = EventSigner.sign_payload(str(event.tenant_id), payload_str.encode())
-        return Response({
-            "event_id": event.id,
-            "signature": signature
-        }, status=status.HTTP_200_OK)
+        return Response({"event_id": event.id, "signature": signature}, status=status.HTTP_200_OK)
 
 
 class DeadLetterEventViewSet(viewsets.ModelViewSet):
@@ -56,7 +54,7 @@ class DeadLetterEventViewSet(viewsets.ModelViewSet):
         topic = request.data.get("topic")
         if not tenant_id:
             return Response({"detail": "tenant_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         count = EventReplayManager.replay_failed_events(tenant_id, topic)
         return Response({"retried_count": count}, status=status.HTTP_200_OK)
 

@@ -1,6 +1,11 @@
 from rest_framework import serializers
+
 from products.cymed.commercial.editions.models import (
-    ProductCatalogEntry, ProductEdition, EditionFeature, EditionLimit, EditionModule
+    EditionFeature,
+    EditionLimit,
+    EditionModule,
+    ProductCatalogEntry,
+    ProductEdition,
 )
 
 

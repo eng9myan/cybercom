@@ -1,10 +1,10 @@
-﻿import uuid
+import uuid
+
 import django.db.models.deletion
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -13,7 +13,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="InsuranceCompany",
             fields=[
-                ("id", models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        primary_key=True, default=uuid.uuid4, editable=False, serialize=False
+                    ),
+                ),
                 ("tenant_id", models.UUIDField(db_index=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -49,7 +54,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="InsurancePlan",
             fields=[
-                ("id", models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        primary_key=True, default=uuid.uuid4, editable=False, serialize=False
+                    ),
+                ),
                 ("tenant_id", models.UUIDField(db_index=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -107,7 +117,10 @@ class Migration(migrations.Migration):
                 ("is_active", models.BooleanField(default=True)),
                 ("effective_date", models.DateField(null=True, blank=True)),
                 ("expiry_date", models.DateField(null=True, blank=True)),
-                ("max_annual_benefit", models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)),
+                (
+                    "max_annual_benefit",
+                    models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True),
+                ),
             ],
             options={
                 "db_table": "cymed_rcm_ins_plans",
@@ -117,7 +130,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="InsuranceMember",
             fields=[
-                ("id", models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        primary_key=True, default=uuid.uuid4, editable=False, serialize=False
+                    ),
+                ),
                 ("tenant_id", models.UUIDField(db_index=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -160,7 +178,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Coverage",
             fields=[
-                ("id", models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        primary_key=True, default=uuid.uuid4, editable=False, serialize=False
+                    ),
+                ),
                 ("tenant_id", models.UUIDField(db_index=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -191,10 +214,22 @@ class Migration(migrations.Migration):
                 ("is_active", models.BooleanField(default=True)),
                 ("start_date", models.DateField()),
                 ("end_date", models.DateField(null=True, blank=True)),
-                ("deductible_individual", models.DecimalField(max_digits=12, decimal_places=2, default=0)),
-                ("deductible_family", models.DecimalField(max_digits=12, decimal_places=2, default=0)),
-                ("out_of_pocket_individual", models.DecimalField(max_digits=12, decimal_places=2, default=0)),
-                ("out_of_pocket_family", models.DecimalField(max_digits=12, decimal_places=2, default=0)),
+                (
+                    "deductible_individual",
+                    models.DecimalField(max_digits=12, decimal_places=2, default=0),
+                ),
+                (
+                    "deductible_family",
+                    models.DecimalField(max_digits=12, decimal_places=2, default=0),
+                ),
+                (
+                    "out_of_pocket_individual",
+                    models.DecimalField(max_digits=12, decimal_places=2, default=0),
+                ),
+                (
+                    "out_of_pocket_family",
+                    models.DecimalField(max_digits=12, decimal_places=2, default=0),
+                ),
                 ("fhir_coverage_id", models.CharField(max_length=200, blank=True, null=True)),
             ],
             options={
@@ -205,7 +240,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Benefit",
             fields=[
-                ("id", models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        primary_key=True, default=uuid.uuid4, editable=False, serialize=False
+                    ),
+                ),
                 ("tenant_id", models.UUIDField(db_index=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -218,10 +258,16 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("service_category", models.CharField(max_length=50)),
-                ("coverage_percentage", models.DecimalField(max_digits=5, decimal_places=2, default=100)),
+                (
+                    "coverage_percentage",
+                    models.DecimalField(max_digits=5, decimal_places=2, default=100),
+                ),
                 ("copay_amount", models.DecimalField(max_digits=8, decimal_places=2, default=0)),
                 ("requires_preauth", models.BooleanField(default=False)),
-                ("annual_limit", models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)),
+                (
+                    "annual_limit",
+                    models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True),
+                ),
                 ("visit_limit", models.PositiveIntegerField(null=True, blank=True)),
             ],
             options={
@@ -232,7 +278,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="CoverageRule",
             fields=[
-                ("id", models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        primary_key=True, default=uuid.uuid4, editable=False, serialize=False
+                    ),
+                ),
                 ("tenant_id", models.UUIDField(db_index=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -270,7 +321,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="InsuranceCard",
             fields=[
-                ("id", models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        primary_key=True, default=uuid.uuid4, editable=False, serialize=False
+                    ),
+                ),
                 ("tenant_id", models.UUIDField(db_index=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -299,50 +355,74 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="insurancecompany",
-            index=models.Index(fields=["tenant_id", "is_active"], name="cymed_rcm_ins_co_tenant_active_idx"),
+            index=models.Index(
+                fields=["tenant_id", "is_active"], name="cymed_rcm_ins_co_tenant_active_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="insurancecompany",
-            index=models.Index(fields=["tenant_id", "company_type"], name="cymed_rcm_ins_co_tenant_type_idx"),
+            index=models.Index(
+                fields=["tenant_id", "company_type"], name="cymed_rcm_ins_co_tenant_type_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="insuranceplan",
-            index=models.Index(fields=["tenant_id", "is_active"], name="cymed_rcm_ins_plan_tenant_active_idx"),
+            index=models.Index(
+                fields=["tenant_id", "is_active"], name="cymed_rcm_ins_plan_tenant_active_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="insuranceplan",
-            index=models.Index(fields=["tenant_id", "plan_type"], name="cymed_rcm_ins_plan_tenant_type_idx"),
+            index=models.Index(
+                fields=["tenant_id", "plan_type"], name="cymed_rcm_ins_plan_tenant_type_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="insurancemember",
-            index=models.Index(fields=["tenant_id", "patient_id"], name="cymed_rcm_ins_mbr_tenant_patient_idx"),
+            index=models.Index(
+                fields=["tenant_id", "patient_id"], name="cymed_rcm_ins_mbr_tenant_patient_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="insurancemember",
-            index=models.Index(fields=["tenant_id", "is_active"], name="cymed_rcm_ins_mbr_tenant_active_idx"),
+            index=models.Index(
+                fields=["tenant_id", "is_active"], name="cymed_rcm_ins_mbr_tenant_active_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="insurancemember",
-            index=models.Index(fields=["tenant_id", "priority_order"], name="cymed_rcm_ins_mbr_tenant_priority_idx"),
+            index=models.Index(
+                fields=["tenant_id", "priority_order"], name="cymed_rcm_ins_mbr_tenant_priority_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="coverage",
-            index=models.Index(fields=["tenant_id", "coverage_type"], name="cymed_rcm_ins_cov_tenant_type_idx"),
+            index=models.Index(
+                fields=["tenant_id", "coverage_type"], name="cymed_rcm_ins_cov_tenant_type_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="coverage",
-            index=models.Index(fields=["tenant_id", "is_active"], name="cymed_rcm_ins_cov_tenant_active_idx"),
+            index=models.Index(
+                fields=["tenant_id", "is_active"], name="cymed_rcm_ins_cov_tenant_active_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="coveragerule",
-            index=models.Index(fields=["tenant_id", "rule_type"], name="cymed_rcm_ins_rule_tenant_type_idx"),
+            index=models.Index(
+                fields=["tenant_id", "rule_type"], name="cymed_rcm_ins_rule_tenant_type_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="coveragerule",
-            index=models.Index(fields=["tenant_id", "is_active"], name="cymed_rcm_ins_rule_tenant_active_idx"),
+            index=models.Index(
+                fields=["tenant_id", "is_active"], name="cymed_rcm_ins_rule_tenant_active_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="insurancecard",
-            index=models.Index(fields=["tenant_id", "is_current"], name="cymed_rcm_ins_card_tenant_curr_idx"),
+            index=models.Index(
+                fields=["tenant_id", "is_current"], name="cymed_rcm_ins_card_tenant_curr_idx"
+            ),
         ),
     ]

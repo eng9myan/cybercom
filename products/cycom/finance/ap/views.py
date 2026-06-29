@@ -1,21 +1,21 @@
-﻿from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
 from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import Vendor, Bill, BillLine, VendorPayment
+from .models import Bill, BillLine, Vendor, VendorPayment
 from .serializers import (
-    VendorSerializer,
-    BillSerializer,
     BillLineSerializer,
+    BillSerializer,
     VendorPaymentSerializer,
+    VendorSerializer,
 )
-
 
 # ---------------------------------------------------------------------------
 # Vendor
 # ---------------------------------------------------------------------------
+
 
 class VendorListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -72,14 +72,14 @@ class VendorDetailView(APIView):
 # Bill
 # ---------------------------------------------------------------------------
 
+
 class BillListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         queryset = (
-            Bill.objects
-            .filter(tenant_id=tenant_id)
+            Bill.objects.filter(tenant_id=tenant_id)
             .select_related("vendor")
             .prefetch_related("lines")
             .order_by("-bill_date", "-created_at")
@@ -133,14 +133,14 @@ class BillDetailView(APIView):
 # BillLine
 # ---------------------------------------------------------------------------
 
+
 class BillLineListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         queryset = (
-            BillLine.objects
-            .filter(tenant_id=tenant_id)
+            BillLine.objects.filter(tenant_id=tenant_id)
             .select_related("bill__vendor")
             .order_by("bill__bill_date", "created_at")
         )
@@ -193,14 +193,14 @@ class BillLineDetailView(APIView):
 # VendorPayment
 # ---------------------------------------------------------------------------
 
+
 class VendorPaymentListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         queryset = (
-            VendorPayment.objects
-            .filter(tenant_id=tenant_id)
+            VendorPayment.objects.filter(tenant_id=tenant_id)
             .select_related("vendor", "bill")
             .order_by("-payment_date", "-created_at")
         )

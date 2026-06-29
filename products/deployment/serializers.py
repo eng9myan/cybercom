@@ -1,7 +1,13 @@
 from rest_framework import serializers
+
 from .models import (
-    DeploymentRecord, EnvironmentCheck, DeploymentStep,
-    TenantProvision, BackupRecord, HealthCheckSnapshot, UpgradeRecord,
+    BackupRecord,
+    DeploymentRecord,
+    DeploymentStep,
+    EnvironmentCheck,
+    HealthCheckSnapshot,
+    TenantProvision,
+    UpgradeRecord,
 )
 
 

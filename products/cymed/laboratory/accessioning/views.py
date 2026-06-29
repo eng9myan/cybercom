@@ -1,9 +1,18 @@
-﻿import datetime
-from rest_framework.response import Response
-from rest_framework.decorators import action
-from .models import Accession, AccessionBatch, AccessionBatchItem, AccessionAudit, AccessionNumberSequence
-from .serializers import AccessionSerializer, AccessionBatchSerializer, AccessionBatchItemSerializer, AccessionAuditSerializer
+import datetime
+
 from ..views import LaboratoryModelViewSet
+from .models import (
+    Accession,
+    AccessionAudit,
+    AccessionBatch,
+    AccessionNumberSequence,
+)
+from .serializers import (
+    AccessionAuditSerializer,
+    AccessionBatchSerializer,
+    AccessionSerializer,
+)
+
 
 class AccessionViewSet(LaboratoryModelViewSet):
     queryset = Accession.objects.select_related("specimen")
@@ -17,20 +26,33 @@ class AccessionViewSet(LaboratoryModelViewSet):
         site_code = self.request.data.get("site_code", "HQ")
         year = datetime.date.today().year
         seq, _ = AccessionNumberSequence.objects.get_or_create(
-            tenant_id=tenant_id, site_code=site_code, year=year,
-            defaults={"prefix": "ACC", "last_sequence": 0}
+            tenant_id=tenant_id,
+            site_code=site_code,
+            year=year,
+            defaults={"prefix": "ACC", "last_sequence": 0},
         )
         accession_number = seq.next_number()
-        obj = serializer.save(tenant_id=tenant_id, accession_number=accession_number, accessioned_by=self.request.user.id if self.request.user else None)
+        obj = serializer.save(
+            tenant_id=tenant_id,
+            accession_number=accession_number,
+            accessioned_by=self.request.user.id if self.request.user else None,
+        )
         specimen = obj.specimen
         specimen.status = "accessioned"
         specimen.save(update_fields=["status", "updated_at"])
-        AccessionAudit.objects.create(tenant_id=tenant_id, accession=obj, event_type="accessioned", detail=f"Accession number assigned: {accession_number}")
+        AccessionAudit.objects.create(
+            tenant_id=tenant_id,
+            accession=obj,
+            event_type="accessioned",
+            detail=f"Accession number assigned: {accession_number}",
+        )
+
 
 class AccessionBatchViewSet(LaboratoryModelViewSet):
     queryset = AccessionBatch.objects.all()
     serializer_class = AccessionBatchSerializer
     required_feature = "lab.accessioning"
+
 
 class AccessionAuditViewSet(LaboratoryModelViewSet):
     queryset = AccessionAudit.objects.all()

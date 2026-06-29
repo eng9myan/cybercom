@@ -1,14 +1,17 @@
-﻿"""
+"""
 CyMed Population Health — Quality
 Covers: QualityMeasure, QualityMeasureResult, QualityImprovement, ClinicalAudit
 Terminology: ICD-11 and LOINC codes resolved via TerminologyService.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class QualityMeasure(BaseModel):
     """A clinical quality measure definition (process, outcome, structure, composite)."""
+
     MEASURE_TYPE_CHOICES = [
         ("process", "Process"),
         ("outcome", "Outcome"),
@@ -28,9 +31,7 @@ class QualityMeasure(BaseModel):
     description = models.TextField(blank=True)
     numerator_definition = models.JSONField(default=dict)
     denominator_definition = models.JSONField(default=dict)
-    target_percentage = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True
-    )
+    target_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     benchmark_percentage = models.DecimalField(
         max_digits=5, decimal_places=2, null=True, blank=True
     )
@@ -52,18 +53,14 @@ class QualityMeasure(BaseModel):
 class QualityMeasureResult(BaseModel):
     """A calculated performance result for a quality measure in a given period and facility."""
 
-    measure = models.ForeignKey(
-        QualityMeasure, on_delete=models.PROTECT, related_name="results"
-    )
+    measure = models.ForeignKey(QualityMeasure, on_delete=models.PROTECT, related_name="results")
     facility_id = models.UUIDField(db_index=True)
     period_start = models.DateField()
     period_end = models.DateField()
     numerator = models.PositiveIntegerField(default=0)
     denominator = models.PositiveIntegerField(default=0)
     performance_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    benchmark_rate = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True
-    )
+    benchmark_rate = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     meets_target = models.BooleanField(default=False)
     calculated_at = models.DateTimeField(auto_now_add=True)
 
@@ -80,6 +77,7 @@ class QualityMeasureResult(BaseModel):
 
 class QualityImprovement(BaseModel):
     """A quality improvement initiative linked to a measure result."""
+
     INTERVENTION_TYPE_CHOICES = [
         ("process_change", "Process Change"),
         ("training", "Training"),
@@ -107,9 +105,7 @@ class QualityImprovement(BaseModel):
     expected_improvement = models.DecimalField(
         max_digits=5, decimal_places=2, null=True, blank=True
     )
-    actual_improvement = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True
-    )
+    actual_improvement = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     responsible_user_id = models.UUIDField(null=True, blank=True)
 
     class Meta:
@@ -121,6 +117,7 @@ class QualityImprovement(BaseModel):
 
 class ClinicalAudit(BaseModel):
     """A structured clinical audit evaluating compliance with defined criteria."""
+
     AUDIT_TYPE_CHOICES = [
         ("clinical_practice", "Clinical Practice"),
         ("medication", "Medication"),

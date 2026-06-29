@@ -1,13 +1,18 @@
 """
 Audit & Compliance signals. Auto-record high-value model changes.
 """
+
 import logging
+
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from .models import (
-    AuditAction, AuditLog,
-    ComplianceViolation, LegalHold, LegalHoldStatus, ViolationStatus,
+    AuditAction,
+    AuditLog,
+    ComplianceViolation,
+    LegalHold,
+    ViolationStatus,
 )
 
 log = logging.getLogger(__name__)

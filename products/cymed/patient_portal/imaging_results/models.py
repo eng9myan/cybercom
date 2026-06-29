@@ -1,14 +1,15 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class ImagingResultView(BaseModel):
     REPORT_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('preliminary', 'Preliminary'),
-        ('final', 'Final'),
-        ('amended', 'Amended'),
-        ('corrected', 'Corrected'),
+        ("pending", "Pending"),
+        ("preliminary", "Preliminary"),
+        ("final", "Final"),
+        ("amended", "Amended"),
+        ("corrected", "Corrected"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -25,7 +26,7 @@ class ImagingResultView(BaseModel):
     report_status = models.CharField(
         max_length=20,
         choices=REPORT_STATUS_CHOICES,
-        default='pending',
+        default="pending",
     )
     radiologist_name = models.CharField(max_length=255, blank=True)
     report_summary = models.TextField(blank=True)
@@ -33,32 +34,27 @@ class ImagingResultView(BaseModel):
     has_critical_finding = models.BooleanField(default=False)
     is_viewed = models.BooleanField(default=False)
     viewed_at = models.DateTimeField(null=True, blank=True)
-    fhir_diagnostic_report_id = models.CharField(
-        max_length=255, blank=True, db_index=True
-    )
-    fhir_imaging_study_id = models.CharField(
-        max_length=255, blank=True, db_index=True
-    )
+    fhir_diagnostic_report_id = models.CharField(max_length=255, blank=True, db_index=True)
+    fhir_imaging_study_id = models.CharField(max_length=255, blank=True, db_index=True)
     dicom_study_instance_uid = models.CharField(max_length=255, blank=True)
     viewer_url = models.URLField(max_length=2000, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_imaging_results'
+        db_table = "cymed_portal_imaging_results"
         indexes = [
             models.Index(
-                fields=['account_id', 'modality', 'study_date'],
-                name='imaging_results_acct_mod_date_idx',
+                fields=["account_id", "modality", "study_date"],
+                name="imaging_results_acct_mod_date_idx",
             ),
             models.Index(
-                fields=['patient_id', 'report_status'],
-                name='imaging_results_patient_status_idx',
+                fields=["patient_id", "report_status"],
+                name="imaging_results_patient_status_idx",
             ),
         ]
 
     def __str__(self):
         return (
-            f"{self.modality} — {self.study_description or self.body_part} "
-            f"({self.report_status})"
+            f"{self.modality} — {self.study_description or self.body_part} ({self.report_status})"
         )
 
 
@@ -66,7 +62,7 @@ class ImagingStudyMetadata(BaseModel):
     imaging_result = models.ForeignKey(
         ImagingResultView,
         on_delete=models.CASCADE,
-        related_name='series',
+        related_name="series",
     )
     series_number = models.PositiveSmallIntegerField()
     series_description = models.CharField(max_length=255, blank=True)
@@ -75,7 +71,7 @@ class ImagingStudyMetadata(BaseModel):
     series_instance_uid = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_imaging_series'
+        db_table = "cymed_portal_imaging_series"
 
     def __str__(self):
         return (
@@ -86,10 +82,10 @@ class ImagingStudyMetadata(BaseModel):
 
 class ImagingReportAccess(BaseModel):
     ACCESS_TYPE_CHOICES = [
-        ('view_report', 'View Report'),
-        ('download_report', 'Download Report'),
-        ('view_images', 'View Images'),
-        ('share', 'Share'),
+        ("view_report", "View Report"),
+        ("download_report", "Download Report"),
+        ("view_images", "View Images"),
+        ("share", "Share"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -97,43 +93,40 @@ class ImagingReportAccess(BaseModel):
     imaging_result = models.ForeignKey(
         ImagingResultView,
         on_delete=models.CASCADE,
-        related_name='access_log',
+        related_name="access_log",
     )
     access_type = models.CharField(
         max_length=20,
         choices=ACCESS_TYPE_CHOICES,
-        default='view_report',
+        default="view_report",
     )
     accessed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'cymed_portal_imaging_access'
-        ordering = ['-accessed_at']
+        db_table = "cymed_portal_imaging_access"
+        ordering = ["-accessed_at"]
 
     def __str__(self):
-        return (
-            f"{self.get_access_type_display()} — "
-            f"{self.imaging_result} at {self.accessed_at}"
-        )
+        return f"{self.get_access_type_display()} — {self.imaging_result} at {self.accessed_at}"
 
 
 class ImagingShareLink(BaseModel):
     SHARE_TYPE_CHOICES = [
-        ('report_only', 'Report Only'),
-        ('images_and_report', 'Images and Report'),
+        ("report_only", "Report Only"),
+        ("images_and_report", "Images and Report"),
     ]
 
     imaging_result = models.ForeignKey(
         ImagingResultView,
         on_delete=models.CASCADE,
-        related_name='share_links',
+        related_name="share_links",
     )
     account_id = models.UUIDField(db_index=True)
     share_token = models.CharField(max_length=255, unique=True, db_index=True)
     share_type = models.CharField(
         max_length=20,
         choices=SHARE_TYPE_CHOICES,
-        default='report_only',
+        default="report_only",
     )
     shared_with_name = models.CharField(max_length=255, blank=True)
     valid_until = models.DateTimeField()
@@ -141,7 +134,7 @@ class ImagingShareLink(BaseModel):
     is_revoked = models.BooleanField(default=False)
 
     class Meta:
-        db_table = 'cymed_portal_imaging_share_links'
+        db_table = "cymed_portal_imaging_share_links"
 
     def __str__(self):
         return (

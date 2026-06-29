@@ -1,12 +1,16 @@
 import uuid
+
 from django.db import models
 from django.utils import timezone
+
 from platform.common.models import PlatformModel
+
 
 class ModelConfig(PlatformModel):
     """
     Registry of configured AI models and LLM API providers (Gemini, OpenAI, Anthropic, OpenSource).
     """
+
     name = models.CharField(max_length=100)
     provider = models.CharField(max_length=50)  # gemini, openai, azure, anthropic, ollama
     model_name = models.CharField(max_length=200)  # gemini-1.5-pro, gpt-4o, claude-3-sonnet
@@ -26,6 +30,7 @@ class PromptTemplate(PlatformModel):
     """
     Versioned prompt templates with variables injection.
     """
+
     name = models.CharField(max_length=255, unique=True)
     template_text = models.TextField()
     variables = models.JSONField(default=list)  # List of expected placeholders
@@ -43,8 +48,11 @@ class GuardrailPolicy(PlatformModel):
     """
     Guardrail rules verifying prompts and responses (PII/PHI filter, toxicity, hallucination).
     """
+
     name = models.CharField(max_length=255)
-    policy_type = models.CharField(max_length=50)  # pii_detection, phi_scrub, sentiment, clinical_safety
+    policy_type = models.CharField(
+        max_length=50
+    )  # pii_detection, phi_scrub, sentiment, clinical_safety
     parameters = models.JSONField(default=dict, blank=True)
     active = models.BooleanField(default=True)
 
@@ -59,6 +67,7 @@ class InferenceLog(models.Model):
     """
     Audit ledger tracking LLM queries, tokens, safety status, and output.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     model = models.ForeignKey(ModelConfig, on_delete=models.SET_NULL, null=True, blank=True)
@@ -67,7 +76,9 @@ class InferenceLog(models.Model):
     tokens_prompt = models.PositiveIntegerField(default=0)
     tokens_completion = models.PositiveIntegerField(default=0)
     latency_ms = models.PositiveIntegerField(default=0)
-    safety_verdict = models.CharField(max_length=50, default="passed", db_index=True)  # passed, flagged, blocked
+    safety_verdict = models.CharField(
+        max_length=50, default="passed", db_index=True
+    )  # passed, flagged, blocked
     error_message = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
 

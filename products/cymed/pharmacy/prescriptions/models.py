@@ -7,7 +7,9 @@ FHIR: MedicationRequest, MedicationDispense
 Terminology: Medication codes via TerminologyService (no local drug store duplication).
 Controlled substance tracking with DEA schedule awareness.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -54,13 +56,14 @@ class Prescription(BaseModel):
     Linked to FHIR MedicationRequest. Controlled substance tracking via DEA schedule.
     Medication codes resolved via TerminologyService — no local drug database duplication.
     """
+
     prescription_number = models.CharField(max_length=100, unique=True, db_index=True)
-    patient_id = models.UUIDField(db_index=True)                     # CyMed Core patient
+    patient_id = models.UUIDField(db_index=True)  # CyMed Core patient
     encounter_id = models.UUIDField(null=True, blank=True, db_index=True)
-    admission_id = models.UUIDField(null=True, blank=True)            # Hospital inpatient
-    prescriber_id = models.UUIDField(db_index=True)                  # CyIdentity provider
+    admission_id = models.UUIDField(null=True, blank=True)  # Hospital inpatient
+    prescriber_id = models.UUIDField(db_index=True)  # CyIdentity provider
     prescriber_npi = models.CharField(max_length=20, blank=True)
-    prescriber_dea = models.CharField(max_length=20, blank=True)     # For controlled Rx
+    prescriber_dea = models.CharField(max_length=20, blank=True)  # For controlled Rx
     dispensing_pharmacy_id = models.UUIDField(null=True, blank=True)
     prescription_type = models.CharField(
         max_length=30, choices=PrescriptionType.choices, default=PrescriptionType.OUTPATIENT
@@ -76,7 +79,7 @@ class Prescription(BaseModel):
     fhir_medication_request_id = models.CharField(max_length=255, blank=True, db_index=True)
 
     # Clinical context
-    diagnosis_codes = models.JSONField(default=list)                 # ICD-11 codes from TerminologyService
+    diagnosis_codes = models.JSONField(default=list)  # ICD-11 codes from TerminologyService
     clinical_notes = models.TextField(blank=True)
     allergy_override = models.BooleanField(default=False)
     allergy_override_reason = models.TextField(blank=True)
@@ -90,7 +93,7 @@ class Prescription(BaseModel):
     dispensed_at = models.DateTimeField(null=True, blank=True)
 
     # Pharmacy verification
-    verified_by = models.UUIDField(null=True, blank=True)            # Pharmacist
+    verified_by = models.UUIDField(null=True, blank=True)  # Pharmacist
     verified_at = models.DateTimeField(null=True, blank=True)
 
     # Controlled substance
@@ -128,32 +131,31 @@ class PrescriptionItem(BaseModel):
     Individual medication line within a prescription.
     Drug codes resolved via TerminologyService (RxNorm, SNOMED).
     """
-    prescription = models.ForeignKey(
-        Prescription, on_delete=models.CASCADE, related_name="items"
-    )
+
+    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name="items")
     # Drug identification — resolved via TerminologyService
-    drug_code = models.CharField(max_length=100, db_index=True)       # RxNorm CUI
+    drug_code = models.CharField(max_length=100, db_index=True)  # RxNorm CUI
     drug_name = models.CharField(max_length=500)
     drug_name_ar = models.CharField(max_length=500, blank=True)
     snomed_code = models.CharField(max_length=50, blank=True)
-    generic_code = models.CharField(max_length=100, blank=True)        # Generic RxNorm
+    generic_code = models.CharField(max_length=100, blank=True)  # Generic RxNorm
 
     # Dosage
     dose = models.CharField(max_length=100)
     dose_unit = models.CharField(max_length=50)
-    route = models.CharField(max_length=100)                           # Oral, IV, IM, etc.
-    frequency = models.CharField(max_length=100)                       # TID, BID, PRN, etc.
+    route = models.CharField(max_length=100)  # Oral, IV, IM, etc.
+    frequency = models.CharField(max_length=100)  # TID, BID, PRN, etc.
     duration = models.CharField(max_length=100, blank=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=3)
     quantity_unit = models.CharField(max_length=50)
     days_supply = models.PositiveSmallIntegerField(default=0)
 
     # Substitution
-    dispense_as_written = models.BooleanField(default=False)           # DAW flag
+    dispense_as_written = models.BooleanField(default=False)  # DAW flag
     substitution_allowed = models.BooleanField(default=True)
 
     # Instructions
-    sig = models.TextField()                                           # Patient instructions
+    sig = models.TextField()  # Patient instructions
     pharmacist_notes = models.TextField(blank=True)
     special_instructions = models.TextField(blank=True)
 
@@ -174,6 +176,7 @@ class MedicationOrder(BaseModel):
     Hospital medication order (inpatient MAR-linked).
     Separate from retail prescriptions — supports unit dose, IV admixture, PRN.
     """
+
     ORDER_TYPES = [
         ("scheduled", "Scheduled"),
         ("prn", "PRN (As Needed)"),
@@ -247,7 +250,10 @@ class MedicationOrder(BaseModel):
 
 class MedicationOrderStatus(BaseModel):
     """Immutable status history for medication orders."""
-    order = models.ForeignKey(MedicationOrder, on_delete=models.CASCADE, related_name="status_history")
+
+    order = models.ForeignKey(
+        MedicationOrder, on_delete=models.CASCADE, related_name="status_history"
+    )
     from_status = models.CharField(max_length=30)
     to_status = models.CharField(max_length=30)
     changed_by = models.UUIDField(null=True, blank=True)
@@ -264,6 +270,7 @@ class MedicationRenewal(BaseModel):
     Prescription renewal request — extends an existing prescription.
     Requires pharmacist review and prescriber authorization.
     """
+
     STATUS_CHOICES = [
         ("requested", "Renewal Requested"),
         ("under_review", "Under Pharmacist Review"),
@@ -273,15 +280,17 @@ class MedicationRenewal(BaseModel):
         ("expired", "Expired"),
     ]
 
-    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name="renewals")
-    requested_by = models.UUIDField()                                 # Patient or authorized staff
+    prescription = models.ForeignKey(
+        Prescription, on_delete=models.CASCADE, related_name="renewals"
+    )
+    requested_by = models.UUIDField()  # Patient or authorized staff
     requested_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="requested")
     renewal_duration_days = models.PositiveSmallIntegerField(default=30)
     clinical_justification = models.TextField(blank=True)
-    reviewed_by = models.UUIDField(null=True, blank=True)            # Pharmacist
+    reviewed_by = models.UUIDField(null=True, blank=True)  # Pharmacist
     reviewed_at = models.DateTimeField(null=True, blank=True)
-    authorized_by = models.UUIDField(null=True, blank=True)          # Prescriber
+    authorized_by = models.UUIDField(null=True, blank=True)  # Prescriber
     authorized_at = models.DateTimeField(null=True, blank=True)
     denial_reason = models.TextField(blank=True)
 
@@ -292,6 +301,7 @@ class MedicationRenewal(BaseModel):
 
 class MedicationRefill(BaseModel):
     """Tracks each physical refill event for a prescription."""
+
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("processing", "Processing"),
@@ -311,9 +321,9 @@ class MedicationRefill(BaseModel):
     pickup_method = models.CharField(
         max_length=30,
         choices=[("counter", "Counter Pickup"), ("delivery", "Delivery"), ("mail", "Mail")],
-        default="counter"
+        default="counter",
     )
-    picked_up_by = models.CharField(max_length=255, blank=True)      # Patient name or authorized person
+    picked_up_by = models.CharField(max_length=255, blank=True)  # Patient name or authorized person
     notes = models.TextField(blank=True)
 
     class Meta:
@@ -327,6 +337,7 @@ class PrescriptionAttachment(BaseModel):
     Documents attached to a prescription (handwritten scan, prior auth, patient ID).
     File content stored via CyData — URL reference only.
     """
+
     ATTACHMENT_TYPES = [
         ("handwritten_rx", "Handwritten Prescription Scan"),
         ("prior_auth", "Prior Authorization"),
@@ -337,7 +348,9 @@ class PrescriptionAttachment(BaseModel):
         ("other", "Other"),
     ]
 
-    prescription = models.ForeignKey(Prescription, on_delete=models.CASCADE, related_name="attachments")
+    prescription = models.ForeignKey(
+        Prescription, on_delete=models.CASCADE, related_name="attachments"
+    )
     attachment_type = models.CharField(max_length=30, choices=ATTACHMENT_TYPES, default="other")
     file_name = models.CharField(max_length=255)
     file_type = models.CharField(max_length=50)
@@ -355,6 +368,7 @@ class MedicationHistory(BaseModel):
     Longitudinal medication history per patient (across all encounters and refills).
     Populated from dispensing, admissions, and patient-reported medications.
     """
+
     SOURCE_CHOICES = [
         ("prescription", "Prescription Dispensed"),
         ("admission", "Admission Reconciliation"),
@@ -375,7 +389,7 @@ class MedicationHistory(BaseModel):
     end_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     source = models.CharField(max_length=30, choices=SOURCE_CHOICES, default="prescription")
-    source_reference_id = models.UUIDField(null=True, blank=True)    # FK to prescription/order
+    source_reference_id = models.UUIDField(null=True, blank=True)  # FK to prescription/order
     prescriber_id = models.UUIDField(null=True, blank=True)
     recorded_by = models.UUIDField(null=True, blank=True)
     fhir_medication_statement_id = models.CharField(max_length=255, blank=True)

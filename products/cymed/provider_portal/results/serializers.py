@@ -1,9 +1,10 @@
 from rest_framework import serializers
+
 from products.cymed.provider_portal.results.models import (
-    ProviderResultView,
-    ResultTrend,
     CriticalResultAlert,
+    ProviderResultView,
     ResultAcknowledgement,
+    ResultTrend,
 )
 
 

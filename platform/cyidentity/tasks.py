@@ -1,6 +1,7 @@
 """
 CyIdentity Celery tasks. ADR-0001 (Celery) + ADR-0017 lifecycle automation.
 """
+
 from __future__ import annotations
 
 import logging
@@ -17,6 +18,7 @@ logger = logging.getLogger("cybercom.cyidentity.tasks")
 def expire_break_glass_task() -> int:
     """Expire any active break-glass records past their expires_at."""
     from platform.cyidentity.services import BreakGlassService
+
     return BreakGlassService().expire_due()
 
 

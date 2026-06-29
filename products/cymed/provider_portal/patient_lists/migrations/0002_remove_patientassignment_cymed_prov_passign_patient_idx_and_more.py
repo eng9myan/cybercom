@@ -4,34 +4,33 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_provider_patient_lists', '0001_initial'),
+        ("cymed_provider_patient_lists", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='patientassignment',
-            name='cymed_prov_passign_patient_idx',
+            model_name="patientassignment",
+            name="cymed_prov_passign_patient_idx",
         ),
         migrations.RemoveIndex(
-            model_name='patientcensus',
-            name='cymed_prov_census_unit_date_idx',
+            model_name="patientcensus",
+            name="cymed_prov_census_unit_date_idx",
         ),
         migrations.RemoveIndex(
-            model_name='patientlist',
-            name='cymed_prov_plist_tenant_wkspc_idx',
+            model_name="patientlist",
+            name="cymed_prov_plist_tenant_wkspc_idx",
         ),
         migrations.RemoveIndex(
-            model_name='patientlist',
-            name='cymed_prov_plist_type_active_idx',
+            model_name="patientlist",
+            name="cymed_prov_plist_type_active_idx",
         ),
         migrations.RemoveIndex(
-            model_name='providerassignment',
-            name='cymed_prov_provassign_pat_prov_idx',
+            model_name="providerassignment",
+            name="cymed_prov_provassign_pat_prov_idx",
         ),
         migrations.RemoveIndex(
-            model_name='providerassignment',
-            name='cymed_prov_provassign_prov_eff_idx',
+            model_name="providerassignment",
+            name="cymed_prov_provassign_prov_eff_idx",
         ),
     ]

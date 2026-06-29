@@ -1,4 +1,5 @@
-﻿from django.db import models
+from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -35,9 +36,7 @@ class CRMAccount(BaseModel):
 
 
 class AccountContact(BaseModel):
-    account = models.ForeignKey(
-        CRMAccount, on_delete=models.CASCADE, related_name="contacts"
-    )
+    account = models.ForeignKey(CRMAccount, on_delete=models.CASCADE, related_name="contacts")
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     title = models.CharField(max_length=100, blank=True)

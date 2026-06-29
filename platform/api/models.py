@@ -2,16 +2,18 @@
 CyberCom API Framework — Domain Models.
 ADR-0003: REST + OpenAPI 3.1. ADR-0030: API Governance.
 """
+
 import hashlib
 import secrets
 import uuid
+
 from django.db import models
 from django.utils import timezone
-
 
 # ---------------------------------------------------------------------------
 # Enumerations
 # ---------------------------------------------------------------------------
+
 
 class ApiStatus(models.TextChoices):
     DRAFT = "draft", "Draft"
@@ -80,13 +82,17 @@ class RateLimitScope(models.TextChoices):
 # ApiVersion
 # ---------------------------------------------------------------------------
 
+
 class ApiVersion(models.Model):
     """Tracks API semantic versions and their lifecycle per ADR-0030 S3.4."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     major = models.PositiveSmallIntegerField(default=1)
     minor = models.PositiveSmallIntegerField(default=0)
     patch = models.PositiveSmallIntegerField(default=0)
-    lifecycle = models.CharField(max_length=20, choices=VersionLifecycle.choices, default=VersionLifecycle.STABLE)
+    lifecycle = models.CharField(
+        max_length=20, choices=VersionLifecycle.choices, default=VersionLifecycle.STABLE
+    )
     release_notes = models.TextField(blank=True)
     deprecated_at = models.DateTimeField(null=True, blank=True)
     sunset_at = models.DateTimeField(null=True, blank=True)
@@ -120,8 +126,10 @@ class ApiVersion(models.Model):
 # ApiCatalog
 # ---------------------------------------------------------------------------
 
+
 class ApiCatalog(models.Model):
     """Registry of all CyberCom APIs. Each entry = one API product."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=100, unique=True)
@@ -160,8 +168,10 @@ class ApiCatalog(models.Model):
 # ApiEndpoint
 # ---------------------------------------------------------------------------
 
+
 class ApiEndpoint(models.Model):
     """Individual REST endpoint within an ApiCatalog entry."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     catalog = models.ForeignKey(ApiCatalog, on_delete=models.CASCADE, related_name="endpoints")
     path = models.CharField(max_length=500)
@@ -190,17 +200,21 @@ class ApiEndpoint(models.Model):
 # ApiApplication
 # ---------------------------------------------------------------------------
 
+
 class ApiApplication(models.Model):
     """
     A registered API consumer application (internal service, partner, product).
     Owns ApiKeys and ApiSubscriptions.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True)
-    classification = models.CharField(max_length=20, choices=ApiClassification.choices, default=ApiClassification.INTERNAL)
+    classification = models.CharField(
+        max_length=20, choices=ApiClassification.choices, default=ApiClassification.INTERNAL
+    )
     status = models.CharField(max_length=20, choices=ApiStatus.choices, default=ApiStatus.ACTIVE)
     owner_user_id = models.CharField(max_length=255, blank=True)
     owner_email = models.EmailField(blank=True)
@@ -231,8 +245,10 @@ class ApiApplication(models.Model):
 # ApiScope
 # ---------------------------------------------------------------------------
 
+
 class ApiScope(models.Model):
     """OAuth 2.1 scope definition for a specific API catalog."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     catalog = models.ForeignKey(ApiCatalog, on_delete=models.CASCADE, related_name="scopes")
     name = models.CharField(max_length=100)
@@ -254,18 +270,24 @@ class ApiScope(models.Model):
 # ApiKey
 # ---------------------------------------------------------------------------
 
+
 class ApiKey(models.Model):
     """
     API key for machine-to-machine authentication.
     Key is stored as SHA-256 hash; raw value shown once at creation.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    application = models.ForeignKey(ApiApplication, on_delete=models.CASCADE, related_name="api_keys")
+    application = models.ForeignKey(
+        ApiApplication, on_delete=models.CASCADE, related_name="api_keys"
+    )
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     name = models.CharField(max_length=200)
     key_prefix = models.CharField(max_length=12, unique=True)
     key_hash = models.CharField(max_length=64)
-    status = models.CharField(max_length=20, choices=ApiKeyStatus.choices, default=ApiKeyStatus.ACTIVE)
+    status = models.CharField(
+        max_length=20, choices=ApiKeyStatus.choices, default=ApiKeyStatus.ACTIVE
+    )
     scopes = models.JSONField(default=list)
     expires_at = models.DateTimeField(null=True, blank=True)
     last_used_at = models.DateTimeField(null=True, blank=True)
@@ -282,14 +304,27 @@ class ApiKey(models.Model):
         return f"ApiKey({self.key_prefix}..., {self.status})"
 
     @classmethod
-    def generate(cls, application, name: str, scopes: list = None, tenant_id=None, created_by: str = "", expires_at=None):
+    def generate(
+        cls,
+        application,
+        name: str,
+        scopes: list = None,
+        tenant_id=None,
+        created_by: str = "",
+        expires_at=None,
+    ):
         raw = f"ck_{secrets.token_urlsafe(32)}"
         prefix = raw[:12]
         key_hash = hashlib.sha256(raw.encode()).hexdigest()
         obj = cls.objects.create(
-            application=application, tenant_id=tenant_id, name=name,
-            key_prefix=prefix, key_hash=key_hash,
-            scopes=scopes or [], created_by=created_by, expires_at=expires_at,
+            application=application,
+            tenant_id=tenant_id,
+            name=name,
+            key_prefix=prefix,
+            key_hash=key_hash,
+            scopes=scopes or [],
+            created_by=created_by,
+            expires_at=expires_at,
         )
         return obj, raw
 
@@ -315,10 +350,14 @@ class ApiKey(models.Model):
 # ApiSubscription
 # ---------------------------------------------------------------------------
 
+
 class ApiSubscription(models.Model):
     """Links an ApiApplication to an ApiCatalog with approved scopes."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    application = models.ForeignKey(ApiApplication, on_delete=models.CASCADE, related_name="subscriptions")
+    application = models.ForeignKey(
+        ApiApplication, on_delete=models.CASCADE, related_name="subscriptions"
+    )
     catalog = models.ForeignKey(ApiCatalog, on_delete=models.CASCADE, related_name="subscriptions")
     approved_scopes = models.JSONField(default=list)
     status = models.CharField(max_length=20, choices=ApiStatus.choices, default=ApiStatus.ACTIVE)
@@ -348,13 +387,21 @@ class ApiSubscription(models.Model):
 # ApiRateLimit
 # ---------------------------------------------------------------------------
 
+
 class ApiRateLimit(models.Model):
     """Rate limit configuration per scope (tenant/user/app/global)."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    catalog = models.ForeignKey(ApiCatalog, on_delete=models.CASCADE, related_name="rate_limits", null=True, blank=True)
-    application = models.ForeignKey(ApiApplication, on_delete=models.CASCADE, related_name="rate_limits", null=True, blank=True)
+    catalog = models.ForeignKey(
+        ApiCatalog, on_delete=models.CASCADE, related_name="rate_limits", null=True, blank=True
+    )
+    application = models.ForeignKey(
+        ApiApplication, on_delete=models.CASCADE, related_name="rate_limits", null=True, blank=True
+    )
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
-    scope = models.CharField(max_length=20, choices=RateLimitScope.choices, default=RateLimitScope.TENANT)
+    scope = models.CharField(
+        max_length=20, choices=RateLimitScope.choices, default=RateLimitScope.TENANT
+    )
     requests_per_minute = models.PositiveIntegerField(default=60)
     requests_per_hour = models.PositiveIntegerField(default=3600)
     requests_per_day = models.PositiveIntegerField(default=86400)
@@ -374,10 +421,14 @@ class ApiRateLimit(models.Model):
 # ApiConsumer
 # ---------------------------------------------------------------------------
 
+
 class ApiConsumer(models.Model):
     """Resolved consumer context from a request (tenant + application + user)."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    application = models.ForeignKey(ApiApplication, on_delete=models.SET_NULL, null=True, blank=True)
+    application = models.ForeignKey(
+        ApiApplication, on_delete=models.SET_NULL, null=True, blank=True
+    )
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     user_id = models.CharField(max_length=255, blank=True)
     kong_consumer_id = models.CharField(max_length=255, blank=True, unique=True)
@@ -397,11 +448,15 @@ class ApiConsumer(models.Model):
 # ApiUsage
 # ---------------------------------------------------------------------------
 
+
 class ApiUsage(models.Model):
     """Per-request API usage record for billing and analytics."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     catalog = models.ForeignKey(ApiCatalog, on_delete=models.SET_NULL, null=True, blank=True)
-    application = models.ForeignKey(ApiApplication, on_delete=models.SET_NULL, null=True, blank=True)
+    application = models.ForeignKey(
+        ApiApplication, on_delete=models.SET_NULL, null=True, blank=True
+    )
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     user_id = models.CharField(max_length=255, blank=True)
     endpoint_path = models.CharField(max_length=500)
@@ -432,11 +487,13 @@ class ApiUsage(models.Model):
 # ApiContract
 # ---------------------------------------------------------------------------
 
+
 class ApiContract(models.Model):
     """
     API contract definition for contract testing (ADR-0003 S7.3 Risk-1).
     Stores OpenAPI schema snapshot for backward-compat checking.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     catalog = models.ForeignKey(ApiCatalog, on_delete=models.CASCADE, related_name="contracts")
     version = models.ForeignKey(ApiVersion, on_delete=models.PROTECT)
@@ -472,17 +529,26 @@ class ApiContract(models.Model):
 # ApiPolicy
 # ---------------------------------------------------------------------------
 
+
 class ApiPolicy(models.Model):
     """Governance policy applied to an API catalog (auth, quota, CORS, etc.)."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     catalog = models.ForeignKey(ApiCatalog, on_delete=models.CASCADE, related_name="policies")
     name = models.CharField(max_length=100)
-    policy_type = models.CharField(max_length=50, choices=[
-        ("auth", "Authentication"), ("rate_limit", "Rate Limit"),
-        ("cors", "CORS"), ("ip_allowlist", "IP Allowlist"),
-        ("request_transform", "Request Transform"), ("response_transform", "Response Transform"),
-        ("logging", "Logging"), ("caching", "Caching"),
-    ])
+    policy_type = models.CharField(
+        max_length=50,
+        choices=[
+            ("auth", "Authentication"),
+            ("rate_limit", "Rate Limit"),
+            ("cors", "CORS"),
+            ("ip_allowlist", "IP Allowlist"),
+            ("request_transform", "Request Transform"),
+            ("response_transform", "Response Transform"),
+            ("logging", "Logging"),
+            ("caching", "Caching"),
+        ],
+    )
     config = models.JSONField(default=dict)
     is_active = models.BooleanField(default=True)
     priority = models.PositiveSmallIntegerField(default=100)
@@ -500,19 +566,25 @@ class ApiPolicy(models.Model):
 # ApiWebhook
 # ---------------------------------------------------------------------------
 
+
 class ApiWebhook(models.Model):
     """
     Webhook subscription. Delivers events to external/internal endpoints.
     HMAC-SHA256 signature verifies authenticity.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    application = models.ForeignKey(ApiApplication, on_delete=models.CASCADE, related_name="webhooks")
+    application = models.ForeignKey(
+        ApiApplication, on_delete=models.CASCADE, related_name="webhooks"
+    )
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     name = models.CharField(max_length=200)
     target_url = models.URLField()
     secret = models.CharField(max_length=64)
     events = models.JSONField(default=list)
-    status = models.CharField(max_length=20, choices=WebhookStatus.choices, default=WebhookStatus.ACTIVE)
+    status = models.CharField(
+        max_length=20, choices=WebhookStatus.choices, default=WebhookStatus.ACTIVE
+    )
     max_retries = models.PositiveSmallIntegerField(default=3)
     retry_delay_seconds = models.PositiveIntegerField(default=60)
     headers = models.JSONField(default=dict)
@@ -536,9 +608,8 @@ class ApiWebhook(models.Model):
 
     def compute_signature(self, payload: str) -> str:
         import hmac
-        return hmac.new(
-            self.secret.encode(), payload.encode(), hashlib.sha256
-        ).hexdigest()
+
+        return hmac.new(self.secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
     def pause(self) -> None:
         self.status = WebhookStatus.PAUSED
@@ -553,13 +624,17 @@ class ApiWebhook(models.Model):
 # ApiWebhookDelivery
 # ---------------------------------------------------------------------------
 
+
 class ApiWebhookDelivery(models.Model):
     """Record of each webhook delivery attempt."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     webhook = models.ForeignKey(ApiWebhook, on_delete=models.CASCADE, related_name="deliveries")
     event_type = models.CharField(max_length=100)
     payload = models.JSONField(default=dict)
-    status = models.CharField(max_length=20, choices=WebhookDeliveryStatus.choices, default=WebhookDeliveryStatus.PENDING)
+    status = models.CharField(
+        max_length=20, choices=WebhookDeliveryStatus.choices, default=WebhookDeliveryStatus.PENDING
+    )
     attempt_count = models.PositiveSmallIntegerField(default=0)
     max_attempts = models.PositiveSmallIntegerField(default=3)
     response_status_code = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -594,19 +669,32 @@ class ApiWebhookDelivery(models.Model):
         else:
             self.status = WebhookDeliveryStatus.RETRYING
             from datetime import timedelta
-            self.next_retry_at = timezone.now() + timedelta(seconds=self.webhook.retry_delay_seconds * self.attempt_count)
-        self.save(update_fields=["status", "attempt_count", "error_message", "response_status_code", "next_retry_at"])
+
+            self.next_retry_at = timezone.now() + timedelta(
+                seconds=self.webhook.retry_delay_seconds * self.attempt_count
+            )
+        self.save(
+            update_fields=[
+                "status",
+                "attempt_count",
+                "error_message",
+                "response_status_code",
+                "next_retry_at",
+            ]
+        )
 
 
 # ---------------------------------------------------------------------------
 # IdempotencyKey
 # ---------------------------------------------------------------------------
 
+
 class IdempotencyKey(models.Model):
     """
     Stores idempotency keys to prevent duplicate processing.
     ADR-0030 S3.1: safe retry without side effects.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     key = models.CharField(max_length=255, db_index=True)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)

@@ -1,7 +1,8 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import Warehouse, StockItem, StockMovement
-from .serializers import WarehouseSerializer, StockItemSerializer, StockMovementSerializer
+
+from .models import StockItem, StockMovement, Warehouse
+from .serializers import StockItemSerializer, StockMovementSerializer, WarehouseSerializer
 
 
 class BaseInventoryViewSet(viewsets.ModelViewSet):

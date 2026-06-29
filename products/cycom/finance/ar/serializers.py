@@ -1,5 +1,6 @@
-﻿from rest_framework import serializers
-from .models import Customer, Invoice, InvoiceLine, Payment, ARAgingBucket
+from rest_framework import serializers
+
+from .models import ARAgingBucket, Customer, Invoice, InvoiceLine, Payment
 
 
 class CustomerSerializer(serializers.ModelSerializer):

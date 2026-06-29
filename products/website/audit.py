@@ -2,11 +2,9 @@
 Website API audit logging utility.
 Writes to both WebsiteApiLog (lightweight analytics) and platform AuditLog (compliance).
 """
+
 import time
 import uuid
-from typing import Optional
-
-from django.utils import timezone
 
 
 def log_website_request(
@@ -17,7 +15,7 @@ def log_website_request(
     resource_id: str = "",
     was_throttled: bool = False,
     error_detail: str = "",
-    start_time: Optional[float] = None,
+    start_time: float | None = None,
 ) -> None:
     """
     Write a WebsiteApiLog entry. Non-blocking: import is deferred to avoid
@@ -56,14 +54,14 @@ def log_lead_event(
     resource_type: str,
     resource_id: str,
     status: str = "success",
-    details: Optional[dict] = None,
+    details: dict | None = None,
 ) -> None:
     """
     Write a platform AuditLog entry for lead-gen events (demo requests, contacts, partner apps).
     These are PUBLIC category events with DATA_CLASSIFICATION=PUBLIC.
     """
     try:
-        from platform.audit.models import AuditLog, AuditAction, AuditStatus
+        from platform.audit.models import AuditLog, AuditStatus
 
         ip = _get_client_ip(request)
 
@@ -87,7 +85,7 @@ def log_lead_event(
         pass
 
 
-def _get_client_ip(request) -> Optional[str]:
+def _get_client_ip(request) -> str | None:
     forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
     if forwarded:
         return forwarded.split(",")[0].strip()

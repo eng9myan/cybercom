@@ -5,85 +5,92 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_portal_messaging', '0001_initial'),
+        ("cymed_portal_messaging", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='messagethread',
-            new_name='cymed_porta_account_2e5907_idx',
-            old_name='cymed_portal_thread_acct_idx',
+            model_name="messagethread",
+            new_name="cymed_porta_account_2e5907_idx",
+            old_name="cymed_portal_thread_acct_idx",
         ),
         migrations.RenameIndex(
-            model_name='patientmessage',
-            new_name='cymed_porta_thread__6c0e47_idx',
-            old_name='cymed_portal_msg_thread_read_idx',
+            model_name="patientmessage",
+            new_name="cymed_porta_thread__6c0e47_idx",
+            old_name="cymed_portal_msg_thread_read_idx",
         ),
         migrations.RenameIndex(
-            model_name='securemessagerecipient',
-            new_name='cymed_porta_thread__3c8ae5_idx',
-            old_name='cymed_portal_recip_thread_idx',
+            model_name="securemessagerecipient",
+            new_name="cymed_porta_thread__3c8ae5_idx",
+            old_name="cymed_portal_recip_thread_idx",
         ),
         migrations.AlterField(
-            model_name='messageattachment',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="messageattachment",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='messageattachment',
-            name='tenant_id',
+            model_name="messageattachment",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='messageattachment',
-            name='updated_at',
+            model_name="messageattachment",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='messagethread',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="messagethread",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='messagethread',
-            name='tenant_id',
+            model_name="messagethread",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='messagethread',
-            name='updated_at',
+            model_name="messagethread",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='patientmessage',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="patientmessage",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='patientmessage',
-            name='tenant_id',
+            model_name="patientmessage",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='patientmessage',
-            name='updated_at',
+            model_name="patientmessage",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='securemessagerecipient',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="securemessagerecipient",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='securemessagerecipient',
-            name='tenant_id',
+            model_name="securemessagerecipient",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='securemessagerecipient',
-            name='updated_at',
+            model_name="securemessagerecipient",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

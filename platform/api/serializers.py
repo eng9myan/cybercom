@@ -1,11 +1,24 @@
 """
 API Framework DRF serializers.
 """
+
 from rest_framework import serializers
+
 from .models import (
-    ApiApplication, ApiCatalog, ApiContract, ApiEndpoint, ApiKey,
-    ApiPolicy, ApiRateLimit, ApiScope, ApiSubscription, ApiUsage,
-    ApiVersion, ApiWebhook, ApiWebhookDelivery, IdempotencyKey,
+    ApiApplication,
+    ApiCatalog,
+    ApiContract,
+    ApiEndpoint,
+    ApiKey,
+    ApiPolicy,
+    ApiRateLimit,
+    ApiScope,
+    ApiSubscription,
+    ApiUsage,
+    ApiVersion,
+    ApiWebhook,
+    ApiWebhookDelivery,
+    IdempotencyKey,
 )
 
 
@@ -54,7 +67,9 @@ class ApiKeyCreateSerializer(serializers.Serializer):
     application_id = serializers.UUIDField()
     name = serializers.CharField(max_length=200)
     scopes = serializers.ListField(child=serializers.CharField(), required=False, default=list)
-    expires_in_days = serializers.IntegerField(required=False, allow_null=True, min_value=1, max_value=3650)
+    expires_in_days = serializers.IntegerField(
+        required=False, allow_null=True, min_value=1, max_value=3650
+    )
 
 
 class ApiKeyRevokeSerializer(serializers.Serializer):
@@ -85,7 +100,13 @@ class ApiContractSerializer(serializers.ModelSerializer):
     class Meta:
         model = ApiContract
         fields = "__all__"
-        read_only_fields = ["schema_hash", "is_valid", "last_validated_at", "validation_errors", "created_at"]
+        read_only_fields = [
+            "schema_hash",
+            "is_valid",
+            "last_validated_at",
+            "validation_errors",
+            "created_at",
+        ]
 
 
 class ApiContractValidateSerializer(serializers.Serializer):
@@ -102,7 +123,13 @@ class ApiWebhookSerializer(serializers.ModelSerializer):
     class Meta:
         model = ApiWebhook
         exclude = ["secret"]
-        read_only_fields = ["failure_count", "last_delivery_at", "last_delivery_status", "created_at", "updated_at"]
+        read_only_fields = [
+            "failure_count",
+            "last_delivery_at",
+            "last_delivery_status",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class ApiWebhookDeliverySerializer(serializers.ModelSerializer):
@@ -126,10 +153,18 @@ class IdempotencyKeySerializer(serializers.ModelSerializer):
 
 
 class FHIRSearchSerializer(serializers.Serializer):
-    resource_type = serializers.ChoiceField(choices=[
-        "Patient", "Encounter", "Practitioner", "Observation",
-        "MedicationRequest", "Appointment", "CarePlan", "DiagnosticReport",
-    ])
+    resource_type = serializers.ChoiceField(
+        choices=[
+            "Patient",
+            "Encounter",
+            "Practitioner",
+            "Observation",
+            "MedicationRequest",
+            "Appointment",
+            "CarePlan",
+            "DiagnosticReport",
+        ]
+    )
     fhir_version = serializers.ChoiceField(choices=["R4", "R5"], default="R4")
     limit = serializers.IntegerField(required=False, default=20, min_value=1, max_value=100)
     _id = serializers.CharField(required=False)

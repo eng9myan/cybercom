@@ -1,10 +1,11 @@
 from rest_framework import serializers
+
 from .models import (
-    SurveillanceCase,
+    CaseInvestigation,
     Outbreak,
     OutbreakAlert,
     PublicHealthEvent,
-    CaseInvestigation,
+    SurveillanceCase,
 )
 
 

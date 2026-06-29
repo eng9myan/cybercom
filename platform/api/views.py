@@ -2,39 +2,63 @@
 API Framework ViewSets + FHIR endpoints.
 ADR-0003 REST + OpenAPI 3.1. ADR-0030 governance.
 """
-import json
+
 import logging
 
 from django.http import HttpResponse
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .idempotency import IdempotencyService
 from .models import (
-    ApiApplication, ApiCatalog, ApiContract, ApiKey, ApiPolicy,
-    ApiRateLimit, ApiScope, ApiSubscription, ApiUsage, ApiVersion,
-    ApiWebhook, ApiWebhookDelivery, IdempotencyKey,
+    ApiApplication,
+    ApiCatalog,
+    ApiContract,
+    ApiKey,
+    ApiPolicy,
+    ApiRateLimit,
+    ApiSubscription,
+    ApiUsage,
+    ApiVersion,
+    ApiWebhook,
+    IdempotencyKey,
 )
-from .pagination import (
-    CyberComCursorPagination, ApiUsageCursorPagination, FHIRBundlePagination
-)
-from .permissions import IsApiAdmin, IsApiOwner, ReadOnlyOrApiAdmin, CanManageWebhooks
+from .pagination import ApiUsageCursorPagination, CyberComCursorPagination, FHIRBundlePagination
+from .permissions import CanManageWebhooks, IsApiAdmin, IsApiOwner, ReadOnlyOrApiAdmin
 from .serializers import (
-    ApiApplicationSerializer, ApiCatalogSerializer, ApiContractSerializer,
-    ApiContractValidateSerializer, ApiEndpointSerializer, ApiKeyCreateSerializer,
-    ApiKeyRevokeSerializer, ApiKeySerializer, ApiPolicySerializer,
-    ApiRateLimitSerializer, ApiScopeSerializer, ApiSubscriptionSerializer,
-    ApiUsageSerializer, ApiVersionSerializer, ApiWebhookDeliverySerializer,
-    ApiWebhookSerializer, FHIRSearchSerializer, IdempotencyKeySerializer,
-    SDKGenerateSerializer, WebhookDispatchSerializer,
+    ApiApplicationSerializer,
+    ApiCatalogSerializer,
+    ApiContractSerializer,
+    ApiContractValidateSerializer,
+    ApiEndpointSerializer,
+    ApiKeyCreateSerializer,
+    ApiKeyRevokeSerializer,
+    ApiKeySerializer,
+    ApiPolicySerializer,
+    ApiRateLimitSerializer,
+    ApiScopeSerializer,
+    ApiSubscriptionSerializer,
+    ApiUsageSerializer,
+    ApiVersionSerializer,
+    ApiWebhookDeliverySerializer,
+    ApiWebhookSerializer,
+    IdempotencyKeySerializer,
+    SDKGenerateSerializer,
+    WebhookDispatchSerializer,
 )
 from .services import (
-    ApiApplicationService, ApiCatalogService, ApiContractService,
-    ApiKeyService, ApiSubscriptionService, ApiVersionService,
-    FHIRService, SDKGeneratorService, WebhookService,
+    ApiApplicationService,
+    ApiCatalogService,
+    ApiContractService,
+    ApiKeyService,
+    ApiSubscriptionService,
+    ApiVersionService,
+    FHIRService,
+    SDKGeneratorService,
+    WebhookService,
 )
 
 log = logging.getLogger(__name__)
@@ -54,6 +78,7 @@ _idempotency_svc = IdempotencyService()
 # ---------------------------------------------------------------------------
 # ApiVersionViewSet
 # ---------------------------------------------------------------------------
+
 
 class ApiVersionViewSet(viewsets.ModelViewSet):
     queryset = ApiVersion.objects.all().order_by("-major", "-minor", "-patch")
@@ -78,6 +103,7 @@ class ApiVersionViewSet(viewsets.ModelViewSet):
 # ---------------------------------------------------------------------------
 # ApiCatalogViewSet
 # ---------------------------------------------------------------------------
+
 
 class ApiCatalogViewSet(viewsets.ModelViewSet):
     queryset = ApiCatalog.objects.select_related("current_version").all()
@@ -117,7 +143,8 @@ class ApiCatalogViewSet(viewsets.ModelViewSet):
         ser = ApiScopeSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         scope = _catalog_svc.add_scope(
-            cat, ser.validated_data["name"],
+            cat,
+            ser.validated_data["name"],
             ser.validated_data["description"],
             ser.validated_data.get("is_sensitive", False),
         )
@@ -127,6 +154,7 @@ class ApiCatalogViewSet(viewsets.ModelViewSet):
 # ---------------------------------------------------------------------------
 # ApiApplicationViewSet
 # ---------------------------------------------------------------------------
+
 
 class ApiApplicationViewSet(viewsets.ModelViewSet):
     queryset = ApiApplication.objects.all()
@@ -157,6 +185,7 @@ class ApiApplicationViewSet(viewsets.ModelViewSet):
 # ApiKeyViewSet
 # ---------------------------------------------------------------------------
 
+
 class ApiKeyViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ApiKey.objects.all()
     serializer_class = ApiKeySerializer
@@ -171,9 +200,13 @@ class ApiKeyViewSet(viewsets.ReadOnlyModelViewSet):
             app = ApiApplication.objects.get(pk=ser.validated_data["application_id"])
         except ApiApplication.DoesNotExist:
             return Response(
-                {"type": "https://cybercom.io/errors/not_found", "title": "Not Found", "status": 404,
-                 "detail": "Application not found."},
-                status=status.HTTP_404_NOT_FOUND
+                {
+                    "type": "https://cybercom.io/errors/not_found",
+                    "title": "Not Found",
+                    "status": 404,
+                    "detail": "Application not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
             )
         key_obj, raw = _key_svc.generate(
             application=app,
@@ -206,6 +239,7 @@ class ApiKeyViewSet(viewsets.ReadOnlyModelViewSet):
 # ApiSubscriptionViewSet
 # ---------------------------------------------------------------------------
 
+
 class ApiSubscriptionViewSet(viewsets.ModelViewSet):
     queryset = ApiSubscription.objects.select_related("application", "catalog").all()
     serializer_class = ApiSubscriptionSerializer
@@ -222,9 +256,13 @@ class ApiSubscriptionViewSet(viewsets.ModelViewSet):
             cat = ApiCatalog.objects.get(pk=cat_id)
         except (ApiApplication.DoesNotExist, ApiCatalog.DoesNotExist) as e:
             return Response(
-                {"type": "https://cybercom.io/errors/not_found", "title": "Not Found",
-                 "status": 404, "detail": str(e)},
-                status=status.HTTP_404_NOT_FOUND
+                {
+                    "type": "https://cybercom.io/errors/not_found",
+                    "title": "Not Found",
+                    "status": 404,
+                    "detail": str(e),
+                },
+                status=status.HTTP_404_NOT_FOUND,
             )
         sub = _sub_svc.subscribe(app, cat, approved_scopes=scopes, approved_by=str(request.user))
         return Response(ApiSubscriptionSerializer(sub).data, status=status.HTTP_201_CREATED)
@@ -233,6 +271,7 @@ class ApiSubscriptionViewSet(viewsets.ModelViewSet):
 # ---------------------------------------------------------------------------
 # ApiRateLimitViewSet
 # ---------------------------------------------------------------------------
+
 
 class ApiRateLimitViewSet(viewsets.ModelViewSet):
     queryset = ApiRateLimit.objects.all()
@@ -245,6 +284,7 @@ class ApiRateLimitViewSet(viewsets.ModelViewSet):
 # ApiPolicyViewSet
 # ---------------------------------------------------------------------------
 
+
 class ApiPolicyViewSet(viewsets.ModelViewSet):
     queryset = ApiPolicy.objects.all()
     serializer_class = ApiPolicySerializer
@@ -255,6 +295,7 @@ class ApiPolicyViewSet(viewsets.ModelViewSet):
 # ---------------------------------------------------------------------------
 # ApiContractViewSet
 # ---------------------------------------------------------------------------
+
 
 class ApiContractViewSet(viewsets.ModelViewSet):
     queryset = ApiContract.objects.all()
@@ -268,12 +309,14 @@ class ApiContractViewSet(viewsets.ModelViewSet):
         ser = ApiContractValidateSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         is_valid = _contract_svc.validate(contract, ser.validated_data["current_schema"])
-        return Response({
-            "contract_id": str(contract.id),
-            "consumer": contract.consumer_name,
-            "is_valid": is_valid,
-            "validation_errors": contract.validation_errors,
-        })
+        return Response(
+            {
+                "contract_id": str(contract.id),
+                "consumer": contract.consumer_name,
+                "is_valid": is_valid,
+                "validation_errors": contract.validation_errors,
+            }
+        )
 
     @action(detail=False, methods=["post"], url_path="validate-all")
     def validate_all(self, request):
@@ -290,6 +333,7 @@ class ApiContractViewSet(viewsets.ModelViewSet):
 # ApiUsageViewSet
 # ---------------------------------------------------------------------------
 
+
 class ApiUsageViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ApiUsage.objects.all()
     serializer_class = ApiUsageSerializer
@@ -298,7 +342,8 @@ class ApiUsageViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="summary")
     def summary(self, request):
-        from django.db.models import Count, Avg
+        from django.db.models import Avg, Count
+
         qs = self.get_queryset()
         tenant_id = request.query_params.get("tenant_id")
         if tenant_id:
@@ -306,7 +351,9 @@ class ApiUsageViewSet(viewsets.ReadOnlyModelViewSet):
         agg = qs.aggregate(
             total=Count("id"),
             avg_latency=Avg("latency_ms"),
-            errors=Count("id", filter=__import__("django.db.models", fromlist=["Q"]).Q(is_error=True)),
+            errors=Count(
+                "id", filter=__import__("django.db.models", fromlist=["Q"]).Q(is_error=True)
+            ),
         )
         return Response(agg)
 
@@ -314,6 +361,7 @@ class ApiUsageViewSet(viewsets.ReadOnlyModelViewSet):
 # ---------------------------------------------------------------------------
 # ApiWebhookViewSet
 # ---------------------------------------------------------------------------
+
 
 class ApiWebhookViewSet(viewsets.ModelViewSet):
     queryset = ApiWebhook.objects.all()
@@ -342,10 +390,13 @@ class ApiWebhookViewSet(viewsets.ModelViewSet):
             payload=ser.validated_data["payload"],
             tenant_id=ser.validated_data.get("tenant_id"),
         )
-        return Response({
-            "dispatched": len(deliveries),
-            "delivery_ids": [str(d.id) for d in deliveries],
-        }, status=status.HTTP_202_ACCEPTED)
+        return Response(
+            {
+                "dispatched": len(deliveries),
+                "delivery_ids": [str(d.id) for d in deliveries],
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     @action(detail=True, methods=["get"], url_path="deliveries")
     def deliveries(self, request, pk=None):
@@ -357,6 +408,7 @@ class ApiWebhookViewSet(viewsets.ModelViewSet):
 # ---------------------------------------------------------------------------
 # IdempotencyKeyViewSet
 # ---------------------------------------------------------------------------
+
 
 class IdempotencyKeyViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = IdempotencyKey.objects.all()
@@ -374,6 +426,7 @@ class IdempotencyKeyViewSet(viewsets.ReadOnlyModelViewSet):
 # FHIR Views
 # ---------------------------------------------------------------------------
 
+
 class FHIRResourceView(APIView):
     """
     FHIR R4 / R5 resource endpoint.
@@ -381,19 +434,24 @@ class FHIRResourceView(APIView):
     GET  /fhir/{version}/{resource}/{id}/   -> single resource
     POST /fhir/{version}/{resource}/        -> create
     """
+
     permission_classes = [IsAuthenticated]
     pagination_class = FHIRBundlePagination
 
     def get(self, request, fhir_version="R4", resource_type=None, resource_id=None):
         if fhir_version not in _fhir_svc.SUPPORTED_VERSIONS:
             return Response(
-                _fhir_svc.build_operation_outcome("error", "not-supported", f"FHIR version {fhir_version} not supported"),
+                _fhir_svc.build_operation_outcome(
+                    "error", "not-supported", f"FHIR version {fhir_version} not supported"
+                ),
                 status=status.HTTP_400_BAD_REQUEST,
                 content_type="application/fhir+json",
             )
         if not _fhir_svc.is_supported(resource_type or ""):
             return Response(
-                _fhir_svc.build_operation_outcome("error", "not-supported", f"Resource type {resource_type} not supported"),
+                _fhir_svc.build_operation_outcome(
+                    "error", "not-supported", f"Resource type {resource_type} not supported"
+                ),
                 status=status.HTTP_400_BAD_REQUEST,
                 content_type="application/fhir+json",
             )
@@ -408,9 +466,12 @@ class FHIRResourceView(APIView):
 
     def post(self, request, fhir_version="R4", resource_type=None, resource_id=None):
         import uuid as _uuid
+
         if not _fhir_svc.is_supported(resource_type or ""):
             return Response(
-                _fhir_svc.build_operation_outcome("error", "not-supported", f"Resource type {resource_type} not supported"),
+                _fhir_svc.build_operation_outcome(
+                    "error", "not-supported", f"Resource type {resource_type} not supported"
+                ),
                 status=status.HTTP_400_BAD_REQUEST,
                 content_type="application/fhir+json",
             )
@@ -418,13 +479,17 @@ class FHIRResourceView(APIView):
         resource = request.data.copy() if hasattr(request.data, "copy") else dict(request.data)
         resource["id"] = new_id
         resource["resourceType"] = resource_type
-        return Response(resource, status=status.HTTP_201_CREATED, content_type="application/fhir+json")
+        return Response(
+            resource, status=status.HTTP_201_CREATED, content_type="application/fhir+json"
+        )
 
     def _build_single(self, resource_type: str, resource_id: str) -> dict:
         builders = {
             "Patient": lambda: _fhir_svc.build_patient(resource_id),
             "Encounter": lambda: _fhir_svc.build_encounter(resource_id, "unknown"),
-            "Observation": lambda: _fhir_svc.build_observation(resource_id, "unknown", "55284-4", "N/A"),
+            "Observation": lambda: _fhir_svc.build_observation(
+                resource_id, "unknown", "55284-4", "N/A"
+            ),
         }
         builder = builders.get(resource_type)
         if builder:
@@ -446,6 +511,7 @@ class FHIRResourceView(APIView):
 # SDK Generation
 # ---------------------------------------------------------------------------
 
+
 class SDKGenerateView(APIView):
     permission_classes = [IsApiAdmin]
 
@@ -463,22 +529,26 @@ class SDKGenerateView(APIView):
         else:
             code = _sdk_svc.generate_python_stub(cat)
 
-        return Response({
-            "catalog": cat.slug,
-            "language": lang,
-            "sdk_stub": code,
-        })
+        return Response(
+            {
+                "catalog": cat.slug,
+                "language": lang,
+                "sdk_stub": code,
+            }
+        )
 
 
 # ---------------------------------------------------------------------------
 # API Metrics (Prometheus)
 # ---------------------------------------------------------------------------
 
+
 class ApiMetricsView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
         from .services import ApiMetrics
+
         metrics = ApiMetrics().render_prometheus()
         return HttpResponse(metrics, content_type="text/plain; version=0.0.4")
 
@@ -486,6 +556,7 @@ class ApiMetricsView(APIView):
 # ---------------------------------------------------------------------------
 # OpenAPI Spec View
 # ---------------------------------------------------------------------------
+
 
 class OpenAPISpecView(APIView):
     permission_classes = [AllowAny]
@@ -499,8 +570,10 @@ class OpenAPISpecView(APIView):
             except ApiCatalog.DoesNotExist:
                 return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response({
-            "openapi": "3.1.0",
-            "info": {"title": "CyberCom Platform API", "version": "1.0.0"},
-            "paths": {},
-        })
+        return Response(
+            {
+                "openapi": "3.1.0",
+                "info": {"title": "CyberCom Platform API", "version": "1.0.0"},
+                "paths": {},
+            }
+        )

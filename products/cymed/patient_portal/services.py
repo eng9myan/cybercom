@@ -11,10 +11,13 @@ Features:
 - PatientMessagingService
 - ResultsPortalService
 """
+
 from __future__ import annotations
-import uuid
+
 import logging
-from typing import Any, Dict, List, Optional
+import uuid
+from typing import Any
+
 from django.db import transaction
 from django.utils import timezone
 
@@ -25,6 +28,7 @@ def _emit_outbox_event(tenant_id: str, topic: str, event_type: str, payload: dic
     """Helper to write to the platform transactional outbox."""
     try:
         from platform.events.models import OutboxEvent
+
         OutboxEvent.objects.create(
             tenant_id=uuid.UUID(str(tenant_id)),
             topic=topic,
@@ -38,6 +42,7 @@ def _emit_outbox_event(tenant_id: str, topic: str, event_type: str, payload: dic
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. PatientAccountService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class PatientAccountService:
     """
@@ -53,13 +58,16 @@ class PatientAccountService:
         email: str,
         phone: str,
         preferred_language: str = "en",
-        notification_prefs: Optional[dict] = None,
+        notification_prefs: dict | None = None,
     ) -> dict:
         """
         Creates a portal profile linked to a core Patient and Realm Identity user.
         """
-        from products.cymed.patient_portal.accounts.models import PatientPortalAccount, PatientProfile
         from products.cymed.core.patients.models import Patient
+        from products.cymed.patient_portal.accounts.models import (
+            PatientPortalAccount,
+            PatientProfile,
+        )
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         patient_uuid = uuid.UUID(str(patient_id))
@@ -95,7 +103,9 @@ class PatientAccountService:
             "email": email,
             "registered_at": timezone.now().isoformat(),
         }
-        _emit_outbox_event(tenant_id, "cymed.portal.patient.registered", "PatientPortalRegistered", payload)
+        _emit_outbox_event(
+            tenant_id, "cymed.portal.patient.registered", "PatientPortalRegistered", payload
+        )
 
         return {
             "account_id": str(account.id),
@@ -139,6 +149,7 @@ class PatientAccountService:
 # 2. AppointmentPortalService
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class AppointmentPortalService:
     """
     Handles self-service slot queries, booking, and cancellations.
@@ -148,15 +159,16 @@ class AppointmentPortalService:
     def get_available_slots(
         cls,
         tenant_id: str,
-        provider_id: Optional[str] = None,
-        specialty: Optional[str] = None,
-        date_from: Optional[Any] = None,
-        date_to: Optional[Any] = None,
+        provider_id: str | None = None,
+        specialty: str | None = None,
+        date_from: Any | None = None,
+        date_to: Any | None = None,
     ) -> list:
         """
         Lists available doctor schedule slots.
         """
         import datetime
+
         today = datetime.date.today()
         # Mock slots
         return [
@@ -165,15 +177,23 @@ class AppointmentPortalService:
                 "provider_id": provider_id or str(uuid.uuid4()),
                 "provider_name": "Dr. Sarah Al-Hassan",
                 "specialty": specialty or "Internal Medicine",
-                "datetime": timezone.make_aware(datetime.datetime.combine(today + datetime.timedelta(days=1), datetime.time(9, 0))).isoformat(),
+                "datetime": timezone.make_aware(
+                    datetime.datetime.combine(
+                        today + datetime.timedelta(days=1), datetime.time(9, 0)
+                    )
+                ).isoformat(),
             },
             {
                 "slot_id": str(uuid.uuid4()),
                 "provider_id": provider_id or str(uuid.uuid4()),
                 "provider_name": "Dr. Sarah Al-Hassan",
                 "specialty": specialty or "Internal Medicine",
-                "datetime": timezone.make_aware(datetime.datetime.combine(today + datetime.timedelta(days=1), datetime.time(10, 30))).isoformat(),
-            }
+                "datetime": timezone.make_aware(
+                    datetime.datetime.combine(
+                        today + datetime.timedelta(days=1), datetime.time(10, 30)
+                    )
+                ).isoformat(),
+            },
         ]
 
     @classmethod
@@ -217,7 +237,9 @@ class AppointmentPortalService:
             "patient_id": str(patient_id),
             "datetime": dt.isoformat(),
         }
-        _emit_outbox_event(tenant_id, "cymed.portal.appointment.booked", "PortalAppointmentBooked", payload)
+        _emit_outbox_event(
+            tenant_id, "cymed.portal.appointment.booked", "PortalAppointmentBooked", payload
+        )
 
         return {
             "appointment_id": str(req.id),
@@ -227,7 +249,9 @@ class AppointmentPortalService:
 
     @classmethod
     @transaction.atomic
-    def cancel_appointment(cls, tenant_id: str, appointment_id: str, patient_id: str, reason: str = "") -> dict:
+    def cancel_appointment(
+        cls, tenant_id: str, appointment_id: str, patient_id: str, reason: str = ""
+    ) -> dict:
         """
         Cancels an appointment slot.
         """
@@ -245,11 +269,14 @@ class AppointmentPortalService:
         return {"appointment_id": str(req.id), "status": req.status}
 
     @classmethod
-    def get_my_appointments(cls, tenant_id: str, patient_id: str, include_past: bool = False) -> list:
+    def get_my_appointments(
+        cls, tenant_id: str, patient_id: str, include_past: bool = False
+    ) -> list:
         """
         Returns patient appointment request listings.
         """
         from products.cymed.patient_portal.appointments.models import PortalAppointmentRequest
+
         tenant_uuid = uuid.UUID(str(tenant_id))
         patient_uuid = uuid.UUID(str(patient_id))
 
@@ -273,6 +300,7 @@ class AppointmentPortalService:
 # 3. MedicalRecordsService
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class MedicalRecordsService:
     """
     Provides secure access and downloads of clinical notes and summaries.
@@ -286,8 +314,16 @@ class MedicalRecordsService:
         return {
             "allergies": ["Penicillin (Severe)", "Peanuts"],
             "medications": [
-                {"name": "Metformin 500mg", "dosage": "1 tablet twice daily", "prescriber": "Dr. Sarah Al-Hassan"},
-                {"name": "Lisinopril 10mg", "dosage": "1 tablet daily", "prescriber": "Dr. Sarah Al-Hassan"},
+                {
+                    "name": "Metformin 500mg",
+                    "dosage": "1 tablet twice daily",
+                    "prescriber": "Dr. Sarah Al-Hassan",
+                },
+                {
+                    "name": "Lisinopril 10mg",
+                    "dosage": "1 tablet daily",
+                    "prescriber": "Dr. Sarah Al-Hassan",
+                },
             ],
             "conditions": ["Type 2 Diabetes Mellitus", "Essential Hypertension"],
             "immunizations": ["Influenza vaccine (annual)", "COVID-19 Booster"],
@@ -296,7 +332,9 @@ class MedicalRecordsService:
         }
 
     @classmethod
-    def export_records_fhir(cls, tenant_id: str, patient_id: str, record_types: Optional[list] = None) -> dict:
+    def export_records_fhir(
+        cls, tenant_id: str, patient_id: str, record_types: list | None = None
+    ) -> dict:
         """
         Generates FHIR Bundle resource covering selected parts.
         """
@@ -312,15 +350,18 @@ class MedicalRecordsService:
                         "name": [{"family": "Al-Rashid", "given": ["Mariam"]}],
                     }
                 }
-            ]
+            ],
         }
 
     @classmethod
-    def get_visit_history(cls, tenant_id: str, patient_id: str, include_lab: bool = True, include_imaging: bool = True) -> list:
+    def get_visit_history(
+        cls, tenant_id: str, patient_id: str, include_lab: bool = True, include_imaging: bool = True
+    ) -> list:
         """
         Lists past clinical consultations.
         """
         import datetime
+
         return [
             {
                 "visit_id": str(uuid.uuid4()),
@@ -332,7 +373,13 @@ class MedicalRecordsService:
         ]
 
     @classmethod
-    def request_records(cls, tenant_id: str, patient_id: str, record_types: list, delivery_method: str = "secure_portal") -> dict:
+    def request_records(
+        cls,
+        tenant_id: str,
+        patient_id: str,
+        record_types: list,
+        delivery_method: str = "secure_portal",
+    ) -> dict:
         """
         Files a records download request.
         """
@@ -342,6 +389,7 @@ class MedicalRecordsService:
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. PaymentPortalService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class PaymentPortalService:
     """
@@ -409,7 +457,9 @@ class PaymentPortalService:
             "invoice_id": str(invoice_id),
             "amount": amount,
         }
-        _emit_outbox_event(tenant_id, "cymed.portal.payment.processed", "PortalPaymentProcessed", payload)
+        _emit_outbox_event(
+            tenant_id, "cymed.portal.payment.processed", "PortalPaymentProcessed", payload
+        )
 
         return {
             "payment_status": "success",
@@ -418,7 +468,14 @@ class PaymentPortalService:
         }
 
     @classmethod
-    def create_payment_plan(cls, tenant_id: str, patient_id: str, invoice_id: str, installments: int, frequency: str = "monthly") -> dict:
+    def create_payment_plan(
+        cls,
+        tenant_id: str,
+        patient_id: str,
+        invoice_id: str,
+        installments: int,
+        frequency: str = "monthly",
+    ) -> dict:
         """
         Initiates a recurring payment program.
         """
@@ -435,6 +492,7 @@ class PaymentPortalService:
 # ─────────────────────────────────────────────────────────────────────────────
 # 5. InsurancePortalService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class InsurancePortalService:
     """
@@ -463,7 +521,9 @@ class InsurancePortalService:
         return {"claim_id": claim_id, "status": "under_adjudication"}
 
     @classmethod
-    def get_explanation_of_benefits(cls, tenant_id: str, patient_id: str, date_from: Optional[Any] = None) -> list:
+    def get_explanation_of_benefits(
+        cls, tenant_id: str, patient_id: str, date_from: Any | None = None
+    ) -> list:
         """
         Lists EOB letters.
         """
@@ -479,7 +539,14 @@ class InsurancePortalService:
         ]
 
     @classmethod
-    def upload_insurance_card(cls, tenant_id: str, patient_id: str, payer_id: str, card_front_url: str, card_back_url: str = "") -> dict:
+    def upload_insurance_card(
+        cls,
+        tenant_id: str,
+        patient_id: str,
+        payer_id: str,
+        card_front_url: str,
+        card_back_url: str = "",
+    ) -> dict:
         """
         Files insurance member details.
         """
@@ -489,6 +556,7 @@ class InsurancePortalService:
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. PatientMessagingService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class PatientMessagingService:
     """
@@ -552,6 +620,7 @@ class PatientMessagingService:
         Lists message threads.
         """
         from products.cymed.patient_portal.messaging.models import PatientMessage
+
         tenant_uuid = uuid.UUID(str(tenant_id))
         patient_uuid = uuid.UUID(str(patient_id))
 
@@ -575,6 +644,7 @@ class PatientMessagingService:
         Returns count of unread messages.
         """
         from products.cymed.patient_portal.messaging.models import PatientMessage
+
         tenant_uuid = uuid.UUID(str(tenant_id))
         patient_uuid = uuid.UUID(str(patient_id))
 
@@ -588,6 +658,7 @@ class PatientMessagingService:
 # ─────────────────────────────────────────────────────────────────────────────
 # 7. ResultsPortalService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class ResultsPortalService:
     """
@@ -629,10 +700,21 @@ class ResultsPortalService:
         ]
 
     @classmethod
-    def get_result_detail(cls, tenant_id: str, result_id: str, result_type: str, patient_id: str) -> dict:
+    def get_result_detail(
+        cls, tenant_id: str, result_id: str, result_type: str, patient_id: str
+    ) -> dict:
         """
         Retrieves full report findings.
         """
         if result_type == "lab":
-            return {"test_name": "HbA1c", "value": "6.8", "status": "final", "notes": "Consistent with diabetes diagnosis."}
-        return {"study_name": "Chest X-Ray", "status": "final", "narrative": "Lungs are clear. Heart size normal."}
+            return {
+                "test_name": "HbA1c",
+                "value": "6.8",
+                "status": "final",
+                "notes": "Consistent with diabetes diagnosis.",
+            }
+        return {
+            "study_name": "Chest X-Ray",
+            "status": "final",
+            "narrative": "Lungs are clear. Heart size normal.",
+        }

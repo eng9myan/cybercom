@@ -1,4 +1,5 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -60,7 +61,9 @@ class ShiftAssignment(BaseModel):
     )
     original_provider_id = models.UUIDField()
     covering_provider_id = models.UUIDField()
-    assignment_type = models.CharField(max_length=30, choices=ASSIGNMENT_TYPE_CHOICES, default="regular")
+    assignment_type = models.CharField(
+        max_length=30, choices=ASSIGNMENT_TYPE_CHOICES, default="regular"
+    )
     approved_by = models.UUIDField(null=True, blank=True)
     approved_at = models.DateTimeField(null=True, blank=True)
     is_approved = models.BooleanField(default=False)

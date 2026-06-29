@@ -1,5 +1,6 @@
 from rest_framework.routers import DefaultRouter
-from .views import ShiftSwapRequestViewSet, ShiftSwapApprovalViewSet, SwapValidationLogViewSet
+
+from .views import ShiftSwapApprovalViewSet, ShiftSwapRequestViewSet, SwapValidationLogViewSet
 
 router = DefaultRouter()
 router.register("requests", ShiftSwapRequestViewSet, basename="shift-swap-request")

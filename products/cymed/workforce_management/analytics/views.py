@@ -1,13 +1,13 @@
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework import viewsets
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.permissions import IsAuthenticated
 
-from .models import WorkforceAnalyticsSnapshot, WorkforceReport, OnCallSLAMetric
+from .models import OnCallSLAMetric, WorkforceAnalyticsSnapshot, WorkforceReport
 from .serializers import (
+    OnCallSLAMetricSerializer,
     WorkforceAnalyticsSnapshotSerializer,
     WorkforceReportSerializer,
-    OnCallSLAMetricSerializer,
 )
 
 

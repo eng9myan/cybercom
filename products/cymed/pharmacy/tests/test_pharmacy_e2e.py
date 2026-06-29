@@ -1,19 +1,21 @@
 import uuid
+
 import pytest
 from django.utils import timezone
 
-from products.cymed.core.patients.models import Patient
-from products.cymed.core.encounters.models import Encounter
-from products.cymed.core.organizations.models import Organization
-from products.cymed.core.facilities.models import Facility
-
-from products.cymed.pharmacy.prescriptions.models import Prescription, PrescriptionType, PrescriptionStatus, DEASchedule
-from products.cymed.pharmacy.dispensing.models import DispenseOrder, DispenseStatus
-from products.cymed.pharmacy.drug_interactions.models import InteractionRule, DrugInteraction, InteractionSeverityLevel, InteractionType
-from products.cymed.pharmacy.formulary.models import Formulary, FormularyDrug, TherapeuticClass
-
 from products.cymed.core.clinical.services import ClinicalAIService
-from platform.events.models import OutboxEvent
+from products.cymed.core.encounters.models import Encounter
+from products.cymed.core.facilities.models import Facility
+from products.cymed.core.organizations.models import Organization
+from products.cymed.core.patients.models import Patient
+from products.cymed.pharmacy.dispensing.models import DispenseOrder, DispenseStatus
+from products.cymed.pharmacy.formulary.models import Formulary, FormularyDrug, TherapeuticClass
+from products.cymed.pharmacy.prescriptions.models import (
+    DEASchedule,
+    Prescription,
+    PrescriptionStatus,
+    PrescriptionType,
+)
 
 
 @pytest.fixture
@@ -30,11 +32,19 @@ def setup_pharmacy_base_data(test_tenant_id):
         tenant_id=test_tenant_id, organization=org, name="Main Hospital Facility", code="MAIN-HOSP"
     )
     patient = Patient.objects.create(
-        tenant_id=test_tenant_id, first_name="Ahmad", last_name="Kamal", dob="1985-05-15", mrn="MRN-PHARM-001"
+        tenant_id=test_tenant_id,
+        first_name="Ahmad",
+        last_name="Kamal",
+        dob="1985-05-15",
+        mrn="MRN-PHARM-001",
     )
     encounter = Encounter.objects.create(
-        tenant_id=test_tenant_id, patient=patient, encounter_type="inpatient",
-        status="in_progress", organization=org, facility=facility
+        tenant_id=test_tenant_id,
+        patient=patient,
+        encounter_type="inpatient",
+        status="in_progress",
+        organization=org,
+        facility=facility,
     )
 
     return {
@@ -47,8 +57,9 @@ def setup_pharmacy_base_data(test_tenant_id):
 
 @pytest.mark.django_db
 class TestPharmacyEndToEndWorkflow:
-
-    def test_full_prescription_to_dispensing_workflow(self, test_tenant_id, setup_pharmacy_base_data):
+    def test_full_prescription_to_dispensing_workflow(
+        self, test_tenant_id, setup_pharmacy_base_data
+    ):
         patient = setup_pharmacy_base_data["patient"]
         encounter = setup_pharmacy_base_data["encounter"]
 

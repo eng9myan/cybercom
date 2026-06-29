@@ -2,8 +2,8 @@ from rest_framework import serializers
 
 from .models import (
     CareTeam,
-    CareTeamMember,
     CareTeamAssignment,
+    CareTeamMember,
     CareTeamRole,
     CoverageSchedule,
 )
@@ -12,19 +12,19 @@ from .models import (
 class CareTeamMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = CareTeamMember
-        fields = '__all__'
+        fields = "__all__"
 
 
 class CareTeamAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = CareTeamAssignment
-        fields = '__all__'
+        fields = "__all__"
 
 
 class CoverageScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = CoverageSchedule
-        fields = '__all__'
+        fields = "__all__"
 
 
 class CareTeamSerializer(serializers.ModelSerializer):
@@ -34,10 +34,10 @@ class CareTeamSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CareTeam
-        fields = '__all__'
+        fields = "__all__"
 
 
 class CareTeamRoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = CareTeamRole
-        fields = '__all__'
+        fields = "__all__"

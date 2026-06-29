@@ -2,36 +2,65 @@
 CyberCom Multi-Tenant Framework — Comprehensive Test Suite.
 Coverage target: 90%
 """
+
 import uuid
+from datetime import timedelta
+
 import pytest
 from django.test import RequestFactory
 from django.utils import timezone
-from datetime import timedelta
 
 from platform.tenant.models import (
-    Tenant, TenantProfile, TenantConfiguration, TenantBranding,
-    TenantSubscription, TenantLicense, TenantEnvironment, TenantRegion,
-    TenantDeploymentProfile, TenantFeatureFlag, TenantDomain,
-    TenantSSOConfiguration, TenantStoragePolicy, TenantRetentionPolicy,
-    TenantComplianceProfile, TenantAuditConfiguration,
-    TenantStatus, TenantTier, TenantType, SubscriptionPlan, LicenseType,
-    EnvironmentType, SSOProtocol, ComplianceFramework,
-)
-from platform.tenant.services import (
-    TenantBootstrapService, TenantBootstrapRequest, TenantLifecycleService,
-    TenantContextService, TenantRealmMappingService, TenantSSOService,
-    TenantDomainService, TenantFeatureFlagService, TenantLicenseService,
-    TenantComplianceService, render_prometheus, _metrics,
+    ComplianceFramework,
+    EnvironmentType,
+    LicenseType,
+    SSOProtocol,
+    SubscriptionPlan,
+    Tenant,
+    TenantAuditConfiguration,
+    TenantBranding,
+    TenantComplianceProfile,
+    TenantConfiguration,
+    TenantDeploymentProfile,
+    TenantDomain,
+    TenantEnvironment,
+    TenantFeatureFlag,
+    TenantLicense,
+    TenantProfile,
+    TenantRegion,
+    TenantRetentionPolicy,
+    TenantSSOConfiguration,
+    TenantStatus,
+    TenantStoragePolicy,
+    TenantSubscription,
+    TenantTier,
+    TenantType,
 )
 from platform.tenant.permissions import (
-    IsPlatformAdmin, ReadOnlyOrPlatformAdmin, NoCrossTenantAccess,
-    CanProvisionTenant, CanTerminateTenant,
+    CanProvisionTenant,
+    CanTerminateTenant,
+    IsPlatformAdmin,
+    ReadOnlyOrPlatformAdmin,
 )
-
+from platform.tenant.services import (
+    TenantBootstrapRequest,
+    TenantBootstrapService,
+    TenantComplianceService,
+    TenantContextService,
+    TenantDomainService,
+    TenantFeatureFlagService,
+    TenantLicenseService,
+    TenantLifecycleService,
+    TenantRealmMappingService,
+    TenantSSOService,
+    _metrics,
+    render_prometheus,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def rf():
@@ -56,8 +85,10 @@ def tenant(db):
 @pytest.fixture
 def saas_tenant(db):
     return Tenant.objects.create(
-        name="ACME Corp", slug="acme-corp",
-        tenant_type=TenantType.SAAS, tier=TenantTier.SHARED,
+        name="ACME Corp",
+        slug="acme-corp",
+        tenant_type=TenantType.SAAS,
+        tier=TenantTier.SHARED,
         status=TenantStatus.ACTIVE,
     )
 
@@ -65,6 +96,7 @@ def saas_tenant(db):
 # ---------------------------------------------------------------------------
 # TestTenant — model lifecycle
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestTenant:
@@ -125,11 +157,13 @@ class TestTenant:
 # TestTenantProfile
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantProfile:
     def test_create(self, tenant):
         profile = TenantProfile.objects.create(
-            tenant=tenant, legal_name="Test Hospital LLC",
+            tenant=tenant,
+            legal_name="Test Hospital LLC",
             contact_email="admin@test-hospital.sa",
         )
         assert str(profile) == f"Profile({tenant.slug})"
@@ -143,6 +177,7 @@ class TestTenantProfile:
 # ---------------------------------------------------------------------------
 # TestTenantConfiguration
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestTenantConfiguration:
@@ -161,6 +196,7 @@ class TestTenantConfiguration:
 # TestTenantBranding
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantBranding:
     def test_defaults(self, tenant):
@@ -177,6 +213,7 @@ class TestTenantBranding:
 # TestTenantSubscription
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantSubscription:
     def test_create(self, tenant):
@@ -189,14 +226,16 @@ class TestTenantSubscription:
 
     def test_is_trial_true(self, tenant):
         sub = TenantSubscription.objects.create(
-            tenant=tenant, plan=SubscriptionPlan.STARTER,
+            tenant=tenant,
+            plan=SubscriptionPlan.STARTER,
             trial_ends_at=timezone.now() + timedelta(days=14),
         )
         assert sub.is_trial is True
 
     def test_is_expired(self, tenant):
         sub = TenantSubscription.objects.create(
-            tenant=tenant, plan=SubscriptionPlan.STARTER,
+            tenant=tenant,
+            plan=SubscriptionPlan.STARTER,
             ends_at=timezone.now() - timedelta(days=1),
         )
         assert sub.is_expired is True
@@ -206,34 +245,46 @@ class TestTenantSubscription:
 # TestTenantLicense
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantLicense:
     def test_is_valid(self, tenant):
         lic = TenantLicense.objects.create(
-            tenant=tenant, module="cymed", license_type=LicenseType.SUBSCRIPTION,
+            tenant=tenant,
+            module="cymed",
+            license_type=LicenseType.SUBSCRIPTION,
         )
         assert lic.is_valid is True
 
     def test_is_invalid_inactive(self, tenant):
         lic = TenantLicense.objects.create(
-            tenant=tenant, module="cymed", license_type=LicenseType.SUBSCRIPTION, is_active=False,
+            tenant=tenant,
+            module="cymed",
+            license_type=LicenseType.SUBSCRIPTION,
+            is_active=False,
         )
         assert lic.is_valid is False
 
     def test_is_invalid_expired(self, tenant):
         lic = TenantLicense.objects.create(
-            tenant=tenant, module="cymed", license_type=LicenseType.TRIAL,
+            tenant=tenant,
+            module="cymed",
+            license_type=LicenseType.TRIAL,
             valid_until=timezone.now() - timedelta(days=1),
         )
         assert lic.is_valid is False
 
     def test_unique_together(self, tenant):
         TenantLicense.objects.create(
-            tenant=tenant, module="cymed", license_type=LicenseType.SUBSCRIPTION,
+            tenant=tenant,
+            module="cymed",
+            license_type=LicenseType.SUBSCRIPTION,
         )
         with pytest.raises(Exception):
             TenantLicense.objects.create(
-                tenant=tenant, module="cymed", license_type=LicenseType.SUBSCRIPTION,
+                tenant=tenant,
+                module="cymed",
+                license_type=LicenseType.SUBSCRIPTION,
             )
 
 
@@ -241,31 +292,42 @@ class TestTenantLicense:
 # TestTenantEnvironment
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantEnvironment:
     def test_create(self, tenant):
         env = TenantEnvironment.objects.create(
-            tenant=tenant, env_type=EnvironmentType.PRODUCTION,
-            name="hospital-prod", is_production=True,
+            tenant=tenant,
+            env_type=EnvironmentType.PRODUCTION,
+            name="hospital-prod",
+            is_production=True,
         )
         assert "Env" in str(env)
 
     def test_unique_per_tenant_env_type(self, tenant):
-        TenantEnvironment.objects.create(tenant=tenant, env_type=EnvironmentType.PRODUCTION, name="p1")
+        TenantEnvironment.objects.create(
+            tenant=tenant, env_type=EnvironmentType.PRODUCTION, name="p1"
+        )
         with pytest.raises(Exception):
-            TenantEnvironment.objects.create(tenant=tenant, env_type=EnvironmentType.PRODUCTION, name="p2")
+            TenantEnvironment.objects.create(
+                tenant=tenant, env_type=EnvironmentType.PRODUCTION, name="p2"
+            )
 
 
 # ---------------------------------------------------------------------------
 # TestTenantRegion
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantRegion:
     def test_create(self, tenant):
         region = TenantRegion.objects.create(
-            tenant=tenant, region_code="me-central-1",
-            region_name="Middle East Central", is_primary=True, country_code="SA",
+            tenant=tenant,
+            region_code="me-central-1",
+            region_name="Middle East Central",
+            is_primary=True,
+            country_code="SA",
         )
         assert "me-central-1" in str(region)
 
@@ -273,6 +335,7 @@ class TestTenantRegion:
 # ---------------------------------------------------------------------------
 # TestTenantFeatureFlag
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestTenantFeatureFlag:
@@ -287,7 +350,9 @@ class TestTenantFeatureFlag:
 
     def test_is_expired(self, tenant):
         flag = TenantFeatureFlag.objects.create(
-            tenant=tenant, key="old.flag", enabled=True,
+            tenant=tenant,
+            key="old.flag",
+            enabled=True,
             expires_at=timezone.now() - timedelta(hours=1),
         )
         assert flag.is_expired is True
@@ -301,6 +366,7 @@ class TestTenantFeatureFlag:
 # ---------------------------------------------------------------------------
 # TestTenantDomain
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestTenantDomain:
@@ -321,24 +387,31 @@ class TestTenantDomain:
 # TestTenantComplianceProfile
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantComplianceProfile:
     def test_is_current(self, tenant):
         cp = TenantComplianceProfile.objects.create(
-            tenant=tenant, framework=ComplianceFramework.HIPAA, is_active=True,
+            tenant=tenant,
+            framework=ComplianceFramework.HIPAA,
+            is_active=True,
         )
         assert cp.is_current is True
 
     def test_not_current_if_expired(self, tenant):
         cp = TenantComplianceProfile.objects.create(
-            tenant=tenant, framework=ComplianceFramework.GDPR, is_active=True,
+            tenant=tenant,
+            framework=ComplianceFramework.GDPR,
+            is_active=True,
             expires_at=timezone.now() - timedelta(days=1),
         )
         assert cp.is_current is False
 
     def test_not_current_if_inactive(self, tenant):
         cp = TenantComplianceProfile.objects.create(
-            tenant=tenant, framework=ComplianceFramework.ISO27001, is_active=False,
+            tenant=tenant,
+            framework=ComplianceFramework.ISO27001,
+            is_active=False,
         )
         assert cp.is_current is False
 
@@ -346,6 +419,7 @@ class TestTenantComplianceProfile:
 # ---------------------------------------------------------------------------
 # TestTenantBootstrapService
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestTenantBootstrapService:
@@ -367,11 +441,15 @@ class TestTenantBootstrapService:
         assert TenantProfile.objects.filter(tenant=tenant).exists()
         assert TenantConfiguration.objects.filter(tenant=tenant).exists()
         assert TenantBranding.objects.filter(tenant=tenant).exists()
-        assert TenantSubscription.objects.filter(tenant=tenant, plan=SubscriptionPlan.ENTERPRISE).exists()
+        assert TenantSubscription.objects.filter(
+            tenant=tenant, plan=SubscriptionPlan.ENTERPRISE
+        ).exists()
         assert TenantAuditConfiguration.objects.filter(tenant=tenant).exists()
         assert TenantStoragePolicy.objects.filter(tenant=tenant).exists()
         assert TenantDeploymentProfile.objects.filter(tenant=tenant).exists()
-        assert TenantEnvironment.objects.filter(tenant=tenant, env_type=EnvironmentType.PRODUCTION).exists()
+        assert TenantEnvironment.objects.filter(
+            tenant=tenant, env_type=EnvironmentType.PRODUCTION
+        ).exists()
         assert TenantRegion.objects.filter(tenant=tenant, is_primary=True).exists()
         assert TenantComplianceProfile.objects.filter(tenant=tenant).count() == 2
         assert TenantFeatureFlag.objects.filter(tenant=tenant).count() >= 4
@@ -393,6 +471,7 @@ class TestTenantBootstrapService:
 # ---------------------------------------------------------------------------
 # TestTenantLifecycleService
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestTenantLifecycleService:
@@ -431,6 +510,7 @@ class TestTenantLifecycleService:
 # TestTenantContextService
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantContextService:
     def test_resolve_from_claims(self, tenant):
@@ -450,13 +530,17 @@ class TestTenantContextService:
         assert result is None
 
     def test_resolve_from_domain(self, tenant):
-        TenantDomain.objects.create(tenant=tenant, domain="hospital.sa", is_verified=True, is_active=True)
+        TenantDomain.objects.create(
+            tenant=tenant, domain="hospital.sa", is_verified=True, is_active=True
+        )
         svc = TenantContextService()
         result = svc.resolve_from_domain("hospital.sa")
         assert result == tenant
 
     def test_resolve_from_domain_unverified_returns_none(self, tenant):
-        TenantDomain.objects.create(tenant=tenant, domain="unverified.sa", is_verified=False, is_active=True)
+        TenantDomain.objects.create(
+            tenant=tenant, domain="unverified.sa", is_verified=False, is_active=True
+        )
         svc = TenantContextService()
         result = svc.resolve_from_domain("unverified.sa")
         assert result is None
@@ -469,6 +553,7 @@ class TestTenantContextService:
 # ---------------------------------------------------------------------------
 # TestTenantRealmMappingService
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestTenantRealmMappingService:
@@ -493,6 +578,7 @@ class TestTenantRealmMappingService:
 # TestTenantFeatureFlagService
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantFeatureFlagService:
     def test_enable_creates_flag(self, tenant):
@@ -515,7 +601,9 @@ class TestTenantFeatureFlagService:
 
     def test_is_enabled_false_when_expired(self, tenant):
         TenantFeatureFlag.objects.create(
-            tenant=tenant, key="exp.flag", enabled=True,
+            tenant=tenant,
+            key="exp.flag",
+            enabled=True,
             expires_at=timezone.now() - timedelta(hours=1),
         )
         assert TenantFeatureFlagService().is_enabled(tenant, "exp.flag") is False
@@ -528,6 +616,7 @@ class TestTenantFeatureFlagService:
 # ---------------------------------------------------------------------------
 # TestTenantLicenseService
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestTenantLicenseService:
@@ -544,7 +633,9 @@ class TestTenantLicenseService:
         assert lic.is_active is False
 
     def test_has_license_true(self, tenant):
-        TenantLicense.objects.create(tenant=tenant, module="cymed", license_type=LicenseType.SUBSCRIPTION)
+        TenantLicense.objects.create(
+            tenant=tenant, module="cymed", license_type=LicenseType.SUBSCRIPTION
+        )
         assert TenantLicenseService().has_license(tenant, "cymed") is True
 
     def test_has_license_false(self, tenant):
@@ -554,6 +645,7 @@ class TestTenantLicenseService:
 # ---------------------------------------------------------------------------
 # TestTenantComplianceService
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestTenantComplianceService:
@@ -574,13 +666,16 @@ class TestTenantComplianceService:
         assert TenantComplianceService().requires_data_residency(tenant) is True
 
     def test_requires_data_residency_false(self, tenant):
-        TenantComplianceProfile.objects.create(tenant=tenant, framework=ComplianceFramework.ISO27001)
+        TenantComplianceProfile.objects.create(
+            tenant=tenant, framework=ComplianceFramework.ISO27001
+        )
         assert TenantComplianceService().requires_data_residency(tenant) is False
 
 
 # ---------------------------------------------------------------------------
 # TestTenantDomainService
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestTenantDomainService:
@@ -601,11 +696,14 @@ class TestTenantDomainService:
 # TestTenantSSOService
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantSSOService:
     def test_configure_oidc(self, tenant):
         sso = TenantSSOService().configure(
-            tenant, protocol=SSOProtocol.OIDC, alias="adfs",
+            tenant,
+            protocol=SSOProtocol.OIDC,
+            alias="adfs",
             authorization_url="https://adfs.hospital.sa/auth",
             client_id="cybercom-sp",
         )
@@ -629,6 +727,7 @@ class TestTenantSSOService:
 # ---------------------------------------------------------------------------
 # TestPermissions
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestPermissions:
@@ -659,7 +758,9 @@ class TestPermissions:
         assert perm.has_permission(req, None) is False
 
     def test_read_only_or_admin_post_allowed_for_admin(self, rf):
-        req = self._make_request(rf, method="POST", claims={"realm_access": {"roles": ["platform_admin"]}})
+        req = self._make_request(
+            rf, method="POST", claims={"realm_access": {"roles": ["platform_admin"]}}
+        )
         perm = ReadOnlyOrPlatformAdmin()
         assert perm.has_permission(req, None) is True
 
@@ -677,6 +778,7 @@ class TestPermissions:
 # ---------------------------------------------------------------------------
 # TestMetrics
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 class TestTenantMetrics:
@@ -696,32 +798,43 @@ class TestTenantMetrics:
 # TestTenantTasks
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantTasks:
     def test_expire_feature_flags_task(self, tenant):
         TenantFeatureFlag.objects.create(
-            tenant=tenant, key="old", enabled=True,
+            tenant=tenant,
+            key="old",
+            enabled=True,
             expires_at=timezone.now() - timedelta(hours=1),
         )
         from platform.tenant.tasks import expire_feature_flags_task
+
         count = expire_feature_flags_task()
         assert count >= 1
 
     def test_check_license_expiry_task(self, tenant):
         TenantLicense.objects.create(
-            tenant=tenant, module="cymed", license_type=LicenseType.TRIAL,
-            is_active=True, valid_until=timezone.now() - timedelta(days=1),
+            tenant=tenant,
+            module="cymed",
+            license_type=LicenseType.TRIAL,
+            is_active=True,
+            valid_until=timezone.now() - timedelta(days=1),
         )
         from platform.tenant.tasks import check_license_expiry_task
+
         count = check_license_expiry_task()
         assert count >= 1
 
     def test_check_subscription_expiry_suspends_tenant(self, tenant):
         TenantSubscription.objects.create(
-            tenant=tenant, plan=SubscriptionPlan.STARTER, is_active=True,
+            tenant=tenant,
+            plan=SubscriptionPlan.STARTER,
+            is_active=True,
             ends_at=timezone.now() - timedelta(days=1),
         )
         from platform.tenant.tasks import check_subscription_expiry_task
+
         count = check_subscription_expiry_task()
         tenant.refresh_from_db()
         assert tenant.status == TenantStatus.SUSPENDED
@@ -729,6 +842,7 @@ class TestTenantTasks:
 
     def test_sync_realm_mapping_task_missing_tenant(self, db):
         from platform.tenant.tasks import sync_realm_mapping_task
+
         result = sync_realm_mapping_task(str(uuid.uuid4()))
         assert result is None
 
@@ -737,10 +851,12 @@ class TestTenantTasks:
 # TestTenantHealthAPI
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.django_db
 class TestTenantHealthAPI:
     def test_health_endpoint(self, rf, tenant):
         from platform.tenant.views import tenant_health
+
         request = rf.get("/")
         response = tenant_health(request)
         assert response.status_code == 200
@@ -748,6 +864,7 @@ class TestTenantHealthAPI:
 
     def test_metrics_endpoint(self, rf):
         from platform.tenant.views import tenant_metrics
+
         request = rf.get("/")
         response = tenant_metrics(request)
         assert response.status_code == 200

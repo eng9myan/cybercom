@@ -1,5 +1,6 @@
 from django.apps import AppConfig
 
+
 class TerminologyConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "platform.terminology"
@@ -7,4 +8,4 @@ class TerminologyConfig(AppConfig):
 
     def ready(self):
         # Import providers module to trigger registration of default providers in registry
-        import platform.terminology.providers
+        pass

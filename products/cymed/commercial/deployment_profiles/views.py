@@ -1,10 +1,14 @@
-from products.cymed.commercial.views import CommercialModelViewSet
 from products.cymed.commercial.deployment_profiles.models import (
-    DeploymentProfile, DeploymentConfiguration, DeploymentCapability
+    DeploymentCapability,
+    DeploymentConfiguration,
+    DeploymentProfile,
 )
 from products.cymed.commercial.deployment_profiles.serializers import (
-    DeploymentProfileSerializer, DeploymentConfigurationSerializer, DeploymentCapabilitySerializer
+    DeploymentCapabilitySerializer,
+    DeploymentConfigurationSerializer,
+    DeploymentProfileSerializer,
 )
+from products.cymed.commercial.views import CommercialModelViewSet
 
 
 class DeploymentProfileViewSet(CommercialModelViewSet):

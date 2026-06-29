@@ -1,16 +1,30 @@
 """
 Audit & Compliance API URL routing.
 """
-from django.urls import path, include
+
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    AuditArchiveViewSet, AuditCategoryViewSet, AuditChainViewSet,
-    AuditEntryViewSet, AuditEventViewSet, AuditExportViewSet,
-    AuditLogViewSet, AuditRetentionPolicyViewSet, AuditSignatureViewSet,
-    ComplianceAssessmentViewSet, ComplianceProfileViewSet,
-    ComplianceReportViewSet, ComplianceRuleViewSet, ComplianceViolationViewSet,
-    EvidencePackageViewSet, EvidenceRecordViewSet, LegalHoldViewSet,
-    audit_health, audit_metrics,
+    AuditArchiveViewSet,
+    AuditCategoryViewSet,
+    AuditChainViewSet,
+    AuditEntryViewSet,
+    AuditEventViewSet,
+    AuditExportViewSet,
+    AuditLogViewSet,
+    AuditRetentionPolicyViewSet,
+    AuditSignatureViewSet,
+    ComplianceAssessmentViewSet,
+    ComplianceProfileViewSet,
+    ComplianceReportViewSet,
+    ComplianceRuleViewSet,
+    ComplianceViolationViewSet,
+    EvidencePackageViewSet,
+    EvidenceRecordViewSet,
+    LegalHoldViewSet,
+    audit_health,
+    audit_metrics,
 )
 
 router = DefaultRouter()
@@ -26,8 +40,12 @@ router.register(r"exports", AuditExportViewSet, basename="audit-export")
 router.register(r"legal-holds", LegalHoldViewSet, basename="legal-hold")
 router.register(r"compliance/profiles", ComplianceProfileViewSet, basename="compliance-profile")
 router.register(r"compliance/rules", ComplianceRuleViewSet, basename="compliance-rule")
-router.register(r"compliance/violations", ComplianceViolationViewSet, basename="compliance-violation")
-router.register(r"compliance/assessments", ComplianceAssessmentViewSet, basename="compliance-assessment")
+router.register(
+    r"compliance/violations", ComplianceViolationViewSet, basename="compliance-violation"
+)
+router.register(
+    r"compliance/assessments", ComplianceAssessmentViewSet, basename="compliance-assessment"
+)
 router.register(r"compliance/reports", ComplianceReportViewSet, basename="compliance-report")
 router.register(r"evidence/records", EvidenceRecordViewSet, basename="evidence-record")
 router.register(r"evidence/packages", EvidencePackageViewSet, basename="evidence-package")

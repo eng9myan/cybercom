@@ -1,12 +1,13 @@
 from rest_framework import serializers
-from .models import MessageThread, PatientMessage, MessageAttachment, SecureMessageRecipient
+
+from .models import MessageAttachment, MessageThread, PatientMessage, SecureMessageRecipient
 
 
 class MessageAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = MessageAttachment
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at', 'uploaded_at']
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at", "uploaded_at"]
 
 
 class PatientMessageSerializer(serializers.ModelSerializer):
@@ -14,15 +15,15 @@ class PatientMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PatientMessage
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at', 'sent_at']
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at", "sent_at"]
 
 
 class SecureMessageRecipientSerializer(serializers.ModelSerializer):
     class Meta:
         model = SecureMessageRecipient
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at', 'added_at']
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at", "added_at"]
 
 
 class MessageThreadSerializer(serializers.ModelSerializer):
@@ -30,8 +31,8 @@ class MessageThreadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MessageThread
-        fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'updated_at', 'message_count', 'unread_count']
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "updated_at", "message_count", "unread_count"]
 
 
 class MessageThreadDetailSerializer(MessageThreadSerializer):

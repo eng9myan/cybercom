@@ -1,8 +1,10 @@
-﻿"""
+"""
 CyMed Laboratory â€” Quality Management
 QC rules (Westgard), QC runs, failure detection, proficiency testing.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -15,6 +17,7 @@ class QCLevel(models.TextChoices):
 
 class QualityRule(BaseModel):
     """Westgard or custom QC rule applied to a test/analyzer combination."""
+
     RULE_TYPES = [
         ("12s", "1â‚‚s â€” Warning: >2 SD"),
         ("13s", "1â‚ƒs â€” Rejection: >3 SD"),
@@ -27,9 +30,21 @@ class QualityRule(BaseModel):
 
     name = models.CharField(max_length=100)
     rule_type = models.CharField(max_length=20, choices=RULE_TYPES)
-    test = models.ForeignKey("lab_orders.LabTest", on_delete=models.CASCADE, related_name="qc_rules", null=True, blank=True)
-    analyzer = models.ForeignKey("lab_worklists.Analyzer", on_delete=models.SET_NULL, null=True, blank=True, related_name="qc_rules")
-    parameters = models.JSONField(default=dict)   # {"sd_multiplier": 2, "consecutive_count": 4}
+    test = models.ForeignKey(
+        "lab_orders.LabTest",
+        on_delete=models.CASCADE,
+        related_name="qc_rules",
+        null=True,
+        blank=True,
+    )
+    analyzer = models.ForeignKey(
+        "lab_worklists.Analyzer",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="qc_rules",
+    )
+    parameters = models.JSONField(default=dict)  # {"sd_multiplier": 2, "consecutive_count": 4}
     is_warning = models.BooleanField(default=False)
     is_rejection = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
@@ -41,8 +56,17 @@ class QualityRule(BaseModel):
 
 class QualityControl(BaseModel):
     """QC material/reagent lot with expected statistical parameters."""
-    test = models.ForeignKey("lab_orders.LabTest", on_delete=models.CASCADE, related_name="qc_materials")
-    analyzer = models.ForeignKey("lab_worklists.Analyzer", on_delete=models.SET_NULL, null=True, blank=True, related_name="qc_materials")
+
+    test = models.ForeignKey(
+        "lab_orders.LabTest", on_delete=models.CASCADE, related_name="qc_materials"
+    )
+    analyzer = models.ForeignKey(
+        "lab_worklists.Analyzer",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="qc_materials",
+    )
     lot_number = models.CharField(max_length=100)
     product_name = models.CharField(max_length=255, blank=True)
     manufacturer = models.CharField(max_length=100, blank=True)
@@ -61,6 +85,7 @@ class QualityControl(BaseModel):
 
 class QualityRun(BaseModel):
     """Single QC run entry â€” measured value compared against expected range."""
+
     qc = models.ForeignKey(QualityControl, on_delete=models.CASCADE, related_name="runs")
     run_date = models.DateField()
     run_time = models.TimeField()
@@ -71,7 +96,7 @@ class QualityRun(BaseModel):
     passed = models.BooleanField()
     is_warning = models.BooleanField(default=False)
     is_rejection = models.BooleanField(default=False)
-    rules_triggered = models.JSONField(default=list)   # ["13s", "22s"]
+    rules_triggered = models.JSONField(default=list)  # ["13s", "22s"]
     comments = models.CharField(max_length=500, blank=True)
 
     class Meta:
@@ -81,6 +106,7 @@ class QualityRun(BaseModel):
 
 class QualityFailure(BaseModel):
     """Investigation and corrective action record for a QC rejection."""
+
     STATUS_CHOICES = [
         ("open", "Open"),
         ("investigating", "Under Investigation"),
@@ -107,6 +133,7 @@ class QualityFailure(BaseModel):
 
 class ProficiencyTest(BaseModel):
     """External quality assurance / proficiency testing program participation."""
+
     STATUS_CHOICES = [
         ("enrolled", "Enrolled"),
         ("sample_received", "Sample Received"),
@@ -116,12 +143,12 @@ class ProficiencyTest(BaseModel):
     ]
 
     program_name = models.CharField(max_length=255)
-    program_provider = models.CharField(max_length=255, blank=True)   # CAP, RCPAQAP, NEQAS
-    testing_period = models.CharField(max_length=50)     # e.g., "2026-Q1"
+    program_provider = models.CharField(max_length=255, blank=True)  # CAP, RCPAQAP, NEQAS
+    testing_period = models.CharField(max_length=50)  # e.g., "2026-Q1"
     start_date = models.DateField()
     submission_date = models.DateField(null=True, blank=True)
     deadline_date = models.DateField(null=True, blank=True)
-    test_list = models.JSONField(default=list)            # analytes included
+    test_list = models.JSONField(default=list)  # analytes included
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="enrolled")
     score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     score_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)

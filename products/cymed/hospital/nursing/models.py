@@ -1,6 +1,8 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 from products.cymed.hospital.adt.models import Admission
+
 
 class NursingShift(BaseModel):
     name = models.CharField(max_length=100)  # Day shift, Night shift
@@ -9,6 +11,7 @@ class NursingShift(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_nursing_shifts"
+
 
 class NursingAssignment(BaseModel):
     nurse_id = models.UUIDField()
@@ -19,6 +22,7 @@ class NursingAssignment(BaseModel):
     class Meta:
         db_table = "cymed_hospital_nursing_assignments"
 
+
 class NursingAssessment(BaseModel):
     admission = models.ForeignKey(Admission, on_delete=models.CASCADE)
     assessed_by = models.UUIDField()
@@ -28,6 +32,7 @@ class NursingAssessment(BaseModel):
     class Meta:
         db_table = "cymed_hospital_nursing_assessments"
 
+
 class NursingCarePlan(BaseModel):
     admission = models.ForeignKey(Admission, on_delete=models.CASCADE)
     goals = models.TextField()
@@ -36,17 +41,21 @@ class NursingCarePlan(BaseModel):
     class Meta:
         db_table = "cymed_hospital_nursing_careplans"
 
+
 class NursingTask(BaseModel):
     admission = models.ForeignKey(Admission, on_delete=models.CASCADE)
     task_name = models.CharField(max_length=255)
     scheduled_at = models.DateTimeField()
     completed_at = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=50, choices=[
-        ("pending", "Pending"), ("completed", "Completed"), ("skipped", "Skipped")
-    ], default="pending")
+    status = models.CharField(
+        max_length=50,
+        choices=[("pending", "Pending"), ("completed", "Completed"), ("skipped", "Skipped")],
+        default="pending",
+    )
 
     class Meta:
         db_table = "cymed_hospital_nursing_tasks"
+
 
 class NursingHandover(BaseModel):
     admission = models.ForeignKey(Admission, on_delete=models.CASCADE)

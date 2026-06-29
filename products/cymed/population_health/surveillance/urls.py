@@ -1,10 +1,11 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    SurveillanceCaseViewSet,
-    OutbreakViewSet,
-    OutbreakAlertViewSet,
-    PublicHealthEventViewSet,
     CaseInvestigationViewSet,
+    OutbreakAlertViewSet,
+    OutbreakViewSet,
+    PublicHealthEventViewSet,
+    SurveillanceCaseViewSet,
 )
 
 router = DefaultRouter()

@@ -1,5 +1,6 @@
-﻿from rest_framework import serializers
-from .models import QualityMeasure, QualityMeasureResult, QualityImprovement, ClinicalAudit
+from rest_framework import serializers
+
+from .models import ClinicalAudit, QualityImprovement, QualityMeasure, QualityMeasureResult
 
 
 class QualityMeasureSerializer(serializers.ModelSerializer):

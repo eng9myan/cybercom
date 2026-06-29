@@ -1,5 +1,12 @@
-﻿from rest_framework.routers import DefaultRouter
-from .views import CultureViewSet, OrganismViewSet, SensitivityViewSet, ResistanceProfileViewSet, MicrobiologyResultViewSet
+from rest_framework.routers import DefaultRouter
+
+from .views import (
+    CultureViewSet,
+    MicrobiologyResultViewSet,
+    OrganismViewSet,
+    ResistanceProfileViewSet,
+    SensitivityViewSet,
+)
 
 router = DefaultRouter()
 router.register("cultures", CultureViewSet, basename="lab-cultures")

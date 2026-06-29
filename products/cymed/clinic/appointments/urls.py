@@ -1,8 +1,12 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.clinic.appointments.views import (
-    ClinicAppointmentViewSet, AppointmentReminderViewSet,
-    AppointmentWaitlistViewSet, AppointmentTemplateViewSet, AppointmentRuleViewSet
+    AppointmentReminderViewSet,
+    AppointmentRuleViewSet,
+    AppointmentTemplateViewSet,
+    AppointmentWaitlistViewSet,
+    ClinicAppointmentViewSet,
 )
 
 router = DefaultRouter()

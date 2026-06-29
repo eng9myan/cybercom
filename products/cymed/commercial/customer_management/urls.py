@@ -1,8 +1,12 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.commercial.customer_management.views import (
-    CustomerViewSet, CustomerOrganizationViewSet, CustomerContractViewSet,
-    CustomerDeploymentViewSet, CustomerSuccessPlanViewSet
+    CustomerContractViewSet,
+    CustomerDeploymentViewSet,
+    CustomerOrganizationViewSet,
+    CustomerSuccessPlanViewSet,
+    CustomerViewSet,
 )
 
 router = DefaultRouter()

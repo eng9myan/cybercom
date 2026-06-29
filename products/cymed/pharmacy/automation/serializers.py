@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import AutomationDevice, DispensingRobot, CabinetDevice, AutomationQueue
+
+from .models import AutomationDevice, AutomationQueue, CabinetDevice, DispensingRobot
 
 
 class DispensingRobotSerializer(serializers.ModelSerializer):

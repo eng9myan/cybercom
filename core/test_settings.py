@@ -2,7 +2,8 @@
 Test settings override — uses SQLite (no PostgreSQL needed) and dummy cache.
 ADR-0034: Django 5 / Python 3.12. Tests run with KEYCLOAK_ENABLED=False.
 """
-from .settings import *  # noqa: F401, F403
+
+from .settings import *  # noqa: F403
 
 DATABASES = {
     "default": {

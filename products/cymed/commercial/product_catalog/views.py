@@ -1,10 +1,14 @@
-from products.cymed.commercial.views import CommercialModelViewSet
 from products.cymed.commercial.product_catalog.models import (
-    ProductVersion, ProductLicenseMapping, ProductFeatureMatrix
+    ProductFeatureMatrix,
+    ProductLicenseMapping,
+    ProductVersion,
 )
 from products.cymed.commercial.product_catalog.serializers import (
-    ProductVersionSerializer, ProductLicenseMappingSerializer, ProductFeatureMatrixSerializer
+    ProductFeatureMatrixSerializer,
+    ProductLicenseMappingSerializer,
+    ProductVersionSerializer,
 )
+from products.cymed.commercial.views import CommercialModelViewSet
 
 
 class ProductVersionViewSet(CommercialModelViewSet):

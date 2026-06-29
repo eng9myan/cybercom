@@ -5,80 +5,87 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_portal_family_accounts', '0001_initial'),
+        ("cymed_portal_family_accounts", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='familyaccesspermission',
-            new_name='cymed_porta_grantor_a10fad_idx',
-            old_name='cymed_portal_fam_acc_grant_idx',
+            model_name="familyaccesspermission",
+            new_name="cymed_porta_grantor_a10fad_idx",
+            old_name="cymed_portal_fam_acc_grant_idx",
         ),
         migrations.RenameIndex(
-            model_name='familymember',
-            new_name='cymed_porta_group_i_33cfed_idx',
-            old_name='cymed_portal_fam_grp_pat_idx',
+            model_name="familymember",
+            new_name="cymed_porta_group_i_33cfed_idx",
+            old_name="cymed_portal_fam_grp_pat_idx",
         ),
         migrations.AlterField(
-            model_name='dependentprofile',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="dependentprofile",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='dependentprofile',
-            name='tenant_id',
+            model_name="dependentprofile",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='dependentprofile',
-            name='updated_at',
+            model_name="dependentprofile",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='familyaccesspermission',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="familyaccesspermission",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='familyaccesspermission',
-            name='tenant_id',
+            model_name="familyaccesspermission",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='familyaccesspermission',
-            name='updated_at',
+            model_name="familyaccesspermission",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='familygroup',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="familygroup",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='familygroup',
-            name='tenant_id',
+            model_name="familygroup",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='familygroup',
-            name='updated_at',
+            model_name="familygroup",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='familymember',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="familymember",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='familymember',
-            name='tenant_id',
+            model_name="familymember",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='familymember',
-            name='updated_at',
+            model_name="familymember",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

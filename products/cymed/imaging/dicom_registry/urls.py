@@ -1,5 +1,6 @@
 from rest_framework.routers import DefaultRouter
-from .views import DICOMStudyViewSet, DICOMSeriesViewSet, DICOMInstanceViewSet, StudyArchiveViewSet
+
+from .views import DICOMInstanceViewSet, DICOMSeriesViewSet, DICOMStudyViewSet, StudyArchiveViewSet
 
 router = DefaultRouter()
 router.register("studies", DICOMStudyViewSet, basename="dicom-study")

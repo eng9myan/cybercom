@@ -1,9 +1,10 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    WorkforceComplianceConfigViewSet,
+    ComplianceAuditLogViewSet,
     RamadanComplianceRuleViewSet,
     WardRatioConfigViewSet,
-    ComplianceAuditLogViewSet,
+    WorkforceComplianceConfigViewSet,
 )
 
 router = DefaultRouter()

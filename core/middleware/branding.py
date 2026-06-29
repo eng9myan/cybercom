@@ -2,6 +2,7 @@
 White-label branding middleware: attaches brand config to request.brand
 based on the request domain or X-Brand-Code header.
 """
+
 from django.core.cache import cache
 
 
@@ -32,6 +33,7 @@ class BrandingMiddleware:
     def _lookup_domain(self, host):
         try:
             from products.cymed.commercial.branding.models import BrandDomain
+
             domain_obj = BrandDomain.objects.select_related("brand").filter(domain=host).first()
             return domain_obj.brand.code if domain_obj else None
         except Exception:
@@ -44,6 +46,7 @@ class BrandingMiddleware:
             return cached
         try:
             from products.cymed.commercial.branding.models import Brand
+
             brand = (
                 Brand.objects.select_related("theme")
                 .prefetch_related("localizations", "assets")

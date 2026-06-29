@@ -1,10 +1,11 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
     DiseaseRegistryViewSet,
-    RegistryPatientViewSet,
     RegistryEnrollmentViewSet,
-    RegistryStatusViewSet,
     RegistryOutcomeViewSet,
+    RegistryPatientViewSet,
+    RegistryStatusViewSet,
 )
 
 router = DefaultRouter()

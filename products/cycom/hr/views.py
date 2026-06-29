@@ -1,10 +1,11 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from .models import Department, Employee, Attendance, LeaveRequest, PerformanceReview
+
+from .models import Attendance, Department, Employee, LeaveRequest, PerformanceReview
 from .serializers import (
+    AttendanceSerializer,
     DepartmentSerializer,
     EmployeeSerializer,
-    AttendanceSerializer,
     LeaveRequestSerializer,
     PerformanceReviewSerializer,
 )

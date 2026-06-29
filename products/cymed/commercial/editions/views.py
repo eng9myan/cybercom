@@ -1,16 +1,21 @@
-from products.cymed.commercial.views import CommercialModelViewSet
-from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 
 from products.cymed.commercial.editions.models import (
-    ProductCatalogEntry, ProductEdition, EditionFeature, EditionLimit, EditionModule
+    EditionFeature,
+    EditionLimit,
+    EditionModule,
+    ProductCatalogEntry,
+    ProductEdition,
 )
 from products.cymed.commercial.editions.serializers import (
-    ProductCatalogEntrySerializer, ProductEditionSerializer,
-    EditionFeatureSerializer, EditionLimitSerializer, EditionModuleSerializer
+    EditionFeatureSerializer,
+    EditionLimitSerializer,
+    EditionModuleSerializer,
+    ProductCatalogEntrySerializer,
+    ProductEditionSerializer,
 )
+from products.cymed.commercial.views import CommercialModelViewSet
 
 
 class ProductCatalogEntryViewSet(CommercialModelViewSet):
@@ -19,7 +24,9 @@ class ProductCatalogEntryViewSet(CommercialModelViewSet):
 
 
 class ProductEditionViewSet(CommercialModelViewSet):
-    queryset = ProductEdition.objects.select_related("product").prefetch_related("features", "limits", "modules")
+    queryset = ProductEdition.objects.select_related("product").prefetch_related(
+        "features", "limits", "modules"
+    )
     serializer_class = ProductEditionSerializer
 
     @action(detail=True, methods=["get"])
@@ -27,11 +34,13 @@ class ProductEditionViewSet(CommercialModelViewSet):
         """Return the full feature matrix for this edition."""
         edition = self.get_object()
         features = EditionFeature.objects.filter(edition=edition)
-        return Response({
-            "edition": edition.code,
-            "product": edition.product.code,
-            "features": EditionFeatureSerializer(features, many=True).data
-        })
+        return Response(
+            {
+                "edition": edition.code,
+                "product": edition.product.code,
+                "features": EditionFeatureSerializer(features, many=True).data,
+            }
+        )
 
 
 class EditionFeatureViewSet(CommercialModelViewSet):

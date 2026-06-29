@@ -1,5 +1,5 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -108,7 +108,9 @@ class ClaimSubmission(BaseModel):
     claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name="submissions")
     submitted_at = models.DateTimeField(auto_now_add=True)
     submitted_by_user_id = models.UUIDField()
-    submission_method = models.CharField(max_length=20, choices=SUBMISSION_METHOD_CHOICES, default="electronic")
+    submission_method = models.CharField(
+        max_length=20, choices=SUBMISSION_METHOD_CHOICES, default="electronic"
+    )
     payer_transaction_id = models.CharField(max_length=200, blank=True, null=True)
     batch_id = models.CharField(max_length=200, blank=True, null=True)
     acknowledgement_received = models.BooleanField(default=False)

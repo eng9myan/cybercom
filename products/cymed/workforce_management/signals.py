@@ -5,6 +5,7 @@ from django.dispatch import receiver
 def _publish(tenant_id, event_type, payload):
     try:
         from platform.events.outbox import OutboxEvent
+
         OutboxEvent.publish(tenant_id=tenant_id, event_type=event_type, payload=payload)
     except Exception:
         pass
@@ -14,6 +15,7 @@ def _notify_cyconnect(tenant_id, event_type, payload):
     """Push real-time alerts to clinicians via CyConnect (SMS/Push/Voice)."""
     try:
         from platform.integrations.hub import CyIntegrationHub
+
         CyIntegrationHub.send(
             tenant_id=tenant_id,
             destination="cyconnect",
@@ -28,6 +30,7 @@ def _sync_cycom(tenant_id, event_type, payload):
     """Emit timesheet/payroll events to CyCom Payroll via CyIntegrationHub."""
     try:
         from platform.integrations.hub import CyIntegrationHub
+
         CyIntegrationHub.send(
             tenant_id=tenant_id,
             destination="cycom_payroll",
@@ -48,7 +51,9 @@ def on_roster_slot_completed(sender, instance, created, **kwargs):
                 "slot_id": str(instance.id),
                 "workforce_profile_id": str(instance.workforce_profile_id),
                 "roster_cycle_id": str(instance.roster_cycle_id),
-                "checked_in_at": instance.checked_in_at.isoformat() if instance.checked_in_at else None,
+                "checked_in_at": instance.checked_in_at.isoformat()
+                if instance.checked_in_at
+                else None,
                 "checked_out_at": instance.checked_out_at.isoformat(),
             },
         )
@@ -112,7 +117,9 @@ def on_oncall_page_triggered(sender, instance, created, **kwargs):
                 "urgency": instance.urgency,
                 "roster_id": str(instance.oncall_roster_id),
                 "ward_id": str(instance.initiating_ward_id),
-                "sla_deadline": instance.sla_deadline.isoformat() if instance.sla_deadline else None,
+                "sla_deadline": instance.sla_deadline.isoformat()
+                if instance.sla_deadline
+                else None,
             },
         )
 

@@ -4,7 +4,9 @@ CyCom ERP owns procurement. This bridge creates procurement requests
 and queries supplier status via CyIntegrationHub.
 NO ERP procurement logic inside pharmacy.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -13,6 +15,7 @@ class ProcurementRequest(BaseModel):
     Pharmacy-initiated procurement request, forwarded to CyCom ERP via event.
     Published as 'cymed.procurement.requested' for CyCom ERP processing.
     """
+
     REQUEST_TYPES = [
         ("reorder", "Routine Reorder"),
         ("emergency", "Emergency Procurement"),
@@ -38,7 +41,7 @@ class ProcurementRequest(BaseModel):
     urgency = models.CharField(
         max_length=20,
         choices=[("routine", "Routine"), ("urgent", "Urgent"), ("emergency", "Emergency")],
-        default="routine"
+        default="routine",
     )
     clinical_justification = models.TextField(blank=True)
     requested_by = models.UUIDField()

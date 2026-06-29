@@ -1,9 +1,10 @@
 from rest_framework import serializers
+
 from products.cymed.provider_portal.orders.models import (
-    ProviderOrderRequest,
     OrderModification,
-    OrderStatusUpdate,
     OrderSet,
+    OrderStatusUpdate,
+    ProviderOrderRequest,
 )
 
 

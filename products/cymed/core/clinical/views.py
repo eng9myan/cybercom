@@ -1,15 +1,27 @@
-from rest_framework import viewsets, status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from django.utils import timezone
 import uuid
 
-from products.cymed.core.clinical.models import Condition, Allergy, VitalSign, Observation, ClinicalFlag
-from products.cymed.core.clinical.serializers import (
-    ConditionSerializer, AllergySerializer, VitalSignSerializer, ObservationSerializer, ClinicalFlagSerializer
-)
+from django.utils import timezone
+from rest_framework import status, viewsets
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from platform.events.models import OutboxEvent
+from products.cymed.core.clinical.models import (
+    Allergy,
+    ClinicalFlag,
+    Condition,
+    Observation,
+    VitalSign,
+)
+from products.cymed.core.clinical.serializers import (
+    AllergySerializer,
+    ClinicalFlagSerializer,
+    ConditionSerializer,
+    ObservationSerializer,
+    VitalSignSerializer,
+)
+
 
 class ConditionViewSet(viewsets.ModelViewSet):
     queryset = Condition.objects.filter(is_deleted=False)
@@ -76,6 +88,7 @@ class BreakGlassView(APIView):
     Emergency Break Glass access endpoint.
     Grants clinical user temporary elevated access and records a secure audit entry.
     """
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -86,20 +99,27 @@ class BreakGlassView(APIView):
         if not patient_id or not justification:
             return Response(
                 {"detail": "patient_id and justification are required parameters."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         tenant_id = getattr(request, "tenant_id", None)
         if not tenant_id:
-            return Response({"detail": "Tenant context required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Tenant context required"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # 1. Create Break Glass Access entry in Identity Module if models exist
         try:
-            from platform.cyidentity.models import UserProfile, IdentityRealm, BreakGlassAccess, BreakGlassStatus
-            
+            from platform.cyidentity.models import (
+                BreakGlassAccess,
+                BreakGlassStatus,
+                IdentityRealm,
+                UserProfile,
+            )
+
             user_profile = UserProfile.objects.filter(tenant_id=tenant_id).first()
             realm = IdentityRealm.objects.filter(tenant_id=tenant_id).first()
-            
+
             if user_profile and realm:
                 BreakGlassAccess.objects.create(
                     tenant_id=uuid.UUID(tenant_id),
@@ -111,7 +131,7 @@ class BreakGlassView(APIView):
                     target_action="read_clinical_record",
                     status=BreakGlassStatus.ACTIVE,
                     activated_at=timezone.now(),
-                    expires_at=timezone.now() + timezone.timedelta(hours=1)
+                    expires_at=timezone.now() + timezone.timedelta(hours=1),
                 )
         except Exception:
             # Fallback if cyidentity models are not registered or mock environment
@@ -127,11 +147,14 @@ class BreakGlassView(APIView):
                 "patient_id": patient_id,
                 "reason": reason,
                 "justification": justification,
-                "timestamp": timezone.now().isoformat()
-            }
+                "timestamp": timezone.now().isoformat(),
+            },
         )
 
-        return Response({
-            "detail": "Emergency access granted. Break glass event registered.",
-            "session_expiry": (timezone.now() + timezone.timedelta(hours=1)).isoformat()
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "detail": "Emergency access granted. Break glass event registered.",
+                "session_expiry": (timezone.now() + timezone.timedelta(hours=1)).isoformat(),
+            },
+            status=status.HTTP_200_OK,
+        )

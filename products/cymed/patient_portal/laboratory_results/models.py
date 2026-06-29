@@ -1,14 +1,15 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class LabResultView(BaseModel):
     RESULT_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('partial', 'Partial'),
-        ('final', 'Final'),
-        ('corrected', 'Corrected'),
-        ('amended', 'Amended'),
+        ("pending", "Pending"),
+        ("partial", "Partial"),
+        ("final", "Final"),
+        ("corrected", "Corrected"),
+        ("amended", "Amended"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -26,27 +27,25 @@ class LabResultView(BaseModel):
     result_status = models.CharField(
         max_length=20,
         choices=RESULT_STATUS_CHOICES,
-        default='pending',
+        default="pending",
     )
     result_summary = models.TextField(blank=True)
     is_critical = models.BooleanField(default=False)
     is_viewed = models.BooleanField(default=False)
     viewed_at = models.DateTimeField(null=True, blank=True)
     pdf_url = models.URLField(max_length=2000, blank=True)
-    fhir_diagnostic_report_id = models.CharField(
-        max_length=255, blank=True, db_index=True
-    )
+    fhir_diagnostic_report_id = models.CharField(max_length=255, blank=True, db_index=True)
 
     class Meta:
-        db_table = 'cymed_portal_lab_results'
+        db_table = "cymed_portal_lab_results"
         indexes = [
             models.Index(
-                fields=['account_id', 'result_status', 'resulted_at'],
-                name='lab_results_acct_status_date_idx',
+                fields=["account_id", "result_status", "resulted_at"],
+                name="lab_results_acct_status_date_idx",
             ),
             models.Index(
-                fields=['patient_id', 'is_critical'],
-                name='lab_results_patient_critical_idx',
+                fields=["patient_id", "is_critical"],
+                name="lab_results_patient_critical_idx",
             ),
         ]
 
@@ -71,8 +70,8 @@ class LabResultTrend(BaseModel):
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'cymed_portal_lab_trends'
-        unique_together = [('tenant_id', 'patient_id', 'test_code')]
+        db_table = "cymed_portal_lab_trends"
+        unique_together = [("tenant_id", "patient_id", "test_code")]
 
     def __str__(self):
         return f"{self.test_name} trend for patient {self.patient_id}"
@@ -80,17 +79,17 @@ class LabResultTrend(BaseModel):
 
 class CriticalResultAcknowledgement(BaseModel):
     ACTION_CHOICES = [
-        ('contacted_provider', 'Contacted Provider'),
-        ('scheduled_appointment', 'Scheduled Appointment'),
-        ('went_to_er', 'Went to ER'),
-        ('no_action', 'No Action'),
-        ('other', 'Other'),
+        ("contacted_provider", "Contacted Provider"),
+        ("scheduled_appointment", "Scheduled Appointment"),
+        ("went_to_er", "Went to ER"),
+        ("no_action", "No Action"),
+        ("other", "Other"),
     ]
 
     lab_result = models.ForeignKey(
         LabResultView,
         on_delete=models.CASCADE,
-        related_name='acknowledgements',
+        related_name="acknowledgements",
     )
     account_id = models.UUIDField(db_index=True)
     patient_id = models.UUIDField(db_index=True)
@@ -98,26 +97,23 @@ class CriticalResultAcknowledgement(BaseModel):
     action_taken = models.CharField(
         max_length=30,
         choices=ACTION_CHOICES,
-        default='no_action',
+        default="no_action",
     )
     notes = models.TextField(blank=True)
     notified_provider_id = models.UUIDField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_critical_ack'
+        db_table = "cymed_portal_critical_ack"
 
     def __str__(self):
-        return (
-            f"Acknowledgement for {self.lab_result} "
-            f"— {self.get_action_taken_display()}"
-        )
+        return f"Acknowledgement for {self.lab_result} — {self.get_action_taken_display()}"
 
 
 class LabResultShareLink(BaseModel):
     lab_result = models.ForeignKey(
         LabResultView,
         on_delete=models.CASCADE,
-        related_name='share_links',
+        related_name="share_links",
     )
     account_id = models.UUIDField(db_index=True)
     share_token = models.CharField(max_length=255, unique=True, db_index=True)
@@ -128,7 +124,7 @@ class LabResultShareLink(BaseModel):
     is_revoked = models.BooleanField(default=False)
 
     class Meta:
-        db_table = 'cymed_portal_lab_share_links'
+        db_table = "cymed_portal_lab_share_links"
 
     def __str__(self):
         return f"Share link for {self.lab_result} (token: {self.share_token[:8]}...)"

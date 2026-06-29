@@ -1,6 +1,7 @@
 """
 CyIdentity URL configuration. Mounted at `/api/v1/identity/`.
 """
+
 from __future__ import annotations
 
 from django.urls import include, path
@@ -23,7 +24,9 @@ router.register(r"users", v.UserProfileViewSet, basename="user")
 router.register(r"sessions", v.UserSessionViewSet, basename="session")
 router.register(r"login-audits", v.LoginAuditViewSet, basename="login-audit")
 router.register(r"devices", v.DeviceRegistrationViewSet, basename="device")
-router.register(r"webauthn-credentials", v.WebAuthnCredentialViewSet, basename="webauthn-credential")
+router.register(
+    r"webauthn-credentials", v.WebAuthnCredentialViewSet, basename="webauthn-credential"
+)
 router.register(r"break-glass", v.BreakGlassAccessViewSet, basename="break-glass")
 
 urlpatterns = [

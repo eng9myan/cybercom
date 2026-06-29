@@ -1,21 +1,21 @@
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework import viewsets
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.permissions import IsAuthenticated
 
 from products.cymed.provider_portal.workforce.models import (
-    ProviderSchedule,
-    ShiftAssignment,
-    LeaveRequest,
     AttendanceRecord,
     CredentialExpiry,
+    LeaveRequest,
+    ProviderSchedule,
+    ShiftAssignment,
 )
 from products.cymed.provider_portal.workforce.serializers import (
-    ProviderScheduleSerializer,
-    ShiftAssignmentSerializer,
-    LeaveRequestSerializer,
     AttendanceRecordSerializer,
     CredentialExpirySerializer,
+    LeaveRequestSerializer,
+    ProviderScheduleSerializer,
+    ShiftAssignmentSerializer,
 )
 
 
@@ -41,7 +41,13 @@ class ShiftAssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = ShiftAssignmentSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["schedule", "original_provider_id", "covering_provider_id", "assignment_type", "is_approved"]
+    filterset_fields = [
+        "schedule",
+        "original_provider_id",
+        "covering_provider_id",
+        "assignment_type",
+        "is_approved",
+    ]
     search_fields = []
     ordering_fields = ["created_at"]
     ordering = ["-created_at"]

@@ -1,8 +1,11 @@
 import random
+
 from django.db import transaction
 from django.utils import timezone
-from products.cymed.core.patients.models import Patient, PatientMergeHistory
+
 from platform.events.models import OutboxEvent
+from products.cymed.core.patients.models import Patient, PatientMergeHistory
+
 
 class PatientService:
     @classmethod
@@ -20,7 +23,7 @@ class PatientService:
         dob,
         tenant_id: str,
         national_id: str = None,
-        passport_number: str = None
+        passport_number: str = None,
     ):
         """
         Fuzzy duplicate detection for patients in the same tenant.
@@ -28,11 +31,15 @@ class PatientService:
         """
         # 1. Exact match on National ID or Passport
         if national_id:
-            qs = Patient.objects.filter(tenant_id=tenant_id, national_id=national_id, is_active=True)
+            qs = Patient.objects.filter(
+                tenant_id=tenant_id, national_id=national_id, is_active=True
+            )
             if qs.exists():
                 return qs
         if passport_number:
-            qs = Patient.objects.filter(tenant_id=tenant_id, passport_number=passport_number, is_active=True)
+            qs = Patient.objects.filter(
+                tenant_id=tenant_id, passport_number=passport_number, is_active=True
+            )
             if qs.exists():
                 return qs
 
@@ -43,12 +50,14 @@ class PatientService:
             dob=dob,
             is_active=True,
             first_name__icontains=first_name[:3],
-            last_name__icontains=last_name[:3]
+            last_name__icontains=last_name[:3],
         )
         return name_qs
 
     @classmethod
-    def merge_patients(cls, source_id: str, target_id: str, tenant_id: str, merged_by: str) -> PatientMergeHistory:
+    def merge_patients(
+        cls, source_id: str, target_id: str, tenant_id: str, merged_by: str
+    ) -> PatientMergeHistory:
         """
         Merges source patient into target patient.
         Disables source patient, references target patient, and logs history + event.
@@ -69,7 +78,7 @@ class PatientService:
                 merged_patient=source,
                 target_patient=target,
                 merged_by=merged_by,
-                merged_at=timezone.now()
+                merged_at=timezone.now(),
             )
 
             # Publish event
@@ -81,21 +90,23 @@ class PatientService:
                     "source_patient_id": str(source.id),
                     "target_patient_id": str(target.id),
                     "merged_by": merged_by,
-                    "merged_at": history.merged_at.isoformat()
-                }
+                    "merged_at": history.merged_at.isoformat(),
+                },
             )
 
             return history
 
     @classmethod
-    def unmerge_patients(cls, history_id: str, tenant_id: str, unmerged_by: str) -> PatientMergeHistory:
+    def unmerge_patients(
+        cls, history_id: str, tenant_id: str, unmerged_by: str
+    ) -> PatientMergeHistory:
         """
         Restores a merged patient and clears the merge reference.
         """
         with transaction.atomic():
             history = PatientMergeHistory.objects.get(id=history_id, tenant_id=tenant_id)
             source = history.merged_patient
-            
+
             source.merged_into = None
             source.is_active = True
             source.save()
@@ -113,8 +124,8 @@ class PatientService:
                     "source_patient_id": str(source.id),
                     "target_patient_id": str(history.target_patient.id),
                     "unmerged_by": unmerged_by,
-                    "unmerged_at": history.unmerged_at.isoformat()
-                }
+                    "unmerged_at": history.unmerged_at.isoformat(),
+                },
             )
 
             return history

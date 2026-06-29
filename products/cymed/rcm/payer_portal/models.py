@@ -1,5 +1,5 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -41,7 +41,9 @@ class PayerPortalAccount(BaseModel):
 
 
 class PayerDashboard(BaseModel):
-    payer_account = models.OneToOneField(PayerPortalAccount, on_delete=models.CASCADE, related_name="dashboard")
+    payer_account = models.OneToOneField(
+        PayerPortalAccount, on_delete=models.CASCADE, related_name="dashboard"
+    )
     pending_claims_count = models.PositiveIntegerField(default=0)
     pending_auths_count = models.PositiveIntegerField(default=0)
     pending_appeals_count = models.PositiveIntegerField(default=0)
@@ -70,9 +72,13 @@ class PayerClaimReview(BaseModel):
         ("pending", "Pending"),
     ]
 
-    payer_account = models.ForeignKey(PayerPortalAccount, on_delete=models.PROTECT, related_name="claim_reviews")
+    payer_account = models.ForeignKey(
+        PayerPortalAccount, on_delete=models.PROTECT, related_name="claim_reviews"
+    )
     claim_id = models.UUIDField(db_index=True)
-    review_status = models.CharField(max_length=30, choices=REVIEW_STATUS_CHOICES, default="pending")
+    review_status = models.CharField(
+        max_length=30, choices=REVIEW_STATUS_CHOICES, default="pending"
+    )
     reviewer_notes = models.TextField(blank=True)
     decision = models.CharField(max_length=20, blank=True, choices=DECISION_CHOICES)
     decision_date = models.DateTimeField(null=True, blank=True)
@@ -106,9 +112,13 @@ class PayerAuthorizationReview(BaseModel):
         ("pending_info", "Pending Info"),
     ]
 
-    payer_account = models.ForeignKey(PayerPortalAccount, on_delete=models.PROTECT, related_name="auth_reviews")
+    payer_account = models.ForeignKey(
+        PayerPortalAccount, on_delete=models.PROTECT, related_name="auth_reviews"
+    )
     preauthorization_id = models.UUIDField(db_index=True)
-    review_status = models.CharField(max_length=30, choices=REVIEW_STATUS_CHOICES, default="pending")
+    review_status = models.CharField(
+        max_length=30, choices=REVIEW_STATUS_CHOICES, default="pending"
+    )
     reviewer_notes = models.TextField(blank=True)
     decision = models.CharField(max_length=20, blank=True, choices=DECISION_CHOICES)
     approved_units = models.PositiveIntegerField(null=True, blank=True)

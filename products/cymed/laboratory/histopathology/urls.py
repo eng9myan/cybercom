@@ -1,5 +1,12 @@
-﻿from rest_framework.routers import DefaultRouter
-from .views import HistologyCaseViewSet, TissueBlockViewSet, SlideViewSet, SlideReviewViewSet, HistologyDiagnosisViewSet
+from rest_framework.routers import DefaultRouter
+
+from .views import (
+    HistologyCaseViewSet,
+    HistologyDiagnosisViewSet,
+    SlideReviewViewSet,
+    SlideViewSet,
+    TissueBlockViewSet,
+)
 
 router = DefaultRouter()
 router.register("histology-cases", HistologyCaseViewSet, basename="lab-histo-cases")

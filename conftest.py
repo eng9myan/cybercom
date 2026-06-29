@@ -2,6 +2,7 @@
 Root pytest configuration for CyberCom backend.
 Provides shared fixtures used across all test modules.
 """
+
 import os
 import sys
 from pathlib import Path
@@ -34,7 +35,7 @@ for entry in [script_dir, ""]:
         break
 
 # Step 3: Import stdlib platform (now that backend dir is removed)
-import platform as std_platform  # noqa: E402
+import platform as std_platform
 
 # Step 4: Graft local platform/ onto stdlib module so both work
 if not hasattr(std_platform, "__path__") or std_platform.__path__ is None:
@@ -55,6 +56,7 @@ if repo_root not in sys.path:
     sys.path.append(repo_root)
 
 import uuid
+
 import pytest
 from django.test import RequestFactory
 

@@ -1,24 +1,24 @@
-﻿from rest_framework import status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
     Charge,
-    ChargeItem,
-    ChargeRule,
     ChargeAdjustment,
     ChargeAudit,
+    ChargeItem,
+    ChargeRule,
 )
 from .serializers import (
-    ChargeSerializer,
-    ChargeWriteSerializer,
-    ChargeItemSerializer,
-    ChargeRuleSerializer,
     ChargeAdjustmentSerializer,
     ChargeAuditSerializer,
+    ChargeItemSerializer,
+    ChargeRuleSerializer,
+    ChargeSerializer,
+    ChargeWriteSerializer,
 )
 
 
@@ -75,8 +75,9 @@ class ChargeViewSet(ModelViewSet):
             tenant_id=charge.tenant_id,
             charge=charge,
             action="approved",
-            performed_by_user_id=request.user.id if request.user.is_authenticated else None
-            or charge.tenant_id,
+            performed_by_user_id=request.user.id
+            if request.user.is_authenticated
+            else None or charge.tenant_id,
             previous_status=previous_status,
             new_status="approved",
         )
@@ -115,8 +116,9 @@ class ChargeViewSet(ModelViewSet):
             tenant_id=charge.tenant_id,
             charge=charge,
             action="voided",
-            performed_by_user_id=request.user.id if request.user.is_authenticated else None
-            or charge.tenant_id,
+            performed_by_user_id=request.user.id
+            if request.user.is_authenticated
+            else None or charge.tenant_id,
             previous_status=previous_status,
             new_status="voided",
             notes=request.data.get("notes", ""),

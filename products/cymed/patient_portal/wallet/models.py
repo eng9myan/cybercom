@@ -1,17 +1,17 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class HealthWallet(BaseModel):
     account_id = models.UUIDField(unique=True, db_index=True)
     patient_id = models.UUIDField(db_index=True)
-    wallet_name = models.CharField(max_length=100, default='My Health Wallet')
+    wallet_name = models.CharField(max_length=100, default="My Health Wallet")
     is_active = models.BooleanField(default=True)
     card_count = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        db_table = 'cymed_portal_health_wallets'
+        db_table = "cymed_portal_health_wallets"
 
     def __str__(self):
         return f"{self.wallet_name} ({self.account_id})"
@@ -19,18 +19,18 @@ class HealthWallet(BaseModel):
 
 class DigitalCard(BaseModel):
     CARD_TYPE_CHOICES = [
-        ('patient_id', 'Patient ID'),
-        ('insurance', 'Insurance'),
-        ('loyalty', 'Loyalty'),
-        ('membership', 'Membership'),
-        ('government_health_id', 'Government Health ID'),
-        ('vaccination_pass', 'Vaccination Pass'),
-        ('other', 'Other'),
+        ("patient_id", "Patient ID"),
+        ("insurance", "Insurance"),
+        ("loyalty", "Loyalty"),
+        ("membership", "Membership"),
+        ("government_health_id", "Government Health ID"),
+        ("vaccination_pass", "Vaccination Pass"),
+        ("other", "Other"),
     ]
     BARCODE_TYPE_CHOICES = [
-        ('qr', 'QR'),
-        ('barcode', 'Barcode'),
-        ('none', 'None'),
+        ("qr", "QR"),
+        ("barcode", "Barcode"),
+        ("none", "None"),
     ]
 
     wallet_account_id = models.UUIDField(db_index=True)
@@ -46,15 +46,15 @@ class DigitalCard(BaseModel):
     barcode_type = models.CharField(max_length=10, choices=BARCODE_TYPE_CHOICES, blank=True)
     barcode_value = models.CharField(max_length=500, blank=True)
     card_image_url = models.URLField(max_length=2000, blank=True)
-    background_color = models.CharField(max_length=20, default='#1A56DB')
-    text_color = models.CharField(max_length=20, default='#FFFFFF')
+    background_color = models.CharField(max_length=20, default="#1A56DB")
+    text_color = models.CharField(max_length=20, default="#FFFFFF")
     is_active = models.BooleanField(default=True)
     display_order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        db_table = 'cymed_portal_digital_cards'
+        db_table = "cymed_portal_digital_cards"
         indexes = [
-            models.Index(fields=['wallet_account_id', 'card_type', 'is_active']),
+            models.Index(fields=["wallet_account_id", "card_type", "is_active"]),
         ]
 
     def __str__(self):
@@ -63,16 +63,16 @@ class DigitalCard(BaseModel):
 
 class HealthPass(BaseModel):
     PASS_TYPE_CHOICES = [
-        ('vaccination', 'Vaccination'),
-        ('covid_test', 'COVID Test'),
-        ('immunity', 'Immunity'),
-        ('health_declaration', 'Health Declaration'),
-        ('travel_health', 'Travel Health'),
+        ("vaccination", "Vaccination"),
+        ("covid_test", "COVID Test"),
+        ("immunity", "Immunity"),
+        ("health_declaration", "Health Declaration"),
+        ("travel_health", "Travel Health"),
     ]
     STATUS_CHOICES = [
-        ('valid', 'Valid'),
-        ('expired', 'Expired'),
-        ('revoked', 'Revoked'),
+        ("valid", "Valid"),
+        ("expired", "Expired"),
+        ("revoked", "Revoked"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -83,16 +83,16 @@ class HealthPass(BaseModel):
     expiry_date = models.DateField(null=True, blank=True)
     issuer_name = models.CharField(max_length=255)
     pass_number = models.CharField(max_length=100, blank=True)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='valid')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="valid")
     qr_code_data = models.TextField(blank=True)
     pass_data = models.JSONField(default=dict)
     is_verified = models.BooleanField(default=False)
     verified_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_health_passes'
+        db_table = "cymed_portal_health_passes"
         indexes = [
-            models.Index(fields=['account_id', 'pass_type', 'status']),
+            models.Index(fields=["account_id", "pass_type", "status"]),
         ]
 
     def __str__(self):
@@ -122,9 +122,9 @@ class VaccinationRecord(BaseModel):
     is_verified = models.BooleanField(default=False)
 
     class Meta:
-        db_table = 'cymed_portal_vaccination_records'
+        db_table = "cymed_portal_vaccination_records"
         indexes = [
-            models.Index(fields=['account_id', 'vaccine_code', 'administered_date']),
+            models.Index(fields=["account_id", "vaccine_code", "administered_date"]),
         ]
 
     def __str__(self):

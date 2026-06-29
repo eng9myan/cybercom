@@ -1,6 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from platform.events.views import OutboxEventViewSet, DeadLetterEventViewSet, EventDeliveryLogViewSet
+
+from platform.events.views import (
+    DeadLetterEventViewSet,
+    EventDeliveryLogViewSet,
+    OutboxEventViewSet,
+)
 
 router = DefaultRouter()
 router.register("outbox", OutboxEventViewSet, basename="event-outbox")

@@ -1,5 +1,6 @@
 from rest_framework.routers import DefaultRouter
-from .views import WorkforceProfileViewSet, ClinicalCredentialViewSet, CompetencyRecordViewSet
+
+from .views import ClinicalCredentialViewSet, CompetencyRecordViewSet, WorkforceProfileViewSet
 
 router = DefaultRouter()
 router.register("profiles", WorkforceProfileViewSet, basename="workforce-profile")

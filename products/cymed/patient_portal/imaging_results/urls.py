@@ -1,23 +1,24 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from . import views
 
 router = DefaultRouter()
-router.register(r'results', views.ImagingResultViewViewSet, basename='imaging-result')
+router.register(r"results", views.ImagingResultViewViewSet, basename="imaging-result")
 router.register(
-    r'study-metadata',
+    r"study-metadata",
     views.ImagingStudyMetadataViewSet,
-    basename='imaging-study-metadata',
+    basename="imaging-study-metadata",
 )
 router.register(
-    r'access-log',
+    r"access-log",
     views.ImagingReportAccessViewSet,
-    basename='imaging-report-access',
+    basename="imaging-report-access",
 )
 router.register(
-    r'share-links',
+    r"share-links",
     views.ImagingShareLinkViewSet,
-    basename='imaging-share-link',
+    basename="imaging-share-link",
 )
 
-urlpatterns = [path('', include(router.urls))]
+urlpatterns = [path("", include(router.urls))]

@@ -1,4 +1,5 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -57,10 +58,6 @@ class ImagingProtocol(BaseModel):
 
 
 class ImagingProcedure(BaseModel):
-    class Meta:
-        app_label = "img_orders"
-        db_table = "cymed_img_procedures"
-
     code = models.CharField(max_length=100, db_index=True)
     name = models.CharField(max_length=255)
     modality = models.CharField(max_length=20, choices=ModalityType.choices)
@@ -74,7 +71,9 @@ class ImagingProcedure(BaseModel):
     preparation_instructions = models.TextField(blank=True)
     duration_minutes = models.PositiveIntegerField(default=30)
     contrast_required = models.BooleanField(default=False)
-    radiation_dose_estimate = models.DecimalField(max_digits=8, decimal_places=3, null=True, blank=True)
+    radiation_dose_estimate = models.DecimalField(
+        max_digits=8, decimal_places=3, null=True, blank=True
+    )
     rvu_value = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
@@ -96,14 +95,18 @@ class ImagingOrder(BaseModel):
     patient_id = models.UUIDField(db_index=True)
     encounter_id = models.UUIDField(null=True, blank=True, db_index=True)
     ordered_by = models.UUIDField()
-    priority = models.CharField(max_length=20, choices=ImagingPriority.choices, default=ImagingPriority.ROUTINE)
+    priority = models.CharField(
+        max_length=20, choices=ImagingPriority.choices, default=ImagingPriority.ROUTINE
+    )
     order_type = models.CharField(max_length=30, choices=ORDER_TYPES, default="outpatient")
     clinical_indication = models.TextField(blank=True)
     icd11_codes = models.JSONField(default=list)
     fhir_service_request_id = models.CharField(max_length=255, blank=True)
     hl7_placer_order_number = models.CharField(max_length=100, blank=True)
     hl7_filler_order_number = models.CharField(max_length=100, blank=True)
-    status = models.CharField(max_length=30, choices=ORDER_STATUSES, default="pending", db_index=True)
+    status = models.CharField(
+        max_length=30, choices=ORDER_STATUSES, default="pending", db_index=True
+    )
     ordering_facility = models.CharField(max_length=255, blank=True)
     transport_required = models.BooleanField(default=False)
     is_portable = models.BooleanField(default=False)
@@ -126,16 +129,22 @@ class ImagingOrderItem(BaseModel):
         ("cancelled", "Cancelled"),
     ]
     LATERALITY = [
-        ("left", "Left"), ("right", "Right"),
-        ("bilateral", "Bilateral"), ("none", "None"),
+        ("left", "Left"),
+        ("right", "Right"),
+        ("bilateral", "Bilateral"),
+        ("none", "None"),
     ]
 
-    order = models.ForeignKey("img_orders.ImagingOrder", on_delete=models.CASCADE, related_name="items")
+    order = models.ForeignKey(
+        "img_orders.ImagingOrder", on_delete=models.CASCADE, related_name="items"
+    )
     procedure = models.ForeignKey("img_orders.ImagingProcedure", on_delete=models.PROTECT)
     body_part = models.CharField(max_length=100, blank=True)
     laterality = models.CharField(max_length=20, choices=LATERALITY, blank=True)
     contrast_required = models.BooleanField(default=False)
-    status = models.CharField(max_length=30, choices=ITEM_STATUSES, default="pending", db_index=True)
+    status = models.CharField(
+        max_length=30, choices=ITEM_STATUSES, default="pending", db_index=True
+    )
     dicom_study_instance_uid = models.CharField(max_length=255, blank=True, db_index=True)
     accession_number = models.CharField(max_length=100, blank=True, db_index=True)
     notes = models.TextField(blank=True)
@@ -150,7 +159,9 @@ class ImagingOrderStatusHistory(BaseModel):
         db_table = "cymed_img_order_status_history"
         ordering = ["changed_at"]
 
-    order = models.ForeignKey("img_orders.ImagingOrder", on_delete=models.CASCADE, related_name="status_history")
+    order = models.ForeignKey(
+        "img_orders.ImagingOrder", on_delete=models.CASCADE, related_name="status_history"
+    )
     from_status = models.CharField(max_length=30)
     to_status = models.CharField(max_length=30)
     changed_by = models.UUIDField()

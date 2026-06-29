@@ -1,9 +1,14 @@
 """Analytics URL routing."""
-from django.urls import path, include
+
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    PharmacyDashboardSnapshotViewSet, MedicationSafetyEventViewSet,
-    PharmacyAnalyticsConfigViewSet, PharmacyOperationsDashboardView, MedicationSafetyDashboardView
+    MedicationSafetyDashboardView,
+    MedicationSafetyEventViewSet,
+    PharmacyAnalyticsConfigViewSet,
+    PharmacyDashboardSnapshotViewSet,
+    PharmacyOperationsDashboardView,
 )
 
 router = DefaultRouter()
@@ -13,6 +18,14 @@ router.register(r"config", PharmacyAnalyticsConfigViewSet, basename="analytics-c
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("dashboard/operations/", PharmacyOperationsDashboardView.as_view(), name="pharmacy-operations-dashboard"),
-    path("dashboard/safety/", MedicationSafetyDashboardView.as_view(), name="medication-safety-dashboard"),
+    path(
+        "dashboard/operations/",
+        PharmacyOperationsDashboardView.as_view(),
+        name="pharmacy-operations-dashboard",
+    ),
+    path(
+        "dashboard/safety/",
+        MedicationSafetyDashboardView.as_view(),
+        name="medication-safety-dashboard",
+    ),
 ]

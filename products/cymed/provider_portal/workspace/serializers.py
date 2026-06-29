@@ -1,9 +1,9 @@
 from rest_framework import serializers
 
 from products.cymed.provider_portal.workspace.models import (
-    ProviderWorkspace,
     ProviderDashboard,
     ProviderPreferences,
+    ProviderWorkspace,
     WorkspaceSession,
 )
 

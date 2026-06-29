@@ -1,22 +1,22 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class PatientPortalAccount(BaseModel):
     ACCOUNT_STATUS_CHOICES = [
-        ('active', 'Active'),
-        ('inactive', 'Inactive'),
-        ('suspended', 'Suspended'),
-        ('pending_verification', 'Pending Verification'),
+        ("active", "Active"),
+        ("inactive", "Inactive"),
+        ("suspended", "Suspended"),
+        ("pending_verification", "Pending Verification"),
     ]
 
     REGISTRATION_SOURCE_CHOICES = [
-        ('web', 'Web'),
-        ('mobile', 'Mobile'),
-        ('clinic', 'Clinic'),
-        ('hospital', 'Hospital'),
-        ('self_registration', 'Self Registration'),
+        ("web", "Web"),
+        ("mobile", "Mobile"),
+        ("clinic", "Clinic"),
+        ("hospital", "Hospital"),
+        ("self_registration", "Self Registration"),
     ]
 
     patient_id = models.UUIDField(db_index=True)
@@ -27,7 +27,7 @@ class PatientPortalAccount(BaseModel):
     account_status = models.CharField(
         max_length=30,
         choices=ACCOUNT_STATUS_CHOICES,
-        default='pending_verification',
+        default="pending_verification",
     )
     is_email_verified = models.BooleanField(default=False)
     is_phone_verified = models.BooleanField(default=False)
@@ -38,19 +38,19 @@ class PatientPortalAccount(BaseModel):
     registration_source = models.CharField(
         max_length=30,
         choices=REGISTRATION_SOURCE_CHOICES,
-        default='self_registration',
+        default="self_registration",
     )
     referred_by = models.UUIDField(null=True, blank=True)
-    preferred_language = models.CharField(max_length=10, default='en')
-    timezone = models.CharField(max_length=50, default='UTC')
+    preferred_language = models.CharField(max_length=10, default="en")
+    timezone = models.CharField(max_length=50, default="UTC")
     profile_photo_url = models.URLField(max_length=2000, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_accounts'
+        db_table = "cymed_portal_accounts"
         indexes = [
-            models.Index(fields=['patient_id']),
-            models.Index(fields=['email']),
-            models.Index(fields=['account_status']),
+            models.Index(fields=["patient_id"]),
+            models.Index(fields=["email"]),
+            models.Index(fields=["account_status"]),
         ]
 
     def __str__(self):
@@ -59,28 +59,28 @@ class PatientPortalAccount(BaseModel):
 
 class PatientProfile(BaseModel):
     GENDER_CHOICES = [
-        ('male', 'Male'),
-        ('female', 'Female'),
-        ('other', 'Other'),
-        ('prefer_not_to_say', 'Prefer Not to Say'),
+        ("male", "Male"),
+        ("female", "Female"),
+        ("other", "Other"),
+        ("prefer_not_to_say", "Prefer Not to Say"),
     ]
 
     BLOOD_GROUP_CHOICES = [
-        ('A+', 'A+'),
-        ('A-', 'A-'),
-        ('B+', 'B+'),
-        ('B-', 'B-'),
-        ('AB+', 'AB+'),
-        ('AB-', 'AB-'),
-        ('O+', 'O+'),
-        ('O-', 'O-'),
-        ('unknown', 'Unknown'),
+        ("A+", "A+"),
+        ("A-", "A-"),
+        ("B+", "B+"),
+        ("B-", "B-"),
+        ("AB+", "AB+"),
+        ("AB-", "AB-"),
+        ("O+", "O+"),
+        ("O-", "O-"),
+        ("unknown", "Unknown"),
     ]
 
     account = models.OneToOneField(
         PatientPortalAccount,
         on_delete=models.CASCADE,
-        related_name='profile',
+        related_name="profile",
     )
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
@@ -94,7 +94,7 @@ class PatientProfile(BaseModel):
     blood_group = models.CharField(
         max_length=10,
         choices=BLOOD_GROUP_CHOICES,
-        default='unknown',
+        default="unknown",
     )
     address_line1 = models.CharField(max_length=255, blank=True)
     address_line2 = models.CharField(max_length=255, blank=True)
@@ -107,7 +107,7 @@ class PatientProfile(BaseModel):
     emergency_contact_relationship = models.CharField(max_length=50, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_profiles'
+        db_table = "cymed_portal_profiles"
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -115,32 +115,32 @@ class PatientProfile(BaseModel):
 
 class PatientPreferences(BaseModel):
     LANGUAGE_CHOICES = [
-        ('en', 'English'),
-        ('ar', 'Arabic'),
-        ('fr', 'French'),
-        ('es', 'Spanish'),
+        ("en", "English"),
+        ("ar", "Arabic"),
+        ("fr", "French"),
+        ("es", "Spanish"),
     ]
 
     APPOINTMENT_TIME_CHOICES = [
-        ('morning', 'Morning'),
-        ('afternoon', 'Afternoon'),
-        ('evening', 'Evening'),
-        ('any', 'Any'),
+        ("morning", "Morning"),
+        ("afternoon", "Afternoon"),
+        ("evening", "Evening"),
+        ("any", "Any"),
     ]
 
     PROVIDER_GENDER_CHOICES = [
-        ('any', 'Any'),
-        ('male', 'Male'),
-        ('female', 'Female'),
+        ("any", "Any"),
+        ("male", "Male"),
+        ("female", "Female"),
     ]
 
     account = models.OneToOneField(
         PatientPortalAccount,
         on_delete=models.CASCADE,
-        related_name='preferences',
+        related_name="preferences",
     )
-    preferred_language = models.CharField(max_length=10, default='en')
-    preferred_currency = models.CharField(max_length=3, default='USD')
+    preferred_language = models.CharField(max_length=10, default="en")
+    preferred_currency = models.CharField(max_length=3, default="USD")
     email_notifications = models.BooleanField(default=True)
     sms_notifications = models.BooleanField(default=True)
     push_notifications = models.BooleanField(default=True)
@@ -153,16 +153,16 @@ class PatientPreferences(BaseModel):
     preferred_appointment_time = models.CharField(
         max_length=20,
         choices=APPOINTMENT_TIME_CHOICES,
-        default='any',
+        default="any",
     )
     preferred_provider_gender = models.CharField(
         max_length=10,
         choices=PROVIDER_GENDER_CHOICES,
-        default='any',
+        default="any",
     )
 
     class Meta:
-        db_table = 'cymed_portal_preferences'
+        db_table = "cymed_portal_preferences"
 
     def __str__(self):
         return f"Preferences for {self.account.username}"
@@ -170,22 +170,22 @@ class PatientPreferences(BaseModel):
 
 class PatientSecuritySettings(BaseModel):
     MFA_METHOD_CHOICES = [
-        ('totp', 'TOTP'),
-        ('sms', 'SMS'),
-        ('email', 'Email'),
-        ('authenticator_app', 'Authenticator App'),
+        ("totp", "TOTP"),
+        ("sms", "SMS"),
+        ("email", "Email"),
+        ("authenticator_app", "Authenticator App"),
     ]
 
     account = models.OneToOneField(
         PatientPortalAccount,
         on_delete=models.CASCADE,
-        related_name='security_settings',
+        related_name="security_settings",
     )
     mfa_enabled = models.BooleanField(default=False)
     mfa_method = models.CharField(
         max_length=20,
         choices=MFA_METHOD_CHOICES,
-        default='sms',
+        default="sms",
     )
     biometric_enabled = models.BooleanField(default=False)
     passkey_enabled = models.BooleanField(default=False)
@@ -197,7 +197,7 @@ class PatientSecuritySettings(BaseModel):
     last_password_change = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_security_settings'
+        db_table = "cymed_portal_security_settings"
 
     def __str__(self):
         return f"Security settings for {self.account.username}"
@@ -205,22 +205,22 @@ class PatientSecuritySettings(BaseModel):
 
 class PatientDevice(BaseModel):
     DEVICE_TYPE_CHOICES = [
-        ('ios', 'iOS'),
-        ('android', 'Android'),
-        ('web', 'Web'),
-        ('tablet', 'Tablet'),
+        ("ios", "iOS"),
+        ("android", "Android"),
+        ("web", "Web"),
+        ("tablet", "Tablet"),
     ]
 
     account = models.ForeignKey(
         PatientPortalAccount,
         on_delete=models.CASCADE,
-        related_name='devices',
+        related_name="devices",
     )
     device_name = models.CharField(max_length=255)
     device_type = models.CharField(
         max_length=20,
         choices=DEVICE_TYPE_CHOICES,
-        default='web',
+        default="web",
     )
     device_token = models.CharField(max_length=500, blank=True)
     device_fingerprint = models.CharField(max_length=255, blank=True, db_index=True)
@@ -232,9 +232,9 @@ class PatientDevice(BaseModel):
     registered_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'cymed_portal_devices'
+        db_table = "cymed_portal_devices"
         indexes = [
-            models.Index(fields=['account', 'is_active']),
+            models.Index(fields=["account", "is_active"]),
         ]
 
     def __str__(self):

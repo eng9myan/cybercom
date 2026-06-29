@@ -1,9 +1,9 @@
-from platform.terminology.providers.registry import TerminologyProviderRegistry
-from platform.terminology.providers.icd11 import ICD11Provider
-from platform.terminology.providers.snomed import SNOMEDProvider
-from platform.terminology.providers.loinc import LOINCProvider
-from platform.terminology.providers.icf import ICFProvider
 from platform.terminology.providers.fhir import FHIRTerminologyProvider
+from platform.terminology.providers.icd11 import ICD11Provider
+from platform.terminology.providers.icf import ICFProvider
+from platform.terminology.providers.loinc import LOINCProvider
+from platform.terminology.providers.registry import TerminologyProviderRegistry
+from platform.terminology.providers.snomed import SNOMEDProvider
 
 # Register default providers
 TerminologyProviderRegistry.register_provider("icd11", ICD11Provider())

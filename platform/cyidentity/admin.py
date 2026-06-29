@@ -1,4 +1,5 @@
 """CyIdentity admin. Program 2.1: full CRUD + readonly for audit tables."""
+
 from django.contrib import admin
 
 from platform.cyidentity.models import (
@@ -24,7 +25,15 @@ from platform.cyidentity.models import (
 
 @admin.register(IdentityRealm)
 class IdentityRealmAdmin(admin.ModelAdmin):
-    list_display = ["realm_name", "realm_type", "status", "is_active", "mfa_enforced", "passkey_enabled", "home_region"]
+    list_display = [
+        "realm_name",
+        "realm_type",
+        "status",
+        "is_active",
+        "mfa_enforced",
+        "passkey_enabled",
+        "home_region",
+    ]
     list_filter = ["realm_type", "status", "is_active", "mfa_enforced"]
     search_fields = ["realm_name", "tenant_id"]
     readonly_fields = ["id", "created_at", "updated_at", "activated_at", "suspended_at"]
@@ -32,7 +41,12 @@ class IdentityRealmAdmin(admin.ModelAdmin):
 
 @admin.register(RealmConfiguration)
 class RealmConfigurationAdmin(admin.ModelAdmin):
-    list_display = ["realm", "access_token_lifetime_seconds", "session_max_lifetime_seconds", "risk_scoring_enabled"]
+    list_display = [
+        "realm",
+        "access_token_lifetime_seconds",
+        "session_max_lifetime_seconds",
+        "risk_scoring_enabled",
+    ]
     search_fields = ["realm__realm_name"]
 
 
@@ -52,7 +66,16 @@ class ServicePrincipalAdmin(admin.ModelAdmin):
 
 @admin.register(ApplicationClient)
 class ApplicationClientAdmin(admin.ModelAdmin):
-    list_display = ["client_id", "name", "realm", "protocol", "enabled", "mfa_required", "fapi_profile_enabled", "smart_on_fhir_enabled"]
+    list_display = [
+        "client_id",
+        "name",
+        "realm",
+        "protocol",
+        "enabled",
+        "mfa_required",
+        "fapi_profile_enabled",
+        "smart_on_fhir_enabled",
+    ]
     list_filter = ["protocol", "enabled", "fapi_profile_enabled", "smart_on_fhir_enabled"]
     search_fields = ["client_id", "name"]
 
@@ -102,7 +125,15 @@ class GroupMembershipAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ["username", "email", "realm", "enabled", "mfa_enrolled", "is_locked", "last_login_at"]
+    list_display = [
+        "username",
+        "email",
+        "realm",
+        "enabled",
+        "mfa_enrolled",
+        "is_locked",
+        "last_login_at",
+    ]
     list_filter = ["enabled", "mfa_enrolled", "locale", "realm"]
     search_fields = ["username", "email", "display_name", "keycloak_user_id"]
     readonly_fields = ["id", "keycloak_user_id", "created_at", "updated_at", "last_login_at"]
@@ -110,10 +141,25 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(UserSession)
 class UserSessionAdmin(admin.ModelAdmin):
-    list_display = ["user", "status", "ip_address", "started_at", "last_activity_at", "expires_at", "risk_score"]
+    list_display = [
+        "user",
+        "status",
+        "ip_address",
+        "started_at",
+        "last_activity_at",
+        "expires_at",
+        "risk_score",
+    ]
     list_filter = ["status", "geo_country"]
     search_fields = ["user__username", "keycloak_session_id"]
-    readonly_fields = ["id", "started_at", "last_activity_at", "revoked_at", "created_at", "updated_at"]
+    readonly_fields = [
+        "id",
+        "started_at",
+        "last_activity_at",
+        "revoked_at",
+        "created_at",
+        "updated_at",
+    ]
 
 
 @admin.register(LoginAudit)
@@ -145,12 +191,38 @@ class WebAuthnCredentialAdmin(admin.ModelAdmin):
     list_display = ["label", "user", "attestation_format", "aaguid", "last_used_at", "revoked_at"]
     list_filter = ["attestation_format", "user_verification"]
     search_fields = ["label", "credential_id", "user__username"]
-    readonly_fields = ["id", "credential_id", "public_key", "sign_count", "created_at", "updated_at", "last_used_at"]
+    readonly_fields = [
+        "id",
+        "credential_id",
+        "public_key",
+        "sign_count",
+        "created_at",
+        "updated_at",
+        "last_used_at",
+    ]
 
 
 @admin.register(BreakGlassAccess)
 class BreakGlassAccessAdmin(admin.ModelAdmin):
-    list_display = ["user", "realm", "reason", "status", "target_resource", "approved_by", "second_approver", "expires_at"]
+    list_display = [
+        "user",
+        "realm",
+        "reason",
+        "status",
+        "target_resource",
+        "approved_by",
+        "second_approver",
+        "expires_at",
+    ]
     list_filter = ["status", "reason", "realm"]
     search_fields = ["user__username", "approved_by", "target_resource"]
-    readonly_fields = ["id", "requested_at", "approved_at", "activated_at", "expires_at", "revoked_at", "created_at", "updated_at"]
+    readonly_fields = [
+        "id",
+        "requested_at",
+        "approved_at",
+        "activated_at",
+        "expires_at",
+        "revoked_at",
+        "created_at",
+        "updated_at",
+    ]

@@ -1,9 +1,11 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class Brand(BaseModel):
     """White-label brand definition per tenant/customer."""
+
     code = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=255)
     customer_id = models.UUIDField(null=True, blank=True)
@@ -19,6 +21,7 @@ class Brand(BaseModel):
 
 class BrandTheme(BaseModel):
     """Visual theme overrides for a brand (colors, fonts, spacing)."""
+
     brand = models.OneToOneField(Brand, on_delete=models.CASCADE, related_name="theme")
     primary_color = models.CharField(max_length=20, default="#0062CC")
     secondary_color = models.CharField(max_length=20, default="#6C757D")
@@ -37,6 +40,7 @@ class BrandTheme(BaseModel):
 
 class BrandAsset(BaseModel):
     """Stored branding assets (logos, icons, splash screens)."""
+
     ASSET_TYPES = [
         ("logo_light", "Logo (Light Background)"),
         ("logo_dark", "Logo (Dark Background)"),
@@ -50,7 +54,7 @@ class BrandAsset(BaseModel):
     asset_type = models.CharField(max_length=50, choices=ASSET_TYPES)
     asset_url = models.URLField(max_length=1000)
     alt_text = models.CharField(max_length=255, blank=True)
-    language_code = models.CharField(max_length=10, default="en")   # "en", "ar"
+    language_code = models.CharField(max_length=10, default="en")  # "en", "ar"
 
     class Meta:
         db_table = "cymed_commercial_brand_assets"
@@ -59,6 +63,7 @@ class BrandAsset(BaseModel):
 
 class BrandDomain(BaseModel):
     """Custom domain mapping for white-label deployments."""
+
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name="domains")
     domain = models.CharField(max_length=255, unique=True)
     is_primary = models.BooleanField(default=False)
@@ -71,8 +76,9 @@ class BrandDomain(BaseModel):
 
 class BrandLocalization(BaseModel):
     """Localized brand strings (app name, tagline, login messages)."""
+
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name="localizations")
-    language_code = models.CharField(max_length=10)     # "en", "ar"
+    language_code = models.CharField(max_length=10)  # "en", "ar"
     app_name = models.CharField(max_length=255)
     tagline = models.CharField(max_length=500, blank=True)
     login_title = models.CharField(max_length=255, blank=True)
@@ -80,7 +86,7 @@ class BrandLocalization(BaseModel):
     support_email = models.EmailField(blank=True)
     support_phone = models.CharField(max_length=50, blank=True)
     footer_text = models.TextField(blank=True)
-    is_rtl = models.BooleanField(default=False)         # Arabic = True
+    is_rtl = models.BooleanField(default=False)  # Arabic = True
 
     class Meta:
         db_table = "cymed_commercial_brand_localizations"

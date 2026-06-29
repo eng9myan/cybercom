@@ -7,10 +7,10 @@ Two layers:
   - TokenHasRealmRole / TokenHasScope:
     JWT-claim-based checks that work with the validated bearer token.
 """
+
 from __future__ import annotations
 
 from rest_framework import permissions
-
 
 SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
 
@@ -73,6 +73,6 @@ class TokenHasScope(permissions.BasePermission):
 
     def has_permission(self, request, view) -> bool:
         token = getattr(request, "auth_claims", None) or {}
-        scope = (token.get("scope") or "")
+        scope = token.get("scope") or ""
         scopes = set(scope.split()) if isinstance(scope, str) else set(token.get("scp", []) or [])
         return self.required_scope in scopes

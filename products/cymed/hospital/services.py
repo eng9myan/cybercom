@@ -12,10 +12,13 @@ Features:
 - DischargeService
 - CapacityService
 """
+
 from __future__ import annotations
-import uuid
+
 import logging
-from typing import Any, Dict, List, Optional
+import uuid
+from typing import Any
+
 from django.db import transaction
 from django.utils import timezone
 
@@ -26,6 +29,7 @@ def _emit_outbox_event(tenant_id: str, topic: str, event_type: str, payload: dic
     """Helper to write to the platform transactional outbox."""
     try:
         from platform.events.models import OutboxEvent
+
         OutboxEvent.objects.create(
             tenant_id=uuid.UUID(str(tenant_id)),
             topic=topic,
@@ -39,6 +43,7 @@ def _emit_outbox_event(tenant_id: str, topic: str, event_type: str, payload: dic
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. AdmissionService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class AdmissionService:
     """
@@ -55,16 +60,16 @@ class AdmissionService:
         admission_type_id: str,
         admission_reason_id: str,
         admitting_physician_id: str,
-        bed_id: Optional[str] = None,
+        bed_id: str | None = None,
     ) -> dict:
         """
         Admits a patient to the hospital, assigns a bed, and triggers outbox/billing events.
         """
-        from products.cymed.hospital.adt.models import Admission, AdmissionType, AdmissionReason
+        from products.cymed.hospital.adt.models import Admission, AdmissionReason, AdmissionType
         from products.cymed.hospital.inpatient.models import HospitalStay
 
         tenant_uuid = uuid.UUID(str(tenant_id))
-        patient_uuid = uuid.UUID(str(patient_id))
+        uuid.UUID(str(patient_id))
         encounter_uuid = uuid.UUID(str(encounter_id))
         adm_type_uuid = uuid.UUID(str(admission_type_id))
         adm_reason_uuid = uuid.UUID(str(admission_reason_id))
@@ -111,7 +116,9 @@ class AdmissionService:
             "bed_id": str(bed_id) if bed_id else None,
             "admitted_at": admission.admitted_at.isoformat(),
         }
-        _emit_outbox_event(tenant_id, "cymed.hospital.admission.created", "AdmissionCreated", payload)
+        _emit_outbox_event(
+            tenant_id, "cymed.hospital.admission.created", "AdmissionCreated", payload
+        )
 
         # 5. Post charge to CyCom ERP (Simulated Event)
         charge_payload = {
@@ -144,7 +151,12 @@ class AdmissionService:
         """
         Discharges a patient, completes the discharge checklists, and releases the assigned bed.
         """
-        from products.cymed.hospital.adt.models import Admission, DischargeSummary, DischargeDisposition, DischargeReason
+        from products.cymed.hospital.adt.models import (
+            Admission,
+            DischargeDisposition,
+            DischargeReason,
+            DischargeSummary,
+        )
         from products.cymed.hospital.bed_management.models import BedAssignment
 
         tenant_uuid = uuid.UUID(str(tenant_id))
@@ -192,7 +204,9 @@ class AdmissionService:
             "discharged_at": summary.discharged_at.isoformat(),
             "discharged_by": str(discharged_by),
         }
-        _emit_outbox_event(tenant_id, "cymed.hospital.discharge.completed", "DischargeCompleted", payload)
+        _emit_outbox_event(
+            tenant_id, "cymed.hospital.discharge.completed", "DischargeCompleted", payload
+        )
 
         return {
             "discharge_summary_id": str(summary.id),
@@ -212,9 +226,9 @@ class AdmissionService:
         """
         Creates a transfer request, auto-approves if target bed is available.
         """
-        from products.cymed.hospital.adt.models import Admission, TransferRequest, TransferApproval
-        from products.cymed.hospital.bed_management.models import BedAssignment
         from products.cymed.core.facilities.models import Bed
+        from products.cymed.hospital.adt.models import Admission, TransferApproval, TransferRequest
+        from products.cymed.hospital.bed_management.models import BedAssignment
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         admission_uuid = uuid.UUID(str(admission_id))
@@ -262,7 +276,9 @@ class AdmissionService:
 
             # Release current bed
             if source_bed_id:
-                BedManagementService.release_bed(tenant_id=tenant_id, bed_id=str(source_bed_id), reason="transfer")
+                BedManagementService.release_bed(
+                    tenant_id=tenant_id, bed_id=str(source_bed_id), reason="transfer"
+                )
 
             # Assign new bed
             BedManagementService.assign_bed(
@@ -292,6 +308,7 @@ class AdmissionService:
 # 2. BedManagementService
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class BedManagementService:
     """
     Manages Bed Allocations, Cleanliness, Maintenance, and census tracking.
@@ -310,9 +327,9 @@ class BedManagementService:
         """
         Assigns a bed to a patient and sets the bed status to Occupied.
         """
-        from products.cymed.hospital.bed_management.models import BedAssignment
         from products.cymed.core.facilities.models import Bed
         from products.cymed.core.patients.models import Patient
+        from products.cymed.hospital.bed_management.models import BedAssignment
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         bed_uuid = uuid.UUID(str(bed_id))
@@ -347,8 +364,8 @@ class BedManagementService:
         """
         Releases an assigned bed and sets it to available (or reserved/maintenance).
         """
-        from products.cymed.hospital.bed_management.models import BedAssignment
         from products.cymed.core.facilities.models import Bed
+        from products.cymed.hospital.bed_management.models import BedAssignment
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         bed_uuid = uuid.UUID(str(bed_id))
@@ -376,8 +393,8 @@ class BedManagementService:
     def get_available_beds(
         cls,
         tenant_id: str,
-        ward_id: Optional[str] = None,
-        room_type: Optional[str] = None,
+        ward_id: str | None = None,
+        room_type: str | None = None,
     ) -> list[dict]:
         """
         Queries and lists available beds matching optional filters.
@@ -407,7 +424,7 @@ class BedManagementService:
         ]
 
     @classmethod
-    def get_census(cls, tenant_id: str, facility_id: Optional[str] = None) -> dict:
+    def get_census(cls, tenant_id: str, facility_id: str | None = None) -> dict:
         """
         Returns complete counts of occupied, available, maintenance, and cleaning beds.
         """
@@ -441,13 +458,13 @@ class BedManagementService:
         bed_id: str,
         reason: str,
         blocked_by: str,
-        until: Optional[Any] = None,
+        until: Any | None = None,
     ) -> Any:
         """
         Blocks a bed for maintenance or cleaning.
         """
-        from products.cymed.hospital.bed_management.models import BedBlocking
         from products.cymed.core.facilities.models import Bed
+        from products.cymed.hospital.bed_management.models import BedBlocking
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         bed_uuid = uuid.UUID(str(bed_id))
@@ -469,8 +486,8 @@ class BedManagementService:
         """
         Creates a cleaning task for a bed and sets its status to Reserved/Cleaning.
         """
-        from products.cymed.hospital.bed_management.models import BedCleaning
         from products.cymed.core.facilities.models import Bed
+        from products.cymed.hospital.bed_management.models import BedCleaning
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         bed_uuid = uuid.UUID(str(bed_id))
@@ -491,6 +508,7 @@ class BedManagementService:
 # 3. EmergencyService
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class EmergencyService:
     """
     Manages Emergency Room triage, severity indexing, and boarding tracks.
@@ -504,13 +522,13 @@ class EmergencyService:
         patient_id: str,
         chief_complaint: str,
         arrival_mode: str,
-        arrived_at: Optional[Any] = None,
+        arrived_at: Any | None = None,
     ) -> dict:
         """
         Registers an incoming emergency patient and creates a tracking record.
         """
-        from products.cymed.hospital.emergency.models import EmergencyVisit, EmergencyTracking
         from products.cymed.core.patients.models import Patient
+        from products.cymed.hospital.emergency.models import EmergencyTracking, EmergencyVisit
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         patient_uuid = uuid.UUID(str(patient_id))
@@ -548,7 +566,11 @@ class EmergencyService:
         """
         Triages an ER visit, computes ESI level, and triggers outbox/critical alerts.
         """
-        from products.cymed.hospital.emergency.models import EmergencyVisit, EmergencyTriage, EmergencyAcuity
+        from products.cymed.hospital.emergency.models import (
+            EmergencyAcuity,
+            EmergencyTriage,
+            EmergencyVisit,
+        )
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         visit_uuid = uuid.UUID(str(visit_id))
@@ -592,7 +614,9 @@ class EmergencyService:
             "news2_score": news2_score,
             "status": visit.status,
         }
-        _emit_outbox_event(tenant_id, "cymed.emergency.triage.completed", "EmergencyTriageCompleted", payload)
+        _emit_outbox_event(
+            tenant_id, "cymed.emergency.triage.completed", "EmergencyTriageCompleted", payload
+        )
 
         # Critical Alert if ESI 1 or 2
         if esi_level <= 2:
@@ -601,7 +625,9 @@ class EmergencyService:
                 "severity": "CRITICAL" if esi_level == 1 else "HIGH",
                 "message": f"Critical triage alert: ESI Level {esi_level} patient registered.",
             }
-            _emit_outbox_event(tenant_id, "cymed.emergency.alert.critical", "CriticalAlertTriggered", alert_payload)
+            _emit_outbox_event(
+                tenant_id, "cymed.emergency.alert.critical", "CriticalAlertTriggered", alert_payload
+            )
 
         return {
             "triage_id": str(triage.id),
@@ -622,7 +648,11 @@ class EmergencyService:
         """
         Assigns the ER disposition (e.g. admitted, discharged) and completes tracking.
         """
-        from products.cymed.hospital.emergency.models import EmergencyVisit, EmergencyDisposition, EmergencyTracking
+        from products.cymed.hospital.emergency.models import (
+            EmergencyDisposition,
+            EmergencyTracking,
+            EmergencyVisit,
+        )
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         visit_uuid = uuid.UUID(str(visit_id))
@@ -661,13 +691,15 @@ class EmergencyService:
         """
         Calculates time spent in ER waitlists.
         """
-        from products.cymed.hospital.emergency.models import EmergencyVisit, EmergencyTracking
+        from products.cymed.hospital.emergency.models import EmergencyTracking, EmergencyVisit
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         visit_uuid = uuid.UUID(str(visit_id))
 
         visit = EmergencyVisit.objects.get(id=visit_uuid, tenant_id=tenant_uuid)
-        tracking_entries = EmergencyTracking.objects.filter(visit=visit, tenant_id=tenant_uuid).order_by("entered_at")
+        tracking_entries = EmergencyTracking.objects.filter(
+            visit=visit, tenant_id=tenant_uuid
+        ).order_by("entered_at")
 
         boarding_duration_min = 0.0
         for entry in tracking_entries:
@@ -684,6 +716,7 @@ class EmergencyService:
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. ICUService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class ICUService:
     """
@@ -703,8 +736,8 @@ class ICUService:
         """
         Creates an ICUStay allocation associated with an active HospitalStay.
         """
-        from products.cymed.hospital.inpatient.models import HospitalStay
         from products.cymed.hospital.icu.models import ICUStay
+        from products.cymed.hospital.inpatient.models import HospitalStay
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         encounter_uuid = uuid.UUID(str(encounter_id))
@@ -750,7 +783,7 @@ class ICUService:
         """
         Creates round assessments and calculates SOFA score based on clinical values.
         """
-        from products.cymed.hospital.icu.models import ICUStay, ICURound, ICUAssessment
+        from products.cymed.hospital.icu.models import ICUAssessment, ICURound, ICUStay
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         icu_stay_uuid = uuid.UUID(str(icu_stay_id))
@@ -774,19 +807,27 @@ class ICUService:
         sofa_score = int(round_data.get("sofa_score", 0))
         if not sofa_score:
             pao2_fio2 = round_data.get("pao2_fio2", 400.0)
-            if pao2_fio2 < 100: sofa_score += 4
-            elif pao2_fio2 < 200: sofa_score += 3
-            elif pao2_fio2 < 300: sofa_score += 2
-            elif pao2_fio2 < 400: sofa_score += 1
+            if pao2_fio2 < 100:
+                sofa_score += 4
+            elif pao2_fio2 < 200:
+                sofa_score += 3
+            elif pao2_fio2 < 300:
+                sofa_score += 2
+            elif pao2_fio2 < 400:
+                sofa_score += 1
 
             gcs = round_data.get("glasgow_coma_scale", 15)
-            if gcs < 6: sofa_score += 4
-            elif gcs < 9: sofa_score += 3
-            elif gcs < 12: sofa_score += 2
-            elif gcs < 15: sofa_score += 1
+            if gcs < 6:
+                sofa_score += 4
+            elif gcs < 9:
+                sofa_score += 3
+            elif gcs < 12:
+                sofa_score += 2
+            elif gcs < 15:
+                sofa_score += 1
 
         # Create assessment
-        assessment = ICUAssessment.objects.create(
+        ICUAssessment.objects.create(
             tenant_id=tenant_uuid,
             icu_stay=icu_stay,
             sofa_score=sofa_score,
@@ -853,7 +894,7 @@ class ICUService:
         """
         Registers a critical event in the ICU (e.g. cardiac arrest, extubation).
         """
-        from products.cymed.hospital.icu.models import ICUStay, CriticalEvent
+        from products.cymed.hospital.icu.models import CriticalEvent, ICUStay
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         icu_stay_uuid = uuid.UUID(str(icu_stay_id))
@@ -874,6 +915,7 @@ class ICUService:
 # 5. Operating Room Service
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class OperatingRoomService:
     """
     Manages Case Scheduling, OR Room Allocation, Consent forms, and checklist logs.
@@ -889,13 +931,13 @@ class OperatingRoomService:
         surgeon_id: str,
         scheduled_datetime: Any,
         estimated_minutes: int,
-        room_id: Optional[str] = None,
+        room_id: str | None = None,
     ) -> dict:
         """
         Schedules a surgical procedure, performs room resource checking, and logs conflict errors.
         """
-        from products.cymed.hospital.operating_room.models import SurgicalCase, SurgicalSchedule
         from products.cymed.core.encounters.models import Encounter
+        from products.cymed.hospital.operating_room.models import SurgicalCase, SurgicalSchedule
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         encounter_uuid = uuid.UUID(str(encounter_id))
@@ -904,6 +946,7 @@ class OperatingRoomService:
         encounter = Encounter.objects.get(id=encounter_uuid, tenant_id=tenant_uuid)
 
         import datetime
+
         if isinstance(scheduled_datetime, str):
             start = timezone.datetime.fromisoformat(scheduled_datetime)
         else:
@@ -926,7 +969,9 @@ class OperatingRoomService:
                 conflict_exists = True
 
         if conflict_exists:
-            raise ValueError(f"Scheduling conflict detected for Operating Room {room_id} between {start} and {end}.")
+            raise ValueError(
+                f"Scheduling conflict detected for Operating Room {room_id} between {start} and {end}."
+            )
 
         # Create Case
         case = SurgicalCase.objects.create(
@@ -1005,7 +1050,7 @@ class OperatingRoomService:
         case_id: str,
         completed_by: str,
         actual_minutes: int,
-        complications: Optional[str] = None,
+        complications: str | None = None,
     ) -> dict:
         """
         Transitions case status to completed, records duration, and submits charge reports.
@@ -1029,7 +1074,9 @@ class OperatingRoomService:
 
         # Trigger billing event
         charge_payload = {
-            "encounter_id": str(case.patient.encounters.first().id) if case.patient.encounters.exists() else None,
+            "encounter_id": str(case.patient.encounters.first().id)
+            if case.patient.encounters.exists()
+            else None,
             "charge_type": "surgery",
             "amount": 1500.00,
             "posted_at": timezone.now().isoformat(),
@@ -1051,12 +1098,12 @@ class OperatingRoomService:
         procedure_name: str,
         risk_summary: str,
         consented_by: str,
-        witness_id: Optional[str] = None,
+        witness_id: str | None = None,
     ) -> Any:
         """
         Creates and logs a procedure consent signed by the patient.
         """
-        from products.cymed.hospital.operating_room.models import SurgicalCase, ProcedureConsent
+        from products.cymed.hospital.operating_room.models import ProcedureConsent, SurgicalCase
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         case_uuid = uuid.UUID(str(case_id))
@@ -1075,6 +1122,7 @@ class OperatingRoomService:
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. Nursing Service
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class NursingService:
     """
@@ -1126,8 +1174,8 @@ class NursingService:
         """
         Logs a nursing clinical assessment.
         """
-        from products.cymed.hospital.nursing.models import NursingAssessment
         from products.cymed.hospital.adt.models import Admission
+        from products.cymed.hospital.nursing.models import NursingAssessment
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         admission_uuid = uuid.UUID(str(findings.get("admission_id")))
@@ -1157,13 +1205,15 @@ class NursingService:
         """
         Creates a nursing care plan.
         """
-        from products.cymed.hospital.nursing.models import NursingCarePlan
         from products.cymed.hospital.adt.models import Admission
+        from products.cymed.hospital.nursing.models import NursingCarePlan
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         encounter_uuid = uuid.UUID(str(encounter_id))
 
-        admission = Admission.objects.filter(encounter_id=encounter_uuid, tenant_id=tenant_uuid).first()
+        admission = Admission.objects.filter(
+            encounter_id=encounter_uuid, tenant_id=tenant_uuid
+        ).first()
         if not admission:
             raise ValueError("No active admission found for care plan.")
 
@@ -1189,8 +1239,8 @@ class NursingService:
         """
         Schedules a task/treatment for a patient.
         """
-        from products.cymed.hospital.nursing.models import NursingTask
         from products.cymed.hospital.adt.models import Admission
+        from products.cymed.hospital.nursing.models import NursingTask
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         patient_uuid = uuid.UUID(str(patient_id))
@@ -1231,8 +1281,8 @@ class NursingService:
         """
         Completes a shift nursing handover using SBAR structured format.
         """
-        from products.cymed.hospital.nursing.models import NursingHandover
         from products.cymed.hospital.adt.models import Admission
+        from products.cymed.hospital.nursing.models import NursingHandover
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         admission_uuid = uuid.UUID(str(handover_notes.get("admission_id")))
@@ -1254,6 +1304,7 @@ class NursingService:
 # 7. Discharge Service
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class DischargeService:
     """
     Manages discharge planning, checklists, and medication reconciliations.
@@ -1271,14 +1322,13 @@ class DischargeService:
         """
         Initiates the discharge planning track.
         """
-        from products.cymed.hospital.inpatient.models import HospitalStay, DischargePlanning
+        from products.cymed.hospital.inpatient.models import DischargePlanning, HospitalStay
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         admission_uuid = uuid.UUID(str(admission_id))
 
         stay = HospitalStay.objects.get(admission_id=admission_uuid, tenant_id=tenant_uuid)
 
-        import datetime
         if isinstance(target_date, str):
             t_date = timezone.datetime.fromisoformat(target_date).date()
         else:
@@ -1388,7 +1438,9 @@ class DischargeService:
 
     @classmethod
     @transaction.atomic
-    def generate_discharge_instructions(cls, tenant_id: str, admission_id: str, language: str = "en") -> dict:
+    def generate_discharge_instructions(
+        cls, tenant_id: str, admission_id: str, language: str = "en"
+    ) -> dict:
         """
         Compiles and formats instructions, warning symptoms, and medications.
         """
@@ -1419,6 +1471,7 @@ class DischargeService:
 # 8. Capacity Service
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class CapacityService:
     """
     Manages surge trigger conditions, overflow units, and utilization forecasts.
@@ -1430,6 +1483,7 @@ class CapacityService:
         Aggregates ward occupancy metrics and returns organization utilization metrics.
         """
         from products.cymed.core.facilities.models import Ward
+
         tenant_uuid = uuid.UUID(str(tenant_id))
         facility_uuid = uuid.UUID(str(facility_id))
 
@@ -1445,13 +1499,15 @@ class CapacityService:
             occ = sum(1 for b in beds_qs if b[1] == "occupied")
             avail = total - occ
 
-            ward_metrics.append({
-                "ward_id": str(w.id),
-                "name": w.name,
-                "total_beds": total,
-                "occupied": occ,
-                "available": avail,
-            })
+            ward_metrics.append(
+                {
+                    "ward_id": str(w.id),
+                    "name": w.name,
+                    "total_beds": total,
+                    "occupied": occ,
+                    "available": avail,
+                }
+            )
             total_beds += total
             occupied_beds += occ
 
@@ -1463,7 +1519,7 @@ class CapacityService:
                 "total_beds": total_beds,
                 "occupied_beds": occupied_beds,
                 "utilization_pct": round(util_pct, 1),
-            }
+            },
         }
 
     @classmethod
@@ -1472,7 +1528,10 @@ class CapacityService:
         """
         Evaluates current occupancy against rules to trigger alerts.
         """
-        from products.cymed.hospital.capacity_management.models import CapacityRule, CapacityThreshold
+        from products.cymed.hospital.capacity_management.models import (
+            CapacityRule,
+            CapacityThreshold,
+        )
 
         tenant_uuid = uuid.UUID(str(tenant_id))
 
@@ -1511,11 +1570,13 @@ class CapacityService:
 
     @classmethod
     @transaction.atomic
-    def activate_surge_plan(cls, tenant_id: str, facility_id: str, surge_level: str, activated_by: str) -> Any:
+    def activate_surge_plan(
+        cls, tenant_id: str, facility_id: str, surge_level: str, activated_by: str
+    ) -> Any:
         """
         Activates surge protocol and unlocks overflow capacity.
         """
-        from products.cymed.hospital.capacity_management.models import SurgePlan, OverflowUnit
+        from products.cymed.hospital.capacity_management.models import OverflowUnit, SurgePlan
 
         tenant_uuid = uuid.UUID(str(tenant_id))
 
@@ -1541,7 +1602,9 @@ class CapacityService:
             "surge_level": surge_level,
             "activated_by": activated_by,
         }
-        _emit_outbox_event(tenant_id, "cymed.hospital.surge.activated", "SurgePlanActivated", payload)
+        _emit_outbox_event(
+            tenant_id, "cymed.hospital.surge.activated", "SurgePlanActivated", payload
+        )
 
         return plan
 

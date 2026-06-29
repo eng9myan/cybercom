@@ -1,9 +1,11 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class SubscriptionPlan(BaseModel):
     """Subscription plan definition (pricing + billing cycle)."""
+
     BILLING_CYCLES = [
         ("monthly", "Monthly"),
         ("quarterly", "Quarterly"),
@@ -32,6 +34,7 @@ class SubscriptionPlan(BaseModel):
 
 class Subscription(BaseModel):
     """Active subscription for a customer/tenant."""
+
     STATUS_CHOICES = [
         ("trial", "Trial"),
         ("active", "Active"),
@@ -41,7 +44,9 @@ class Subscription(BaseModel):
         ("suspended", "Suspended"),
     ]
 
-    plan = models.ForeignKey(SubscriptionPlan, on_delete=models.PROTECT, related_name="subscriptions")
+    plan = models.ForeignKey(
+        SubscriptionPlan, on_delete=models.PROTECT, related_name="subscriptions"
+    )
     customer_id = models.UUIDField()
     license_id = models.UUIDField(null=True, blank=True)
 
@@ -59,6 +64,7 @@ class Subscription(BaseModel):
 
 class SubscriptionUsage(BaseModel):
     """Monthly usage snapshot for billing reconciliation."""
+
     subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE, related_name="usage")
     period_start = models.DateField()
     period_end = models.DateField()
@@ -77,6 +83,7 @@ class SubscriptionUsage(BaseModel):
 
 class SubscriptionInvoice(BaseModel):
     """Invoice generated for a subscription period."""
+
     STATUS_CHOICES = [
         ("draft", "Draft"),
         ("issued", "Issued"),
@@ -85,7 +92,9 @@ class SubscriptionInvoice(BaseModel):
         ("void", "Void"),
     ]
 
-    subscription = models.ForeignKey(Subscription, on_delete=models.CASCADE, related_name="invoices")
+    subscription = models.ForeignKey(
+        Subscription, on_delete=models.CASCADE, related_name="invoices"
+    )
     invoice_number = models.CharField(max_length=100, unique=True)
     period_start = models.DateField()
     period_end = models.DateField()
@@ -103,13 +112,16 @@ class SubscriptionInvoice(BaseModel):
 
 class SubscriptionContract(BaseModel):
     """Enterprise agreement / multi-year contract."""
-    subscription = models.OneToOneField(Subscription, on_delete=models.CASCADE, related_name="contract")
+
+    subscription = models.OneToOneField(
+        Subscription, on_delete=models.CASCADE, related_name="contract"
+    )
     contract_number = models.CharField(max_length=100, unique=True)
     signed_at = models.DateField(null=True, blank=True)
     contract_years = models.PositiveIntegerField(default=1)
     total_contract_value = models.DecimalField(max_digits=15, decimal_places=2)
     payment_terms = models.CharField(max_length=255, blank=True)
-    sla_tier = models.CharField(max_length=50, default="standard")     # standard, gold, platinum
+    sla_tier = models.CharField(max_length=50, default="standard")  # standard, gold, platinum
     dedicated_csm = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
 

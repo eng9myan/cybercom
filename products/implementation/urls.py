@@ -1,7 +1,12 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    ImplementationProjectViewSet, ProjectMilestoneViewSet, ProjectTaskViewSet,
-    CutoverChecklistViewSet, HypercareLogViewSet, MethodologyTemplateViewSet,
+    CutoverChecklistViewSet,
+    HypercareLogViewSet,
+    ImplementationProjectViewSet,
+    MethodologyTemplateViewSet,
+    ProjectMilestoneViewSet,
+    ProjectTaskViewSet,
 )
 
 router = DefaultRouter()

@@ -1,7 +1,16 @@
 from rest_framework import serializers
-from products.cymed.clinic.consultations.models import Consultation, ConsultationDiagnosis, ConsultationProcedure, ConsultationPlan, ConsultationFollowUp, ConsultationAttachment
-from platform.terminology.services import TerminologyService
+
 from platform.events.models import OutboxEvent
+from platform.terminology.services import TerminologyService
+from products.cymed.clinic.consultations.models import (
+    Consultation,
+    ConsultationAttachment,
+    ConsultationDiagnosis,
+    ConsultationFollowUp,
+    ConsultationPlan,
+    ConsultationProcedure,
+)
+
 
 class ConsultationDiagnosisSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,13 +22,13 @@ class ConsultationDiagnosisSerializer(serializers.ModelSerializer):
         system = attrs.get("system")
         request = self.context.get("request")
         tenant_id = getattr(request, "tenant_id", "00000000-0000-0000-0000-000000000000")
-        
+
         try:
             is_valid = TerminologyService.validate(
                 provider=system,
                 code=code,
                 tenant_id=str(tenant_id),
-                requested_by=str(request.user) if request else "system"
+                requested_by=str(request.user) if request else "system",
             )
         except Exception:
             is_valid = False
@@ -30,25 +39,30 @@ class ConsultationDiagnosisSerializer(serializers.ModelSerializer):
             )
         return attrs
 
+
 class ConsultationProcedureSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConsultationProcedure
         fields = ["id", "code", "system", "display", "notes"]
+
 
 class ConsultationPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConsultationPlan
         fields = ["id", "instructions", "prescriptions"]
 
+
 class ConsultationFollowUpSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConsultationFollowUp
         fields = ["id", "follow_up_date", "reason"]
 
+
 class ConsultationAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConsultationAttachment
         fields = ["id", "title", "file_url"]
+
 
 class ConsultationSerializer(serializers.ModelSerializer):
     diagnoses = ConsultationDiagnosisSerializer(many=True, required=False)
@@ -59,7 +73,21 @@ class ConsultationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Consultation
-        fields = ["id", "encounter", "consulted_at", "consulted_by", "subjective", "objective", "assessment", "plan", "diagnoses", "procedures", "treatment_plan", "follow_ups", "attachments"]
+        fields = [
+            "id",
+            "encounter",
+            "consulted_at",
+            "consulted_by",
+            "subjective",
+            "objective",
+            "assessment",
+            "plan",
+            "diagnoses",
+            "procedures",
+            "treatment_plan",
+            "follow_ups",
+            "attachments",
+        ]
         read_only_fields = ["consulted_at"]
 
     def create(self, validated_data):
@@ -77,15 +105,23 @@ class ConsultationSerializer(serializers.ModelSerializer):
 
         # Create relations
         for d in diagnoses_data:
-            ConsultationDiagnosis.objects.create(tenant_id=tenant_id, consultation=consultation, **d)
+            ConsultationDiagnosis.objects.create(
+                tenant_id=tenant_id, consultation=consultation, **d
+            )
         for p in procedures_data:
-            ConsultationProcedure.objects.create(tenant_id=tenant_id, consultation=consultation, **p)
+            ConsultationProcedure.objects.create(
+                tenant_id=tenant_id, consultation=consultation, **p
+            )
         if plan_data:
-            ConsultationPlan.objects.create(tenant_id=tenant_id, consultation=consultation, **plan_data)
+            ConsultationPlan.objects.create(
+                tenant_id=tenant_id, consultation=consultation, **plan_data
+            )
         for f in follow_ups_data:
             ConsultationFollowUp.objects.create(tenant_id=tenant_id, consultation=consultation, **f)
         for a in attachments_data:
-            ConsultationAttachment.objects.create(tenant_id=tenant_id, consultation=consultation, **a)
+            ConsultationAttachment.objects.create(
+                tenant_id=tenant_id, consultation=consultation, **a
+            )
 
         # Publish Event
         OutboxEvent.objects.create(
@@ -96,8 +132,8 @@ class ConsultationSerializer(serializers.ModelSerializer):
                 "consultation_id": str(consultation.id),
                 "encounter_id": str(consultation.encounter.id),
                 "consulted_by": consultation.consulted_by,
-                "timestamp": consultation.consulted_at.isoformat()
-            }
+                "timestamp": consultation.consulted_at.isoformat(),
+            },
         )
 
         return consultation

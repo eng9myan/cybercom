@@ -1,5 +1,6 @@
 from rest_framework.routers import DefaultRouter
-from .views import ImagingResultViewSet, StructuredMeasurementViewSet, ResultCommunicationViewSet
+
+from .views import ImagingResultViewSet, ResultCommunicationViewSet, StructuredMeasurementViewSet
 
 router = DefaultRouter()
 router.register("results", ImagingResultViewSet, basename="imaging-result")

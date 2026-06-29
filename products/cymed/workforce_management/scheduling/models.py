@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 SHIFT_TYPE_CHOICES = [
     ("8h_morning", "8-Hour Morning (07:00-15:00)"),

@@ -1,11 +1,17 @@
 """
 Tests for CyMed Commercial — White Label Branding Platform.
 """
+
 import uuid
+
 import pytest
 
 from products.cymed.commercial.branding.models import (
-    Brand, BrandTheme, BrandAsset, BrandDomain, BrandLocalization
+    Brand,
+    BrandAsset,
+    BrandDomain,
+    BrandLocalization,
+    BrandTheme,
 )
 from products.cymed.commercial.branding.services import BrandingService
 
@@ -76,6 +82,7 @@ class TestBrandModel:
 
     def test_unique_code(self, db, brand):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             Brand.objects.create(tenant_id=TENANT, code="seha_jordan", name="Dup")
 
@@ -127,12 +134,19 @@ class TestBrandAsset:
 
     def test_unique_asset_type_language(self, db, brand):
         from django.db import IntegrityError
+
         BrandAsset.objects.create(
-            tenant_id=TENANT, brand=brand, asset_type="logo_light",
-            asset_url="https://cdn.seha.jo/a.svg", language_code="en"
+            tenant_id=TENANT,
+            brand=brand,
+            asset_type="logo_light",
+            asset_url="https://cdn.seha.jo/a.svg",
+            language_code="en",
         )
         with pytest.raises(IntegrityError):
             BrandAsset.objects.create(
-                tenant_id=TENANT, brand=brand, asset_type="logo_light",
-                asset_url="https://cdn.seha.jo/b.svg", language_code="en"
+                tenant_id=TENANT,
+                brand=brand,
+                asset_type="logo_light",
+                asset_url="https://cdn.seha.jo/b.svg",
+                language_code="en",
             )

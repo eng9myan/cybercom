@@ -1,16 +1,19 @@
 """
 Tests for CyMed Commercial — Usage Metering and Deployment Profiles.
 """
+
 import uuid
 from decimal import Decimal
-import pytest
 from unittest.mock import patch
 
-from products.cymed.commercial.usage_metering.models import UsageMeter, UsageAlert
-from products.cymed.commercial.usage_metering.services import UsageMeteringService
+import pytest
+
 from products.cymed.commercial.deployment_profiles.models import (
-    DeploymentProfile, DeploymentConfiguration, DeploymentCapability
+    DeploymentCapability,
+    DeploymentProfile,
 )
+from products.cymed.commercial.usage_metering.models import UsageAlert, UsageMeter
+from products.cymed.commercial.usage_metering.services import UsageMeteringService
 
 TENANT = uuid.UUID("10000000-0000-0000-0000-000000000001")
 
@@ -66,6 +69,7 @@ class TestUsageMeteringService:
     @patch("products.cymed.commercial.usage_metering.services.License")
     def test_record_snapshot(self, mock_license_cls, db):
         from django.core.exceptions import ObjectDoesNotExist
+
         mock_license_cls.objects.get.side_effect = ObjectDoesNotExist("No license")
         meter = UsageMeteringService.record_snapshot(
             tenant_id=TENANT,
@@ -84,6 +88,7 @@ class TestUsageMeteringService:
     @patch("products.cymed.commercial.usage_metering.services.License")
     def test_snapshot_idempotent_today(self, mock_license_cls, db):
         from django.core.exceptions import ObjectDoesNotExist
+
         mock_license_cls.objects.get.side_effect = ObjectDoesNotExist("No license")
         UsageMeteringService.record_snapshot(
             tenant_id=TENANT,

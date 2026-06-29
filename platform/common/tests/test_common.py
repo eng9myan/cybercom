@@ -1,14 +1,17 @@
 import uuid
+
+import jwt
 import pytest
 from rest_framework.test import APIClient
-import jwt
 
-from platform.common.security.vault import VaultClient
 from platform.common.security.opa import OPAPolicyEngine
+from platform.common.security.vault import VaultClient
+
 
 @pytest.fixture
 def test_tenant_id():
     return uuid.uuid4()
+
 
 @pytest.fixture
 def auth_client(test_tenant_id):
@@ -28,11 +31,12 @@ def auth_client(test_tenant_id):
     )
     return client
 
+
 class TestVaultClient:
     def test_default_secrets(self):
         db_secrets = VaultClient.get_secret("cybercom/database")
         assert db_secrets["username"] == "postgres"
-        
+
         kc_secrets = VaultClient.get_secret("cybercom/keycloak")
         assert kc_secrets["client_secret"] == "fake-vault-keycloak-secret"
 
@@ -48,39 +52,52 @@ class TestVaultClient:
 
 class TestOPAPolicyEngine:
     def test_admin_policy(self):
-        assert OPAPolicyEngine.evaluate_policy("platform/admin", {"roles": ["platform_admin"]}) is True
+        assert (
+            OPAPolicyEngine.evaluate_policy("platform/admin", {"roles": ["platform_admin"]}) is True
+        )
         assert OPAPolicyEngine.evaluate_policy("platform/admin", {"roles": ["clinician"]}) is False
 
     def test_clinical_access_policy(self):
         # Clinician role
-        assert OPAPolicyEngine.evaluate_policy(
-            "clinical/access",
-            {"action": "write", "roles": ["clinician"]}
-        ) is True
+        assert (
+            OPAPolicyEngine.evaluate_policy(
+                "clinical/access", {"action": "write", "roles": ["clinician"]}
+            )
+            is True
+        )
 
         # Break glass active
-        assert OPAPolicyEngine.evaluate_policy(
-            "clinical/access",
-            {"action": "write", "roles": ["other"], "break_glass_active": True}
-        ) is True
+        assert (
+            OPAPolicyEngine.evaluate_policy(
+                "clinical/access",
+                {"action": "write", "roles": ["other"], "break_glass_active": True},
+            )
+            is True
+        )
 
         # Read/view action by patient_viewer
-        assert OPAPolicyEngine.evaluate_policy(
-            "clinical/access",
-            {"action": "read", "roles": ["patient_viewer"]}
-        ) is True
+        assert (
+            OPAPolicyEngine.evaluate_policy(
+                "clinical/access", {"action": "read", "roles": ["patient_viewer"]}
+            )
+            is True
+        )
 
         # Reject mutation by patient_viewer
-        assert OPAPolicyEngine.evaluate_policy(
-            "clinical/access",
-            {"action": "write", "roles": ["patient_viewer"]}
-        ) is False
+        assert (
+            OPAPolicyEngine.evaluate_policy(
+                "clinical/access", {"action": "write", "roles": ["patient_viewer"]}
+            )
+            is False
+        )
 
         # Reject all other cases
-        assert OPAPolicyEngine.evaluate_policy(
-            "clinical/access",
-            {"action": "write", "roles": ["unprivileged"]}
-        ) is False
+        assert (
+            OPAPolicyEngine.evaluate_policy(
+                "clinical/access", {"action": "write", "roles": ["unprivileged"]}
+            )
+            is False
+        )
 
     def test_default_policy(self):
         assert OPAPolicyEngine.evaluate_policy("some/other/policy", {"roles": ["user"]}) is True

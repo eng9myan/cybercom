@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import PharmacyDashboardSnapshot, MedicationSafetyEvent, PharmacyAnalyticsConfig
+
+from .models import MedicationSafetyEvent, PharmacyAnalyticsConfig, PharmacyDashboardSnapshot
 
 
 class PharmacyDashboardSnapshotSerializer(serializers.ModelSerializer):

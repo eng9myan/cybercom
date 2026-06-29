@@ -1,5 +1,6 @@
-﻿from rest_framework import serializers
-from .models import Cohort, CohortMember, CohortOutcome, CohortAnalysis
+from rest_framework import serializers
+
+from .models import Cohort, CohortAnalysis, CohortMember, CohortOutcome
 
 
 class CohortSerializer(serializers.ModelSerializer):

@@ -1,18 +1,27 @@
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
-    DeploymentRecord, EnvironmentCheck, DeploymentStep,
-    TenantProvision, BackupRecord, HealthCheckSnapshot, UpgradeRecord,
+    BackupRecord,
+    DeploymentRecord,
+    DeploymentStep,
+    EnvironmentCheck,
+    HealthCheckSnapshot,
+    TenantProvision,
+    UpgradeRecord,
 )
 from .serializers import (
-    DeploymentRecordSerializer, EnvironmentCheckSerializer, DeploymentStepSerializer,
-    TenantProvisionSerializer, BackupRecordSerializer, HealthCheckSnapshotSerializer,
+    BackupRecordSerializer,
+    DeploymentRecordSerializer,
+    DeploymentStepSerializer,
+    EnvironmentCheckSerializer,
+    HealthCheckSnapshotSerializer,
+    TenantProvisionSerializer,
     UpgradeRecordSerializer,
 )
 
@@ -34,7 +43,13 @@ class BaseViewSet(viewsets.ModelViewSet):
 class DeploymentRecordViewSet(BaseViewSet):
     queryset = DeploymentRecord.objects.all()
     serializer_class = DeploymentRecordSerializer
-    filterset_fields = ["deployment_type", "tenancy_model", "infrastructure", "status", "country_code"]
+    filterset_fields = [
+        "deployment_type",
+        "tenancy_model",
+        "infrastructure",
+        "status",
+        "country_code",
+    ]
     search_fields = ["customer_name", "deployment_code", "region"]
     ordering_fields = ["customer_name", "status", "go_live_date", "created_at"]
 

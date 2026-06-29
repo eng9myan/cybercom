@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import ImagingOperationsDashboard, RadiologistProductivity, TeleradiologyDashboard, ImagingRevenueEvent
+
+from .models import (
+    ImagingOperationsDashboard,
+    ImagingRevenueEvent,
+    RadiologistProductivity,
+    TeleradiologyDashboard,
+)
 
 
 class ImagingOperationsDashboardSerializer(serializers.ModelSerializer):

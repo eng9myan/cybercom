@@ -1,19 +1,20 @@
-from rest_framework import viewsets
-from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets
+from rest_framework.filters import OrderingFilter, SearchFilter
+
 from .models import (
-    ProviderProductivitySnapshot,
     ClinicalQualityMetric,
-    WorkforceDashboardSnapshot,
-    ProviderAIInsight,
     ExecutiveDashboardMetric,
+    ProviderAIInsight,
+    ProviderProductivitySnapshot,
+    WorkforceDashboardSnapshot,
 )
 from .serializers import (
-    ProviderProductivitySnapshotSerializer,
     ClinicalQualityMetricSerializer,
-    WorkforceDashboardSnapshotSerializer,
-    ProviderAIInsightSerializer,
     ExecutiveDashboardMetricSerializer,
+    ProviderAIInsightSerializer,
+    ProviderProductivitySnapshotSerializer,
+    WorkforceDashboardSnapshotSerializer,
 )
 
 
@@ -31,9 +32,7 @@ class ProviderProductivitySnapshotViewSet(viewsets.ModelViewSet):
     ordering = ["-snapshot_date"]
 
     def get_queryset(self):
-        return ProviderProductivitySnapshot.objects.filter(
-            tenant_id=self.request.tenant_id
-        )
+        return ProviderProductivitySnapshot.objects.filter(tenant_id=self.request.tenant_id)
 
 
 class ClinicalQualityMetricViewSet(viewsets.ModelViewSet):
@@ -51,9 +50,7 @@ class ClinicalQualityMetricViewSet(viewsets.ModelViewSet):
     ordering = ["-measured_at"]
 
     def get_queryset(self):
-        return ClinicalQualityMetric.objects.filter(
-            tenant_id=self.request.tenant_id
-        )
+        return ClinicalQualityMetric.objects.filter(tenant_id=self.request.tenant_id)
 
 
 class WorkforceDashboardSnapshotViewSet(viewsets.ModelViewSet):
@@ -65,9 +62,7 @@ class WorkforceDashboardSnapshotViewSet(viewsets.ModelViewSet):
     ordering = ["-snapshot_date"]
 
     def get_queryset(self):
-        return WorkforceDashboardSnapshot.objects.filter(
-            tenant_id=self.request.tenant_id
-        )
+        return WorkforceDashboardSnapshot.objects.filter(tenant_id=self.request.tenant_id)
 
 
 class ProviderAIInsightViewSet(viewsets.ModelViewSet):
@@ -85,9 +80,7 @@ class ProviderAIInsightViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        return ProviderAIInsight.objects.filter(
-            tenant_id=self.request.tenant_id
-        )
+        return ProviderAIInsight.objects.filter(tenant_id=self.request.tenant_id)
 
 
 class ExecutiveDashboardMetricViewSet(viewsets.ModelViewSet):
@@ -105,6 +98,4 @@ class ExecutiveDashboardMetricViewSet(viewsets.ModelViewSet):
     ordering = ["-metric_date"]
 
     def get_queryset(self):
-        return ExecutiveDashboardMetric.objects.filter(
-            tenant_id=self.request.tenant_id
-        )
+        return ExecutiveDashboardMetric.objects.filter(tenant_id=self.request.tenant_id)

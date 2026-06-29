@@ -1,13 +1,16 @@
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
-from products.cymed.core.patients.models import Patient, PatientMergeHistory
+from products.cymed.core.patients.models import Patient
 from products.cymed.core.patients.serializers import (
-    PatientSerializer, PatientMergeSerializer, PatientUnmergeSerializer
+    PatientMergeSerializer,
+    PatientSerializer,
+    PatientUnmergeSerializer,
 )
 from products.cymed.core.patients.services import PatientService
+
 
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.filter(is_deleted=False)
@@ -32,7 +35,9 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         tenant_id = getattr(request, "tenant_id", None)
         if not tenant_id:
-            return Response({"detail": "Tenant context required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Tenant context required"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         matches = PatientService.detect_duplicates(
             first_name=first_name,
@@ -40,7 +45,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             dob=dob,
             tenant_id=tenant_id,
             national_id=national_id,
-            passport_number=passport_number
+            passport_number=passport_number,
         )
 
         serializer = self.get_serializer(matches, many=True)
@@ -54,19 +59,21 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         tenant_id = getattr(request, "tenant_id", None)
         if not tenant_id:
-            return Response({"detail": "Tenant context required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Tenant context required"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             history = PatientService.merge_patients(
                 source_id=ser.validated_data["source_patient_id"],
                 target_id=ser.validated_data["target_patient_id"],
                 tenant_id=tenant_id,
-                merged_by=str(request.user)
+                merged_by=str(request.user),
             )
-            return Response({
-                "detail": "Patients merged successfully",
-                "merge_history_id": str(history.id)
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {"detail": "Patients merged successfully", "merge_history_id": str(history.id)},
+                status=status.HTTP_200_OK,
+            )
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -78,13 +85,15 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         tenant_id = getattr(request, "tenant_id", None)
         if not tenant_id:
-            return Response({"detail": "Tenant context required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Tenant context required"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             PatientService.unmerge_patients(
                 history_id=ser.validated_data["merge_history_id"],
                 tenant_id=tenant_id,
-                unmerged_by=str(request.user)
+                unmerged_by=str(request.user),
             )
             return Response({"detail": "Patients unmerged successfully"}, status=status.HTTP_200_OK)
         except Exception as e:

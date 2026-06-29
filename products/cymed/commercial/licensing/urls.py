@@ -1,9 +1,15 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.commercial.licensing.views import (
-    LicenseViewSet, LicenseKeyViewSet, LicenseActivationViewSet,
-    LicenseFeatureViewSet, LicenseAuditViewSet, LicenseUsageViewSet,
-    LicenseServerViewSet, OfflineActivationPackageViewSet
+    LicenseActivationViewSet,
+    LicenseAuditViewSet,
+    LicenseFeatureViewSet,
+    LicenseKeyViewSet,
+    LicenseServerViewSet,
+    LicenseUsageViewSet,
+    LicenseViewSet,
+    OfflineActivationPackageViewSet,
 )
 
 router = DefaultRouter()

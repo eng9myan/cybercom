@@ -1,7 +1,12 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    ClaimViewSet, ClaimLineViewSet, ClaimSubmissionViewSet,
-    ClaimResponseViewSet, ClaimStatusViewSet, ClaimAttachmentViewSet,
+    ClaimAttachmentViewSet,
+    ClaimLineViewSet,
+    ClaimResponseViewSet,
+    ClaimStatusViewSet,
+    ClaimSubmissionViewSet,
+    ClaimViewSet,
 )
 
 router = DefaultRouter()

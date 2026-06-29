@@ -1,14 +1,15 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    PopulationGroupViewSet,
-    PopulationSegmentViewSet,
-    HealthRiskViewSet,
-    HealthGoalViewSet,
-    PopulationProgramViewSet,
-    NationalProviderViewSet,
-    ProviderCredentialViewSet,
-    NationalFacilityViewSet,
     FacilityAccreditationViewSet,
+    HealthGoalViewSet,
+    HealthRiskViewSet,
+    NationalFacilityViewSet,
+    NationalProviderViewSet,
+    PopulationGroupViewSet,
+    PopulationProgramViewSet,
+    PopulationSegmentViewSet,
+    ProviderCredentialViewSet,
 )
 
 router = DefaultRouter()
@@ -20,6 +21,8 @@ router.register("programs", PopulationProgramViewSet, basename="population-progr
 router.register("national-providers", NationalProviderViewSet, basename="national-provider")
 router.register("provider-credentials", ProviderCredentialViewSet, basename="provider-credential")
 router.register("national-facilities", NationalFacilityViewSet, basename="national-facility")
-router.register("facility-accreditations", FacilityAccreditationViewSet, basename="facility-accreditation")
+router.register(
+    "facility-accreditations", FacilityAccreditationViewSet, basename="facility-accreditation"
+)
 
 urlpatterns = router.urls

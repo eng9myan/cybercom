@@ -1,11 +1,21 @@
 from rest_framework import serializers
-from products.cymed.hospital.nursing.models import NursingShift, NursingAssignment, NursingAssessment, NursingCarePlan, NursingTask, NursingHandover
+
 from platform.events.models import OutboxEvent
+from products.cymed.hospital.nursing.models import (
+    NursingAssessment,
+    NursingAssignment,
+    NursingCarePlan,
+    NursingHandover,
+    NursingShift,
+    NursingTask,
+)
+
 
 class NursingShiftSerializer(serializers.ModelSerializer):
     class Meta:
         model = NursingShift
         fields = "__all__"
+
 
 class NursingAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,21 +35,24 @@ class NursingAssignmentSerializer(serializers.ModelSerializer):
                 "assignment_id": str(assignment.id),
                 "employee_id": str(assignment.nurse_id),
                 "role": "nurse",
-                "assigned_date": assignment.assigned_date.isoformat()
-            }
+                "assigned_date": assignment.assigned_date.isoformat(),
+            },
         )
 
         return assignment
+
 
 class NursingAssessmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = NursingAssessment
         fields = "__all__"
 
+
 class NursingCarePlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = NursingCarePlan
         fields = "__all__"
+
 
 class NursingTaskSerializer(serializers.ModelSerializer):
     class Meta:
@@ -50,10 +63,11 @@ class NursingTaskSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         tenant_id = instance.tenant_id
         status_val = validated_data.get("status")
-        
+
         # If task changes to completed, log daily charge
         if status_val == "completed" and instance.status != "completed":
             from django.utils import timezone
+
             validated_data["completed_at"] = timezone.now()
 
             # Trigger ERP Billing Charge Event
@@ -66,11 +80,12 @@ class NursingTaskSerializer(serializers.ModelSerializer):
                     "charge_type": "nursing_care",
                     "amount": 75.00,
                     "currency": "AED",
-                    "service_code": "NUR-SER-01"
-                }
+                    "service_code": "NUR-SER-01",
+                },
             )
 
         return super().update(instance, validated_data)
+
 
 class NursingHandoverSerializer(serializers.ModelSerializer):
     class Meta:

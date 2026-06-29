@@ -1,9 +1,11 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class FeatureFlag(BaseModel):
     """Global feature flag definition."""
+
     FLAG_SCOPES = [
         ("global", "Global"),
         ("edition", "Edition-Based"),
@@ -29,6 +31,7 @@ class FeatureFlag(BaseModel):
 
 class FeatureDependency(BaseModel):
     """Feature X requires Feature Y to be enabled."""
+
     feature = models.ForeignKey(FeatureFlag, on_delete=models.CASCADE, related_name="dependencies")
     requires_feature_code = models.CharField(max_length=200)
 
@@ -39,7 +42,10 @@ class FeatureDependency(BaseModel):
 
 class TenantFeature(BaseModel):
     """Per-tenant feature flag override — inherits from edition, overridable per customer."""
-    feature = models.ForeignKey(FeatureFlag, on_delete=models.CASCADE, related_name="tenant_overrides")
+
+    feature = models.ForeignKey(
+        FeatureFlag, on_delete=models.CASCADE, related_name="tenant_overrides"
+    )
     is_enabled = models.BooleanField(default=False)
     limit_override = models.PositiveIntegerField(null=True, blank=True)
     override_reason = models.CharField(max_length=255, blank=True)
@@ -51,8 +57,11 @@ class TenantFeature(BaseModel):
 
 class CustomerFeature(BaseModel):
     """Per-customer (cross-tenant) feature flag override — set by CyMed operations."""
+
     customer_id = models.UUIDField()
-    feature = models.ForeignKey(FeatureFlag, on_delete=models.CASCADE, related_name="customer_overrides")
+    feature = models.ForeignKey(
+        FeatureFlag, on_delete=models.CASCADE, related_name="customer_overrides"
+    )
     is_enabled = models.BooleanField(default=False)
     enabled_by = models.UUIDField(null=True, blank=True)
     notes = models.TextField(blank=True)

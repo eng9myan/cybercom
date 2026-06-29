@@ -1,5 +1,5 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -114,7 +114,9 @@ class ReimbursementRule(BaseModel):
         ("capitation", "Capitation"),
     ]
 
-    contract = models.ForeignKey(PayerContract, on_delete=models.CASCADE, related_name="reimbursement_rules")
+    contract = models.ForeignKey(
+        PayerContract, on_delete=models.CASCADE, related_name="reimbursement_rules"
+    )
     rule_name = models.CharField(max_length=200)
     calculation_method = models.CharField(max_length=30, choices=CALCULATION_METHOD_CHOICES)
     base_rate = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)

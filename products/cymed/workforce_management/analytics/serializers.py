@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import WorkforceAnalyticsSnapshot, WorkforceReport, OnCallSLAMetric
+
+from .models import OnCallSLAMetric, WorkforceAnalyticsSnapshot, WorkforceReport
 
 
 class WorkforceAnalyticsSnapshotSerializer(serializers.ModelSerializer):

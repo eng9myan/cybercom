@@ -2,26 +2,42 @@
 CyMed Laboratory — Core Services
 Integrates with: TerminologyService (LOINC/SNOMED), CyAI, CyData, CyIntegrationHub.
 """
+
 from __future__ import annotations
-import uuid
+
 import datetime
+import uuid
 from decimal import Decimal
-from typing import Any, Optional
+from typing import Any
 
 
 class LabOrderingService:
     """Creates and manages lab orders from any source (clinic, hospital, external)."""
 
     @staticmethod
-    def create_order(tenant_id, patient_id, order_type, tests: list[str], priority="routine",
-                     encounter_id=None, ordered_by=None) -> dict[str, Any]:
+    def create_order(
+        tenant_id,
+        patient_id,
+        order_type,
+        tests: list[str],
+        priority="routine",
+        encounter_id=None,
+        ordered_by=None,
+    ) -> dict[str, Any]:
         """
         Create a LabOrder with items. Validates test codes via TerminologyService (LOINC).
         Returns serialized order dict.
         """
-        from products.cymed.laboratory.orders.models import LabOrder, LabOrderItem, LabTest, LabOrderStatusHistory
+        from products.cymed.laboratory.orders.models import (
+            LabOrder,
+            LabOrderItem,
+            LabOrderStatusHistory,
+            LabTest,
+        )
 
-        order_number = f"LAB-{datetime.date.today().strftime('%Y%m%d')}-{str(uuid.uuid4()).upper()[:8]}"
+        order_number = (
+            f"LAB-{datetime.date.today().strftime('%Y%m%d')}-{str(uuid.uuid4()).upper()[:8]}"
+        )
         order = LabOrder.objects.create(
             tenant_id=tenant_id,
             patient_id=patient_id,
@@ -40,7 +56,9 @@ class LabOrderingService:
                     order=order,
                     test=test,
                     priority=priority,
-                    specimen_type=test.specimen_types_accepted[0] if test.specimen_types_accepted else "",
+                    specimen_type=test.specimen_types_accepted[0]
+                    if test.specimen_types_accepted
+                    else "",
                 )
             except LabTest.DoesNotExist:
                 pass
@@ -54,19 +72,21 @@ class LabOrderingService:
         return {"order_id": str(order.id), "order_number": order.order_number}
 
     @staticmethod
-    def validate_test_loinc(loinc_code: str) -> Optional[dict]:
+    def validate_test_loinc(loinc_code: str) -> dict | None:
         """Delegates LOINC validation to TerminologyService — no local LOINC lookup."""
         try:
             from platform.terminology.services import TerminologyService
+
             return TerminologyService.lookup(code=loinc_code, system="loinc")
         except Exception:
             return None
 
     @staticmethod
-    def validate_diagnosis_icd11(icd11_code: str) -> Optional[dict]:
+    def validate_diagnosis_icd11(icd11_code: str) -> dict | None:
         """Delegates ICD-11 code validation to TerminologyService."""
         try:
             from platform.terminology.services import TerminologyService
+
             return TerminologyService.lookup(code=icd11_code, system="icd11")
         except Exception:
             return None
@@ -76,9 +96,20 @@ class SpecimenService:
     """Specimen lifecycle management — collection, transport, chain-of-custody."""
 
     @staticmethod
-    def record_collection(tenant_id, specimen_id, collected_by, collected_at,
-                          collection_site, method="", fasting=False) -> dict:
-        from products.cymed.laboratory.specimens.models import Specimen, SpecimenCollection, SpecimenChainOfCustody
+    def record_collection(
+        tenant_id,
+        specimen_id,
+        collected_by,
+        collected_at,
+        collection_site,
+        method="",
+        fasting=False,
+    ) -> dict:
+        from products.cymed.laboratory.specimens.models import (
+            Specimen,
+            SpecimenChainOfCustody,
+            SpecimenCollection,
+        )
 
         specimen = Specimen.objects.get(pk=specimen_id, tenant_id=tenant_id)
         coll, _ = SpecimenCollection.objects.get_or_create(
@@ -107,9 +138,11 @@ class SpecimenService:
         return {"specimen_id": str(specimen.id), "status": "collected"}
 
     @staticmethod
-    def reject_specimen(tenant_id, specimen_id, rejected_by, reason, action_taken="recollect") -> dict:
-        from products.cymed.laboratory.specimens.models import Specimen, SpecimenRejection
+    def reject_specimen(
+        tenant_id, specimen_id, rejected_by, reason, action_taken="recollect"
+    ) -> dict:
         from platform.events.models import OutboxEvent
+        from products.cymed.laboratory.specimens.models import Specimen, SpecimenRejection
 
         specimen = Specimen.objects.get(pk=specimen_id, tenant_id=tenant_id)
         rejection = SpecimenRejection.objects.create(
@@ -130,10 +163,11 @@ class SpecimenService:
         return {"specimen_id": str(specimen.id), "rejection_id": str(rejection.id)}
 
     @staticmethod
-    def resolve_specimen_snomed(specimen_type: str) -> Optional[str]:
+    def resolve_specimen_snomed(specimen_type: str) -> str | None:
         """Look up SNOMED-CT code for a specimen type via TerminologyService."""
         try:
             from platform.terminology.services import TerminologyService
+
             results = TerminologyService.search(query=specimen_type, system="snomed")
             return results[0]["code"] if results else None
         except Exception:
@@ -144,8 +178,13 @@ class ResultService:
     """Result management — critical value detection, delta checks, AI integration."""
 
     @staticmethod
-    def run_delta_check(tenant_id, patient_id, analyte_code, current_value: Decimal,
-                        delta_threshold_pct: Decimal = Decimal("25")) -> dict:
+    def run_delta_check(
+        tenant_id,
+        patient_id,
+        analyte_code,
+        current_value: Decimal,
+        delta_threshold_pct: Decimal = Decimal("25"),
+    ) -> dict:
         """
         Check if current value deviates >delta_threshold_pct from most recent previous value.
         Returns delta check result dict. CyAI can call this for enhanced pattern detection.
@@ -175,7 +214,9 @@ class ResultService:
             "delta_flag": delta_pct > delta_threshold_pct,
             "delta_pct": float(delta_pct),
             "previous_value": str(prev),
-            "previous_date": previous.created_at.date().isoformat() if previous.created_at else None,
+            "previous_date": previous.created_at.date().isoformat()
+            if previous.created_at
+            else None,
         }
 
     @staticmethod
@@ -186,7 +227,7 @@ class ResultService:
             cr = CriticalResult.objects.get(result_value_id=result_value_id, tenant_id=tenant_id)
             cr.notification_status = "notified"
             cr.notified_by = notified_by
-            cr.notified_at = datetime.datetime.now(tz=datetime.timezone.utc)
+            cr.notified_at = datetime.datetime.now(tz=datetime.UTC)
             cr.save(update_fields=["notification_status", "notified_by", "notified_at"])
             return True
         except CriticalResult.DoesNotExist:
@@ -200,6 +241,7 @@ class ResultService:
         """
         try:
             from platform.cyai.services import CyAIService  # type: ignore
+
             return CyAIService.analyze_lab_result(result_id=str(result_id))
         except Exception:
             return {"suggestion": None, "confidence": None, "ai_available": False}
@@ -211,9 +253,13 @@ class QCService:
     WESTGARD_RULES = {
         "12s": lambda z, history: abs(z) > 2,
         "13s": lambda z, history: abs(z) > 3,
-        "22s": lambda z, history: len(history) >= 2 and all(abs(h) > 2 and (h > 0) == (z > 0) for h in history[-1:]),
+        "22s": lambda z, history: (
+            len(history) >= 2 and all(abs(h) > 2 and (h > 0) == (z > 0) for h in history[-1:])
+        ),
         "r4s": lambda z, history: len(history) >= 1 and abs(z - history[-1]) > 4,
-        "41s": lambda z, history: len(history) >= 3 and all(abs(h) > 1 and (h > 0) == (z > 0) for h in history[-3:]),
+        "41s": lambda z, history: (
+            len(history) >= 3 and all(abs(h) > 1 and (h > 0) == (z > 0) for h in history[-3:])
+        ),
     }
 
     @classmethod
@@ -230,7 +276,8 @@ class QCService:
         z = float((measured_value - mean) / sd) if sd != 0 else 0.0
 
         recent = list(
-            QualityRun.objects.filter(qc=qc, tenant_id=tenant_id).order_by("-run_date", "-run_time")[:9]
+            QualityRun.objects.filter(qc=qc, tenant_id=tenant_id)
+            .order_by("-run_date", "-run_time")[:9]
             .values_list("z_score", flat=True)
         )
         recent_z = [float(r) for r in recent if r is not None]
@@ -270,7 +317,9 @@ class FHIRLabService:
             "intent": "order",
             "priority": order.priority,
             "subject": {"reference": f"Patient/{order.patient_id}"},
-            "encounter": {"reference": f"Encounter/{order.encounter_id}"} if order.encounter_id else None,
+            "encounter": {"reference": f"Encounter/{order.encounter_id}"}
+            if order.encounter_id
+            else None,
             "requester": {"reference": f"Practitioner/{order.ordered_by}"},
             "identifier": [{"value": order.order_number}],
         }
@@ -283,10 +332,7 @@ class FHIRLabService:
             "id": str(result.id),
             "status": result.status,
             "subject": {"reference": f"Patient/{order_item.order.patient_id}"},
-            "result": [
-                {"reference": f"Observation/{rv.id}"}
-                for rv in result.values.all()
-            ],
+            "result": [{"reference": f"Observation/{rv.id}"} for rv in result.values.all()],
         }
 
     @staticmethod
@@ -299,13 +345,33 @@ class FHIRLabService:
             "interpretation": [],
         }
         if result_value.loinc_code:
-            obs["code"] = {"coding": [{"system": "http://loinc.org", "code": result_value.loinc_code, "display": result_value.analyte_name}]}
+            obs["code"] = {
+                "coding": [
+                    {
+                        "system": "http://loinc.org",
+                        "code": result_value.loinc_code,
+                        "display": result_value.analyte_name,
+                    }
+                ]
+            }
         if result_value.value_numeric is not None:
-            obs["valueQuantity"] = {"value": float(result_value.value_numeric), "unit": result_value.unit}
+            obs["valueQuantity"] = {
+                "value": float(result_value.value_numeric),
+                "unit": result_value.unit,
+            }
         elif result_value.value_text:
             obs["valueString"] = result_value.value_text
         if result_value.interpretation:
-            obs["interpretation"] = [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", "code": result_value.interpretation}]}]
+            obs["interpretation"] = [
+                {
+                    "coding": [
+                        {
+                            "system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+                            "code": result_value.interpretation,
+                        }
+                    ]
+                }
+            ]
         return obs
 
     @staticmethod
@@ -316,7 +382,11 @@ class FHIRLabService:
             "identifier": [{"value": specimen.specimen_number}],
             "type": {"text": specimen.specimen_type},
             "subject": {"reference": f"Patient/{specimen.patient_id}"},
-            "collection": {"collectedDateTime": specimen.collected_at.isoformat() if specimen.collected_at else None},
+            "collection": {
+                "collectedDateTime": specimen.collected_at.isoformat()
+                if specimen.collected_at
+                else None
+            },
         }
 
     @staticmethod

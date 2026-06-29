@@ -1,10 +1,9 @@
 import uuid
-import django.db.models.deletion
+
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -354,9 +353,7 @@ class Migration(migrations.Migration):
         # unique_together constraints
         migrations.AlterUniqueTogether(
             name="providerproductivitysnapshot",
-            unique_together={
-                ("tenant_id", "provider_id", "snapshot_date", "snapshot_period")
-            },
+            unique_together={("tenant_id", "provider_id", "snapshot_date", "snapshot_period")},
         ),
         migrations.AlterUniqueTogether(
             name="workforcedashboardsnapshot",

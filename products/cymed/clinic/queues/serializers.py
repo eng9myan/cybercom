@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from products.cymed.clinic.queues.models import Queue, QueueEntry, QueueBoard, ProviderQueue
+
+from products.cymed.clinic.queues.models import ProviderQueue, Queue, QueueBoard, QueueEntry
+
 
 class QueueSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,6 +14,7 @@ class QueueSerializer(serializers.ModelSerializer):
             validated_data["tenant_id"] = request.tenant_id
         return super().create(validated_data)
 
+
 class QueueEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = QueueEntry
@@ -23,6 +26,7 @@ class QueueEntrySerializer(serializers.ModelSerializer):
             validated_data["tenant_id"] = request.tenant_id
         return super().create(validated_data)
 
+
 class QueueBoardSerializer(serializers.ModelSerializer):
     class Meta:
         model = QueueBoard
@@ -33,6 +37,7 @@ class QueueBoardSerializer(serializers.ModelSerializer):
         if request and hasattr(request, "tenant_id"):
             validated_data["tenant_id"] = request.tenant_id
         return super().create(validated_data)
+
 
 class ProviderQueueSerializer(serializers.ModelSerializer):
     class Meta:

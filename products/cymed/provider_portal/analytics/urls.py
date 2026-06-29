@@ -1,10 +1,11 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    ProviderProductivitySnapshotViewSet,
     ClinicalQualityMetricViewSet,
-    WorkforceDashboardSnapshotViewSet,
-    ProviderAIInsightViewSet,
     ExecutiveDashboardMetricViewSet,
+    ProviderAIInsightViewSet,
+    ProviderProductivitySnapshotViewSet,
+    WorkforceDashboardSnapshotViewSet,
 )
 
 router = DefaultRouter()

@@ -1,13 +1,16 @@
-﻿"""
+"""
 CyMed Laboratory â€” Accessioning
 Unique accession number assignment, multi-site support, reference lab routing.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class AccessionNumberSequence(BaseModel):
     """Per-site, per-year accession number counter. Locked for atomic increment."""
+
     site_code = models.CharField(max_length=20)
     year = models.PositiveSmallIntegerField()
     last_sequence = models.PositiveBigIntegerField(default=0)
@@ -20,6 +23,7 @@ class AccessionNumberSequence(BaseModel):
     def next_number(self) -> str:
         """Atomically increments and returns formatted accession number."""
         from django.db import transaction
+
         with transaction.atomic():
             obj = AccessionNumberSequence.objects.select_for_update().get(pk=self.pk)
             obj.last_sequence += 1
@@ -29,6 +33,7 @@ class AccessionNumberSequence(BaseModel):
 
 class Accession(BaseModel):
     """Accession record linking a specimen to a unique accession number."""
+
     STATUS_CHOICES = [
         ("active", "Active"),
         ("cancelled", "Cancelled"),
@@ -57,6 +62,7 @@ class Accession(BaseModel):
 
 class AccessionBatch(BaseModel):
     """Groups multiple accessions processed together (e.g., morning batch run)."""
+
     batch_number = models.CharField(max_length=100, unique=True)
     site_code = models.CharField(max_length=20, blank=True)
     created_by = models.UUIDField()
@@ -72,6 +78,7 @@ class AccessionBatch(BaseModel):
 
 class AccessionBatchItem(BaseModel):
     """Links an accession to a batch."""
+
     batch = models.ForeignKey(AccessionBatch, on_delete=models.CASCADE, related_name="items")
     accession = models.ForeignKey(Accession, on_delete=models.CASCADE, related_name="batch_items")
     added_at = models.DateTimeField(auto_now_add=True)
@@ -83,6 +90,7 @@ class AccessionBatchItem(BaseModel):
 
 class AccessionAudit(BaseModel):
     """Immutable audit log for accession lifecycle events."""
+
     accession = models.ForeignKey(Accession, on_delete=models.CASCADE, related_name="audit_log")
     event_type = models.CharField(max_length=100)
     performed_by = models.UUIDField(null=True, blank=True)

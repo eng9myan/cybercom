@@ -1,10 +1,16 @@
-from rest_framework import viewsets, permissions, filters
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import PatientNotification, NotificationPreference, NotificationTemplate, PushSubscription
+from rest_framework import filters, permissions, viewsets
+
+from .models import (
+    NotificationPreference,
+    NotificationTemplate,
+    PatientNotification,
+    PushSubscription,
+)
 from .serializers import (
-    PatientNotificationSerializer,
     NotificationPreferenceSerializer,
     NotificationTemplateSerializer,
+    PatientNotificationSerializer,
     PushSubscriptionSerializer,
 )
 
@@ -13,9 +19,9 @@ class PatientNotificationViewSet(viewsets.ModelViewSet):
     serializer_class = PatientNotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['notification_type', 'priority', 'is_read', 'is_dismissed']
-    ordering_fields = ['created_at', 'priority', 'expires_at']
-    ordering = ['-created_at']
+    filterset_fields = ["notification_type", "priority", "is_read", "is_dismissed"]
+    ordering_fields = ["created_at", "priority", "expires_at"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         return PatientNotification.objects.filter(
@@ -39,9 +45,9 @@ class NotificationTemplateViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationTemplateSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['notification_type', 'channel', 'language', 'is_active']
-    ordering_fields = ['created_at', 'code']
-    ordering = ['code']
+    filterset_fields = ["notification_type", "channel", "language", "is_active"]
+    ordering_fields = ["created_at", "code"]
+    ordering = ["code"]
 
     def get_queryset(self):
         return NotificationTemplate.objects.filter(
@@ -53,9 +59,9 @@ class PushSubscriptionViewSet(viewsets.ModelViewSet):
     serializer_class = PushSubscriptionSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['platform', 'is_active']
-    ordering_fields = ['created_at', 'last_used_at']
-    ordering = ['-created_at']
+    filterset_fields = ["platform", "is_active"]
+    ordering_fields = ["created_at", "last_used_at"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         return PushSubscription.objects.filter(

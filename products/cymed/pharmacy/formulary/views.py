@@ -1,12 +1,23 @@
 """CyMed Pharmacy — Formulary Management Views."""
+
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Formulary, FormularyDrug, FormularyRestriction, TherapeuticClass, PreferredMedication
-from .serializers import (
-    FormularySerializer, FormularyDrugSerializer, FormularyRestrictionSerializer,
-    TherapeuticClassSerializer, PreferredMedicationSerializer
-)
+
 from ..views import PharmacyModelViewSet
+from .models import (
+    Formulary,
+    FormularyDrug,
+    FormularyRestriction,
+    PreferredMedication,
+    TherapeuticClass,
+)
+from .serializers import (
+    FormularyDrugSerializer,
+    FormularyRestrictionSerializer,
+    FormularySerializer,
+    PreferredMedicationSerializer,
+    TherapeuticClassSerializer,
+)
 
 
 class TherapeuticClassViewSet(PharmacyModelViewSet):
@@ -33,21 +44,27 @@ class FormularyViewSet(PharmacyModelViewSet):
             return Response({"detail": "drug_code query parameter required."}, status=400)
         try:
             entry = formulary.drugs.get(drug_code=drug_code)
-            return Response({
-                "on_formulary": True,
-                "status": entry.status,
-                "tier": entry.tier,
-                "requires_prior_auth": entry.requires_prior_auth,
-            })
+            return Response(
+                {
+                    "on_formulary": True,
+                    "status": entry.status,
+                    "tier": entry.tier,
+                    "requires_prior_auth": entry.requires_prior_auth,
+                }
+            )
         except FormularyDrug.DoesNotExist:
             # Check for preferred alternative
             alternative = formulary.preferred_medications.filter(
                 non_formulary_drug_code=drug_code
             ).first()
-            return Response({
-                "on_formulary": False,
-                "preferred_alternative": PreferredMedicationSerializer(alternative).data if alternative else None,
-            })
+            return Response(
+                {
+                    "on_formulary": False,
+                    "preferred_alternative": PreferredMedicationSerializer(alternative).data
+                    if alternative
+                    else None,
+                }
+            )
 
 
 class FormularyDrugViewSet(PharmacyModelViewSet):

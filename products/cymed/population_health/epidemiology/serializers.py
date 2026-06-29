@@ -1,5 +1,6 @@
-﻿from rest_framework import serializers
-from .models import EpidemiologyStudy, DiseaseTrend, PopulationIndicator, HealthMeasure
+from rest_framework import serializers
+
+from .models import DiseaseTrend, EpidemiologyStudy, HealthMeasure, PopulationIndicator
 
 
 class EpidemiologyStudySerializer(serializers.ModelSerializer):

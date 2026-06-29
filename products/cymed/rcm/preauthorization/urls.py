@@ -1,7 +1,10 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    PreauthorizationViewSet, AuthorizationRequestViewSet,
-    AuthorizationDecisionViewSet, AuthorizationAppealViewSet,
+    AuthorizationAppealViewSet,
+    AuthorizationDecisionViewSet,
+    AuthorizationRequestViewSet,
+    PreauthorizationViewSet,
 )
 
 router = DefaultRouter()

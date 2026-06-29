@@ -6,6 +6,7 @@ CyberCom API middleware stack.
 - API usage recording
 - Audit event emission
 """
+
 import logging
 import time
 import uuid
@@ -15,7 +16,12 @@ from django.utils.deprecation import MiddlewareMixin
 
 log = logging.getLogger(__name__)
 
-RATE_LIMIT_EXEMPT_PATHS = {"/api/v1/audit/healthz/", "/api/v1/tenants/healthz/", "/health", "/metrics"}
+RATE_LIMIT_EXEMPT_PATHS = {
+    "/api/v1/audit/healthz/",
+    "/api/v1/tenants/healthz/",
+    "/health",
+    "/metrics",
+}
 
 
 class CorrelationIdMiddleware(MiddlewareMixin):
@@ -53,6 +59,7 @@ class RateLimitMiddleware(MiddlewareMixin):
             return None
 
         from .rate_limit import get_rate_limiter
+
         rl = get_rate_limiter()
 
         tenant_id = request.headers.get("X-Tenant-ID", "")
@@ -60,13 +67,16 @@ class RateLimitMiddleware(MiddlewareMixin):
 
         result = rl.check_tenant(tenant_id or ip, requests_per_minute=60)
         if not result.allowed:
-            response = JsonResponse({
-                "type": "https://cybercom.io/errors/rate_limit_exceeded",
-                "title": "Too Many Requests",
-                "status": 429,
-                "detail": f"Rate limit exceeded. Retry after {result.retry_after}s.",
-                "instance": request.path,
-            }, status=429)
+            response = JsonResponse(
+                {
+                    "type": "https://cybercom.io/errors/rate_limit_exceeded",
+                    "title": "Too Many Requests",
+                    "status": 429,
+                    "detail": f"Rate limit exceeded. Retry after {result.retry_after}s.",
+                    "instance": request.path,
+                },
+                status=429,
+            )
             response["Retry-After"] = str(result.retry_after or 60)
             response["X-RateLimit-Limit"] = str(result.limit)
             response["X-RateLimit-Remaining"] = "0"
@@ -96,8 +106,11 @@ class ApiUsageMiddleware(MiddlewareMixin):
             return response
 
         try:
-            latency_ms = int((time.monotonic() - getattr(request, "_api_start_time", time.monotonic())) * 1000)
+            latency_ms = int(
+                (time.monotonic() - getattr(request, "_api_start_time", time.monotonic())) * 1000
+            )
             from .models import ApiUsage
+
             tenant_id = request.headers.get("X-Tenant-ID") or None
             correlation_id = getattr(request, "correlation_id", "")
             ApiUsage.objects.create(

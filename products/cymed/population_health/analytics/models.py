@@ -1,12 +1,13 @@
-﻿"""
+"""
 CyMed Population Health — Analytics
 Covers: NationalHealthSnapshot, PopulationAnalyticsInsight, QualityKPIDashboard,
         OutbreakForecast, PopulationHealthDashboard
 Terminology: ICD-11 codes resolved via TerminologyService (not stored locally).
 """
-from django.db import models
-from platform.common.models import BaseModel
 
+from django.db import models
+
+from platform.common.models import BaseModel
 
 PERIOD_TYPE_CHOICES = [
     ("daily", "Daily"),

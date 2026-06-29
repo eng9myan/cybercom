@@ -1,14 +1,19 @@
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework import viewsets
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.permissions import IsAuthenticated
 
-from .models import PatientAcuityScore, WardCoverageRequirement, CoverageValidationRun, SkillMixValidation
+from .models import (
+    CoverageValidationRun,
+    PatientAcuityScore,
+    SkillMixValidation,
+    WardCoverageRequirement,
+)
 from .serializers import (
-    PatientAcuityScoreSerializer,
-    WardCoverageRequirementSerializer,
     CoverageValidationRunSerializer,
+    PatientAcuityScoreSerializer,
     SkillMixValidationSerializer,
+    WardCoverageRequirementSerializer,
 )
 
 
@@ -37,7 +42,12 @@ class PatientAcuityScoreViewSet(HWMModelViewSet):
 class WardCoverageRequirementViewSet(HWMModelViewSet):
     queryset = WardCoverageRequirement.objects.all()
     serializer_class = WardCoverageRequirementSerializer
-    filterset_fields = ["facility_id", "ward_type", "physician_coverage_24_7", "specialty_cert_required_100pct"]
+    filterset_fields = [
+        "facility_id",
+        "ward_type",
+        "physician_coverage_24_7",
+        "specialty_cert_required_100pct",
+    ]
     ordering_fields = ["ward_type", "created_at"]
 
 

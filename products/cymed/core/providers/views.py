@@ -1,7 +1,9 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+
 from products.cymed.core.providers.models import Provider
 from products.cymed.core.providers.serializers import ProviderSerializer
+
 
 class ProviderViewSet(viewsets.ModelViewSet):
     queryset = Provider.objects.filter(is_deleted=False)

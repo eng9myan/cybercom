@@ -1,32 +1,32 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class PatientNotification(BaseModel):
     NOTIFICATION_TYPE_CHOICES = [
-        ('appointment_confirmed', 'Appointment Confirmed'),
-        ('appointment_reminder', 'Appointment Reminder'),
-        ('appointment_cancelled', 'Appointment Cancelled'),
-        ('lab_result_ready', 'Lab Result Ready'),
-        ('imaging_result_ready', 'Imaging Result Ready'),
-        ('prescription_ready', 'Prescription Ready'),
-        ('refill_reminder', 'Refill Reminder'),
-        ('invoice_due', 'Invoice Due'),
-        ('payment_received', 'Payment Received'),
-        ('preauth_approved', 'Preauth Approved'),
-        ('preauth_denied', 'Preauth Denied'),
-        ('message_received', 'Message Received'),
-        ('critical_result', 'Critical Result'),
-        ('system_alert', 'System Alert'),
-        ('health_reminder', 'Health Reminder'),
-        ('wellness_tip', 'Wellness Tip'),
+        ("appointment_confirmed", "Appointment Confirmed"),
+        ("appointment_reminder", "Appointment Reminder"),
+        ("appointment_cancelled", "Appointment Cancelled"),
+        ("lab_result_ready", "Lab Result Ready"),
+        ("imaging_result_ready", "Imaging Result Ready"),
+        ("prescription_ready", "Prescription Ready"),
+        ("refill_reminder", "Refill Reminder"),
+        ("invoice_due", "Invoice Due"),
+        ("payment_received", "Payment Received"),
+        ("preauth_approved", "Preauth Approved"),
+        ("preauth_denied", "Preauth Denied"),
+        ("message_received", "Message Received"),
+        ("critical_result", "Critical Result"),
+        ("system_alert", "System Alert"),
+        ("health_reminder", "Health Reminder"),
+        ("wellness_tip", "Wellness Tip"),
     ]
     PRIORITY_CHOICES = [
-        ('low', 'Low'),
-        ('normal', 'Normal'),
-        ('high', 'High'),
-        ('critical', 'Critical'),
+        ("low", "Low"),
+        ("normal", "Normal"),
+        ("high", "High"),
+        ("critical", "Critical"),
     ]
 
     account_id = models.UUIDField(db_index=True)
@@ -38,7 +38,7 @@ class PatientNotification(BaseModel):
     action_label = models.CharField(max_length=100, blank=True)
     source_type = models.CharField(max_length=50, blank=True)
     source_id = models.UUIDField(null=True, blank=True)
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='normal')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="normal")
     is_read = models.BooleanField(default=False)
     read_at = models.DateTimeField(null=True, blank=True)
     is_dismissed = models.BooleanField(default=False)
@@ -47,10 +47,10 @@ class PatientNotification(BaseModel):
     channels_sent = models.JSONField(default=list)
 
     class Meta:
-        db_table = 'cymed_portal_notifications'
+        db_table = "cymed_portal_notifications"
         indexes = [
-            models.Index(fields=['account_id', 'is_read', 'notification_type']),
-            models.Index(fields=['account_id', 'priority', 'created_at']),
+            models.Index(fields=["account_id", "is_read", "notification_type"]),
+            models.Index(fields=["account_id", "priority", "created_at"]),
         ]
 
     def __str__(self):
@@ -73,7 +73,7 @@ class NotificationPreference(BaseModel):
     quiet_hours_end = models.TimeField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_notification_preferences'
+        db_table = "cymed_portal_notification_preferences"
 
     def __str__(self):
         return f"Notification Preferences for account {self.account_id}"
@@ -81,22 +81,22 @@ class NotificationPreference(BaseModel):
 
 class NotificationTemplate(BaseModel):
     CHANNEL_CHOICES = [
-        ('push', 'Push'),
-        ('email', 'Email'),
-        ('sms', 'SMS'),
-        ('in_app', 'In App'),
+        ("push", "Push"),
+        ("email", "Email"),
+        ("sms", "SMS"),
+        ("in_app", "In App"),
     ]
 
     code = models.CharField(max_length=50, unique=True)
     notification_type = models.CharField(max_length=50)
-    channel = models.CharField(max_length=10, choices=CHANNEL_CHOICES, default='push')
-    language = models.CharField(max_length=10, default='en')
+    channel = models.CharField(max_length=10, choices=CHANNEL_CHOICES, default="push")
+    language = models.CharField(max_length=10, default="en")
     title_template = models.CharField(max_length=255)
     body_template = models.TextField()
     is_active = models.BooleanField(default=True)
 
     class Meta:
-        db_table = 'cymed_portal_notification_templates'
+        db_table = "cymed_portal_notification_templates"
 
     def __str__(self):
         return f"Template: {self.code} ({self.channel})"
@@ -104,22 +104,22 @@ class NotificationTemplate(BaseModel):
 
 class PushSubscription(BaseModel):
     PLATFORM_CHOICES = [
-        ('ios', 'iOS'),
-        ('android', 'Android'),
-        ('web', 'Web'),
+        ("ios", "iOS"),
+        ("android", "Android"),
+        ("web", "Web"),
     ]
 
     account_id = models.UUIDField(db_index=True)
     device_id = models.UUIDField(null=True, blank=True)
     push_token = models.CharField(max_length=500, db_index=True)
-    platform = models.CharField(max_length=10, choices=PLATFORM_CHOICES, default='android')
+    platform = models.CharField(max_length=10, choices=PLATFORM_CHOICES, default="android")
     is_active = models.BooleanField(default=True)
     last_used_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = 'cymed_portal_push_subscriptions'
+        db_table = "cymed_portal_push_subscriptions"
         indexes = [
-            models.Index(fields=['account_id', 'is_active']),
+            models.Index(fields=["account_id", "is_active"]),
         ]
 
     def __str__(self):

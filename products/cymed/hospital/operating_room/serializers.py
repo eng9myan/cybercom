@@ -1,31 +1,45 @@
 from rest_framework import serializers
-from products.cymed.hospital.operating_room.models import SurgicalCase, SurgicalSchedule, ProcedureBooking, ProcedureConsent, ProcedureChecklist, SurgicalTeam, SurgicalEquipment
+
 from platform.events.models import OutboxEvent
 from platform.terminology.services import TerminologyService
+from products.cymed.hospital.operating_room.models import (
+    ProcedureBooking,
+    ProcedureChecklist,
+    ProcedureConsent,
+    SurgicalCase,
+    SurgicalEquipment,
+    SurgicalSchedule,
+    SurgicalTeam,
+)
+
 
 class SurgicalCaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = SurgicalCase
-        fields = ["id", "patient", "surgeon_id", "procedure_code", "scheduled_start", "scheduled_end", "status"]
+        fields = [
+            "id",
+            "patient",
+            "surgeon_id",
+            "procedure_code",
+            "scheduled_start",
+            "scheduled_end",
+            "status",
+        ]
 
     def validate_procedure_code(self, value):
         request = self.context.get("request")
         tenant_id = getattr(request, "tenant_id", "00000000-0000-0000-0000-000000000000")
-        
+
         # Consume Terminology Service validate
         is_valid = TerminologyService.validate(
-            provider="snomed",
-            code=value,
-            tenant_id=str(tenant_id)
+            provider="snomed", code=value, tenant_id=str(tenant_id)
         )
         if not is_valid:
             # Fallback check under icd11
             is_valid = TerminologyService.validate(
-                provider="icd11",
-                code=value,
-                tenant_id=str(tenant_id)
+                provider="icd11", code=value, tenant_id=str(tenant_id)
             )
-        
+
         if not is_valid:
             raise serializers.ValidationError(
                 f"Surgical procedure code '{value}' is invalid under SNOMED and ICD-11."
@@ -53,8 +67,8 @@ class SurgicalCaseSerializer(serializers.ModelSerializer):
                     "procedure_code": surgical_case.procedure_code,
                     "scheduled_start": surgical_case.scheduled_start.isoformat(),
                     "scheduled_end": surgical_case.scheduled_end.isoformat(),
-                    "status": "completed"
-                }
+                    "status": "completed",
+                },
             )
 
             # Trigger ERP Billing Charge Event
@@ -63,12 +77,14 @@ class SurgicalCaseSerializer(serializers.ModelSerializer):
                 topic="cymed.billing.events",
                 event_type="cymed.charge.created",
                 payload={
-                    "encounter_id": str(surgical_case.id), # Surgical Case acts as session details reference
+                    "encounter_id": str(
+                        surgical_case.id
+                    ),  # Surgical Case acts as session details reference
                     "charge_type": "or_utilization",
                     "amount": 2500.00,
                     "currency": "AED",
-                    "service_code": "OR-UTIL-01"
-                }
+                    "service_code": "OR-UTIL-01",
+                },
             )
 
             # Trigger ERP Inventory Consumed Event
@@ -81,36 +97,42 @@ class SurgicalCaseSerializer(serializers.ModelSerializer):
                     "item_code": "SURG-KIT-COMP-01",
                     "quantity": 1,
                     "unit": "kit",
-                    "cost": 350.00
-                }
+                    "cost": 350.00,
+                },
             )
 
         return surgical_case
+
 
 class SurgicalScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = SurgicalSchedule
         fields = "__all__"
 
+
 class ProcedureBookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProcedureBooking
         fields = "__all__"
+
 
 class ProcedureConsentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProcedureConsent
         fields = "__all__"
 
+
 class ProcedureChecklistSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProcedureChecklist
         fields = "__all__"
 
+
 class SurgicalTeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = SurgicalTeam
         fields = "__all__"
+
 
 class SurgicalEquipmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -130,8 +152,8 @@ class SurgicalEquipmentSerializer(serializers.ModelSerializer):
             payload={
                 "surgical_case_id": str(equip.surgical_case.id),
                 "asset_serial": equip.asset_serial,
-                "assigned_at": equip.assigned_at.isoformat()
-            }
+                "assigned_at": equip.assigned_at.isoformat(),
+            },
         )
 
         return equip

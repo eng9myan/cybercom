@@ -1,5 +1,5 @@
-﻿import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -99,8 +99,12 @@ class EligibilityResponse(BaseModel):
     out_of_pocket_met = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     # FHIR: CoverageEligibilityResponse.insurance[].item[].benefit (type=copay)
     copay_amount = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
-    coinsurance_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    patient_responsibility_estimate = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    coinsurance_percentage = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
+    patient_responsibility_estimate = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True
+    )
     # Full raw payer response payload
     raw_response = models.JSONField(default=dict)
     fhir_coverage_eligibility_response_id = models.CharField(max_length=200, blank=True, null=True)

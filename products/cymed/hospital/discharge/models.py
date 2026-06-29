@@ -1,17 +1,24 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 from products.cymed.hospital.inpatient.models import HospitalStay
 
+
 class DischargeChecklist(BaseModel):
     stay = models.ForeignKey(HospitalStay, on_delete=models.CASCADE)
-    task_name = models.CharField(max_length=255)  # medication_recon, follow_up_scheduled, billing_cleared
-    status = models.CharField(max_length=50, choices=[
-        ("pending", "Pending"), ("completed", "Completed")
-    ], default="pending")
+    task_name = models.CharField(
+        max_length=255
+    )  # medication_recon, follow_up_scheduled, billing_cleared
+    status = models.CharField(
+        max_length=50,
+        choices=[("pending", "Pending"), ("completed", "Completed")],
+        default="pending",
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "cymed_hospital_discharge_checklists"
+
 
 class DischargeMedication(BaseModel):
     stay = models.ForeignKey(HospitalStay, on_delete=models.CASCADE)
@@ -22,6 +29,7 @@ class DischargeMedication(BaseModel):
     class Meta:
         db_table = "cymed_hospital_discharge_medications"
 
+
 class FollowUpAppointment(BaseModel):
     stay = models.ForeignKey(HospitalStay, on_delete=models.CASCADE)
     specialty_code = models.CharField(max_length=100)
@@ -30,6 +38,7 @@ class FollowUpAppointment(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_discharge_followups"
+
 
 class DischargeInstruction(BaseModel):
     stay = models.OneToOneField(HospitalStay, on_delete=models.CASCADE, related_name="instructions")

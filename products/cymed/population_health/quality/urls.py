@@ -1,9 +1,10 @@
-﻿from rest_framework.routers import DefaultRouter
+from rest_framework.routers import DefaultRouter
+
 from .views import (
-    QualityMeasureViewSet,
-    QualityMeasureResultViewSet,
-    QualityImprovementViewSet,
     ClinicalAuditViewSet,
+    QualityImprovementViewSet,
+    QualityMeasureResultViewSet,
+    QualityMeasureViewSet,
 )
 
 router = DefaultRouter()

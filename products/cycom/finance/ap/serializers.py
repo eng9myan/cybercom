@@ -1,5 +1,6 @@
-﻿from rest_framework import serializers
-from .models import Vendor, Bill, BillLine, VendorPayment
+from rest_framework import serializers
+
+from .models import Bill, BillLine, Vendor, VendorPayment
 
 
 class VendorSerializer(serializers.ModelSerializer):

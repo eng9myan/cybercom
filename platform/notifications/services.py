@@ -2,10 +2,12 @@
 Notification dispatch service. Tenant-scoped, multi-channel.
 Channels: email, SMS, push (FCM/APNs), in-app, webhook.
 """
+
 import logging
-from typing import Optional
+
 from django.utils import timezone
-from .models import Notification, NotificationTemplate, NotificationStatus, NotificationChannel
+
+from .models import Notification, NotificationChannel, NotificationStatus, NotificationTemplate
 
 log = logging.getLogger("cybercom.notifications")
 
@@ -21,9 +23,9 @@ class NotificationService:
         channel: str,
         subject: str,
         body: str,
-        template: Optional[NotificationTemplate] = None,
+        template: NotificationTemplate | None = None,
         scheduled_at=None,
-        metadata: Optional[dict] = None,
+        metadata: dict | None = None,
     ) -> Notification:
         notification = Notification.objects.create(
             tenant_id=tenant_id,
@@ -50,13 +52,15 @@ class NotificationService:
         recipient_address: str,
         context: dict,
         lang: str = "en",
-    ) -> Optional[Notification]:
+    ) -> Notification | None:
         try:
             template = NotificationTemplate.objects.get(
                 tenant_id=tenant_id, name=template_name, channel=channel, is_active=True
             )
         except NotificationTemplate.DoesNotExist:
-            log.warning("Template not found: %s/%s for tenant %s", template_name, channel, tenant_id)
+            log.warning(
+                "Template not found: %s/%s for tenant %s", template_name, channel, tenant_id
+            )
             return None
 
         body = template.body_en if lang == "en" else template.body_ar
@@ -120,15 +124,17 @@ class NotificationService:
 
     @staticmethod
     def mark_delivered(notification_id: str, tenant_id: str) -> bool:
-        updated = Notification.objects.filter(
-            id=notification_id, tenant_id=tenant_id
-        ).update(status=NotificationStatus.DELIVERED)
+        updated = Notification.objects.filter(id=notification_id, tenant_id=tenant_id).update(
+            status=NotificationStatus.DELIVERED
+        )
         return updated > 0
 
 
 class TemplateService:
     @staticmethod
-    def create(tenant_id: str, name: str, channel: str, subject: str, body_en: str, body_ar: str) -> NotificationTemplate:
+    def create(
+        tenant_id: str, name: str, channel: str, subject: str, body_en: str, body_ar: str
+    ) -> NotificationTemplate:
         return NotificationTemplate.objects.create(
             tenant_id=tenant_id,
             name=name,
@@ -139,7 +145,7 @@ class TemplateService:
         )
 
     @staticmethod
-    def get_active(tenant_id: str, name: str, channel: str) -> Optional[NotificationTemplate]:
+    def get_active(tenant_id: str, name: str, channel: str) -> NotificationTemplate | None:
         return NotificationTemplate.objects.filter(
             tenant_id=tenant_id, name=name, channel=channel, is_active=True
         ).first()

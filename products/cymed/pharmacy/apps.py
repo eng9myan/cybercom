@@ -1,6 +1,7 @@
 """
 CyMed Pharmacy Edition — Django App Configuration
 """
+
 from django.apps import AppConfig
 
 

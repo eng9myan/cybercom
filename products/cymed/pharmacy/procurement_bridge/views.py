@@ -1,11 +1,15 @@
 """CyMed Pharmacy — Procurement Bridge Views."""
+
 import uuid
+
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
 from platform.events.models import OutboxEvent
+
+from ..views import PharmacyModelViewSet
 from .models import ProcurementRequest
 from .serializers import ProcurementRequestSerializer
-from ..views import PharmacyModelViewSet
 
 
 class ProcurementRequestViewSet(PharmacyModelViewSet):
@@ -37,11 +41,13 @@ class ProcurementRequestViewSet(PharmacyModelViewSet):
     def submit_to_erp(self, request, pk=None):
         """Submit procurement request to CyCom ERP via CyIntegrationHub."""
         import django.utils.timezone as tz
+
         req = self.get_object()
         tenant_id = getattr(request, "tenant_id", None)
 
         try:
             from platform.cyintegrationhub.services import IntegrationHubService
+
             result = IntegrationHubService.submit_procurement_request(
                 request_id=str(req.id), tenant_id=str(tenant_id)
             )
@@ -50,6 +56,6 @@ class ProcurementRequestViewSet(PharmacyModelViewSet):
             req.erp_response = result
             req.save(update_fields=["status", "erp_submitted_at", "erp_response"])
         except Exception as e:
-            return Response({"detail": f"ERP submission failed: {str(e)}"}, status=503)
+            return Response({"detail": f"ERP submission failed: {e!s}"}, status=503)
 
         return Response(ProcurementRequestSerializer(req).data)

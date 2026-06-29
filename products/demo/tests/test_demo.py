@@ -1,8 +1,14 @@
 import uuid
+
 from django.test import TestCase
+
 from products.demo.models import (
-    DemoEnvironment, DemoTenant, DemoScenario, DemoSession,
-    DemoResetRequest, ProductTour,
+    DemoEnvironment,
+    DemoResetRequest,
+    DemoScenario,
+    DemoSession,
+    DemoTenant,
+    ProductTour,
 )
 
 TENANT_ID = uuid.uuid4()
@@ -10,19 +16,19 @@ PRESENTER_ID = uuid.uuid4()
 
 
 def make_environment(**kwargs):
-    defaults = dict(
-        tenant_id=TENANT_ID,
-        name="CyMed Hospital Demo",
-        code=f"demo-{uuid.uuid4().hex[:8]}",
-        demo_type="cymed_hospital",
-        status="active",
-        prospect_name="Test Prospect",
-        prospect_organization="Acme Health",
-        prospect_email="prospect@example.com",
-        product_edition="enterprise",
-        country_config="USA",
-        language_code="en",
-    )
+    defaults = {
+        "tenant_id": TENANT_ID,
+        "name": "CyMed Hospital Demo",
+        "code": f"demo-{uuid.uuid4().hex[:8]}",
+        "demo_type": "cymed_hospital",
+        "status": "active",
+        "prospect_name": "Test Prospect",
+        "prospect_organization": "Acme Health",
+        "prospect_email": "prospect@example.com",
+        "product_edition": "enterprise",
+        "country_config": "USA",
+        "language_code": "en",
+    }
     defaults.update(kwargs)
     return DemoEnvironment.objects.create(**defaults)
 

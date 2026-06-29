@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 FLOAT_ASSIGNMENT_STATUS_CHOICES = [
     ("available", "Available"),
@@ -55,7 +55,9 @@ class FloatDeployment(BaseModel):
     target_department_id = models.UUIDField(db_index=True)
     target_facility_id = models.UUIDField(db_index=True)
     roster_slot_id = models.UUIDField(null=True, blank=True)
-    status = models.CharField(max_length=20, choices=FLOAT_ASSIGNMENT_STATUS_CHOICES, default="deployed")
+    status = models.CharField(
+        max_length=20, choices=FLOAT_ASSIGNMENT_STATUS_CHOICES, default="deployed"
+    )
     deployed_at = models.DateTimeField(auto_now_add=True)
     recalled_at = models.DateTimeField(null=True, blank=True)
     deployment_reason = models.TextField(blank=True)
@@ -86,7 +88,9 @@ class AgencyStaffRegistration(BaseModel):
 
     # Issued after both verifications pass
     ehr_access_token_issued = models.BooleanField(default=False)
-    status = models.CharField(max_length=30, choices=AGENCY_STAFF_STATUS_CHOICES, default="pending_verification")
+    status = models.CharField(
+        max_length=30, choices=AGENCY_STAFF_STATUS_CHOICES, default="pending_verification"
+    )
 
     def __str__(self):
         return f"{self.display_name} ({self.agency_name}) — {self.status}"

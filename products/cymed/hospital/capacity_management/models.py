@@ -1,5 +1,7 @@
 from django.db import models
+
 from platform.common.models import BaseModel
+
 
 class CapacityRule(BaseModel):
     rule_name = models.CharField(max_length=255)
@@ -10,6 +12,7 @@ class CapacityRule(BaseModel):
     class Meta:
         db_table = "cymed_hospital_capacity_rules"
 
+
 class CapacityThreshold(BaseModel):
     rule = models.ForeignKey(CapacityRule, on_delete=models.CASCADE)
     current_value = models.PositiveIntegerField()
@@ -19,6 +22,7 @@ class CapacityThreshold(BaseModel):
     class Meta:
         db_table = "cymed_hospital_capacity_mgmt_thresholds"
 
+
 class SurgePlan(BaseModel):
     name = models.CharField(max_length=255)
     trigger_condition = models.CharField(max_length=255)
@@ -27,6 +31,7 @@ class SurgePlan(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_surge_plans"
+
 
 class OverflowUnit(BaseModel):
     name = models.CharField(max_length=255)

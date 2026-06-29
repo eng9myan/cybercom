@@ -1,12 +1,14 @@
-import uuid
 import hashlib
 import hmac
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class LicenseServer(BaseModel):
     """Optional centralized license validation server record."""
+
     name = models.CharField(max_length=255)
     server_url = models.URLField(max_length=500, blank=True)
     public_key_pem = models.TextField(blank=True)
@@ -21,6 +23,7 @@ class LicenseServer(BaseModel):
 
 class License(BaseModel):
     """Master license record for a customer deployment."""
+
     LICENSE_TYPES = [
         ("trial", "Trial"),
         ("subscription", "Subscription"),
@@ -46,24 +49,24 @@ class License(BaseModel):
 
     # Identity
     license_number = models.CharField(max_length=100, unique=True)
-    product_code = models.CharField(max_length=100)         # e.g. "cymed_clinic", "cymed_hospital"
-    edition_code = models.CharField(max_length=100)         # e.g. "starter", "enterprise"
+    product_code = models.CharField(max_length=100)  # e.g. "cymed_clinic", "cymed_hospital"
+    edition_code = models.CharField(max_length=100)  # e.g. "starter", "enterprise"
     license_type = models.CharField(max_length=50, choices=LICENSE_TYPES, default="subscription")
     delivery_mode = models.CharField(max_length=50, choices=DELIVERY_MODES, default="online")
 
     # Customer
     customer_id = models.UUIDField(null=True, blank=True)
     organization_name = models.CharField(max_length=255)
-    country_code = models.CharField(max_length=10)          # ISO 3166-1 alpha-2
+    country_code = models.CharField(max_length=10)  # ISO 3166-1 alpha-2
 
     # Validity
     issued_at = models.DateTimeField(auto_now_add=True)
     valid_from = models.DateField()
-    valid_until = models.DateField(null=True, blank=True)   # null = perpetual
+    valid_until = models.DateField(null=True, blank=True)  # null = perpetual
     grace_period_days = models.PositiveIntegerField(default=14)
 
     # Limits
-    max_users = models.PositiveIntegerField(default=0)      # 0 = unlimited
+    max_users = models.PositiveIntegerField(default=0)  # 0 = unlimited
     max_providers = models.PositiveIntegerField(default=0)
     max_beds = models.PositiveIntegerField(default=0)
     max_facilities = models.PositiveIntegerField(default=0)
@@ -88,11 +91,13 @@ class License(BaseModel):
 
     def is_valid(self) -> bool:
         from django.utils import timezone
+
         today = timezone.now().date()
         if self.status == "revoked":
             return False
         if self.valid_until and today > self.valid_until:
             import datetime
+
             if today > self.valid_until + datetime.timedelta(days=self.grace_period_days):
                 return False
             self.status = "grace"
@@ -101,6 +106,7 @@ class License(BaseModel):
 
 class LicenseKey(BaseModel):
     """Activation key associated with a license."""
+
     license = models.ForeignKey(License, on_delete=models.CASCADE, related_name="keys")
     key_string = models.CharField(max_length=255, unique=True)
     is_used = models.BooleanField(default=False)
@@ -117,7 +123,10 @@ class LicenseKey(BaseModel):
 
 class LicenseActivation(BaseModel):
     """Record of a license key activation event."""
-    license_key = models.ForeignKey(LicenseKey, on_delete=models.CASCADE, related_name="activations")
+
+    license_key = models.ForeignKey(
+        LicenseKey, on_delete=models.CASCADE, related_name="activations"
+    )
     activated_at = models.DateTimeField(auto_now_add=True)
     machine_fingerprint = models.CharField(max_length=512, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
@@ -130,10 +139,11 @@ class LicenseActivation(BaseModel):
 
 class LicenseFeature(BaseModel):
     """Per-license feature entitlement overrides."""
+
     license = models.ForeignKey(License, on_delete=models.CASCADE, related_name="features")
     feature_code = models.CharField(max_length=200)
     is_enabled = models.BooleanField(default=True)
-    limit_value = models.PositiveIntegerField(null=True, blank=True)   # e.g. max templates = 5
+    limit_value = models.PositiveIntegerField(null=True, blank=True)  # e.g. max templates = 5
     notes = models.TextField(blank=True)
 
     class Meta:
@@ -143,8 +153,11 @@ class LicenseFeature(BaseModel):
 
 class LicenseAudit(BaseModel):
     """Immutable audit log for all license lifecycle events."""
+
     license = models.ForeignKey(License, on_delete=models.CASCADE, related_name="audit_log")
-    event_type = models.CharField(max_length=100)   # activated, renewed, revoked, expired, grace_started
+    event_type = models.CharField(
+        max_length=100
+    )  # activated, renewed, revoked, expired, grace_started
     performed_by = models.UUIDField(null=True, blank=True)
     metadata = models.JSONField(default=dict)
     logged_at = models.DateTimeField(auto_now_add=True)
@@ -156,6 +169,7 @@ class LicenseAudit(BaseModel):
 
 class LicenseUsage(BaseModel):
     """Daily snapshot of license consumption metrics."""
+
     license = models.ForeignKey(License, on_delete=models.CASCADE, related_name="usage_records")
     snapshot_date = models.DateField()
     active_users = models.PositiveIntegerField(default=0)
@@ -172,10 +186,11 @@ class LicenseUsage(BaseModel):
 
 class OfflineActivationPackage(BaseModel):
     """Air-gapped / offline activation bundle."""
+
     license = models.ForeignKey(License, on_delete=models.CASCADE, related_name="offline_packages")
     package_token = models.CharField(max_length=512, unique=True)
     machine_fingerprint = models.CharField(max_length=512)
-    signed_payload = models.TextField()                # Base64-encoded signed JSON
+    signed_payload = models.TextField()  # Base64-encoded signed JSON
     is_consumed = models.BooleanField(default=False)
     consumed_at = models.DateTimeField(null=True, blank=True)
     expires_at = models.DateTimeField()

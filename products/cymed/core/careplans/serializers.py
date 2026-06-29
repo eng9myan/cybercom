@@ -1,15 +1,19 @@
 from rest_framework import serializers
-from products.cymed.core.careplans.models import CarePlan, CareGoal, CareTask
+
+from products.cymed.core.careplans.models import CareGoal, CarePlan, CareTask
+
 
 class CareGoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = CareGoal
         fields = ["id", "description", "status", "target_date"]
 
+
 class CareTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = CareTask
         fields = ["id", "title", "description", "status", "assigned_provider"]
+
 
 class CarePlanSerializer(serializers.ModelSerializer):
     goals = CareGoalSerializer(many=True, required=False)
@@ -17,7 +21,20 @@ class CarePlanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CarePlan
-        fields = ["id", "patient", "status", "intent", "title", "description", "period_start", "period_end", "goals", "tasks", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "patient",
+            "status",
+            "intent",
+            "title",
+            "description",
+            "period_start",
+            "period_end",
+            "goals",
+            "tasks",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
     def create(self, validated_data):
@@ -37,11 +54,16 @@ class CarePlanSerializer(serializers.ModelSerializer):
 
         # Publish outbox event
         from platform.events.models import OutboxEvent
+
         OutboxEvent.objects.create(
             tenant_id=cp.tenant_id,
             topic="cymed.careplan.events",
             event_type="cymed.careplan.created",
-            payload={"careplan_id": str(cp.id), "patient_id": str(cp.patient.id), "title": cp.title}
+            payload={
+                "careplan_id": str(cp.id),
+                "patient_id": str(cp.patient.id),
+                "title": cp.title,
+            },
         )
 
         return cp

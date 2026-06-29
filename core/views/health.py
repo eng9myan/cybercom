@@ -1,11 +1,13 @@
-from django.db import connection
-from django.core.cache import cache
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
 import logging
 
+from django.core.cache import cache
+from django.db import connection
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 logger = logging.getLogger("cybercom.health")
+
 
 class HealthView(APIView):
     permission_classes = [AllowAny]
@@ -13,12 +15,14 @@ class HealthView(APIView):
     def get(self, request):
         return Response({"status": "healthy"}, status=200)
 
+
 class LivenessView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
         # Quick ping to assert runtime process is alive
         return Response({"liveness": "alive"}, status=200)
+
 
 class ReadinessView(APIView):
     permission_classes = [AllowAny]

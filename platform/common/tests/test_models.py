@@ -1,7 +1,8 @@
 """Unit tests for common base models."""
+
 import uuid
+
 import pytest
-from django.utils import timezone
 
 
 @pytest.mark.unit

@@ -1,17 +1,28 @@
 from django.db import models
 from django.utils import timezone
+
 from platform.common.models import BaseModel
 from products.cymed.core.patients.models import Patient
 from products.cymed.core.providers.models import Provider
 
+
 class CarePlan(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="careplans")
-    status = models.CharField(max_length=30, choices=[
-        ("draft", "Draft"), ("active", "Active"), ("suspended", "Suspended"), ("completed", "Completed")
-    ], default="active")
-    intent = models.CharField(max_length=30, choices=[
-        ("proposal", "Proposal"), ("plan", "Plan"), ("order", "Order")
-    ], default="plan")
+    status = models.CharField(
+        max_length=30,
+        choices=[
+            ("draft", "Draft"),
+            ("active", "Active"),
+            ("suspended", "Suspended"),
+            ("completed", "Completed"),
+        ],
+        default="active",
+    )
+    intent = models.CharField(
+        max_length=30,
+        choices=[("proposal", "Proposal"), ("plan", "Plan"), ("order", "Order")],
+        default="plan",
+    )
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     period_start = models.DateTimeField(default=timezone.now)
@@ -28,9 +39,16 @@ class CarePlan(BaseModel):
 class CareGoal(BaseModel):
     careplan = models.ForeignKey(CarePlan, on_delete=models.CASCADE, related_name="goals")
     description = models.TextField()
-    status = models.CharField(max_length=30, choices=[
-        ("proposed", "Proposed"), ("active", "Active"), ("achieved", "Achieved"), ("failed", "Failed")
-    ], default="active")
+    status = models.CharField(
+        max_length=30,
+        choices=[
+            ("proposed", "Proposed"),
+            ("active", "Active"),
+            ("achieved", "Achieved"),
+            ("failed", "Failed"),
+        ],
+        default="active",
+    )
     target_date = models.DateField(null=True, blank=True)
 
     class Meta:
@@ -41,10 +59,19 @@ class CareTask(BaseModel):
     careplan = models.ForeignKey(CarePlan, on_delete=models.CASCADE, related_name="tasks")
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    status = models.CharField(max_length=30, choices=[
-        ("ready", "Ready"), ("in_progress", "In Progress"), ("completed", "Completed"), ("cancelled", "Cancelled")
-    ], default="ready")
-    assigned_provider = models.ForeignKey(Provider, on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(
+        max_length=30,
+        choices=[
+            ("ready", "Ready"),
+            ("in_progress", "In Progress"),
+            ("completed", "Completed"),
+            ("cancelled", "Cancelled"),
+        ],
+        default="ready",
+    )
+    assigned_provider = models.ForeignKey(
+        Provider, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     class Meta:
         db_table = "cymed_careplan_tasks"

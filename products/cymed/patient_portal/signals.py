@@ -2,6 +2,7 @@
 CyMed Patient Portal — Signal Handlers
 Publishes domain events via Program 2.5 Event Framework (OutboxEvent).
 """
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -9,6 +10,7 @@ from django.dispatch import receiver
 def _publish_event(topic: str, event_type: str, payload: dict, tenant_id=None):
     try:
         from platform.events.models import OutboxEvent
+
         OutboxEvent.objects.create(
             tenant_id=str(tenant_id) if tenant_id else None,
             topic=topic,

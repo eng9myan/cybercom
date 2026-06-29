@@ -1,12 +1,15 @@
 """
 Tests for CyMed Commercial — Subscription Platform.
 """
+
 import uuid
 from datetime import date
+
 import pytest
 
 from products.cymed.commercial.subscriptions.models import (
-    SubscriptionPlan, Subscription, SubscriptionUsage, SubscriptionInvoice, SubscriptionContract
+    SubscriptionContract,
+    SubscriptionPlan,
 )
 from products.cymed.commercial.subscriptions.services import SubscriptionService
 
@@ -62,10 +65,14 @@ class TestSubscriptionPlan:
 
     def test_unique_code(self, db, plan):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             SubscriptionPlan.objects.create(
-                tenant_id=TENANT, code="cymed_clinic_starter_annual", name="Dup",
-                product_code="x", edition_code="x"
+                tenant_id=TENANT,
+                code="cymed_clinic_starter_annual",
+                name="Dup",
+                product_code="x",
+                edition_code="x",
             )
 
 
@@ -87,6 +94,7 @@ class TestSubscriptionService:
             tenant_id=TENANT,
         )
         from dateutil.relativedelta import relativedelta
+
         expected = date.today() + relativedelta(months=1) - relativedelta(days=1)
         assert sub.current_period_end == expected
 

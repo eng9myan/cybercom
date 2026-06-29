@@ -3,9 +3,9 @@ Idempotency key service. ADR-0030 S3.1: safe retries without double processing.
 Header: Idempotency-Key (max 255 chars).
 Retention: 24 hours by default.
 """
+
 import hashlib
 from datetime import timedelta
-from typing import Optional
 
 from django.utils import timezone
 
@@ -24,12 +24,13 @@ class IdempotencyService:
         # process request...
         svc.complete(result.record, status_code, response_body)
     """
+
     RETENTION_HOURS = 24
 
     def _body_hash(self, body: str) -> str:
         return hashlib.sha256(body.encode()).hexdigest()
 
-    def get(self, key: str, tenant_id=None) -> Optional[IdempotencyKey]:
+    def get(self, key: str, tenant_id=None) -> IdempotencyKey | None:
         try:
             return IdempotencyKey.objects.get(key=key, tenant_id=tenant_id)
         except IdempotencyKey.DoesNotExist:

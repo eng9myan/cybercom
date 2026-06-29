@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import ShiftTemplate, RosterCycle, RosterSlot, SelfScheduleWindow, SlotQuota
+
+from .models import RosterCycle, RosterSlot, SelfScheduleWindow, ShiftTemplate, SlotQuota
 
 
 class ShiftTemplateSerializer(serializers.ModelSerializer):

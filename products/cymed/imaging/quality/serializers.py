@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import QualityAudit, ImagingQualityMetric, RadiationDoseRecord, AccreditationRecord
+
+from .models import AccreditationRecord, ImagingQualityMetric, QualityAudit, RadiationDoseRecord
 
 
 class QualityAuditSerializer(serializers.ModelSerializer):

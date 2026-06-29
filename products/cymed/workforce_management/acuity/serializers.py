@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import PatientAcuityScore, WardCoverageRequirement, CoverageValidationRun, SkillMixValidation
+
+from .models import (
+    CoverageValidationRun,
+    PatientAcuityScore,
+    SkillMixValidation,
+    WardCoverageRequirement,
+)
 
 
 class PatientAcuityScoreSerializer(serializers.ModelSerializer):

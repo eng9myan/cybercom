@@ -1,11 +1,16 @@
-from products.cymed.commercial.views import CommercialModelViewSet
 from products.cymed.commercial.partner_management.models import (
-    PartnerType, Partner, ResellerAgreement, DistributorAgreement
+    DistributorAgreement,
+    Partner,
+    PartnerType,
+    ResellerAgreement,
 )
 from products.cymed.commercial.partner_management.serializers import (
-    PartnerTypeSerializer, PartnerSerializer,
-    ResellerAgreementSerializer, DistributorAgreementSerializer
+    DistributorAgreementSerializer,
+    PartnerSerializer,
+    PartnerTypeSerializer,
+    ResellerAgreementSerializer,
 )
+from products.cymed.commercial.views import CommercialModelViewSet
 
 
 class PartnerTypeViewSet(CommercialModelViewSet):

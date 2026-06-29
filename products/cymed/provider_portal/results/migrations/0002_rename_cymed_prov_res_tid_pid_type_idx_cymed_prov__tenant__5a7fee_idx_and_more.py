@@ -4,20 +4,19 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_provider_results', '0001_initial'),
+        ("cymed_provider_results", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='providerresultview',
-            new_name='cymed_prov__tenant__5a7fee_idx',
-            old_name='cymed_prov_res_tid_pid_type_idx',
+            model_name="providerresultview",
+            new_name="cymed_prov__tenant__5a7fee_idx",
+            old_name="cymed_prov_res_tid_pid_type_idx",
         ),
         migrations.RenameIndex(
-            model_name='providerresultview',
-            new_name='cymed_prov__tenant__7c9455_idx',
-            old_name='cymed_prov_res_tid_opid_rev_idx',
+            model_name="providerresultview",
+            new_name="cymed_prov__tenant__7c9455_idx",
+            old_name="cymed_prov_res_tid_opid_rev_idx",
         ),
     ]

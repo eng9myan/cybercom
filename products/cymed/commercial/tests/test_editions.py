@@ -2,10 +2,17 @@
 Tests for CyMed Commercial — Edition Management.
 Covers: models, service, feature matrix, module access.
 """
+
 import uuid
+
 import pytest
+
 from products.cymed.commercial.editions.models import (
-    ProductCatalogEntry, ProductEdition, EditionFeature, EditionLimit, EditionModule
+    EditionFeature,
+    EditionLimit,
+    EditionModule,
+    ProductCatalogEntry,
+    ProductEdition,
 )
 from products.cymed.commercial.editions.services import EditionService
 
@@ -61,11 +68,13 @@ def edition_with_features(db, edition):
 @pytest.fixture
 def edition_with_modules(db, edition):
     EditionModule.objects.get_or_create(
-        edition=edition, module_code="clinic.appointments",
+        edition=edition,
+        module_code="clinic.appointments",
         defaults={"tenant_id": TENANT, "is_included": True},
     )
     EditionModule.objects.get_or_create(
-        edition=edition, module_code="clinic.icu",
+        edition=edition,
+        module_code="clinic.icu",
         defaults={"tenant_id": TENANT, "is_included": False},
     )
     return edition
@@ -77,6 +86,7 @@ class TestProductCatalogEntry:
 
     def test_unique_code(self, db, product):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             ProductCatalogEntry.objects.create(
                 tenant_id=TENANT, code="cymed_clinic", name="Duplicate"
@@ -89,6 +99,7 @@ class TestProductEdition:
 
     def test_unique_product_code(self, db, product, edition):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             ProductEdition.objects.create(
                 tenant_id=TENANT, product=product, code="starter", name="Dup", tier="starter"
@@ -116,7 +127,10 @@ class TestEditionService:
         assert "clinic.icu" not in modules
 
     def test_is_module_included_true(self, edition_with_modules):
-        assert EditionService.is_module_included("cymed_clinic", "starter", "clinic.appointments") is True
+        assert (
+            EditionService.is_module_included("cymed_clinic", "starter", "clinic.appointments")
+            is True
+        )
 
     def test_is_module_included_false(self, edition_with_modules):
         assert EditionService.is_module_included("cymed_clinic", "starter", "clinic.icu") is False

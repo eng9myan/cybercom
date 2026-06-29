@@ -1,5 +1,7 @@
 from django.db import models
+
 from platform.common.models import BaseModel
+
 
 class OrganizationType(models.TextChoices):
     HOSPITAL = "hospital", "Hospital"
@@ -8,6 +10,7 @@ class OrganizationType(models.TextChoices):
     IMAGING_CENTER = "imaging_center", "Imaging Center"
     PHARMACY = "pharmacy", "Pharmacy"
     HEALTH_NETWORK = "health_network", "Health Network"
+
 
 class Organization(BaseModel):
     name = models.CharField(max_length=255)
@@ -24,7 +27,9 @@ class Organization(BaseModel):
 
 
 class OrganizationAddress(BaseModel):
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="addresses")
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="addresses"
+    )
     line1 = models.CharField(max_length=255)
     line2 = models.CharField(max_length=255, blank=True)
     city = models.CharField(max_length=100)
@@ -37,10 +42,13 @@ class OrganizationAddress(BaseModel):
 
 
 class OrganizationContact(BaseModel):
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="contacts")
-    telecom_system = models.CharField(max_length=20, choices=[
-        ("phone", "Phone"), ("fax", "Fax"), ("email", "Email"), ("url", "URL")
-    ])
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="contacts"
+    )
+    telecom_system = models.CharField(
+        max_length=20,
+        choices=[("phone", "Phone"), ("fax", "Fax"), ("email", "Email"), ("url", "URL")],
+    )
     telecom_value = models.CharField(max_length=255)
 
     class Meta:
@@ -48,11 +56,15 @@ class OrganizationContact(BaseModel):
 
 
 class OrganizationRelationship(BaseModel):
-    source_organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="parent_relationships")
-    target_organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="child_relationships")
-    relationship_type = models.CharField(max_length=50, choices=[
-        ("parent", "Parent"), ("child", "Child"), ("partner", "Partner")
-    ])
+    source_organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="parent_relationships"
+    )
+    target_organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="child_relationships"
+    )
+    relationship_type = models.CharField(
+        max_length=50, choices=[("parent", "Parent"), ("child", "Child"), ("partner", "Partner")]
+    )
 
     class Meta:
         db_table = "cymed_organization_relationships"
@@ -60,7 +72,9 @@ class OrganizationRelationship(BaseModel):
 
 
 class OrganizationAccreditation(BaseModel):
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="accreditations")
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="accreditations"
+    )
     accreditation_body = models.CharField(max_length=100)  # e.g., "JCI", "Saudi CBAHI"
     accreditation_number = models.CharField(max_length=100)
     valid_until = models.DateField()

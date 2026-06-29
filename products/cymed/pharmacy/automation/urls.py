@@ -1,7 +1,13 @@
 """Automation URL routing."""
-from django.urls import path, include
+
 from rest_framework.routers import DefaultRouter
-from .views import AutomationDeviceViewSet, DispensingRobotViewSet, CabinetDeviceViewSet, AutomationQueueViewSet
+
+from .views import (
+    AutomationDeviceViewSet,
+    AutomationQueueViewSet,
+    CabinetDeviceViewSet,
+    DispensingRobotViewSet,
+)
 
 router = DefaultRouter()
 router.register(r"devices", AutomationDeviceViewSet, basename="automation-device")

@@ -1,13 +1,20 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.response import Response
 
-from .models import Preauthorization, AuthorizationRequest, AuthorizationDecision, AuthorizationAppeal
+from .models import (
+    AuthorizationAppeal,
+    AuthorizationDecision,
+    AuthorizationRequest,
+    Preauthorization,
+)
 from .serializers import (
-    PreauthorizationSerializer, AuthorizationRequestSerializer,
-    AuthorizationDecisionSerializer, AuthorizationAppealSerializer,
+    AuthorizationAppealSerializer,
+    AuthorizationDecisionSerializer,
+    AuthorizationRequestSerializer,
+    PreauthorizationSerializer,
 )
 
 
@@ -15,7 +22,14 @@ class PreauthorizationViewSet(viewsets.ModelViewSet):
     queryset = Preauthorization.objects.all()
     serializer_class = PreauthorizationSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["patient_id", "status", "authorization_type", "insurance_plan_id", "priority", "requesting_provider_id"]
+    filterset_fields = [
+        "patient_id",
+        "status",
+        "authorization_type",
+        "insurance_plan_id",
+        "priority",
+        "requesting_provider_id",
+    ]
     search_fields = ["service_description", "auth_number"]
     ordering_fields = ["created_at", "requested_start_date", "status"]
     ordering = ["-created_at"]
@@ -30,7 +44,10 @@ class PreauthorizationViewSet(viewsets.ModelViewSet):
     def submit(self, request, pk=None):
         preauth = self.get_object()
         if preauth.status not in ("draft",):
-            return Response({"error": "Only draft preauthorizations can be submitted."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Only draft preauthorizations can be submitted."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         preauth.status = "submitted"
         preauth.save()
         return Response({"status": "submitted", "id": str(preauth.id)})
@@ -39,7 +56,10 @@ class PreauthorizationViewSet(viewsets.ModelViewSet):
     def renew(self, request, pk=None):
         preauth = self.get_object()
         if preauth.status not in ("approved", "expired"):
-            return Response({"error": "Only approved or expired authorizations can be renewed."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Only approved or expired authorizations can be renewed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         preauth.status = "submitted"
         preauth.auth_number = None
         preauth.approved_units = None

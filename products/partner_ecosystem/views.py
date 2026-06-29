@@ -1,18 +1,26 @@
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
-    Partner, PartnerApplication, PartnerCertification, LeadRegistration,
-    MarketplaceExtension, PartnerPortalAccess,
+    LeadRegistration,
+    MarketplaceExtension,
+    Partner,
+    PartnerApplication,
+    PartnerCertification,
+    PartnerPortalAccess,
 )
 from .serializers import (
-    PartnerSerializer, PartnerApplicationSerializer, PartnerCertificationSerializer,
-    LeadRegistrationSerializer, MarketplaceExtensionSerializer, PartnerPortalAccessSerializer,
+    LeadRegistrationSerializer,
+    MarketplaceExtensionSerializer,
+    PartnerApplicationSerializer,
+    PartnerCertificationSerializer,
+    PartnerPortalAccessSerializer,
+    PartnerSerializer,
 )
 
 
@@ -33,7 +41,14 @@ class BaseViewSet(viewsets.ModelViewSet):
 class PartnerViewSet(BaseViewSet):
     queryset = Partner.objects.all()
     serializer_class = PartnerSerializer
-    filterset_fields = ["partner_type", "status", "tier", "country_code", "region", "assigned_am_id"]
+    filterset_fields = [
+        "partner_type",
+        "status",
+        "tier",
+        "country_code",
+        "region",
+        "assigned_am_id",
+    ]
     search_fields = ["name", "code", "contact_name", "contact_email"]
     ordering_fields = ["name", "tier", "status", "joined_at", "created_at"]
 
@@ -66,8 +81,12 @@ class PartnerApplicationViewSet(BaseViewSet):
         application.reviewed_by_id = request.data.get("reviewed_by_id")
         application.review_notes = request.data.get("review_notes", application.review_notes)
         application.decided_at = timezone.now()
-        application.save(update_fields=["status", "reviewed_by_id", "review_notes", "decided_at", "updated_at"])
-        return Response({"status": "approved", "decided_at": application.decided_at, "id": str(application.id)})
+        application.save(
+            update_fields=["status", "reviewed_by_id", "review_notes", "decided_at", "updated_at"]
+        )
+        return Response(
+            {"status": "approved", "decided_at": application.decided_at, "id": str(application.id)}
+        )
 
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
@@ -76,8 +95,12 @@ class PartnerApplicationViewSet(BaseViewSet):
         application.reviewed_by_id = request.data.get("reviewed_by_id")
         application.review_notes = request.data.get("review_notes", application.review_notes)
         application.decided_at = timezone.now()
-        application.save(update_fields=["status", "reviewed_by_id", "review_notes", "decided_at", "updated_at"])
-        return Response({"status": "rejected", "decided_at": application.decided_at, "id": str(application.id)})
+        application.save(
+            update_fields=["status", "reviewed_by_id", "review_notes", "decided_at", "updated_at"]
+        )
+        return Response(
+            {"status": "rejected", "decided_at": application.decided_at, "id": str(application.id)}
+        )
 
 
 class PartnerCertificationViewSet(BaseViewSet):
@@ -125,7 +148,9 @@ class MarketplaceExtensionViewSet(BaseViewSet):
         extension.status = "published"
         extension.published_at = timezone.now()
         extension.save(update_fields=["status", "published_at", "updated_at"])
-        return Response({"status": "published", "published_at": extension.published_at, "id": str(extension.id)})
+        return Response(
+            {"status": "published", "published_at": extension.published_at, "id": str(extension.id)}
+        )
 
     @action(detail=True, methods=["post"])
     def deprecate(self, request, pk=None):

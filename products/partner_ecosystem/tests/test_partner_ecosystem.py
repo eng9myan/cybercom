@@ -1,13 +1,12 @@
 import uuid
+
+import jwt
 import pytest
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
-import jwt
 
 from products.partner_ecosystem.models import (
-    Partner, PartnerApplication, PartnerCertification, LeadRegistration,
-    MarketplaceExtension, PartnerPortalAccess
+    Partner,
 )
 
 TENANT_A = uuid.UUID("aaaaaaaa-0000-0000-0000-000000000001")
@@ -33,7 +32,6 @@ def auth_client():
 
 @pytest.mark.django_db
 class TestPartnerEcosystemAPIs:
-
     def test_partners(self, auth_client):
         # Create
         res = auth_client.post(
@@ -44,7 +42,7 @@ class TestPartnerEcosystemAPIs:
                 "partner_type": "strategic",
                 "status": "prospect",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         partner_id = res.data["id"]
@@ -68,7 +66,7 @@ class TestPartnerEcosystemAPIs:
                 "contact_name": "John Doe",
                 "contact_email": "john@nextgen.com",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         app_id = res.data["id"]
@@ -77,7 +75,7 @@ class TestPartnerEcosystemAPIs:
         res = auth_client.post(
             f"/api/v1/partners/applications/{app_id}/approve/",
             {"reviewed_by_id": str(uuid.uuid4()), "review_notes": "Meets all criteria"},
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_200_OK
         assert res.data["status"] == "approved"
@@ -86,7 +84,7 @@ class TestPartnerEcosystemAPIs:
         res = auth_client.post(
             f"/api/v1/partners/applications/{app_id}/reject/",
             {"reviewed_by_id": str(uuid.uuid4()), "review_notes": "Incomplete info"},
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_200_OK
         assert res.data["status"] == "rejected"
@@ -106,7 +104,7 @@ class TestPartnerEcosystemAPIs:
                 "certification_type": "technical",
                 "status": "completed",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
 
@@ -125,7 +123,7 @@ class TestPartnerEcosystemAPIs:
                 "lead_email": "purchasing@mafraq.ae",
                 "estimated_value": "250000.00",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         lead_id = res.data["id"]
@@ -134,7 +132,7 @@ class TestPartnerEcosystemAPIs:
         res = auth_client.post(
             f"/api/v1/partners/lead-registrations/{lead_id}/approve/",
             {"approved_by_id": str(uuid.uuid4())},
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_200_OK
         assert res.data["status"] == "approved"
@@ -159,7 +157,7 @@ class TestPartnerEcosystemAPIs:
                 "code": "ext-sms-custom-alert",
                 "category": "integration",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         ext_id = res.data["id"]
@@ -193,6 +191,6 @@ class TestPartnerEcosystemAPIs:
                 "user_id": str(uuid.uuid4()),
                 "access_level": "admin",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED

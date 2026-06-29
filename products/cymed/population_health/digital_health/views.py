@@ -1,21 +1,21 @@
-﻿from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
+    DigitalHealthWalletEntry,
+    HealthPass,
     NationalHealthID,
     VaccinationCertificate,
-    HealthPass,
-    DigitalHealthWalletEntry,
 )
 from .serializers import (
+    DigitalHealthWalletEntrySerializer,
+    HealthPassSerializer,
     NationalHealthIDSerializer,
     VaccinationCertificateSerializer,
-    HealthPassSerializer,
-    DigitalHealthWalletEntrySerializer,
 )
 
 
@@ -46,10 +46,13 @@ class NationalHealthIDViewSet(DigitalHealthBaseViewSet):
         """Mark a national health ID as verified."""
         national_id = self.get_object()
         from django.utils import timezone
+
         national_id.id_status = "active"
         national_id.verification_date = timezone.now().date()
         national_id.verified_by_user_id = request.data.get("verified_by_user_id")
-        national_id.save(update_fields=["id_status", "verification_date", "verified_by_user_id", "updated_at"])
+        national_id.save(
+            update_fields=["id_status", "verification_date", "verified_by_user_id", "updated_at"]
+        )
         return Response({"status": "verified", "id": str(national_id.id)})
 
 

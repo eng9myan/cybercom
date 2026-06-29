@@ -1,9 +1,11 @@
-﻿"""
+"""
 CyMed Laboratory â€” Blood Bank Foundation
 Foundation models only. Full Blood Bank (transfusion reactions, crossmatch
 workflows, donor management, component preparation) is a future program.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -33,6 +35,7 @@ class BloodProductType(models.TextChoices):
 
 class BloodProduct(BaseModel):
     """Individual unit of blood product in inventory."""
+
     STATUS_CHOICES = [
         ("available", "Available"),
         ("reserved", "Reserved"),
@@ -45,7 +48,9 @@ class BloodProduct(BaseModel):
 
     unit_number = models.CharField(max_length=100, unique=True, db_index=True)
     product_type = models.CharField(max_length=20, choices=BloodProductType.choices)
-    blood_group = models.CharField(max_length=10, choices=BloodGroup.choices, default=BloodGroup.UNKNOWN)
+    blood_group = models.CharField(
+        max_length=10, choices=BloodGroup.choices, default=BloodGroup.UNKNOWN
+    )
     rh_type = models.CharField(max_length=10, choices=RhType.choices, default=RhType.UNKNOWN)
     volume_ml = models.PositiveIntegerField(null=True, blank=True)
     collection_date = models.DateField(null=True, blank=True)
@@ -53,7 +58,9 @@ class BloodProduct(BaseModel):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="available")
     storage_location = models.CharField(max_length=100, blank=True)
     supplier = models.CharField(max_length=255, blank=True)
-    special_attributes = models.JSONField(default=list)   # ["irradiated", "CMV_negative", "leukoreduced"]
+    special_attributes = models.JSONField(
+        default=list
+    )  # ["irradiated", "CMV_negative", "leukoreduced"]
 
     class Meta:
         db_table = "cymed_lab_blood_products"
@@ -65,6 +72,7 @@ class BloodProduct(BaseModel):
 
 class BloodInventory(BaseModel):
     """Aggregate inventory counts by product type and blood group."""
+
     product_type = models.CharField(max_length=20, choices=BloodProductType.choices)
     blood_group = models.CharField(max_length=10, choices=BloodGroup.choices)
     rh_type = models.CharField(max_length=10, choices=RhType.choices)
@@ -77,11 +85,14 @@ class BloodInventory(BaseModel):
 
     class Meta:
         db_table = "cymed_lab_blood_inventory"
-        unique_together = [("tenant_id", "product_type", "blood_group", "rh_type", "storage_location")]
+        unique_together = [
+            ("tenant_id", "product_type", "blood_group", "rh_type", "storage_location")
+        ]
 
 
 class BloodCompatibility(BaseModel):
     """Patient blood group and compatibility screening on file."""
+
     ANTIBODY_SCREEN_STATUS = [
         ("negative", "Negative"),
         ("positive", "Positive â€” Antibody Identified"),
@@ -90,11 +101,15 @@ class BloodCompatibility(BaseModel):
     ]
 
     patient_id = models.UUIDField(db_index=True)
-    blood_group = models.CharField(max_length=10, choices=BloodGroup.choices, default=BloodGroup.UNKNOWN)
+    blood_group = models.CharField(
+        max_length=10, choices=BloodGroup.choices, default=BloodGroup.UNKNOWN
+    )
     rh_type = models.CharField(max_length=10, choices=RhType.choices, default=RhType.UNKNOWN)
-    antibody_screen = models.CharField(max_length=20, choices=ANTIBODY_SCREEN_STATUS, default="not_done")
-    antibodies_identified = models.JSONField(default=list)     # ["Anti-E", "Anti-Kell"]
-    special_requirements = models.JSONField(default=list)       # ["irradiated", "CMV_negative"]
+    antibody_screen = models.CharField(
+        max_length=20, choices=ANTIBODY_SCREEN_STATUS, default="not_done"
+    )
+    antibodies_identified = models.JSONField(default=list)  # ["Anti-E", "Anti-Kell"]
+    special_requirements = models.JSONField(default=list)  # ["irradiated", "CMV_negative"]
     verified_by = models.UUIDField(null=True, blank=True)
     verified_at = models.DateTimeField(null=True, blank=True)
     sample_expiry_date = models.DateField(null=True, blank=True)
@@ -106,6 +121,7 @@ class BloodCompatibility(BaseModel):
 
 class TransfusionRequest(BaseModel):
     """Request for blood product(s) for a patient."""
+
     URGENCY_CHOICES = [
         ("elective", "Elective"),
         ("urgent", "Urgent (2h)"),
@@ -124,7 +140,11 @@ class TransfusionRequest(BaseModel):
 
     patient_id = models.UUIDField(db_index=True)
     order_item = models.ForeignKey(
-        "lab_orders.LabOrderItem", on_delete=models.CASCADE, related_name="transfusion_requests", null=True, blank=True
+        "lab_orders.LabOrderItem",
+        on_delete=models.CASCADE,
+        related_name="transfusion_requests",
+        null=True,
+        blank=True,
     )
     product_type = models.CharField(max_length=20, choices=BloodProductType.choices)
     units_requested = models.PositiveSmallIntegerField(default=1)

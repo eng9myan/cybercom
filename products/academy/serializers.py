@@ -1,7 +1,13 @@
 from rest_framework import serializers
+
 from .models import (
-    Course, CourseModule, Enrollment, Exam,
-    ExamAttempt, Certificate, LearningPath,
+    Certificate,
+    Course,
+    CourseModule,
+    Enrollment,
+    Exam,
+    ExamAttempt,
+    LearningPath,
 )
 
 

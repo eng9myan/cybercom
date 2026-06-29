@@ -1,7 +1,10 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.commercial.deployment_profiles.views import (
-    DeploymentProfileViewSet, DeploymentConfigurationViewSet, DeploymentCapabilityViewSet
+    DeploymentCapabilityViewSet,
+    DeploymentConfigurationViewSet,
+    DeploymentProfileViewSet,
 )
 
 router = DefaultRouter()

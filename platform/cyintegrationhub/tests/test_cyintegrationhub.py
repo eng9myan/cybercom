@@ -1,15 +1,28 @@
 import uuid
+
+import jwt
 import pytest
 from rest_framework.test import APIClient
-import jwt
 
-from platform.cyintegrationhub.models import IntegrationPartner, ConnectorConfig, TransformationMapping, MessageAuditLog
-from platform.cyintegrationhub.services import TransformationEngine, MappingEngine, RoutingEngine, ConnectorFramework
+from platform.cyintegrationhub.models import (
+    ConnectorConfig,
+    IntegrationPartner,
+    MessageAuditLog,
+    TransformationMapping,
+)
+from platform.cyintegrationhub.services import (
+    ConnectorFramework,
+    MappingEngine,
+    RoutingEngine,
+    TransformationEngine,
+)
 from platform.events.models import OutboxEvent
+
 
 @pytest.fixture
 def test_tenant_id():
     return uuid.uuid4()
+
 
 @pytest.fixture
 def auth_client(test_tenant_id):
@@ -29,6 +42,7 @@ def auth_client(test_tenant_id):
     )
     return client
 
+
 @pytest.mark.django_db
 class TestIntegrationModels:
     def test_partner_creation(self):
@@ -37,22 +51,20 @@ class TestIntegrationModels:
             slug="partner-a",
             protocol="fhir",
             direction="bidirectional",
-            active=True
+            active=True,
         )
         assert str(partner) == "Partner(Partner A, fhir)"
 
     def test_connector_config(self):
         partner = IntegrationPartner.objects.create(
-            name="Partner B",
-            slug="partner-b",
-            protocol="hl7v2"
+            name="Partner B", slug="partner-b", protocol="hl7v2"
         )
         config = ConnectorConfig.objects.create(
             partner=partner,
             name="HL7 Endpoint",
             connector_type="hl7v2",
             endpoint_url="mllp://127.0.0.1:5000",
-            sync_interval_seconds=60
+            sync_interval_seconds=60,
         )
         assert str(config) == "Connector(HL7 Endpoint, hl7v2)"
 
@@ -61,15 +73,13 @@ class TestIntegrationModels:
             name="HL7 Patient Map",
             source_format="hl7v2",
             target_format="json",
-            mapping_rules={"PID.3": "patient_id", "PID.5": "patient_name"}
+            mapping_rules={"PID.3": "patient_id", "PID.5": "patient_name"},
         )
         assert str(mapping) == "Mapping(HL7 Patient Map: hl7v2 -> json)"
 
     def test_message_audit_log(self, test_tenant_id):
         partner = IntegrationPartner.objects.create(
-            name="Partner C",
-            slug="partner-c",
-            protocol="soap"
+            name="Partner C", slug="partner-c", protocol="soap"
         )
         log = MessageAuditLog.objects.create(
             tenant_id=test_tenant_id,
@@ -78,7 +88,7 @@ class TestIntegrationModels:
             direction="inbound",
             payload_size_bytes=500,
             status="success",
-            duration_ms=120
+            duration_ms=120,
         )
         assert log.status == "success"
         assert log.duration_ms == 120
@@ -111,7 +121,7 @@ class TestMappingAndRoutingEngines:
             name="Custom Map",
             source_format="json",
             target_format="json",
-            mapping_rules={"source_id": "target_id", "source_val": "target_val"}
+            mapping_rules={"source_id": "target_id", "source_val": "target_val"},
         )
         source_data = {"source_id": "123", "source_val": "hello", "extra": "omit"}
         mapped = MappingEngine.map_fields(source_data, mapping)
@@ -122,7 +132,7 @@ class TestMappingAndRoutingEngines:
             tenant_id=str(test_tenant_id),
             topic="platform.identity.events",
             event_type="cyidentity.user.provisioned",
-            payload={"user_id": "usr-1"}
+            payload={"user_id": "usr-1"},
         )
         assert success is True
         assert OutboxEvent.objects.filter(tenant_id=test_tenant_id).count() == 1
@@ -137,10 +147,13 @@ class TestConnectorFramework:
             partner=partner,
             connector_type="fhir",
             action="send",
-            payload={"id": "fhir-patient-1"}
+            payload={"id": "fhir-patient-1"},
         )
         assert res["fhir_status"] == "synced"
-        assert MessageAuditLog.objects.filter(tenant_id=test_tenant_id, connector_type="fhir").count() == 1
+        assert (
+            MessageAuditLog.objects.filter(tenant_id=test_tenant_id, connector_type="fhir").count()
+            == 1
+        )
 
     def test_hl7_connector(self, test_tenant_id):
         partner = IntegrationPartner.objects.create(name="P2", slug="p2", protocol="hl7")
@@ -150,11 +163,14 @@ class TestConnectorFramework:
             partner=partner,
             connector_type="hl7v2",
             action="receive",
-            payload=hl7_data
+            payload=hl7_data,
         )
         assert res["hl7_status"] == "processed"
         assert res["data"]["patient_id"] == "PID-1"
-        assert MessageAuditLog.objects.filter(tenant_id=test_tenant_id, direction="inbound").count() == 1
+        assert (
+            MessageAuditLog.objects.filter(tenant_id=test_tenant_id, direction="inbound").count()
+            == 1
+        )
 
     def test_dicom_connector(self, test_tenant_id):
         partner = IntegrationPartner.objects.create(name="P3", slug="p3", protocol="dicom")
@@ -163,7 +179,7 @@ class TestConnectorFramework:
             partner=partner,
             connector_type="dicom",
             action="send",
-            payload="binary-dicom-data"
+            payload="binary-dicom-data",
         )
         assert res["dicom_status"] == "archived"
 
@@ -174,7 +190,7 @@ class TestConnectorFramework:
             partner=partner,
             connector_type="ldap",
             action="send",
-            payload={"username": "admin"}
+            payload={"username": "admin"},
         )
         assert res["ldap_status"] == "authenticated"
 
@@ -185,7 +201,7 @@ class TestConnectorFramework:
             partner=partner,
             connector_type="smtp",
             action="send",
-            payload="Hello email"
+            payload="Hello email",
         )
         assert res["smtp_status"] == "delivered"
 
@@ -196,7 +212,7 @@ class TestConnectorFramework:
             partner=partner,
             connector_type="soap",
             action="send",
-            payload="<soap>"
+            payload="<soap>",
         )
         assert res["soap_status"] == "response_received"
 
@@ -204,22 +220,24 @@ class TestConnectorFramework:
 @pytest.mark.django_db
 class TestIntegrationAPIs:
     def test_list_partners(self, auth_client):
-        partner = IntegrationPartner.objects.create(name="Partner X", slug="partner-x", protocol="fhir")
+        IntegrationPartner.objects.create(name="Partner X", slug="partner-x", protocol="fhir")
         resp = auth_client.get("/api/v1/integration/partners/")
         assert resp.status_code == 200
         assert len(resp.data) >= 1
 
     def test_execute_connector_api(self, auth_client, test_tenant_id):
-        partner = IntegrationPartner.objects.create(name="Partner Y", slug="partner-y", protocol="fhir")
+        partner = IntegrationPartner.objects.create(
+            name="Partner Y", slug="partner-y", protocol="fhir"
+        )
         resp = auth_client.post(
             f"/api/v1/integration/partners/{partner.id}/execute/",
             {
                 "tenant_id": str(test_tenant_id),
                 "connector_type": "fhir",
                 "action": "send",
-                "payload": {"id": "patient-123"}
+                "payload": {"id": "patient-123"},
             },
-            format="json"
+            format="json",
         )
         assert resp.status_code == 200
         assert resp.data["fhir_status"] == "synced"
@@ -232,7 +250,7 @@ class TestResilienceAndParsers:
         preamble = b"\x00" * 128
         magic = b"DICM"
         payload = preamble + magic + b"some_dicom_data"
-        
+
         metadata = ConnectorFramework.parse_dicom_metadata(payload)
         assert metadata["patient_name"] == "John Doe"
         assert metadata["sop_instance_uid"] == "1.2.840.10008.5.1.4.1.1.2.999"
@@ -245,7 +263,7 @@ class TestResilienceAndParsers:
             "OBX|1|NM|BP_SYSTOLIC||120|mmHg|90-140|N|||F"
         )
         parsed = TransformationEngine.transform(hl7_msg, "hl7v2")
-        
+
         assert parsed["message_type"] == "ADT^A08"
         assert parsed["message_code"] == "ADT"
         assert parsed["trigger_event"] == "A08"
@@ -261,16 +279,18 @@ class TestResilienceAndParsers:
 
     def test_circuit_breaker_tripping(self, test_tenant_id):
         from platform.cyintegrationhub.services import CircuitBreakerOpenException
-        partner = IntegrationPartner.objects.create(name="Failing Partner", slug="fail-p", protocol="fhir")
-        
+
+        IntegrationPartner.objects.create(name="Failing Partner", slug="fail-p", protocol="fhir")
+
         # We simulate repeated failure calling a mock failing connector type
         # Let's trigger execute_connector with an invalid connector type or make it fail
         # ConnectorFramework raises default_processed or handles Exceptions.
         # Let's force an exception in execution to trigger the circuit breaker failure records.
         # Since execute_connector catches Exception internally and returns {"error": ...}, we can test the decorator directly.
-        from platform.cyintegrationhub.services import resilient_call, get_breaker
-        
+        from platform.cyintegrationhub.services import resilient_call
+
         call_count = 0
+
         @resilient_call(partner_name="Failing Partner", max_retries=2, backoff_seconds=0.01)
         def fail_operation():
             nonlocal call_count
@@ -288,4 +308,3 @@ class TestResilienceAndParsers:
 
         # Call count should be 10 (2 attempts per call, 5 calls before opening)
         assert call_count == 10
-

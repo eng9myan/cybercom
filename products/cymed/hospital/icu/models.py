@@ -1,16 +1,21 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 from products.cymed.hospital.inpatient.models import HospitalStay
+
 
 class ICUStay(BaseModel):
     stay = models.OneToOneField(HospitalStay, on_delete=models.CASCADE, related_name="icu_details")
     icu_admitted_at = models.DateTimeField(auto_now_add=True)
     icu_released_at = models.DateTimeField(null=True, blank=True)
-    ventilator_status = models.CharField(max_length=50, default="none")  # none, non_invasive, invasive
+    ventilator_status = models.CharField(
+        max_length=50, default="none"
+    )  # none, non_invasive, invasive
     invasive_lines_count = models.PositiveIntegerField(default=0)
 
     class Meta:
         db_table = "cymed_hospital_icu_stays"
+
 
 class ICURound(BaseModel):
     icu_stay = models.ForeignKey(ICUStay, on_delete=models.CASCADE, related_name="rounds")
@@ -25,6 +30,7 @@ class ICURound(BaseModel):
     class Meta:
         db_table = "cymed_hospital_icu_rounds"
 
+
 class ICUAssessment(BaseModel):
     icu_stay = models.ForeignKey(ICUStay, on_delete=models.CASCADE)
     assessed_at = models.DateTimeField(auto_now_add=True)
@@ -34,6 +40,7 @@ class ICUAssessment(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_icu_assessments"
+
 
 class VentilatorRecord(BaseModel):
     icu_stay = models.ForeignKey(ICUStay, on_delete=models.CASCADE)
@@ -46,6 +53,7 @@ class VentilatorRecord(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_icu_ventilators"
+
 
 class CriticalEvent(BaseModel):
     icu_stay = models.ForeignKey(ICUStay, on_delete=models.CASCADE)

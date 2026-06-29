@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import InteractionRule, DrugInteraction, InteractionSeverity, InteractionAlert
+
+from .models import DrugInteraction, InteractionAlert, InteractionRule, InteractionSeverity
 
 
 class InteractionRuleSerializer(serializers.ModelSerializer):
@@ -39,12 +40,17 @@ class InteractionSeveritySerializer(serializers.ModelSerializer):
 
 class InteractionCheckSerializer(serializers.Serializer):
     """Request body for the interaction check endpoint."""
+
     patient_id = serializers.UUIDField()
     drug_codes = serializers.ListField(child=serializers.CharField(), min_length=1)
     prescription_id = serializers.UUIDField(required=False, allow_null=True)
     encounter_id = serializers.UUIDField(required=False, allow_null=True)
-    patient_allergies = serializers.ListField(child=serializers.CharField(), required=False, default=list)
-    patient_diagnoses = serializers.ListField(child=serializers.CharField(), required=False, default=list)
+    patient_allergies = serializers.ListField(
+        child=serializers.CharField(), required=False, default=list
+    )
+    patient_diagnoses = serializers.ListField(
+        child=serializers.CharField(), required=False, default=list
+    )
     patient_age_years = serializers.IntegerField(required=False, allow_null=True)
     is_pregnant = serializers.BooleanField(required=False, default=False)
     pregnancy_trimester = serializers.CharField(required=False, allow_blank=True, default="")
@@ -52,4 +58,5 @@ class InteractionCheckSerializer(serializers.Serializer):
 
 class InteractionOverrideSerializer(serializers.Serializer):
     """Request body for pharmacist override."""
+
     override_reason = serializers.CharField(min_length=10)

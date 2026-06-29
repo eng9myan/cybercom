@@ -1,7 +1,6 @@
-import uuid
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 SERVICE_CATEGORY_CHOICES = [
     ("hospital", "Hospital"),
@@ -39,7 +38,9 @@ class PriceList(BaseModel):
 
 
 class ServicePrice(BaseModel):
-    price_list = models.ForeignKey(PriceList, on_delete=models.PROTECT, related_name="service_prices")
+    price_list = models.ForeignKey(
+        PriceList, on_delete=models.PROTECT, related_name="service_prices"
+    )
     service_code = models.CharField(max_length=50)
     service_description = models.CharField(max_length=500)
     service_category = models.CharField(max_length=30, choices=SERVICE_CATEGORY_CHOICES)
@@ -73,7 +74,9 @@ class PackagePrice(BaseModel):
         ("other", "Other"),
     ]
 
-    price_list = models.ForeignKey(PriceList, on_delete=models.PROTECT, related_name="package_prices")
+    price_list = models.ForeignKey(
+        PriceList, on_delete=models.PROTECT, related_name="package_prices"
+    )
     package_name = models.CharField(max_length=200)
     package_code = models.CharField(max_length=50)
     package_type = models.CharField(max_length=30, choices=PACKAGE_TYPE_CHOICES)
@@ -114,7 +117,9 @@ class DiscountRule(BaseModel):
     applies_to = models.CharField(max_length=30, choices=APPLIES_TO_CHOICES)
     condition_description = models.TextField(blank=True)
     discount_value = models.DecimalField(max_digits=8, decimal_places=2)
-    max_discount_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    max_discount_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True
+    )
     requires_approval = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
 

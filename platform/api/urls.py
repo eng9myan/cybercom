@@ -2,15 +2,26 @@
 API Framework URL configuration. Flat DefaultRouter only (no nested routers).
 FHIR: /fhir/{version}/{resource}/ and /fhir/{version}/{resource}/{id}/
 """
-from django.urls import path, include
+
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    ApiApplicationViewSet, ApiCatalogViewSet, ApiContractViewSet,
-    ApiKeyViewSet, ApiMetricsView, ApiPolicyViewSet, ApiRateLimitViewSet,
-    ApiSubscriptionViewSet, ApiUsageViewSet, ApiVersionViewSet,
-    ApiWebhookViewSet, FHIRResourceView, IdempotencyKeyViewSet,
-    OpenAPISpecView, SDKGenerateView,
+    ApiApplicationViewSet,
+    ApiCatalogViewSet,
+    ApiContractViewSet,
+    ApiKeyViewSet,
+    ApiMetricsView,
+    ApiPolicyViewSet,
+    ApiRateLimitViewSet,
+    ApiSubscriptionViewSet,
+    ApiUsageViewSet,
+    ApiVersionViewSet,
+    ApiWebhookViewSet,
+    FHIRResourceView,
+    IdempotencyKeyViewSet,
+    OpenAPISpecView,
+    SDKGenerateView,
 )
 
 router = DefaultRouter()

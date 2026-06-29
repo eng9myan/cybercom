@@ -1,5 +1,6 @@
-﻿from rest_framework import serializers
-from .models import RiskScore, RiskFactor, RiskCategory, RiskAssessment
+from rest_framework import serializers
+
+from .models import RiskAssessment, RiskCategory, RiskFactor, RiskScore
 
 
 class RiskScoreSerializer(serializers.ModelSerializer):

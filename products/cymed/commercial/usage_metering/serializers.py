@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from products.cymed.commercial.usage_metering.models import UsageMeter, UsageAlert
+
+from products.cymed.commercial.usage_metering.models import UsageAlert, UsageMeter
 
 
 class UsageAlertSerializer(serializers.ModelSerializer):

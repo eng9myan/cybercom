@@ -2,7 +2,9 @@
 Hospital Clinical Command Center — Domain Models.
 Real-time operational awareness: census, capacity, staffing, quality, safety.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -31,6 +33,7 @@ class CapacityStatus(models.TextChoices):
 
 class CommandCenterSnapshot(BaseModel):
     """Periodic operational snapshot — persisted for trending and reporting."""
+
     snapshot_time = models.DateTimeField(auto_now_add=True, db_index=True)
     total_beds = models.PositiveIntegerField(default=0)
     occupied_beds = models.PositiveIntegerField(default=0)
@@ -52,10 +55,14 @@ class CommandCenterSnapshot(BaseModel):
     )
     rn_on_duty = models.PositiveIntegerField(default=0)
     md_on_duty = models.PositiveIntegerField(default=0)
-    hap_infections_mtd = models.PositiveIntegerField(default=0, help_text="Hospital-acquired infections month-to-date")
+    hap_infections_mtd = models.PositiveIntegerField(
+        default=0, help_text="Hospital-acquired infections month-to-date"
+    )
     falls_mtd = models.PositiveIntegerField(default=0)
     pressure_injuries_mtd = models.PositiveIntegerField(default=0)
-    patient_satisfaction_score = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    patient_satisfaction_score = models.DecimalField(
+        max_digits=4, decimal_places=2, null=True, blank=True
+    )
 
     class Meta:
         db_table = "cymed_hospital_command_center_snapshots"
@@ -70,12 +77,17 @@ class CommandCenterSnapshot(BaseModel):
 
 class CommandCenterAlert(BaseModel):
     """Real-time operational alert requiring attention."""
+
     alert_code = models.CharField(max_length=100, db_index=True)
     title = models.CharField(max_length=255)
     title_ar = models.CharField(max_length=255, blank=True)
     description = models.TextField(blank=True)
-    severity = models.CharField(max_length=20, choices=AlertSeverity.choices, default=AlertSeverity.MEDIUM)
-    status = models.CharField(max_length=20, choices=AlertStatus.choices, default=AlertStatus.ACTIVE)
+    severity = models.CharField(
+        max_length=20, choices=AlertSeverity.choices, default=AlertSeverity.MEDIUM
+    )
+    status = models.CharField(
+        max_length=20, choices=AlertStatus.choices, default=AlertStatus.ACTIVE
+    )
     category = models.CharField(max_length=100, blank=True)
     department = models.CharField(max_length=200, blank=True)
     location = models.CharField(max_length=255, blank=True)
@@ -103,6 +115,7 @@ class CommandCenterAlert(BaseModel):
 
 class CapacityThreshold(BaseModel):
     """Configurable capacity thresholds per unit/department."""
+
     unit_name = models.CharField(max_length=255)
     unit_code = models.CharField(max_length=50, blank=True)
     total_capacity = models.PositiveIntegerField()
@@ -147,6 +160,7 @@ class HospitalDiversionStatus(BaseModel):
 
 class BedTurnoverLog(BaseModel):
     """Logs bed turnaround times for capacity optimization."""
+
     bed_id = models.CharField(max_length=255)
     unit_name = models.CharField(max_length=255)
     patient_discharge_time = models.DateTimeField()
@@ -165,6 +179,7 @@ class BedTurnoverLog(BaseModel):
 
 class CommandCenterKPI(BaseModel):
     """Persisted KPI metrics for dashboard trend analysis."""
+
     kpi_date = models.DateField(db_index=True)
     kpi_name = models.CharField(max_length=200, db_index=True)
     kpi_value = models.DecimalField(max_digits=12, decimal_places=4)

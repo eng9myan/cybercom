@@ -1,10 +1,11 @@
-﻿"""
+"""
 CyMed Population Health — Reporting
 Covers: NationalReport, ReportTemplate, GovernmentSubmission, ReportSchedule
 """
-from django.db import models
-from platform.common.models import BaseModel
 
+from django.db import models
+
+from platform.common.models import BaseModel
 
 REPORT_TYPE_CHOICES = [
     ("annual_health", "Annual Health"),

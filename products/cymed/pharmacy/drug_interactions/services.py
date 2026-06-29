@@ -4,10 +4,12 @@ Interaction checking engine with CyAI integration for priority scoring.
 Pharmacist approval required for all overrides.
 AI cannot dispense or approve prescriptions.
 """
+
 import uuid
-from typing import List, Dict, Optional
+
 import django.utils.timezone as tz
-from .models import InteractionRule, DrugInteraction, InteractionAlert, InteractionType
+
+from .models import DrugInteraction, InteractionRule, InteractionType
 
 
 class DrugInteractionService:
@@ -21,17 +23,17 @@ class DrugInteractionService:
     def check_prescription(
         cls,
         patient_id: uuid.UUID,
-        drug_codes: List[str],
-        prescription_id: Optional[uuid.UUID] = None,
-        encounter_id: Optional[uuid.UUID] = None,
-        admission_id: Optional[uuid.UUID] = None,
-        patient_allergies: Optional[List[str]] = None,
-        patient_diagnoses: Optional[List[str]] = None,
-        patient_age_years: Optional[int] = None,
+        drug_codes: list[str],
+        prescription_id: uuid.UUID | None = None,
+        encounter_id: uuid.UUID | None = None,
+        admission_id: uuid.UUID | None = None,
+        patient_allergies: list[str] | None = None,
+        patient_diagnoses: list[str] | None = None,
+        patient_age_years: int | None = None,
         is_pregnant: bool = False,
-        pregnancy_trimester: Optional[str] = None,
-        tenant_id: Optional[uuid.UUID] = None,
-    ) -> List[DrugInteraction]:
+        pregnancy_trimester: str | None = None,
+        tenant_id: uuid.UUID | None = None,
+    ) -> list[DrugInteraction]:
         """
         Check all interactions for a given set of drug codes.
         Returns list of detected DrugInteraction objects.
@@ -39,37 +41,63 @@ class DrugInteractionService:
         detected = []
 
         # Drug-Drug interactions
-        detected.extend(cls._check_drug_drug(
-            drug_codes, patient_id, prescription_id, encounter_id, admission_id, tenant_id
-        ))
+        detected.extend(
+            cls._check_drug_drug(
+                drug_codes, patient_id, prescription_id, encounter_id, admission_id, tenant_id
+            )
+        )
 
         # Drug-Allergy interactions
         if patient_allergies:
-            detected.extend(cls._check_drug_allergy(
-                drug_codes, patient_allergies, patient_id,
-                prescription_id, encounter_id, tenant_id
-            ))
+            detected.extend(
+                cls._check_drug_allergy(
+                    drug_codes,
+                    patient_allergies,
+                    patient_id,
+                    prescription_id,
+                    encounter_id,
+                    tenant_id,
+                )
+            )
 
         # Drug-Diagnosis contraindications
         if patient_diagnoses:
-            detected.extend(cls._check_drug_diagnosis(
-                drug_codes, patient_diagnoses, patient_id,
-                prescription_id, encounter_id, tenant_id
-            ))
+            detected.extend(
+                cls._check_drug_diagnosis(
+                    drug_codes,
+                    patient_diagnoses,
+                    patient_id,
+                    prescription_id,
+                    encounter_id,
+                    tenant_id,
+                )
+            )
 
         # Drug-Age
         if patient_age_years is not None:
-            detected.extend(cls._check_drug_age(
-                drug_codes, patient_age_years, patient_id,
-                prescription_id, encounter_id, tenant_id
-            ))
+            detected.extend(
+                cls._check_drug_age(
+                    drug_codes,
+                    patient_age_years,
+                    patient_id,
+                    prescription_id,
+                    encounter_id,
+                    tenant_id,
+                )
+            )
 
         # Drug-Pregnancy
         if is_pregnant:
-            detected.extend(cls._check_drug_pregnancy(
-                drug_codes, pregnancy_trimester, patient_id,
-                prescription_id, encounter_id, tenant_id
-            ))
+            detected.extend(
+                cls._check_drug_pregnancy(
+                    drug_codes,
+                    pregnancy_trimester,
+                    patient_id,
+                    prescription_id,
+                    encounter_id,
+                    tenant_id,
+                )
+            )
 
         # AI priority scoring via CyAI
         cls._apply_ai_priority(detected)
@@ -77,13 +105,13 @@ class DrugInteractionService:
         return detected
 
     @classmethod
-    def _check_drug_drug(cls, drug_codes, patient_id, prescription_id, encounter_id, admission_id, tenant_id):
+    def _check_drug_drug(
+        cls, drug_codes, patient_id, prescription_id, encounter_id, admission_id, tenant_id
+    ):
         """Check all drug pairs for drug-drug interactions."""
         detected = []
         rules = InteractionRule.objects.filter(
-            interaction_type=InteractionType.DRUG_DRUG,
-            is_active=True,
-            drug_a_code__in=drug_codes
+            interaction_type=InteractionType.DRUG_DRUG, is_active=True, drug_a_code__in=drug_codes
         ).filter(drug_b_code__in=drug_codes)
 
         for rule in rules:
@@ -107,14 +135,16 @@ class DrugInteractionService:
         return detected
 
     @classmethod
-    def _check_drug_allergy(cls, drug_codes, allergen_codes, patient_id, prescription_id, encounter_id, tenant_id):
+    def _check_drug_allergy(
+        cls, drug_codes, allergen_codes, patient_id, prescription_id, encounter_id, tenant_id
+    ):
         """Check drug-allergy interactions."""
         detected = []
         rules = InteractionRule.objects.filter(
             interaction_type=InteractionType.DRUG_ALLERGY,
             is_active=True,
             drug_a_code__in=drug_codes,
-            allergen_code__in=allergen_codes
+            allergen_code__in=allergen_codes,
         )
         for rule in rules:
             interaction = DrugInteraction.objects.create(
@@ -134,14 +164,16 @@ class DrugInteractionService:
         return detected
 
     @classmethod
-    def _check_drug_diagnosis(cls, drug_codes, diagnosis_codes, patient_id, prescription_id, encounter_id, tenant_id):
+    def _check_drug_diagnosis(
+        cls, drug_codes, diagnosis_codes, patient_id, prescription_id, encounter_id, tenant_id
+    ):
         """Check drug-diagnosis contraindications."""
         detected = []
         rules = InteractionRule.objects.filter(
             interaction_type=InteractionType.DRUG_DIAGNOSIS,
             is_active=True,
             drug_a_code__in=drug_codes,
-            diagnosis_code__in=diagnosis_codes
+            diagnosis_code__in=diagnosis_codes,
         )
         for rule in rules:
             interaction = DrugInteraction.objects.create(
@@ -161,13 +193,13 @@ class DrugInteractionService:
         return detected
 
     @classmethod
-    def _check_drug_age(cls, drug_codes, age_years, patient_id, prescription_id, encounter_id, tenant_id):
+    def _check_drug_age(
+        cls, drug_codes, age_years, patient_id, prescription_id, encounter_id, tenant_id
+    ):
         """Check drug-age appropriateness."""
         detected = []
         rules = InteractionRule.objects.filter(
-            interaction_type=InteractionType.DRUG_AGE,
-            is_active=True,
-            drug_a_code__in=drug_codes
+            interaction_type=InteractionType.DRUG_AGE, is_active=True, drug_a_code__in=drug_codes
         )
         for rule in rules:
             age_issue = False
@@ -192,13 +224,15 @@ class DrugInteractionService:
         return detected
 
     @classmethod
-    def _check_drug_pregnancy(cls, drug_codes, trimester, patient_id, prescription_id, encounter_id, tenant_id):
+    def _check_drug_pregnancy(
+        cls, drug_codes, trimester, patient_id, prescription_id, encounter_id, tenant_id
+    ):
         """Check drug-pregnancy safety."""
         detected = []
         rules = InteractionRule.objects.filter(
             interaction_type=InteractionType.DRUG_PREGNANCY,
             is_active=True,
-            drug_a_code__in=drug_codes
+            drug_a_code__in=drug_codes,
         ).exclude(pregnancy_category__in=["A", "B"])
         for rule in rules:
             interaction = DrugInteraction.objects.create(
@@ -217,13 +251,14 @@ class DrugInteractionService:
         return detected
 
     @classmethod
-    def _apply_ai_priority(cls, interactions: List[DrugInteraction]) -> None:
+    def _apply_ai_priority(cls, interactions: list[DrugInteraction]) -> None:
         """
         Apply CyAI priority scoring to detected interactions.
         AI assists with prioritization — pharmacist makes all decisions.
         """
         try:
             from platform.cyai.services import CyAIService
+
             for interaction in interactions:
                 score = CyAIService.score_interaction_priority(
                     interaction_type=interaction.interaction_type,
@@ -242,7 +277,7 @@ class DrugInteractionService:
         interaction_id: uuid.UUID,
         pharmacist_id: uuid.UUID,
         override_reason: str,
-        tenant_id: Optional[uuid.UUID] = None,
+        tenant_id: uuid.UUID | None = None,
     ) -> DrugInteraction:
         """
         Allow pharmacist to override an interaction with justification.
@@ -257,13 +292,14 @@ class DrugInteractionService:
         interaction.overridden_by = pharmacist_id
         interaction.overridden_at = tz.now()
         interaction.override_reason = override_reason
-        interaction.save(update_fields=[
-            "alert_status", "overridden_by", "overridden_at", "override_reason"
-        ])
+        interaction.save(
+            update_fields=["alert_status", "overridden_by", "overridden_at", "override_reason"]
+        )
 
         # Publish event
         try:
             from platform.events.models import OutboxEvent
+
             OutboxEvent.objects.create(
                 tenant_id=str(tenant_id) if tenant_id else None,
                 topic="cymed.pharmacy.interaction.detected",

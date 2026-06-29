@@ -1,7 +1,12 @@
 from rest_framework import serializers
+
 from .models import (
-    Partner, PartnerApplication, PartnerCertification, LeadRegistration,
-    MarketplaceExtension, PartnerPortalAccess,
+    LeadRegistration,
+    MarketplaceExtension,
+    Partner,
+    PartnerApplication,
+    PartnerCertification,
+    PartnerPortalAccess,
 )
 
 

@@ -1,18 +1,18 @@
 import datetime
 import uuid
+
+import jwt
 import pytest
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
-import jwt
 
 from products.commercial_readiness.models import (
-    PricingPlan, Quotation, Proposal, LicenseKey,
-    ComplianceCertification, CompetitiveBenchmark,
-    License, Subscription, ProductEdition, FeatureFlag,
-    TenantFeatureFlagOverride, WhiteLabelConfig, ConcurrentLicenseSession,
-    CustomerPortalAccess, SupportTicket, MarketplaceListing,
-    MarketplaceInstallation, CommercialMetricsSnapshot
+    CommercialMetricsSnapshot,
+    FeatureFlag,
+    License,
+    MarketplaceListing,
+    ProductEdition,
 )
 
 TENANT_A = uuid.UUID("aaaaaaaa-0000-0000-0000-000000000001")
@@ -22,9 +22,9 @@ TENANT_A = uuid.UUID("aaaaaaaa-0000-0000-0000-000000000001")
 # Unit tests — pure model logic, no database required
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 class TestLicenseModelProperties:
-
     def _make_license(self, valid_until=None, grace_period_days=30):
         lic = License.__new__(License)
         lic.valid_until = valid_until
@@ -120,7 +120,6 @@ def auth_client():
 
 @pytest.mark.django_db
 class TestCommercialReadinessAPIs:
-
     def test_pricing_plans(self, auth_client):
         # Create
         res = auth_client.post(
@@ -133,7 +132,7 @@ class TestCommercialReadinessAPIs:
                 "base_price": "50.00",
                 "billing_cycle": "monthly",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         plan_id = res.data["id"]
@@ -158,7 +157,7 @@ class TestCommercialReadinessAPIs:
                 "customer_email": "info@jmg.jo",
                 "total": "12000.00",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         quote_id = res.data["id"]
@@ -188,7 +187,7 @@ class TestCommercialReadinessAPIs:
                 "proposal_title": "CyMed Core Implementation for MOH Hospitals",
                 "total_value": "450000.00",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         prop_id = res.data["id"]
@@ -202,7 +201,7 @@ class TestCommercialReadinessAPIs:
         res = auth_client.post(
             f"/api/v1/commercial-readiness/proposals/{prop_id}/mark_won/",
             {"win_reason": "Better regional localization and CBAHI compliance support"},
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_200_OK
         assert res.data["status"] == "won"
@@ -211,7 +210,7 @@ class TestCommercialReadinessAPIs:
         res = auth_client.post(
             f"/api/v1/commercial-readiness/proposals/{prop_id}/mark_lost/",
             {"loss_reason": "Budget constraints"},
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_200_OK
         assert res.data["status"] == "lost"
@@ -224,7 +223,7 @@ class TestCommercialReadinessAPIs:
                 "product_code": "cymed_hospital",
                 "key_value": "KEY-HOSP-TEST-XYZ",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         key_id = res.data["id"]
@@ -247,7 +246,7 @@ class TestCommercialReadinessAPIs:
                 "standard": "hipaa",
                 "status": "certified",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
 
@@ -262,7 +261,7 @@ class TestCommercialReadinessAPIs:
                 "competitor_score": "6.0",
                 "last_updated": "2026-06-28",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
 
@@ -276,7 +275,7 @@ class TestCommercialReadinessAPIs:
                 "issued_to_email": "amman@clinic.jo",
                 "valid_from": timezone.now().isoformat(),
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         lic_id = res.data["id"]
@@ -302,7 +301,9 @@ class TestCommercialReadinessAPIs:
         assert res.data["status"] == "suspended"
 
         # Generate Offline Token
-        res = auth_client.post(f"/api/v1/commercial-readiness/licenses/{lic_id}/generate_offline_token/")
+        res = auth_client.post(
+            f"/api/v1/commercial-readiness/licenses/{lic_id}/generate_offline_token/"
+        )
         assert res.status_code == status.HTTP_200_OK
         assert "offline_token" in res.data
 
@@ -324,7 +325,7 @@ class TestCommercialReadinessAPIs:
                 "current_period_start": "2026-06-01",
                 "current_period_end": "2026-06-30",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         sub_id = res.data["id"]
@@ -376,7 +377,7 @@ class TestCommercialReadinessAPIs:
                 "is_enabled": True,
                 "override_reason": "Enterprise customer request",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
 
@@ -389,7 +390,7 @@ class TestCommercialReadinessAPIs:
                 "primary_color": "#0055A5",
                 "secondary_color": "#004B91",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
 
@@ -409,18 +410,22 @@ class TestCommercialReadinessAPIs:
                 "user_id": str(uuid.uuid4()),
                 "is_active": True,
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         sess_id = res.data["id"]
 
         # Checkout
-        res = auth_client.post(f"/api/v1/commercial-readiness/concurrent-sessions/{sess_id}/checkout/")
+        res = auth_client.post(
+            f"/api/v1/commercial-readiness/concurrent-sessions/{sess_id}/checkout/"
+        )
         assert res.status_code == status.HTTP_200_OK
         assert res.data["status"] == "checked_out"
 
         # Checkin
-        res = auth_client.post(f"/api/v1/commercial-readiness/concurrent-sessions/{sess_id}/checkin/")
+        res = auth_client.post(
+            f"/api/v1/commercial-readiness/concurrent-sessions/{sess_id}/checkin/"
+        )
         assert res.status_code == status.HTTP_200_OK
         assert res.data["status"] == "checked_in"
 
@@ -432,7 +437,7 @@ class TestCommercialReadinessAPIs:
                 "access_level": "admin",
                 "can_manage_licenses": True,
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
 
@@ -445,7 +450,7 @@ class TestCommercialReadinessAPIs:
                 "product_code": "cymed_clinic",
                 "priority": "high",
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
         ticket_id = res.data["id"]
@@ -454,7 +459,7 @@ class TestCommercialReadinessAPIs:
         res = auth_client.post(
             f"/api/v1/commercial-readiness/support-tickets/{ticket_id}/assign/",
             {"assigned_to_id": str(uuid.uuid4())},
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_200_OK
         assert res.data["status"] == "assigned"
@@ -463,7 +468,7 @@ class TestCommercialReadinessAPIs:
         res = auth_client.post(
             f"/api/v1/commercial-readiness/support-tickets/{ticket_id}/resolve/",
             {"resolution_notes": "Added database indexes for query optimization"},
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_200_OK
         assert res.data["status"] == "resolved"
@@ -483,7 +488,9 @@ class TestCommercialReadinessAPIs:
         )
 
         # Install
-        res = auth_client.post(f"/api/v1/commercial-readiness/marketplace-listings/{listing.id}/install/")
+        res = auth_client.post(
+            f"/api/v1/commercial-readiness/marketplace-listings/{listing.id}/install/"
+        )
         assert res.status_code == status.HTTP_200_OK
         assert res.data["status"] == "installed"
 
@@ -502,7 +509,7 @@ class TestCommercialReadinessAPIs:
                 "installed_by_id": str(uuid.uuid4()),
                 "is_active": True,
             },
-            format="json"
+            format="json",
         )
         assert res.status_code == status.HTTP_201_CREATED
 

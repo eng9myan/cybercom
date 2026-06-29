@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 CALL_MODE_CHOICES = [
     ("in_house", "In-House (< 5 min response)"),
@@ -159,4 +159,6 @@ class CallSwapRequest(BaseModel):
     policy_cache_updated = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Call Swap {self.requester_profile_id} -> {self.recipient_profile_id} ({self.status})"
+        return (
+            f"Call Swap {self.requester_profile_id} -> {self.recipient_profile_id} ({self.status})"
+        )

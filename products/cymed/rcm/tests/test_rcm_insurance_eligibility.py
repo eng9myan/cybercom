@@ -1,76 +1,91 @@
 """
 Tests for CyMed RCM — Insurance, Eligibility, Preauthorization, Charge Capture.
 """
+
 import uuid
 from decimal import Decimal
-from unittest.mock import patch, MagicMock
 
 from django.test import TestCase
 from django.utils import timezone
 
-from products.cymed.rcm.insurance.models import (
-    InsuranceCompany, InsurancePlan, InsuranceMember, Coverage, Benefit, CoverageRule, InsuranceCard,
+from products.cymed.rcm.charge_capture.models import (
+    Charge,
+    ChargeAudit,
+    ChargeItem,
+    ChargeRule,
 )
 from products.cymed.rcm.eligibility.models import (
-    EligibilityRequest, EligibilityResponse, CoverageVerification, BenefitVerification,
+    BenefitVerification,
+    CoverageVerification,
+    EligibilityRequest,
+    EligibilityResponse,
+)
+from products.cymed.rcm.insurance.models import (
+    Benefit,
+    Coverage,
+    CoverageRule,
+    InsuranceCard,
+    InsuranceCompany,
+    InsuranceMember,
+    InsurancePlan,
 )
 from products.cymed.rcm.preauthorization.models import (
-    Preauthorization, AuthorizationRequest, AuthorizationDecision, AuthorizationAppeal,
+    AuthorizationAppeal,
+    AuthorizationDecision,
+    AuthorizationRequest,
+    Preauthorization,
 )
-from products.cymed.rcm.charge_capture.models import (
-    Charge, ChargeItem, ChargeRule, ChargeAdjustment, ChargeAudit,
-)
-
 
 TENANT = uuid.uuid4()
 
 
 def make_company(**kwargs):
-    defaults = dict(
-        tenant_id=TENANT,
-        name="Gulf Insurance Co",
-        short_name="GIC",
-        company_type="private",
-        payer_id=str(uuid.uuid4())[:10],
-        country="SAU",
-        is_active=True,
-    )
+    defaults = {
+        "tenant_id": TENANT,
+        "name": "Gulf Insurance Co",
+        "short_name": "GIC",
+        "company_type": "private",
+        "payer_id": str(uuid.uuid4())[:10],
+        "country": "SAU",
+        "is_active": True,
+    }
     defaults.update(kwargs)
     return InsuranceCompany.objects.create(**defaults)
 
 
 def make_plan(company, **kwargs):
-    defaults = dict(
-        tenant_id=TENANT,
-        company=company,
-        plan_name="Gold Plan",
-        plan_code="GOLD-001",
-        plan_type="ppo",
-        network_type="both",
-        coverage_category="premium",
-        is_active=True,
-    )
+    defaults = {
+        "tenant_id": TENANT,
+        "company": company,
+        "plan_name": "Gold Plan",
+        "plan_code": "GOLD-001",
+        "plan_type": "ppo",
+        "network_type": "both",
+        "coverage_category": "premium",
+        "is_active": True,
+    }
     defaults.update(kwargs)
     return InsurancePlan.objects.create(**defaults)
 
 
 def make_member(plan, patient_id=None, **kwargs):
-    defaults = dict(
-        tenant_id=TENANT,
-        patient_id=patient_id or uuid.uuid4(),
-        insurance_plan=plan,
-        member_id="MEM-001",
-        member_relationship="self",
-        is_primary_holder=True,
-        effective_date=timezone.now().date(),
-        is_active=True,
-        priority_order=1,
-    )
+    defaults = {
+        "tenant_id": TENANT,
+        "patient_id": patient_id or uuid.uuid4(),
+        "insurance_plan": plan,
+        "member_id": "MEM-001",
+        "member_relationship": "self",
+        "is_primary_holder": True,
+        "effective_date": timezone.now().date(),
+        "is_active": True,
+        "priority_order": 1,
+    }
     defaults.update(kwargs)
     return InsuranceMember.objects.create(**defaults)
 
 
 # ─── Insurance ────────────────────────────────────────────────────────────────
+
 
 class InsuranceCompanyTest(TestCase):
     def test_create_company(self):
@@ -167,6 +182,7 @@ class InsuranceCompanyTest(TestCase):
 
 # ─── Eligibility ──────────────────────────────────────────────────────────────
 
+
 class EligibilityTest(TestCase):
     def setUp(self):
         self.co = make_company()
@@ -244,6 +260,7 @@ class EligibilityTest(TestCase):
 
 
 # ─── Preauthorization ─────────────────────────────────────────────────────────
+
 
 class PreauthorizationTest(TestCase):
     def setUp(self):
@@ -351,6 +368,7 @@ class PreauthorizationTest(TestCase):
 
 
 # ─── Charge Capture ───────────────────────────────────────────────────────────
+
 
 class ChargeCaptureTest(TestCase):
     def setUp(self):

@@ -1,30 +1,27 @@
 import uuid
+
 import pytest
 from django.utils import timezone
-from django.db import transaction
 
-from products.cymed.core.patients.models import Patient
-from products.cymed.core.encounters.models import Encounter
-from products.cymed.core.organizations.models import Organization
-from products.cymed.core.facilities.models import Facility, Department, Ward, Room, Bed
-
-from products.cymed.hospital.adt.models import (
-    AdmissionReason, AdmissionType, DischargeReason, DischargeDisposition,
-    Admission, TransferRequest
-)
-from products.cymed.hospital.bed_management.models import BedAssignment, BedCleaning, BedBlocking
-from products.cymed.hospital.inpatient.models import HospitalStay, DischargePlanning
-from products.cymed.hospital.emergency.models import EmergencyVisit, EmergencyTriage, EmergencyAcuity
-from products.cymed.hospital.icu.models import ICUStay, ICURound, ICUAssessment
-from products.cymed.hospital.operating_room.models import SurgicalCase, SurgicalSchedule
-from products.cymed.hospital.nursing.models import NursingShift, NursingAssignment
-from products.cymed.hospital.capacity_management.models import CapacityRule, CapacityThreshold
-
-from products.cymed.hospital.services import (
-    AdmissionService, BedManagementService, EmergencyService,
-    ICUService, OperatingRoomService, NursingService, DischargeService, CapacityService
-)
 from platform.events.models import OutboxEvent
+from products.cymed.core.encounters.models import Encounter
+from products.cymed.core.facilities.models import Bed, Department, Facility, Room, Ward
+from products.cymed.core.organizations.models import Organization
+from products.cymed.core.patients.models import Patient
+from products.cymed.hospital.adt.models import (
+    AdmissionReason,
+    AdmissionType,
+    DischargeDisposition,
+    DischargeReason,
+)
+from products.cymed.hospital.services import (
+    AdmissionService,
+    BedManagementService,
+    CapacityService,
+    EmergencyService,
+    ICUService,
+    OperatingRoomService,
+)
 
 
 @pytest.fixture
@@ -53,31 +50,51 @@ def setup_base_data(test_tenant_id):
         tenant_id=test_tenant_id, room=room, bed_number="101-A", status="available"
     )
     patient = Patient.objects.create(
-        tenant_id=test_tenant_id, first_name="Ahmad", last_name="Kamal", dob="1985-05-15", mrn="MRN-H-001"
+        tenant_id=test_tenant_id,
+        first_name="Ahmad",
+        last_name="Kamal",
+        dob="1985-05-15",
+        mrn="MRN-H-001",
     )
     encounter = Encounter.objects.create(
-        tenant_id=test_tenant_id, patient=patient, encounter_type="inpatient",
-        status="in_progress", organization=org, facility=facility
+        tenant_id=test_tenant_id,
+        patient=patient,
+        encounter_type="inpatient",
+        status="in_progress",
+        organization=org,
+        facility=facility,
     )
     return {
-        "org": org, "facility": facility, "dept": dept,
-        "ward": ward, "room": room, "bed": bed,
-        "patient": patient, "encounter": encounter
+        "org": org,
+        "facility": facility,
+        "dept": dept,
+        "ward": ward,
+        "room": room,
+        "bed": bed,
+        "patient": patient,
+        "encounter": encounter,
     }
 
 
 @pytest.mark.django_db
 class TestHospitalServices:
-
     def test_full_adt_workflow(self, test_tenant_id, setup_base_data):
         patient = setup_base_data["patient"]
         encounter = setup_base_data["encounter"]
         bed = setup_base_data["bed"]
 
-        reason = AdmissionReason.objects.create(tenant_id=test_tenant_id, name="Chest Pain", code="R-ADM-001")
-        adm_type = AdmissionType.objects.create(tenant_id=test_tenant_id, name="Emergency", code="T-ADM-001")
-        dis_reason = DischargeReason.objects.create(tenant_id=test_tenant_id, name="Recovered", code="R-DIS-001")
-        dis_disp = DischargeDisposition.objects.create(tenant_id=test_tenant_id, name="Home", code="D-DIS-001")
+        reason = AdmissionReason.objects.create(
+            tenant_id=test_tenant_id, name="Chest Pain", code="R-ADM-001"
+        )
+        adm_type = AdmissionType.objects.create(
+            tenant_id=test_tenant_id, name="Emergency", code="T-ADM-001"
+        )
+        dis_reason = DischargeReason.objects.create(
+            tenant_id=test_tenant_id, name="Recovered", code="R-DIS-001"
+        )
+        dis_disp = DischargeDisposition.objects.create(
+            tenant_id=test_tenant_id, name="Home", code="D-DIS-001"
+        )
 
         physician_id = str(uuid.uuid4())
 
@@ -105,7 +122,10 @@ class TestHospitalServices:
 
         # 2. Transfer Patient
         new_bed = Bed.objects.create(
-            tenant_id=test_tenant_id, room=setup_base_data["room"], bed_number="101-B", status="available"
+            tenant_id=test_tenant_id,
+            room=setup_base_data["room"],
+            bed_number="101-B",
+            status="available",
         )
         res_transfer = AdmissionService.transfer_patient(
             tenant_id=str(test_tenant_id),
@@ -160,7 +180,9 @@ class TestHospitalServices:
         assert triage_res["visit_status"] == "fast_track"
 
         # Check critical alert event was generated
-        assert OutboxEvent.objects.filter(tenant_id=test_tenant_id, event_type="CriticalAlertTriggered").exists()
+        assert OutboxEvent.objects.filter(
+            tenant_id=test_tenant_id, event_type="CriticalAlertTriggered"
+        ).exists()
 
     def test_bed_management_assign_and_release(self, test_tenant_id, setup_base_data):
         patient = setup_base_data["patient"]
@@ -182,9 +204,7 @@ class TestHospitalServices:
 
         # Release
         success = BedManagementService.release_bed(
-            tenant_id=str(test_tenant_id),
-            bed_id=str(bed.id),
-            reason="transfer"
+            tenant_id=str(test_tenant_id), bed_id=str(bed.id), reason="transfer"
         )
         assert success
         bed.refresh_from_db()
@@ -196,11 +216,15 @@ class TestHospitalServices:
         bed = setup_base_data["bed"]
         physician_id = str(uuid.uuid4())
 
-        reason = AdmissionReason.objects.create(tenant_id=test_tenant_id, name="ICU Admission", code="R-ICU-001")
-        adm_type = AdmissionType.objects.create(tenant_id=test_tenant_id, name="Emergency", code="T-ICU-001")
+        reason = AdmissionReason.objects.create(
+            tenant_id=test_tenant_id, name="ICU Admission", code="R-ICU-001"
+        )
+        adm_type = AdmissionType.objects.create(
+            tenant_id=test_tenant_id, name="Emergency", code="T-ICU-001"
+        )
 
         # Admit inpatient stay
-        res_admit = AdmissionService.admit_patient(
+        AdmissionService.admit_patient(
             tenant_id=str(test_tenant_id),
             patient_id=str(patient.id),
             encounter_id=str(encounter.id),
@@ -261,7 +285,6 @@ class TestHospitalServices:
     def test_capacity_service_census(self, test_tenant_id, setup_base_data):
         # Trigger capacity check
         res = CapacityService.check_surge_threshold(
-            tenant_id=str(test_tenant_id),
-            facility_id=str(setup_base_data["facility"].id)
+            tenant_id=str(test_tenant_id), facility_id=str(setup_base_data["facility"].id)
         )
         assert res["alert_level"] is not None

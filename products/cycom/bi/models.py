@@ -1,4 +1,5 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -26,7 +27,9 @@ class DashboardMetric(BaseModel):
     name = models.CharField(max_length=255)
     metric_value = models.DecimalField(max_digits=18, decimal_places=4)
     period = models.CharField(max_length=50, default="daily")  # e.g., daily, monthly, real-time
-    dimensions = models.JSONField(default=dict, blank=True)   # metadata like department=1, store=North
+    dimensions = models.JSONField(
+        default=dict, blank=True
+    )  # metadata like department=1, store=North
 
     class Meta:
         db_table = "cycom_bi_dashboard_metrics"

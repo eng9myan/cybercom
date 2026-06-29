@@ -1,5 +1,13 @@
 from rest_framework import serializers
-from .models import DemoEnvironment, DemoTenant, DemoScenario, DemoSession, DemoResetRequest, ProductTour
+
+from .models import (
+    DemoEnvironment,
+    DemoResetRequest,
+    DemoScenario,
+    DemoSession,
+    DemoTenant,
+    ProductTour,
+)
 
 
 class DemoEnvironmentSerializer(serializers.ModelSerializer):

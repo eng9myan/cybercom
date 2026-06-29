@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 DEMO_TYPE_CHOICES = [
     ("full_platform", "Full Platform Demo"),
@@ -168,7 +168,12 @@ class DemoResetRequest(BaseModel):
     reason = models.TextField(blank=True)
     status = models.CharField(
         max_length=20,
-        choices=[("pending", "Pending"), ("in_progress", "In Progress"), ("completed", "Completed"), ("failed", "Failed")],
+        choices=[
+            ("pending", "Pending"),
+            ("in_progress", "In Progress"),
+            ("completed", "Completed"),
+            ("failed", "Failed"),
+        ],
         default="pending",
     )
     completed_at = models.DateTimeField(null=True, blank=True)

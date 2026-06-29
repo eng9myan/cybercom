@@ -1,9 +1,10 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    ProviderMobileDeviceViewSet,
-    MobileSessionViewSet,
     MobilePreferencesViewSet,
     MobilePushNotificationViewSet,
+    MobileSessionViewSet,
+    ProviderMobileDeviceViewSet,
 )
 
 router = DefaultRouter()

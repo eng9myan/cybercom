@@ -1,7 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.clinic.billing_bridge.views import (
-    ChargeCodeViewSet, PriceListViewSet, ClinicServiceViewSet, ChargeItemViewSet
+    ChargeCodeViewSet,
+    ChargeItemViewSet,
+    ClinicServiceViewSet,
+    PriceListViewSet,
 )
 
 router = DefaultRouter()

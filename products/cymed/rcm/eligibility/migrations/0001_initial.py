@@ -1,10 +1,10 @@
-﻿import uuid
+import uuid
+
 import django.db.models.deletion
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -13,7 +13,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="EligibilityRequest",
             fields=[
-                ("id", models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        primary_key=True, default=uuid.uuid4, editable=False, serialize=False
+                    ),
+                ),
                 ("tenant_id", models.UUIDField(db_index=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -60,7 +65,10 @@ class Migration(migrations.Migration):
                         ],
                     ),
                 ),
-                ("fhir_coverage_eligibility_request_id", models.CharField(max_length=200, blank=True, null=True)),
+                (
+                    "fhir_coverage_eligibility_request_id",
+                    models.CharField(max_length=200, blank=True, null=True),
+                ),
                 ("payer_transaction_id", models.CharField(max_length=200, blank=True, null=True)),
                 ("error_message", models.TextField(blank=True, null=True)),
             ],
@@ -72,7 +80,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="CoverageVerification",
             fields=[
-                ("id", models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        primary_key=True, default=uuid.uuid4, editable=False, serialize=False
+                    ),
+                ),
                 ("tenant_id", models.UUIDField(db_index=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -104,7 +117,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="EligibilityResponse",
             fields=[
-                ("id", models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        primary_key=True, default=uuid.uuid4, editable=False, serialize=False
+                    ),
+                ),
                 ("tenant_id", models.UUIDField(db_index=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -131,15 +149,39 @@ class Migration(migrations.Migration):
                 ),
                 ("coverage_start_date", models.DateField(null=True, blank=True)),
                 ("coverage_end_date", models.DateField(null=True, blank=True)),
-                ("deductible_amount", models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)),
-                ("deductible_met", models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)),
-                ("out_of_pocket_max", models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)),
-                ("out_of_pocket_met", models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)),
-                ("copay_amount", models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)),
-                ("coinsurance_percentage", models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)),
-                ("patient_responsibility_estimate", models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)),
+                (
+                    "deductible_amount",
+                    models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True),
+                ),
+                (
+                    "deductible_met",
+                    models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True),
+                ),
+                (
+                    "out_of_pocket_max",
+                    models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True),
+                ),
+                (
+                    "out_of_pocket_met",
+                    models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True),
+                ),
+                (
+                    "copay_amount",
+                    models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True),
+                ),
+                (
+                    "coinsurance_percentage",
+                    models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True),
+                ),
+                (
+                    "patient_responsibility_estimate",
+                    models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True),
+                ),
                 ("raw_response", models.JSONField(default=dict)),
-                ("fhir_coverage_eligibility_response_id", models.CharField(max_length=200, blank=True, null=True)),
+                (
+                    "fhir_coverage_eligibility_response_id",
+                    models.CharField(max_length=200, blank=True, null=True),
+                ),
             ],
             options={
                 "db_table": "cymed_rcm_elig_responses",
@@ -149,7 +191,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="BenefitVerification",
             fields=[
-                ("id", models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        primary_key=True, default=uuid.uuid4, editable=False, serialize=False
+                    ),
+                ),
                 ("tenant_id", models.UUIDField(db_index=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -183,8 +230,14 @@ class Migration(migrations.Migration):
                 ),
                 ("is_covered", models.BooleanField(default=False)),
                 ("requires_preauth", models.BooleanField(default=False)),
-                ("coverage_percentage", models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)),
-                ("copay", models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)),
+                (
+                    "coverage_percentage",
+                    models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True),
+                ),
+                (
+                    "copay",
+                    models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True),
+                ),
                 (
                     "network_status",
                     models.CharField(
@@ -205,22 +258,32 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="eligibilityrequest",
-            index=models.Index(fields=["tenant_id", "patient_id"], name="cymed_rcm_elig_req_tenant_patient_idx"),
+            index=models.Index(
+                fields=["tenant_id", "patient_id"], name="cymed_rcm_elig_req_tenant_patient_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="eligibilityrequest",
-            index=models.Index(fields=["tenant_id", "status"], name="cymed_rcm_elig_req_tenant_status_idx"),
+            index=models.Index(
+                fields=["tenant_id", "status"], name="cymed_rcm_elig_req_tenant_status_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="eligibilityrequest",
-            index=models.Index(fields=["tenant_id", "service_date"], name="cymed_rcm_elig_req_tenant_svcdate_idx"),
+            index=models.Index(
+                fields=["tenant_id", "service_date"], name="cymed_rcm_elig_req_tenant_svcdate_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="coverageverification",
-            index=models.Index(fields=["tenant_id", "patient_id"], name="cymed_rcm_cov_ver_tenant_patient_idx"),
+            index=models.Index(
+                fields=["tenant_id", "patient_id"], name="cymed_rcm_cov_ver_tenant_patient_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="coverageverification",
-            index=models.Index(fields=["tenant_id", "encounter_id"], name="cymed_rcm_cov_ver_tenant_enc_idx"),
+            index=models.Index(
+                fields=["tenant_id", "encounter_id"], name="cymed_rcm_cov_ver_tenant_enc_idx"
+            ),
         ),
     ]

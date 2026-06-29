@@ -1,5 +1,13 @@
-﻿from rest_framework import serializers
-from .models import LabOperationsDashboard, LabTurnaroundMetric, LabProductivityReport, LabQualityDashboard, LabMicrobiologyDashboard
+from rest_framework import serializers
+
+from .models import (
+    LabMicrobiologyDashboard,
+    LabOperationsDashboard,
+    LabProductivityReport,
+    LabQualityDashboard,
+    LabTurnaroundMetric,
+)
+
 
 class LabOperationsDashboardSerializer(serializers.ModelSerializer):
     class Meta:
@@ -7,11 +15,13 @@ class LabOperationsDashboardSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
 
+
 class LabTurnaroundMetricSerializer(serializers.ModelSerializer):
     class Meta:
         model = LabTurnaroundMetric
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
 
 class LabProductivityReportSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,11 +29,13 @@ class LabProductivityReportSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
 
+
 class LabQualityDashboardSerializer(serializers.ModelSerializer):
     class Meta:
         model = LabQualityDashboard
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
 
 class LabMicrobiologyDashboardSerializer(serializers.ModelSerializer):
     class Meta:

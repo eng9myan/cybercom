@@ -18,6 +18,7 @@ All methods are pure-Python, framework-agnostic where possible so they can be
 unit-tested without spinning up Keycloak (HTTP mocked) or invoked from
 Celery tasks / management commands / DRF views interchangeably.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -27,9 +28,10 @@ import os
 import secrets
 import time
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import timedelta
-from typing import Any, Iterable
+from typing import Any
 
 import jwt
 from django.conf import settings
@@ -39,12 +41,8 @@ from django.utils import timezone
 from platform.cyidentity.models import (
     ApplicationClient,
     BreakGlassAccess,
-    BreakGlassReason,
     BreakGlassStatus,
     ClientSecret,
-    Group,
-    GroupMembership,
-    IdentityProvider,
     IdentityRealm,
     LoginAudit,
     Permission,
@@ -52,12 +50,9 @@ from platform.cyidentity.models import (
     RealmStatus,
     Role,
     RoleAssignment,
-    ServicePrincipal,
     UserProfile,
     UserSession,
-    WebAuthnCredential,
 )
-
 
 logger = logging.getLogger("cybercom.cyidentity")
 
@@ -92,6 +87,7 @@ class TokenValidationError(Exception):
 @dataclass
 class IdentityMetrics:
     """Process-local counters; exposed via /metrics in core.urls."""
+
     login_total: int = 0
     login_failure_total: int = 0
     mfa_challenge_total: int = 0
@@ -134,7 +130,7 @@ def _percentile(samples: list[int], pct: float) -> float:
     if not samples:
         return 0.0
     ordered = sorted(samples)
-    k = max(0, min(len(ordered) - 1, int(round((pct / 100.0) * (len(ordered) - 1)))))
+    k = max(0, min(len(ordered) - 1, round((pct / 100.0) * (len(ordered) - 1))))
     return float(ordered[k])
 
 
@@ -170,7 +166,8 @@ class KeycloakAdminClient:
 
     def __init__(self, realm: IdentityRealm | None = None):
         self.base_url = (
-            realm.admin_api_url.rstrip("/") if realm and realm.admin_api_url
+            realm.admin_api_url.rstrip("/")
+            if realm and realm.admin_api_url
             else getattr(settings, "CYIDENTITY_ISSUER", "http://localhost:8080").rstrip("/")
         )
         self.realm_name = realm.realm_name if realm else "master"
@@ -211,11 +208,15 @@ class KeycloakAdminClient:
         import httpx  # type: ignore
 
         url = f"{self.base_url}/admin/realms"
-        resp = httpx.post(url, json=realm_payload, headers=self._auth_headers(), timeout=self.timeout_seconds)
+        resp = httpx.post(
+            url, json=realm_payload, headers=self._auth_headers(), timeout=self.timeout_seconds
+        )
         if resp.status_code == 409:
             raise KeycloakConflict("Realm already exists", 409, resp.text)
         if resp.status_code >= 400:
-            raise KeycloakError(f"create_realm failed: {resp.status_code}", resp.status_code, resp.text)
+            raise KeycloakError(
+                f"create_realm failed: {resp.status_code}", resp.status_code, resp.text
+            )
         return resp.json() if resp.text else {"realm": realm_payload["realm"]}
 
     def get_realm(self, realm_name: str) -> dict[str, Any]:
@@ -228,7 +229,9 @@ class KeycloakAdminClient:
         if resp.status_code == 404:
             raise KeycloakNotFound(f"Realm not found: {realm_name}", 404)
         if resp.status_code >= 400:
-            raise KeycloakError(f"get_realm failed: {resp.status_code}", resp.status_code, resp.text)
+            raise KeycloakError(
+                f"get_realm failed: {resp.status_code}", resp.status_code, resp.text
+            )
         return resp.json()
 
     def update_realm(self, realm_name: str, payload: dict[str, Any]) -> None:
@@ -238,9 +241,13 @@ class KeycloakAdminClient:
         import httpx  # type: ignore
 
         url = f"{self.base_url}/admin/realms/{realm_name}"
-        resp = httpx.put(url, json=payload, headers=self._auth_headers(), timeout=self.timeout_seconds)
+        resp = httpx.put(
+            url, json=payload, headers=self._auth_headers(), timeout=self.timeout_seconds
+        )
         if resp.status_code >= 400:
-            raise KeycloakError(f"update_realm failed: {resp.status_code}", resp.status_code, resp.text)
+            raise KeycloakError(
+                f"update_realm failed: {resp.status_code}", resp.status_code, resp.text
+            )
 
     def delete_realm(self, realm_name: str) -> None:
         if not getattr(settings, "KEYCLOAK_ENABLED", True):
@@ -253,7 +260,9 @@ class KeycloakAdminClient:
         if resp.status_code == 404:
             raise KeycloakNotFound(f"Realm not found: {realm_name}", 404)
         if resp.status_code >= 400:
-            raise KeycloakError(f"delete_realm failed: {resp.status_code}", resp.status_code, resp.text)
+            raise KeycloakError(
+                f"delete_realm failed: {resp.status_code}", resp.status_code, resp.text
+            )
 
     # --- Client CRUD --------------------------------------------------------
     def create_client(self, realm_name: str, client_payload: dict[str, Any]) -> dict[str, Any]:
@@ -264,9 +273,13 @@ class KeycloakAdminClient:
         import httpx  # type: ignore
 
         url = f"{self.base_url}/admin/realms/{realm_name}/clients"
-        resp = httpx.post(url, json=client_payload, headers=self._auth_headers(), timeout=self.timeout_seconds)
+        resp = httpx.post(
+            url, json=client_payload, headers=self._auth_headers(), timeout=self.timeout_seconds
+        )
         if resp.status_code >= 400:
-            raise KeycloakError(f"create_client failed: {resp.status_code}", resp.status_code, resp.text)
+            raise KeycloakError(
+                f"create_client failed: {resp.status_code}", resp.status_code, resp.text
+            )
         return resp.json() if resp.text else client_payload
 
     def get_client_secret(self, realm_name: str, client_uuid: str) -> dict[str, Any]:
@@ -278,7 +291,9 @@ class KeycloakAdminClient:
         url = f"{self.base_url}/admin/realms/{realm_name}/clients/{client_uuid}/client-secret"
         resp = httpx.get(url, headers=self._auth_headers(), timeout=self.timeout_seconds)
         if resp.status_code >= 400:
-            raise KeycloakError(f"get_client_secret failed: {resp.status_code}", resp.status_code, resp.text)
+            raise KeycloakError(
+                f"get_client_secret failed: {resp.status_code}", resp.status_code, resp.text
+            )
         return resp.json()
 
     def regenerate_client_secret(self, realm_name: str, client_uuid: str) -> dict[str, Any]:
@@ -289,7 +304,9 @@ class KeycloakAdminClient:
         url = f"{self.base_url}/admin/realms/{realm_name}/clients/{client_uuid}/client-secret"
         resp = httpx.post(url, headers=self._auth_headers(), timeout=self.timeout_seconds)
         if resp.status_code >= 400:
-            raise KeycloakError(f"regenerate_client_secret failed: {resp.status_code}", resp.status_code, resp.text)
+            raise KeycloakError(
+                f"regenerate_client_secret failed: {resp.status_code}", resp.status_code, resp.text
+            )
         return resp.json()
 
     # --- Users --------------------------------------------------------------
@@ -301,11 +318,15 @@ class KeycloakAdminClient:
         import httpx  # type: ignore
 
         url = f"{self.base_url}/admin/realms/{realm_name}/users"
-        resp = httpx.post(url, json=user_payload, headers=self._auth_headers(), timeout=self.timeout_seconds)
+        resp = httpx.post(
+            url, json=user_payload, headers=self._auth_headers(), timeout=self.timeout_seconds
+        )
         if resp.status_code == 409:
             raise KeycloakConflict("User already exists", 409, resp.text)
         if resp.status_code >= 400:
-            raise KeycloakError(f"create_user failed: {resp.status_code}", resp.status_code, resp.text)
+            raise KeycloakError(
+                f"create_user failed: {resp.status_code}", resp.status_code, resp.text
+            )
         location = resp.headers.get("Location", "")
         return location.rsplit("/", 1)[-1] if location else str(uuid.uuid4())
 
@@ -315,9 +336,16 @@ class KeycloakAdminClient:
         import httpx  # type: ignore
 
         url = f"{self.base_url}/admin/realms/{realm_name}/users/{user_id}/role-mappings/realm"
-        resp = httpx.post(url, json=[{"name": role_name}], headers=self._auth_headers(), timeout=self.timeout_seconds)
+        resp = httpx.post(
+            url,
+            json=[{"name": role_name}],
+            headers=self._auth_headers(),
+            timeout=self.timeout_seconds,
+        )
         if resp.status_code >= 400:
-            raise KeycloakError(f"assign_role failed: {resp.status_code}", resp.status_code, resp.text)
+            raise KeycloakError(
+                f"assign_role failed: {resp.status_code}", resp.status_code, resp.text
+            )
 
     # --- Helpers ------------------------------------------------------------
     def _auth_headers(self) -> dict[str, str]:
@@ -332,7 +360,7 @@ class KeycloakAdminClient:
 class JWKSCache:
     """JWKS cache with TTL + graceful degradation per ADR-0017 §5.6 + ADR-0035 §5.6."""
 
-    TTL_SECONDS = 300       # 5-minute refresh
+    TTL_SECONDS = 300  # 5-minute refresh
     STALE_TTL_SECONDS = 3600  # serve cached up to 60 min on error
 
     def __init__(self, jwks_uri: str | None = None):
@@ -348,7 +376,7 @@ class JWKSCache:
             cache.set(cache_key, {"fetched_at": time.time(), "keys": fresh}, self.STALE_TTL_SECONDS)
             metrics.jwks_refresh_total += 1
             return fresh
-        except Exception as exc:  # noqa: BLE001 — graceful degradation
+        except Exception as exc:
             if cached:
                 metrics.jwks_serve_stale_total += 1
                 logger.warning("jwks_serve_stale", extra={"reason": str(exc)})
@@ -459,20 +487,22 @@ class RealmService:
 
         # Push to Keycloak first (real or fake)
         self.kc.authenticate()
-        self.kc.create_realm({
-            "realm": realm_name,
-            "enabled": enabled,
-            "displayName": display_name or realm_name,
-            "registrationAllowed": False,
-            "loginWithEmailAllowed": True,
-            "duplicateEmailsAllowed": False,
-            "resetPasswordAllowed": False,
-            "editUsernameAllowed": False,
-            "bruteForceProtected": True,
-            "accessTokenLifespan": access_token_lifetime,
-            "sslRequired": "external",
-            "attributes": {"home_region": home_region, "locale": locale},
-        })
+        self.kc.create_realm(
+            {
+                "realm": realm_name,
+                "enabled": enabled,
+                "displayName": display_name or realm_name,
+                "registrationAllowed": False,
+                "loginWithEmailAllowed": True,
+                "duplicateEmailsAllowed": False,
+                "resetPasswordAllowed": False,
+                "editUsernameAllowed": False,
+                "bruteForceProtected": True,
+                "accessTokenLifespan": access_token_lifetime,
+                "sslRequired": "external",
+                "attributes": {"home_region": home_region, "locale": locale},
+            }
+        )
 
         realm = IdentityRealm.objects.create(
             tenant_id=tenant_id,
@@ -584,12 +614,16 @@ class ClientService:
             mfa_required=mfa_required,
             fapi_profile_enabled=fapi_profile_enabled,
             smart_on_fhir_enabled=smart_on_fhir_enabled,
-            attributes={"keycloak_uuid": client_uuid.get("id", "") if isinstance(client_uuid, dict) else ""},
+            attributes={
+                "keycloak_uuid": client_uuid.get("id", "") if isinstance(client_uuid, dict) else ""
+            },
         )
         metrics.client_created_total += 1
         return client
 
-    def rotate_secret(self, client: ApplicationClient, created_by: str = "") -> tuple[ClientSecret, str]:
+    def rotate_secret(
+        self, client: ApplicationClient, created_by: str = ""
+    ) -> tuple[ClientSecret, str]:
         """Generate a new client secret, store only its hash, return (row, cleartext)."""
         self.kc.authenticate()
         kc_uuid = client.attributes.get("keycloak_uuid") or client.client_id
@@ -598,7 +632,9 @@ class ClientService:
         cleartext = secret_payload.get("value") or secrets.token_urlsafe(48)
 
         # Revoke prior active secrets
-        ClientSecret.objects.filter(client=client, revoked_at__isnull=True).update(revoked_at=timezone.now())
+        ClientSecret.objects.filter(client=client, revoked_at__isnull=True).update(
+            revoked_at=timezone.now()
+        )
 
         row = ClientSecret.objects.create(
             tenant_id=client.realm.tenant_id,
@@ -689,21 +725,41 @@ class UserProvisioningService:
 class RoleSyncService:
     """Idempotent role + permission catalog sync per realm."""
 
-    def ensure_role(self, realm: IdentityRealm, name: str, *, display_name: str = "", description: str = "", client: ApplicationClient | None = None) -> Role:
+    def ensure_role(
+        self,
+        realm: IdentityRealm,
+        name: str,
+        *,
+        display_name: str = "",
+        description: str = "",
+        client: ApplicationClient | None = None,
+    ) -> Role:
         role, _ = Role.objects.update_or_create(
-            realm=realm, name=name, client=client,
-            defaults={"display_name": display_name or name, "description": description, "client_role": bool(client)},
+            realm=realm,
+            name=name,
+            client=client,
+            defaults={
+                "display_name": display_name or name,
+                "description": description,
+                "client_role": bool(client),
+            },
         )
         return role
 
-    def ensure_permission(self, scope: str, action: str, resource: str, *, description: str = "") -> Permission:
+    def ensure_permission(
+        self, scope: str, action: str, resource: str, *, description: str = ""
+    ) -> Permission:
         perm, _ = Permission.objects.update_or_create(
-            scope=scope, action=action, resource=resource,
+            scope=scope,
+            action=action,
+            resource=resource,
             defaults={"description": description},
         )
         return perm
 
-    def attach_permission(self, role: Role, permission: Permission, granted_by: str = "") -> RoleAssignment:
+    def attach_permission(
+        self, role: Role, permission: Permission, granted_by: str = ""
+    ) -> RoleAssignment:
         return RoleAssignment.objects.create(
             role=role,
             permission=permission,
@@ -789,7 +845,9 @@ class BreakGlassService:
         )
         return access
 
-    def approve(self, access: BreakGlassAccess, approver: str, second_approver: str = "") -> BreakGlassAccess:
+    def approve(
+        self, access: BreakGlassAccess, approver: str, second_approver: str = ""
+    ) -> BreakGlassAccess:
         if not second_approver:
             raise ValueError("Break-glass requires dual approval (ADR-0017 §7.3).")
         access.approve(approver, second_approver)
@@ -804,7 +862,9 @@ class BreakGlassService:
         )
         return access
 
-    def activate(self, access: BreakGlassAccess, duration_seconds: int | None = None) -> BreakGlassAccess:
+    def activate(
+        self, access: BreakGlassAccess, duration_seconds: int | None = None
+    ) -> BreakGlassAccess:
         if access.status != BreakGlassStatus.APPROVED:
             raise ValueError("Break-glass must be approved before activation.")
         duration = duration_seconds or access.realm.configuration.break_glass_max_duration_seconds
@@ -817,7 +877,11 @@ class BreakGlassService:
             tenant_id=access.tenant_id,
             user_id=str(access.user.keycloak_user_id),
             status="success",
-            details={"event": "activated", "duration_seconds": duration, "expires_at": access.expires_at.isoformat() if access.expires_at else None},
+            details={
+                "event": "activated",
+                "duration_seconds": duration,
+                "expires_at": access.expires_at.isoformat() if access.expires_at else None,
+            },
         )
         return access
 
@@ -891,7 +955,13 @@ class AuditService:
             status="success" if outcome == "success" else "failure",
             ip_address=ip_address,
             user_agent=user_agent,
-            details={"event": "login", "outcome": outcome, "mfa_method": mfa_method, "failure_reason": failure_reason, **(details or {})},
+            details={
+                "event": "login",
+                "outcome": outcome,
+                "mfa_method": mfa_method,
+                "failure_reason": failure_reason,
+                **(details or {}),
+            },
         )
         return event
 
@@ -912,6 +982,7 @@ class AuditService:
         # Best-effort emit to platform audit sink
         try:
             from platform.audit.models import AuditLog
+
             AuditLog.objects.create(
                 tenant_id=tenant_id,
                 user_id=user_id,
@@ -924,7 +995,7 @@ class AuditService:
                 details=details or {},
             )
             metrics.audit_emitted_total += 1
-        except Exception as exc:  # noqa: BLE001 — never let audit failure break auth
+        except Exception as exc:
             logger.warning("audit_sink_unavailable", extra={"reason": str(exc)})
 
 
@@ -938,10 +1009,13 @@ class IdentityEventEmitter:
     def emit(event_type: str, payload: dict[str, Any]) -> None:
         try:
             from platform.events.models import OutboxEvent
+
             OutboxEvent.objects.create(
                 aggregate_type="cyidentity",
                 event_type=event_type,
                 payload=payload,
             )
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("outbox_emit_failed", extra={"event_type": event_type, "reason": str(exc)})
+        except Exception as exc:
+            logger.warning(
+                "outbox_emit_failed", extra={"event_type": event_type, "reason": str(exc)}
+            )

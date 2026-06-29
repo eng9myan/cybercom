@@ -1,10 +1,11 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    OnCallRosterViewSet,
-    OnCallAssignmentViewSet,
-    OnCallPageViewSet,
-    OnCallEscalationViewSet,
     CallSwapRequestViewSet,
+    OnCallAssignmentViewSet,
+    OnCallEscalationViewSet,
+    OnCallPageViewSet,
+    OnCallRosterViewSet,
 )
 
 router = DefaultRouter()

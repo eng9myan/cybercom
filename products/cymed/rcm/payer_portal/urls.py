@@ -1,7 +1,10 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    PayerPortalAccountViewSet, PayerDashboardViewSet,
-    PayerClaimReviewViewSet, PayerAuthorizationReviewViewSet,
+    PayerAuthorizationReviewViewSet,
+    PayerClaimReviewViewSet,
+    PayerDashboardViewSet,
+    PayerPortalAccountViewSet,
 )
 
 router = DefaultRouter()

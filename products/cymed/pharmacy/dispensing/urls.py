@@ -1,9 +1,13 @@
 """Dispensing app URL routing."""
-from django.urls import path, include
+
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    DispenseOrderViewSet, DispenseItemViewSet, DispenseBatchViewSet,
-    DispenseVerificationViewSet, DispenseAuditViewSet
+    DispenseAuditViewSet,
+    DispenseBatchViewSet,
+    DispenseItemViewSet,
+    DispenseOrderViewSet,
+    DispenseVerificationViewSet,
 )
 
 router = DefaultRouter()

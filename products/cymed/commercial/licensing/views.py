@@ -1,21 +1,32 @@
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.utils import timezone
+from rest_framework.response import Response
 
-from products.cymed.commercial.views import CommercialModelViewSet
+from platform.events.models import OutboxEvent
 from products.cymed.commercial.licensing.models import (
-    License, LicenseKey, LicenseActivation, LicenseFeature,
-    LicenseAudit, LicenseUsage, LicenseServer, OfflineActivationPackage
+    License,
+    LicenseActivation,
+    LicenseAudit,
+    LicenseFeature,
+    LicenseKey,
+    LicenseServer,
+    LicenseUsage,
+    OfflineActivationPackage,
 )
 from products.cymed.commercial.licensing.serializers import (
-    LicenseSerializer, LicenseKeySerializer, LicenseActivationSerializer,
-    LicenseFeatureSerializer, LicenseAuditSerializer, LicenseUsageSerializer,
-    LicenseServerSerializer, OfflineActivationPackageSerializer,
-    LicenseActivateSerializer, LicenseValidateSerializer
+    LicenseActivateSerializer,
+    LicenseActivationSerializer,
+    LicenseAuditSerializer,
+    LicenseFeatureSerializer,
+    LicenseKeySerializer,
+    LicenseSerializer,
+    LicenseServerSerializer,
+    LicenseUsageSerializer,
+    LicenseValidateSerializer,
+    OfflineActivationPackageSerializer,
 )
-from platform.events.models import OutboxEvent
+from products.cymed.commercial.views import CommercialModelViewSet
 
 
 class LicenseViewSet(CommercialModelViewSet):
@@ -36,13 +47,18 @@ class LicenseViewSet(CommercialModelViewSet):
             return Response({"detail": "Invalid license key."}, status=status.HTTP_400_BAD_REQUEST)
 
         if not key.can_activate():
-            return Response({"detail": "License key is revoked or max activations reached."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "License key is revoked or max activations reached."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if not license_obj.is_valid():
-            return Response({"detail": "License is expired or revoked."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "License is expired or revoked."}, status=status.HTTP_403_FORBIDDEN
+            )
 
         # Record activation
-        activation = LicenseActivation.objects.create(
+        LicenseActivation.objects.create(
             tenant_id=license_obj.tenant_id,
             license_key=key,
             machine_fingerprint=ser.validated_data.get("machine_fingerprint", ""),
@@ -59,7 +75,7 @@ class LicenseViewSet(CommercialModelViewSet):
             license=license_obj,
             event_type="activated",
             performed_by=request.user.id if hasattr(request, "user") else None,
-            metadata={"key": key_string, "ip": str(request.META.get("REMOTE_ADDR"))}
+            metadata={"key": key_string, "ip": str(request.META.get("REMOTE_ADDR"))},
         )
 
         # OutboxEvent
@@ -72,15 +88,18 @@ class LicenseViewSet(CommercialModelViewSet):
                 "product_code": license_obj.product_code,
                 "edition_code": license_obj.edition_code,
                 "organization_name": license_obj.organization_name,
-            }
+            },
         )
 
-        return Response({
-            "status": "activated",
-            "license_number": license_obj.license_number,
-            "valid_until": str(license_obj.valid_until),
-            "edition": license_obj.edition_code,
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "status": "activated",
+                "license_number": license_obj.license_number,
+                "valid_until": str(license_obj.valid_until),
+                "edition": license_obj.edition_code,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, methods=["post"])
     def validate(self, request):
@@ -91,19 +110,23 @@ class LicenseViewSet(CommercialModelViewSet):
         try:
             lic = License.objects.get(
                 license_number=ser.validated_data["license_number"],
-                product_code=ser.validated_data["product_code"]
+                product_code=ser.validated_data["product_code"],
             )
         except License.DoesNotExist:
-            return Response({"valid": False, "reason": "License not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"valid": False, "reason": "License not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
         is_valid = lic.is_valid()
-        return Response({
-            "valid": is_valid,
-            "status": lic.status,
-            "edition": lic.edition_code,
-            "valid_until": str(lic.valid_until),
-            "grace_period_days": lic.grace_period_days,
-        })
+        return Response(
+            {
+                "valid": is_valid,
+                "status": lic.status,
+                "edition": lic.edition_code,
+                "valid_until": str(lic.valid_until),
+                "grace_period_days": lic.grace_period_days,
+            }
+        )
 
     @action(detail=True, methods=["post"])
     def revoke(self, request, pk=None):
@@ -117,14 +140,14 @@ class LicenseViewSet(CommercialModelViewSet):
             license=license_obj,
             event_type="revoked",
             performed_by=request.user.id if hasattr(request, "user") else None,
-            metadata={"reason": request.data.get("reason", "")}
+            metadata={"reason": request.data.get("reason", "")},
         )
 
         OutboxEvent.objects.create(
             tenant_id=license_obj.tenant_id,
             topic="cymed.commercial.events",
             event_type="cymed.license.revoked",
-            payload={"license_number": license_obj.license_number}
+            payload={"license_number": license_obj.license_number},
         )
 
         return Response({"status": "revoked"})

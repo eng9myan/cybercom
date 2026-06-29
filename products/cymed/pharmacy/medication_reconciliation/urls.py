@@ -1,7 +1,12 @@
 """Medication Reconciliation URL routing."""
-from django.urls import path, include
+
 from rest_framework.routers import DefaultRouter
-from .views import MedicationReconciliationViewSet, MedicationChangeViewSet, MedicationConflictViewSet
+
+from .views import (
+    MedicationChangeViewSet,
+    MedicationConflictViewSet,
+    MedicationReconciliationViewSet,
+)
 
 router = DefaultRouter()
 router.register(r"", MedicationReconciliationViewSet, basename="med-reconciliation")

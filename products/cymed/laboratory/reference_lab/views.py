@@ -1,7 +1,14 @@
-﻿from platform.events.models import OutboxEvent
-from .models import ReferenceLab, ReferenceLabRouting, ReferenceLabOrder, ReferenceLabResult
-from .serializers import ReferenceLabSerializer, ReferenceLabRoutingSerializer, ReferenceLabOrderSerializer, ReferenceLabResultSerializer
+from platform.events.models import OutboxEvent
+
 from ..views import LaboratoryModelViewSet
+from .models import ReferenceLab, ReferenceLabOrder, ReferenceLabResult, ReferenceLabRouting
+from .serializers import (
+    ReferenceLabOrderSerializer,
+    ReferenceLabResultSerializer,
+    ReferenceLabRoutingSerializer,
+    ReferenceLabSerializer,
+)
+
 
 class ReferenceLabViewSet(LaboratoryModelViewSet):
     queryset = ReferenceLab.objects.all()
@@ -10,11 +17,13 @@ class ReferenceLabViewSet(LaboratoryModelViewSet):
     filterset_fields = ["status", "integration_type", "is_national", "is_government"]
     search_fields = ["code", "name"]
 
+
 class ReferenceLabRoutingViewSet(LaboratoryModelViewSet):
     queryset = ReferenceLabRouting.objects.select_related("test", "reference_lab")
     serializer_class = ReferenceLabRoutingSerializer
     required_feature = "lab.reference_lab"
     filterset_fields = ["test", "reference_lab", "is_active", "is_default"]
+
 
 class ReferenceLabOrderViewSet(LaboratoryModelViewSet):
     queryset = ReferenceLabOrder.objects.select_related("reference_lab")
@@ -31,6 +40,7 @@ class ReferenceLabOrderViewSet(LaboratoryModelViewSet):
             event_type="cymed.lab.reference.sent",
             payload={"reference_order_id": str(obj.id), "reference_lab": obj.reference_lab.code},
         )
+
 
 class ReferenceLabResultViewSet(LaboratoryModelViewSet):
     queryset = ReferenceLabResult.objects.all()

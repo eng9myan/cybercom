@@ -1,24 +1,24 @@
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
-    SurveillanceCase,
+    CaseInvestigation,
     Outbreak,
     OutbreakAlert,
     PublicHealthEvent,
-    CaseInvestigation,
+    SurveillanceCase,
 )
 from .serializers import (
-    SurveillanceCaseSerializer,
-    OutbreakSerializer,
-    OutbreakAlertSerializer,
-    PublicHealthEventSerializer,
     CaseInvestigationSerializer,
+    OutbreakAlertSerializer,
+    OutbreakSerializer,
+    PublicHealthEventSerializer,
+    SurveillanceCaseSerializer,
 )
 
 
@@ -57,11 +57,13 @@ class SurveillanceCaseViewSet(PopulationHealthModelViewSet):
         case.notification_sent = True
         case.notification_sent_at = timezone.now()
         case.save(update_fields=["notification_sent", "notification_sent_at", "updated_at"])
-        return Response({
-            "status": "notification_sent",
-            "id": str(case.id),
-            "notification_sent_at": case.notification_sent_at.isoformat(),
-        })
+        return Response(
+            {
+                "status": "notification_sent",
+                "id": str(case.id),
+                "notification_sent_at": case.notification_sent_at.isoformat(),
+            }
+        )
 
 
 class OutbreakViewSet(PopulationHealthModelViewSet):

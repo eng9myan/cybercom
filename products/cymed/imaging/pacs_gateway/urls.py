@@ -1,5 +1,6 @@
 from rest_framework.routers import DefaultRouter
-from .views import PACSNodeViewSet, PACSQueryViewSet, StudyRouteViewSet, PACSEventViewSet
+
+from .views import PACSEventViewSet, PACSNodeViewSet, PACSQueryViewSet, StudyRouteViewSet
 
 router = DefaultRouter()
 router.register("nodes", PACSNodeViewSet, basename="pacs-node")

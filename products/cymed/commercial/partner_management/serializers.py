@@ -1,6 +1,10 @@
 from rest_framework import serializers
+
 from products.cymed.commercial.partner_management.models import (
-    PartnerType, Partner, ResellerAgreement, DistributorAgreement
+    DistributorAgreement,
+    Partner,
+    PartnerType,
+    ResellerAgreement,
 )
 
 

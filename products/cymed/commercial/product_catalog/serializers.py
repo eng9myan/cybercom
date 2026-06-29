@@ -1,6 +1,9 @@
 from rest_framework import serializers
+
 from products.cymed.commercial.product_catalog.models import (
-    ProductVersion, ProductLicenseMapping, ProductFeatureMatrix
+    ProductFeatureMatrix,
+    ProductLicenseMapping,
+    ProductVersion,
 )
 
 

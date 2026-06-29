@@ -1,31 +1,54 @@
 from rest_framework import serializers
-from products.cymed.hospital.adt.models import AdmissionReason, AdmissionType, DischargeReason, DischargeDisposition, Admission, TransferRequest, TransferApproval, DischargeSummary
+
 from platform.events.models import OutboxEvent
+from products.cymed.hospital.adt.models import (
+    Admission,
+    AdmissionReason,
+    AdmissionType,
+    DischargeDisposition,
+    DischargeReason,
+    DischargeSummary,
+    TransferApproval,
+    TransferRequest,
+)
+
 
 class AdmissionReasonSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdmissionReason
         fields = "__all__"
 
+
 class AdmissionTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdmissionType
         fields = "__all__"
+
 
 class DischargeReasonSerializer(serializers.ModelSerializer):
     class Meta:
         model = DischargeReason
         fields = "__all__"
 
+
 class DischargeDispositionSerializer(serializers.ModelSerializer):
     class Meta:
         model = DischargeDisposition
         fields = "__all__"
 
+
 class AdmissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Admission
-        fields = ["id", "encounter", "admission_type", "admission_reason", "admitting_physician_id", "admitted_at", "status"]
+        fields = [
+            "id",
+            "encounter",
+            "admission_type",
+            "admission_reason",
+            "admitting_physician_id",
+            "admitted_at",
+            "status",
+        ]
         read_only_fields = ["admitted_at"]
 
     def create(self, validated_data):
@@ -42,8 +65,8 @@ class AdmissionSerializer(serializers.ModelSerializer):
                 "encounter_id": str(admission.encounter.id),
                 "patient_id": str(admission.encounter.patient.id),
                 "admitted_at": admission.admitted_at.isoformat(),
-                "status": admission.status
-            }
+                "status": admission.status,
+            },
         )
 
         # Trigger ERP Billing Charge Event
@@ -56,17 +79,29 @@ class AdmissionSerializer(serializers.ModelSerializer):
                 "charge_type": "admission",
                 "amount": 500.00,
                 "currency": "AED",
-                "service_code": "ADM-001"
-            }
+                "service_code": "ADM-001",
+            },
         )
 
         return admission
 
+
 class TransferRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransferRequest
-        fields = ["id", "patient", "encounter", "source_bed_id", "target_bed_id", "requested_by", "requested_at", "status", "reason"]
+        fields = [
+            "id",
+            "patient",
+            "encounter",
+            "source_bed_id",
+            "target_bed_id",
+            "requested_by",
+            "requested_at",
+            "status",
+            "reason",
+        ]
         read_only_fields = ["requested_at"]
+
 
 class TransferApprovalSerializer(serializers.ModelSerializer):
     class Meta:
@@ -95,8 +130,8 @@ class TransferApprovalSerializer(serializers.ModelSerializer):
                 "source_bed_id": str(req.source_bed_id) if req.source_bed_id else None,
                 "target_bed_id": str(req.target_bed_id),
                 "approved_by": str(approval.approved_by),
-                "timestamp": approval.approved_at.isoformat()
-            }
+                "timestamp": approval.approved_at.isoformat(),
+            },
         )
 
         # Trigger ERP Billing Charge Event for Bed Transfer
@@ -109,16 +144,26 @@ class TransferApprovalSerializer(serializers.ModelSerializer):
                 "charge_type": "bed_transfer",
                 "amount": 150.00,
                 "currency": "AED",
-                "service_code": "TX-002"
-            }
+                "service_code": "TX-002",
+            },
         )
 
         return approval
 
+
 class DischargeSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = DischargeSummary
-        fields = ["id", "admission", "discharged_at", "discharged_by", "disposition", "reason", "summary_text", "instructions"]
+        fields = [
+            "id",
+            "admission",
+            "discharged_at",
+            "discharged_by",
+            "disposition",
+            "reason",
+            "summary_text",
+            "instructions",
+        ]
         read_only_fields = ["discharged_at"]
 
     def create(self, validated_data):
@@ -138,8 +183,8 @@ class DischargeSummarySerializer(serializers.ModelSerializer):
             payload={
                 "admission_id": str(admission.id),
                 "discharged_at": summary.discharged_at.isoformat(),
-                "disposition_code": summary.disposition.code
-            }
+                "disposition_code": summary.disposition.code,
+            },
         )
 
         return summary

@@ -1,4 +1,5 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -7,17 +8,32 @@ class QualityAudit(BaseModel):
         app_label = "img_quality"
         db_table = "cymed_img_quality_audits"
 
-    report = models.ForeignKey("img_reporting.RadiologyReport", on_delete=models.CASCADE, related_name="quality_audits")
+    report = models.ForeignKey(
+        "img_reporting.RadiologyReport", on_delete=models.CASCADE, related_name="quality_audits"
+    )
     auditor_id = models.UUIDField()
-    audit_type = models.CharField(max_length=30, choices=[
-        ("peer_review", "Peer Review"), ("clinical_audit", "Clinical Audit"),
-        ("random_audit", "Random Audit"), ("targeted_audit", "Targeted Audit"),
-    ], default="peer_review")
+    audit_type = models.CharField(
+        max_length=30,
+        choices=[
+            ("peer_review", "Peer Review"),
+            ("clinical_audit", "Clinical Audit"),
+            ("random_audit", "Random Audit"),
+            ("targeted_audit", "Targeted Audit"),
+        ],
+        default="peer_review",
+    )
     score = models.PositiveSmallIntegerField(null=True, blank=True)  # 1-5
     feedback = models.TextField(blank=True)
-    discrepancy_level = models.CharField(max_length=20, choices=[
-        ("none", "None"), ("minor", "Minor"), ("major", "Major"), ("critical", "Critical"),
-    ], default="none")
+    discrepancy_level = models.CharField(
+        max_length=20,
+        choices=[
+            ("none", "None"),
+            ("minor", "Minor"),
+            ("major", "Major"),
+            ("critical", "Critical"),
+        ],
+        default="none",
+    )
     action_required = models.BooleanField(default=False)
     action_description = models.TextField(blank=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
@@ -52,7 +68,9 @@ class RadiationDoseRecord(BaseModel):
         app_label = "img_quality"
         db_table = "cymed_img_dose_records"
 
-    order_item = models.OneToOneField("img_orders.ImagingOrderItem", on_delete=models.CASCADE, related_name="dose_record")
+    order_item = models.OneToOneField(
+        "img_orders.ImagingOrderItem", on_delete=models.CASCADE, related_name="dose_record"
+    )
     patient_id = models.UUIDField(db_index=True)
     modality = models.CharField(max_length=20)
     effective_dose_msv = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
@@ -80,9 +98,15 @@ class AccreditationRecord(BaseModel):
     issue_date = models.DateField()
     expiry_date = models.DateField()
     modality_types = models.JSONField(default=list)
-    status = models.CharField(max_length=20, choices=[
-        ("active", "Active"), ("expired", "Expired"), ("suspended", "Suspended"),
-    ], default="active")
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("active", "Active"),
+            ("expired", "Expired"),
+            ("suspended", "Suspended"),
+        ],
+        default="active",
+    )
     next_review_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
 

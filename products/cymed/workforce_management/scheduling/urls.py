@@ -1,9 +1,10 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    ShiftTemplateViewSet,
     RosterCycleViewSet,
     RosterSlotViewSet,
     SelfScheduleWindowViewSet,
+    ShiftTemplateViewSet,
     SlotQuotaViewSet,
 )
 

@@ -1,22 +1,22 @@
-﻿from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
 from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import Customer, Invoice, InvoiceLine, Payment, ARAgingBucket
+from .models import ARAgingBucket, Customer, Invoice, InvoiceLine, Payment
 from .serializers import (
-    CustomerSerializer,
-    InvoiceSerializer,
-    InvoiceLineSerializer,
-    PaymentSerializer,
     ARAgingBucketSerializer,
+    CustomerSerializer,
+    InvoiceLineSerializer,
+    InvoiceSerializer,
+    PaymentSerializer,
 )
-
 
 # ---------------------------------------------------------------------------
 # Customer
 # ---------------------------------------------------------------------------
+
 
 class CustomerListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -73,14 +73,14 @@ class CustomerDetailView(APIView):
 # Invoice
 # ---------------------------------------------------------------------------
 
+
 class InvoiceListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         queryset = (
-            Invoice.objects
-            .filter(tenant_id=tenant_id)
+            Invoice.objects.filter(tenant_id=tenant_id)
             .select_related("customer")
             .prefetch_related("lines")
             .order_by("-invoice_date", "-created_at")
@@ -134,14 +134,14 @@ class InvoiceDetailView(APIView):
 # InvoiceLine
 # ---------------------------------------------------------------------------
 
+
 class InvoiceLineListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         queryset = (
-            InvoiceLine.objects
-            .filter(tenant_id=tenant_id)
+            InvoiceLine.objects.filter(tenant_id=tenant_id)
             .select_related("invoice__customer")
             .order_by("invoice__invoice_date", "created_at")
         )
@@ -194,14 +194,14 @@ class InvoiceLineDetailView(APIView):
 # Payment
 # ---------------------------------------------------------------------------
 
+
 class PaymentListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         queryset = (
-            Payment.objects
-            .filter(tenant_id=tenant_id)
+            Payment.objects.filter(tenant_id=tenant_id)
             .select_related("customer", "invoice")
             .order_by("-payment_date", "-created_at")
         )
@@ -254,14 +254,14 @@ class PaymentDetailView(APIView):
 # ARAgingBucket
 # ---------------------------------------------------------------------------
 
+
 class ARAgingBucketListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         queryset = (
-            ARAgingBucket.objects
-            .filter(tenant_id=tenant_id)
+            ARAgingBucket.objects.filter(tenant_id=tenant_id)
             .select_related("customer")
             .order_by("customer__customer_code", "bucket_label")
         )

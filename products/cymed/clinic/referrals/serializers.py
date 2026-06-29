@@ -1,28 +1,48 @@
 from rest_framework import serializers
-from products.cymed.clinic.referrals.models import Referral, ReferralReason, ReferralProvider, ReferralAttachment
+
 from platform.events.models import OutboxEvent
+from products.cymed.clinic.referrals.models import (
+    Referral,
+    ReferralAttachment,
+    ReferralProvider,
+    ReferralReason,
+)
+
 
 class ReferralReasonSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReferralReason
         fields = "__all__"
 
+
 class ReferralProviderSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReferralProvider
         fields = "__all__"
+
 
 class ReferralAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReferralAttachment
         fields = ["id", "title", "file_url"]
 
+
 class ReferralSerializer(serializers.ModelSerializer):
     attachments = ReferralAttachmentSerializer(many=True, required=False)
 
     class Meta:
         model = Referral
-        fields = ["id", "patient", "referred_by", "target_provider", "reason", "status", "notes", "created_at", "attachments"]
+        fields = [
+            "id",
+            "patient",
+            "referred_by",
+            "target_provider",
+            "reason",
+            "status",
+            "notes",
+            "created_at",
+            "attachments",
+        ]
         read_only_fields = ["created_at"]
 
     def create(self, validated_data):
@@ -46,8 +66,8 @@ class ReferralSerializer(serializers.ModelSerializer):
                 "patient_id": str(referral.patient.id),
                 "target_provider_id": str(referral.target_provider.id),
                 "referred_by": referral.referred_by,
-                "timestamp": referral.created_at.isoformat()
-            }
+                "timestamp": referral.created_at.isoformat(),
+            },
         )
 
         return referral

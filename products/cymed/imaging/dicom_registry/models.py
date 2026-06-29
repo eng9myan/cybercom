@@ -1,4 +1,5 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -8,9 +9,15 @@ class DICOMStudy(BaseModel):
         db_table = "cymed_img_dicom_studies"
 
     order_item = models.OneToOneField(
-        "img_orders.ImagingOrderItem", null=True, blank=True, on_delete=models.SET_NULL, related_name="dicom_study"
+        "img_orders.ImagingOrderItem",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="dicom_study",
     )
-    pacs_node = models.ForeignKey("img_pacs.PACSNode", null=True, blank=True, on_delete=models.SET_NULL)
+    pacs_node = models.ForeignKey(
+        "img_pacs.PACSNode", null=True, blank=True, on_delete=models.SET_NULL
+    )
     study_instance_uid = models.CharField(max_length=255, unique=True, db_index=True)
     accession_number = models.CharField(max_length=100, blank=True, db_index=True)
     patient_id = models.UUIDField(db_index=True)
@@ -22,9 +29,15 @@ class DICOMStudy(BaseModel):
     series_count = models.PositiveIntegerField(default=0)
     instance_count = models.PositiveIntegerField(default=0)
     storage_size_mb = models.PositiveIntegerField(default=0)
-    archive_status = models.CharField(max_length=20, choices=[
-        ("online", "Online"), ("nearline", "Nearline"), ("offline", "Offline"),
-    ], default="online")
+    archive_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("online", "Online"),
+            ("nearline", "Nearline"),
+            ("offline", "Offline"),
+        ],
+        default="online",
+    )
     received_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
@@ -36,7 +49,9 @@ class DICOMSeries(BaseModel):
         app_label = "img_dicom"
         db_table = "cymed_img_dicom_series"
 
-    study = models.ForeignKey("img_dicom.DICOMStudy", on_delete=models.CASCADE, related_name="series")
+    study = models.ForeignKey(
+        "img_dicom.DICOMStudy", on_delete=models.CASCADE, related_name="series"
+    )
     series_instance_uid = models.CharField(max_length=255, unique=True, db_index=True)
     series_number = models.PositiveIntegerField(null=True, blank=True)
     series_description = models.CharField(max_length=255, blank=True)
@@ -57,7 +72,9 @@ class DICOMInstance(BaseModel):
         app_label = "img_dicom"
         db_table = "cymed_img_dicom_instances"
 
-    series = models.ForeignKey("img_dicom.DICOMSeries", on_delete=models.CASCADE, related_name="instances")
+    series = models.ForeignKey(
+        "img_dicom.DICOMSeries", on_delete=models.CASCADE, related_name="instances"
+    )
     sop_instance_uid = models.CharField(max_length=255, unique=True, db_index=True)
     sop_class_uid = models.CharField(max_length=255, blank=True)
     instance_number = models.PositiveIntegerField(null=True, blank=True)
@@ -79,10 +96,18 @@ class StudyArchive(BaseModel):
         app_label = "img_dicom"
         db_table = "cymed_img_study_archives"
 
-    study = models.OneToOneField("img_dicom.DICOMStudy", on_delete=models.CASCADE, related_name="archive")
-    archive_tier = models.CharField(max_length=20, choices=[
-        ("hot", "Hot"), ("warm", "Warm"), ("cold", "Cold"),
-    ], default="hot")
+    study = models.OneToOneField(
+        "img_dicom.DICOMStudy", on_delete=models.CASCADE, related_name="archive"
+    )
+    archive_tier = models.CharField(
+        max_length=20,
+        choices=[
+            ("hot", "Hot"),
+            ("warm", "Warm"),
+            ("cold", "Cold"),
+        ],
+        default="hot",
+    )
     retention_years = models.PositiveSmallIntegerField(default=10)
     compressed = models.BooleanField(default=False)
     compression_type = models.CharField(max_length=50, blank=True)

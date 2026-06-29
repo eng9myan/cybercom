@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Warehouse, StockItem, StockMovement
+
+from .models import StockItem, StockMovement, Warehouse
 
 
 class WarehouseSerializer(serializers.ModelSerializer):

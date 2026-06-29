@@ -1,25 +1,25 @@
-﻿from django.utils import timezone
+from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.filters import SearchFilter, OrderingFilter
-from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import (
-    RevenueDashboardSnapshot,
     ClaimMetricsSnapshot,
     DenialAnalyticsSnapshot,
     PayerPerformanceSnapshot,
     RCMAIInsight,
+    RevenueDashboardSnapshot,
     RevenueLeakageAlert,
 )
 from .serializers import (
-    RevenueDashboardSnapshotSerializer,
     ClaimMetricsSnapshotSerializer,
     DenialAnalyticsSnapshotSerializer,
     PayerPerformanceSnapshotSerializer,
     RCMAIInsightSerializer,
+    RevenueDashboardSnapshotSerializer,
     RevenueLeakageAlertSerializer,
 )
 
@@ -36,8 +36,13 @@ class RevenueDashboardSnapshotViewSet(ModelViewSet):
     filterset_fields = ["snapshot_date", "snapshot_period", "facility_id"]
     search_fields = ["snapshot_period"]
     ordering_fields = [
-        "snapshot_date", "snapshot_period", "gross_revenue",
-        "net_revenue", "days_in_ar", "collection_rate", "denial_rate",
+        "snapshot_date",
+        "snapshot_period",
+        "gross_revenue",
+        "net_revenue",
+        "days_in_ar",
+        "collection_rate",
+        "denial_rate",
     ]
     ordering = ["-snapshot_date"]
     http_method_names = ["get", "post", "head", "options"]
@@ -55,8 +60,12 @@ class ClaimMetricsSnapshotViewSet(ModelViewSet):
     filterset_fields = ["snapshot_date", "snapshot_period", "insurance_company_id"]
     search_fields = ["snapshot_period"]
     ordering_fields = [
-        "snapshot_date", "snapshot_period", "total_claims_submitted",
-        "total_claims_paid", "total_claims_denied", "first_pass_rate",
+        "snapshot_date",
+        "snapshot_period",
+        "total_claims_submitted",
+        "total_claims_paid",
+        "total_claims_denied",
+        "first_pass_rate",
         "average_days_to_payment",
     ]
     ordering = ["-snapshot_date"]
@@ -75,8 +84,12 @@ class DenialAnalyticsSnapshotViewSet(ModelViewSet):
     filterset_fields = ["snapshot_date", "snapshot_period", "denial_category"]
     search_fields = ["denial_category"]
     ordering_fields = [
-        "snapshot_date", "snapshot_period", "denial_category",
-        "total_denials", "total_denial_amount", "appeal_success_rate",
+        "snapshot_date",
+        "snapshot_period",
+        "denial_category",
+        "total_denials",
+        "total_denial_amount",
+        "appeal_success_rate",
         "amount_recovered",
     ]
     ordering = ["-snapshot_date", "denial_category"]
@@ -95,8 +108,12 @@ class PayerPerformanceSnapshotViewSet(ModelViewSet):
     filterset_fields = ["snapshot_date", "insurance_company_id", "trend_direction"]
     search_fields = ["trend_direction"]
     ordering_fields = [
-        "snapshot_date", "snapshot_period", "performance_score",
-        "payment_rate", "denial_rate", "average_processing_days",
+        "snapshot_date",
+        "snapshot_period",
+        "performance_score",
+        "payment_rate",
+        "denial_rate",
+        "average_processing_days",
         "trend_direction",
     ]
     ordering = ["-snapshot_date"]
@@ -115,8 +132,12 @@ class RCMAIInsightViewSet(ModelViewSet):
     filterset_fields = ["insight_type", "scope_type", "status"]
     search_fields = ["insight_title", "insight_detail"]
     ordering_fields = [
-        "created_at", "insight_type", "scope_type", "status",
-        "confidence_score", "estimated_impact_amount",
+        "created_at",
+        "insight_type",
+        "scope_type",
+        "status",
+        "confidence_score",
+        "estimated_impact_amount",
     ]
     ordering = ["-created_at"]
     http_method_names = ["get", "head", "options", "post"]
@@ -135,7 +156,9 @@ class RCMAIInsightViewSet(ModelViewSet):
 
         if insight.status not in ("pending_review",):
             return Response(
-                {"detail": f"Insight is already in status '{insight.status}' and cannot be acknowledged again."},
+                {
+                    "detail": f"Insight is already in status '{insight.status}' and cannot be acknowledged again."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -149,7 +172,9 @@ class RCMAIInsightViewSet(ModelViewSet):
         insight.status = "acknowledged"
         insight.acknowledged_by_user_id = user_id
         insight.acknowledged_at = timezone.now()
-        insight.save(update_fields=["status", "acknowledged_by_user_id", "acknowledged_at", "updated_at"])
+        insight.save(
+            update_fields=["status", "acknowledged_by_user_id", "acknowledged_at", "updated_at"]
+        )
 
         serializer = self.get_serializer(insight)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -167,8 +192,11 @@ class RevenueLeakageAlertViewSet(ModelViewSet):
     filterset_fields = ["leakage_type", "status", "alert_date"]
     search_fields = ["leakage_type", "resolution_notes"]
     ordering_fields = [
-        "alert_date", "leakage_type", "status",
-        "estimated_leakage_amount", "created_at",
+        "alert_date",
+        "leakage_type",
+        "status",
+        "estimated_leakage_amount",
+        "created_at",
     ]
     ordering = ["-alert_date", "-created_at"]
 

@@ -5,80 +5,87 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_portal_consents', '0001_initial'),
+        ("cymed_portal_consents", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='consentrequest',
-            new_name='cymed_porta_account_0e8db7_idx',
-            old_name='cymed_consent_req_acct_status_idx',
+            model_name="consentrequest",
+            new_name="cymed_porta_account_0e8db7_idx",
+            old_name="cymed_consent_req_acct_status_idx",
         ),
         migrations.RenameIndex(
-            model_name='portalconsentrecord',
-            new_name='cymed_porta_account_813244_idx',
-            old_name='cymed_consent_rec_acct_type_status_idx',
+            model_name="portalconsentrecord",
+            new_name="cymed_porta_account_813244_idx",
+            old_name="cymed_consent_rec_acct_type_status_idx",
         ),
         migrations.AlterField(
-            model_name='consenthistory',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="consenthistory",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='consenthistory',
-            name='tenant_id',
+            model_name="consenthistory",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='consenthistory',
-            name='updated_at',
+            model_name="consenthistory",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='consentrequest',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="consentrequest",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='consentrequest',
-            name='tenant_id',
+            model_name="consentrequest",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='consentrequest',
-            name='updated_at',
+            model_name="consentrequest",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='portalconsentrecord',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="portalconsentrecord",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='portalconsentrecord',
-            name='tenant_id',
+            model_name="portalconsentrecord",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='portalconsentrecord',
-            name='updated_at',
+            model_name="portalconsentrecord",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='portalconsenttype',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="portalconsenttype",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='portalconsenttype',
-            name='tenant_id',
+            model_name="portalconsenttype",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='portalconsenttype',
-            name='updated_at',
+            model_name="portalconsenttype",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

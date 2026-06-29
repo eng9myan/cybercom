@@ -4,7 +4,9 @@ CyCom ERP owns inventory. This bridge publishes consumption events
 and queries inventory status via CyIntegrationHub.
 NO ERP inventory logic inside pharmacy.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -14,6 +16,7 @@ class MedicationConsumptionEvent(BaseModel):
     Published as 'cymed.inventory.consumed' event for CyCom ERP to process.
     CyCom ERP handles the actual inventory deduction.
     """
+
     dispense_order_id = models.UUIDField(db_index=True)
     prescription_id = models.UUIDField(null=True, blank=True)
     patient_id = models.UUIDField(db_index=True)
@@ -29,8 +32,13 @@ class MedicationConsumptionEvent(BaseModel):
     # ERP sync status
     erp_sync_status = models.CharField(
         max_length=20,
-        choices=[("pending", "Pending"), ("synced", "Synced"), ("failed", "Failed"), ("manual", "Manual")],
-        default="pending"
+        choices=[
+            ("pending", "Pending"),
+            ("synced", "Synced"),
+            ("failed", "Failed"),
+            ("manual", "Manual"),
+        ],
+        default="pending",
     )
     erp_transaction_id = models.CharField(max_length=255, blank=True)
     erp_synced_at = models.DateTimeField(null=True, blank=True)
@@ -49,6 +57,7 @@ class InventoryQueryResult(BaseModel):
     Cache of inventory status queries to CyCom ERP via CyIntegrationHub.
     Prevents repeated round-trips to ERP for the same drug.
     """
+
     drug_code = models.CharField(max_length=100, db_index=True)
     drug_name = models.CharField(max_length=500, blank=True)
     location = models.CharField(max_length=255, blank=True)
@@ -58,7 +67,7 @@ class InventoryQueryResult(BaseModel):
     is_below_reorder = models.BooleanField(default=False)
     is_out_of_stock = models.BooleanField(default=False)
     expiry_date = models.DateField(null=True, blank=True)
-    erp_item_id = models.CharField(max_length=255, blank=True)      # CyCom ERP item ID
+    erp_item_id = models.CharField(max_length=255, blank=True)  # CyCom ERP item ID
     cached_at = models.DateTimeField(auto_now=True)
 
     class Meta:

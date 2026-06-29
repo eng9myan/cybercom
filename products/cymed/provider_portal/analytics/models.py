@@ -1,5 +1,5 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -14,9 +14,7 @@ class ProviderProductivitySnapshot(BaseModel):
     provider_name = models.CharField(max_length=255)
     provider_type = models.CharField(max_length=100)
     snapshot_date = models.DateField(db_index=True)
-    snapshot_period = models.CharField(
-        max_length=20, choices=PERIOD_CHOICES, default="daily"
-    )
+    snapshot_period = models.CharField(max_length=20, choices=PERIOD_CHOICES, default="daily")
     patients_seen = models.PositiveIntegerField(default=0)
     notes_completed = models.PositiveIntegerField(default=0)
     notes_pending = models.PositiveIntegerField(default=0)
@@ -42,14 +40,10 @@ class ProviderProductivitySnapshot(BaseModel):
                 name="cymed_prov_prod_snap_idx",
             ),
         ]
-        unique_together = [
-            ("tenant_id", "provider_id", "snapshot_date", "snapshot_period")
-        ]
+        unique_together = [("tenant_id", "provider_id", "snapshot_date", "snapshot_period")]
 
     def __str__(self):
-        return (
-            f"{self.provider_name} — {self.snapshot_date} ({self.snapshot_period})"
-        )
+        return f"{self.provider_name} — {self.snapshot_date} ({self.snapshot_period})"
 
 
 class ClinicalQualityMetric(BaseModel):
@@ -80,15 +74,9 @@ class ClinicalQualityMetric(BaseModel):
     scope_name = models.CharField(max_length=255)
     numerator = models.DecimalField(max_digits=10, decimal_places=2)
     denominator = models.DecimalField(max_digits=10, decimal_places=2)
-    rate = models.DecimalField(
-        max_digits=6, decimal_places=2, null=True, blank=True
-    )
-    target_rate = models.DecimalField(
-        max_digits=6, decimal_places=2, null=True, blank=True
-    )
-    benchmark_rate = models.DecimalField(
-        max_digits=6, decimal_places=2, null=True, blank=True
-    )
+    rate = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    target_rate = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    benchmark_rate = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
     meets_target = models.BooleanField(null=True, blank=True)
     notes = models.TextField(blank=True)
 
@@ -121,9 +109,7 @@ class WorkforceDashboardSnapshot(BaseModel):
     open_tasks = models.PositiveIntegerField(default=0)
     critical_alerts_pending = models.PositiveIntegerField(default=0)
     patient_census = models.PositiveIntegerField(default=0)
-    staff_patient_ratio = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True
-    )
+    staff_patient_ratio = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
     class Meta:
         app_label = "cymed_provider_analytics"
@@ -156,13 +142,9 @@ class ProviderAIInsight(BaseModel):
     insight_type = models.CharField(max_length=50, choices=INSIGHT_TYPE_CHOICES)
     insight_title = models.CharField(max_length=255)
     insight_body = models.TextField()
-    confidence_score = models.DecimalField(
-        max_digits=4, decimal_places=2, null=True, blank=True
-    )
+    confidence_score = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
     source_data = models.JSONField(default=dict)
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="pending_review"
-    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending_review")
     acknowledged_by = models.UUIDField(null=True, blank=True)
     acknowledged_at = models.DateTimeField(null=True, blank=True)
     action_taken = models.TextField(blank=True)
@@ -205,15 +187,11 @@ class ExecutiveDashboardMetric(BaseModel):
     metric_date = models.DateField(db_index=True)
     facility_id = models.UUIDField(null=True, blank=True)
     department = models.CharField(max_length=255, blank=True)
-    comparison_value = models.DecimalField(
-        max_digits=15, decimal_places=2, null=True, blank=True
-    )
+    comparison_value = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     trend_direction = models.CharField(
         max_length=20, choices=TREND_DIRECTION_CHOICES, default="unknown"
     )
-    alert_threshold = models.DecimalField(
-        max_digits=15, decimal_places=2, null=True, blank=True
-    )
+    alert_threshold = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     is_above_threshold = models.BooleanField(null=True, blank=True)
 
     class Meta:

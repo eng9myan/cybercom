@@ -1,13 +1,17 @@
 """CyMed Pharmacy — Automation Views."""
+
 import django.utils.timezone as tz
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import AutomationDevice, DispensingRobot, CabinetDevice, AutomationQueue
-from .serializers import (
-    AutomationDeviceSerializer, DispensingRobotSerializer,
-    CabinetDeviceSerializer, AutomationQueueSerializer
-)
+
 from ..views import PharmacyModelViewSet
+from .models import AutomationDevice, AutomationQueue, CabinetDevice, DispensingRobot
+from .serializers import (
+    AutomationDeviceSerializer,
+    AutomationQueueSerializer,
+    CabinetDeviceSerializer,
+    DispensingRobotSerializer,
+)
 
 
 class AutomationDeviceViewSet(PharmacyModelViewSet):
@@ -27,13 +31,14 @@ class AutomationDeviceViewSet(PharmacyModelViewSet):
         dispense_data = request.data
         try:
             from platform.cyintegrationhub.services import IntegrationHubService
+
             response = IntegrationHubService.route_pharmacy_dispense(
                 device_id=device.integration_hub_device_id,
                 dispense_data=dispense_data,
             )
             return Response({"hub_response": response})
         except Exception as e:
-            return Response({"detail": f"Hub routing failed: {str(e)}"}, status=503)
+            return Response({"detail": f"Hub routing failed: {e!s}"}, status=503)
 
     @action(detail=True, methods=["post"], url_path="status-ping")
     def status_ping(self, request, pk=None):
@@ -41,7 +46,13 @@ class AutomationDeviceViewSet(PharmacyModelViewSet):
         device = self.get_object()
         device.last_seen_at = tz.now()
         device.save(update_fields=["last_seen_at"])
-        return Response({"device_id": str(device.id), "status": device.status, "last_seen": str(device.last_seen_at)})
+        return Response(
+            {
+                "device_id": str(device.id),
+                "status": device.status,
+                "last_seen": str(device.last_seen_at),
+            }
+        )
 
 
 class DispensingRobotViewSet(PharmacyModelViewSet):

@@ -1,10 +1,11 @@
-﻿from rest_framework.routers import DefaultRouter
+from rest_framework.routers import DefaultRouter
+
 from .views import (
-    RevenueDashboardSnapshotViewSet,
     ClaimMetricsSnapshotViewSet,
     DenialAnalyticsSnapshotViewSet,
     PayerPerformanceSnapshotViewSet,
     RCMAIInsightViewSet,
+    RevenueDashboardSnapshotViewSet,
     RevenueLeakageAlertViewSet,
 )
 

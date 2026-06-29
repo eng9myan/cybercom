@@ -1,17 +1,17 @@
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import ShiftTemplate, RosterCycle, RosterSlot, SelfScheduleWindow, SlotQuota
+from .models import RosterCycle, RosterSlot, SelfScheduleWindow, ShiftTemplate, SlotQuota
 from .serializers import (
-    ShiftTemplateSerializer,
     RosterCycleSerializer,
     RosterSlotSerializer,
     SelfScheduleWindowSerializer,
+    ShiftTemplateSerializer,
     SlotQuotaSerializer,
 )
 
@@ -72,7 +72,15 @@ class RosterCycleViewSet(HWMModelViewSet):
 class RosterSlotViewSet(HWMModelViewSet):
     queryset = RosterSlot.objects.select_related("roster_cycle", "shift_template")
     serializer_class = RosterSlotSerializer
-    filterset_fields = ["roster_cycle", "workforce_profile_id", "shift_template", "status", "slot_date", "is_weekend", "is_holiday"]
+    filterset_fields = [
+        "roster_cycle",
+        "workforce_profile_id",
+        "shift_template",
+        "status",
+        "slot_date",
+        "is_weekend",
+        "is_holiday",
+    ]
     ordering_fields = ["slot_date", "status", "created_at"]
 
     @action(detail=True, methods=["post"])

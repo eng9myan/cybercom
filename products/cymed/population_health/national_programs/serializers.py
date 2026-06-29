@@ -1,5 +1,6 @@
-﻿from rest_framework import serializers
-from .models import HealthProgram, ProgramEnrollment, ProgramOutcome, ProgramMetric
+from rest_framework import serializers
+
+from .models import HealthProgram, ProgramEnrollment, ProgramMetric, ProgramOutcome
 
 
 class HealthProgramSerializer(serializers.ModelSerializer):

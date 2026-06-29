@@ -1,4 +1,5 @@
-﻿from django.db import models
+from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -28,9 +29,7 @@ class Bill(BaseModel):
         ("cancelled", "Cancelled"),
     ]
 
-    vendor = models.ForeignKey(
-        Vendor, on_delete=models.PROTECT, related_name="bills"
-    )
+    vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="bills")
     bill_number = models.CharField(max_length=50)
     bill_date = models.DateField()
     due_date = models.DateField()
@@ -48,9 +47,7 @@ class Bill(BaseModel):
 
 
 class BillLine(BaseModel):
-    bill = models.ForeignKey(
-        Bill, on_delete=models.CASCADE, related_name="lines"
-    )
+    bill = models.ForeignKey(Bill, on_delete=models.CASCADE, related_name="lines")
     description = models.CharField(max_length=500)
     quantity = models.DecimalField(max_digits=10, decimal_places=3, default=1)
     unit_price = models.DecimalField(max_digits=18, decimal_places=2)
@@ -65,9 +62,7 @@ class BillLine(BaseModel):
 
 
 class VendorPayment(BaseModel):
-    vendor = models.ForeignKey(
-        Vendor, on_delete=models.PROTECT, related_name="payments"
-    )
+    vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="payments")
     bill = models.ForeignKey(
         Bill,
         null=True,

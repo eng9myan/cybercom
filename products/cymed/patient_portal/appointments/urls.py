@@ -1,27 +1,28 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from . import views
 
 router = DefaultRouter()
 router.register(
-    r'requests',
+    r"requests",
     views.PortalAppointmentRequestViewSet,
-    basename='portal-appointment-request',
+    basename="portal-appointment-request",
 )
 router.register(
-    r'waitlist',
+    r"waitlist",
     views.WaitlistEntryViewSet,
-    basename='portal-waitlist-entry',
+    basename="portal-waitlist-entry",
 )
 router.register(
-    r'reminders',
+    r"reminders",
     views.AppointmentReminderViewSet,
-    basename='portal-appointment-reminder',
+    basename="portal-appointment-reminder",
 )
 router.register(
-    r'ratings',
+    r"ratings",
     views.AppointmentRatingViewSet,
-    basename='portal-appointment-rating',
+    basename="portal-appointment-rating",
 )
 
-urlpatterns = [path('', include(router.urls))]
+urlpatterns = [path("", include(router.urls))]

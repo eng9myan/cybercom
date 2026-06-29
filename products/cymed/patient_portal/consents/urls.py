@@ -1,27 +1,28 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from . import views
 
 router = DefaultRouter()
 router.register(
-    r'types',
+    r"types",
     views.PortalConsentTypeViewSet,
-    basename='portal-consent-type',
+    basename="portal-consent-type",
 )
 router.register(
-    r'records',
+    r"records",
     views.PortalConsentRecordViewSet,
-    basename='portal-consent-record',
+    basename="portal-consent-record",
 )
 router.register(
-    r'requests',
+    r"requests",
     views.ConsentRequestViewSet,
-    basename='portal-consent-request',
+    basename="portal-consent-request",
 )
 router.register(
-    r'history',
+    r"history",
     views.ConsentHistoryViewSet,
-    basename='portal-consent-history',
+    basename="portal-consent-history",
 )
 
-urlpatterns = [path('', include(router.urls))]
+urlpatterns = [path("", include(router.urls))]

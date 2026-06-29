@@ -1,6 +1,12 @@
 from products.cymed.imaging.views import ImagingModelViewSet
-from .models import DICOMStudy, DICOMSeries, DICOMInstance, StudyArchive
-from .serializers import DICOMStudySerializer, DICOMSeriesSerializer, DICOMInstanceSerializer, StudyArchiveSerializer
+
+from .models import DICOMInstance, DICOMSeries, DICOMStudy, StudyArchive
+from .serializers import (
+    DICOMInstanceSerializer,
+    DICOMSeriesSerializer,
+    DICOMStudySerializer,
+    StudyArchiveSerializer,
+)
 
 
 class DICOMStudyViewSet(ImagingModelViewSet):

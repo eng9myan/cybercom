@@ -1,8 +1,10 @@
 from django.db import models
 from django.utils import timezone
+
 from platform.common.models import BaseModel
-from products.cymed.core.patients.models import Patient
 from products.cymed.core.encounters.models import Encounter
+from products.cymed.core.patients.models import Patient
+
 
 class OrderType(models.TextChoices):
     LABORATORY = "laboratory", "Laboratory Order"
@@ -11,10 +13,12 @@ class OrderType(models.TextChoices):
     PROCEDURE = "procedure", "Procedure Request"
     REFERRAL = "referral", "Referral Request"
 
+
 class OrderPriority(models.TextChoices):
     ROUTINE = "routine", "Routine"
     URGENT = "urgent", "Urgent"
     STAT = "stat", "STAT (Immediate)"
+
 
 class OrderStatus(models.TextChoices):
     PROPOSED = "proposed", "Proposed"
@@ -23,11 +27,16 @@ class OrderStatus(models.TextChoices):
     COMPLETED = "completed", "Completed"
     CANCELLED = "cancelled", "Cancelled"
 
+
 class Order(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="orders")
-    encounter = models.ForeignKey(Encounter, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders")
+    encounter = models.ForeignKey(
+        Encounter, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders"
+    )
     order_type = models.CharField(max_length=30, choices=OrderType.choices)
-    priority = models.CharField(max_length=20, choices=OrderPriority.choices, default=OrderPriority.ROUTINE)
+    priority = models.CharField(
+        max_length=20, choices=OrderPriority.choices, default=OrderPriority.ROUTINE
+    )
     status = models.CharField(max_length=30, choices=OrderStatus.choices, default=OrderStatus.DRAFT)
     ordered_by = models.CharField(max_length=255)
     ordered_at = models.DateTimeField(default=timezone.now)
@@ -53,7 +62,9 @@ class OrderItem(BaseModel):
 class OrderResult(BaseModel):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="results")
     result_text = models.TextField()
-    result_reference_id = models.UUIDField(null=True, blank=True)  # maps to Observation or diagnostic report
+    result_reference_id = models.UUIDField(
+        null=True, blank=True
+    )  # maps to Observation or diagnostic report
     recorded_at = models.DateTimeField(default=timezone.now)
     recorded_by = models.CharField(max_length=255)
 

@@ -1,8 +1,11 @@
 from products.cymed.imaging.views import ImagingModelViewSet
-from .models import ImagingRoom, ImagingAppointment, ModalitySchedule, RadiologistSchedule
+
+from .models import ImagingAppointment, ImagingRoom, ModalitySchedule, RadiologistSchedule
 from .serializers import (
-    ImagingRoomSerializer, ImagingAppointmentSerializer,
-    ModalityScheduleSerializer, RadiologistScheduleSerializer,
+    ImagingAppointmentSerializer,
+    ImagingRoomSerializer,
+    ModalityScheduleSerializer,
+    RadiologistScheduleSerializer,
 )
 
 

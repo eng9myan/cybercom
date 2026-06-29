@@ -3,8 +3,8 @@ Website Public API — Tests.
 Covers all 7 endpoint groups: products, industries, case-studies, partners,
 documentation, demo-request, contact.
 """
+
 import uuid
-from unittest.mock import patch
 
 from django.test import TestCase
 from django.urls import reverse
@@ -12,17 +12,22 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from products.website.models import (
-    ProductListing, Industry, CaseStudy,
-    DemoRequest, ContactMessage,
-    PartnerListing, PartnerApplication,
-    DocumentationSection, DocumentationItem,
+    CaseStudy,
+    ContactMessage,
+    DemoRequest,
+    DocumentationItem,
+    DocumentationSection,
+    Industry,
     NewsletterSubscription,
+    PartnerApplication,
+    PartnerListing,
+    ProductListing,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 def make_product(**kwargs):
     defaults = {
@@ -90,6 +95,7 @@ def make_doc_section(product=None, **kwargs):
 # Base
 # ---------------------------------------------------------------------------
 
+
 class WebsiteApiTestCase(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -101,6 +107,7 @@ class WebsiteApiTestCase(TestCase):
 # ---------------------------------------------------------------------------
 # Health
 # ---------------------------------------------------------------------------
+
 
 class PublicHealthTests(WebsiteApiTestCase):
     def test_health_returns_ok(self):
@@ -118,6 +125,7 @@ class PublicHealthTests(WebsiteApiTestCase):
 # ---------------------------------------------------------------------------
 # Products
 # ---------------------------------------------------------------------------
+
 
 class ProductListTests(WebsiteApiTestCase):
     def setUp(self):
@@ -169,6 +177,7 @@ class ProductListTests(WebsiteApiTestCase):
 # Industries
 # ---------------------------------------------------------------------------
 
+
 class IndustryTests(WebsiteApiTestCase):
     def setUp(self):
         super().setUp()
@@ -197,6 +206,7 @@ class IndustryTests(WebsiteApiTestCase):
 # ---------------------------------------------------------------------------
 # Case Studies
 # ---------------------------------------------------------------------------
+
 
 class CaseStudyTests(WebsiteApiTestCase):
     def setUp(self):
@@ -227,6 +237,7 @@ class CaseStudyTests(WebsiteApiTestCase):
 # ---------------------------------------------------------------------------
 # Partners
 # ---------------------------------------------------------------------------
+
 
 class PartnerTests(WebsiteApiTestCase):
     def setUp(self):
@@ -274,6 +285,7 @@ class PartnerTests(WebsiteApiTestCase):
 # ---------------------------------------------------------------------------
 # Documentation
 # ---------------------------------------------------------------------------
+
 
 class DocumentationTests(WebsiteApiTestCase):
     def setUp(self):
@@ -326,6 +338,7 @@ class DocumentationTests(WebsiteApiTestCase):
 # Demo Request
 # ---------------------------------------------------------------------------
 
+
 class DemoRequestTests(WebsiteApiTestCase):
     VALID_PAYLOAD = {
         "full_name": "Sara Al-Nour",
@@ -361,7 +374,9 @@ class DemoRequestTests(WebsiteApiTestCase):
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_status_endpoint(self):
-        create_resp = self.client.post("/api/v1/public/demo-request/", self.VALID_PAYLOAD, format="json")
+        create_resp = self.client.post(
+            "/api/v1/public/demo-request/", self.VALID_PAYLOAD, format="json"
+        )
         ref = create_resp.data["reference_number"]
         resp = self.client.get(f"/api/v1/public/demo-request/{ref}/status/")
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
@@ -382,6 +397,7 @@ class DemoRequestTests(WebsiteApiTestCase):
 # ---------------------------------------------------------------------------
 # Contact
 # ---------------------------------------------------------------------------
+
 
 class ContactTests(WebsiteApiTestCase):
     VALID_PAYLOAD = {
@@ -421,6 +437,7 @@ class ContactTests(WebsiteApiTestCase):
 # Newsletter
 # ---------------------------------------------------------------------------
 
+
 class NewsletterTests(WebsiteApiTestCase):
     def test_subscribe_valid(self):
         payload = {"email": "user@company.com", "gdpr_consent": True, "source": "footer"}
@@ -448,6 +465,7 @@ class NewsletterTests(WebsiteApiTestCase):
 # ---------------------------------------------------------------------------
 # Model tests
 # ---------------------------------------------------------------------------
+
 
 class ModelTests(TestCase):
     def test_demo_request_auto_reference(self):
@@ -481,8 +499,8 @@ class ModelTests(TestCase):
         self.assertTrue(app.reference_number.startswith("PAR-"))
 
     def test_website_api_log_immutable(self):
+
         from products.website.models import WebsiteApiLog
-        from django.utils import timezone
 
         log = WebsiteApiLog.objects.create(
             endpoint="/api/v1/public/products/",

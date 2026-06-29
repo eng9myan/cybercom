@@ -1,6 +1,8 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 from products.cymed.core.patients.models import Patient
+
 
 class Pregnancy(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="pregnancies")
@@ -11,6 +13,7 @@ class Pregnancy(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_maternity_pregnancies"
+
 
 class PrenatalEncounter(BaseModel):
     pregnancy = models.ForeignKey(Pregnancy, on_delete=models.CASCADE)
@@ -24,6 +27,7 @@ class PrenatalEncounter(BaseModel):
     class Meta:
         db_table = "cymed_hospital_maternity_prenatal_encounters"
 
+
 class LaborEpisode(BaseModel):
     pregnancy = models.OneToOneField(Pregnancy, on_delete=models.CASCADE, related_name="labor")
     admitted_at = models.DateTimeField(auto_now_add=True)
@@ -35,8 +39,11 @@ class LaborEpisode(BaseModel):
     class Meta:
         db_table = "cymed_hospital_maternity_labor"
 
+
 class Delivery(BaseModel):
-    labor_episode = models.ForeignKey(LaborEpisode, on_delete=models.CASCADE, related_name="deliveries")
+    labor_episode = models.ForeignKey(
+        LaborEpisode, on_delete=models.CASCADE, related_name="deliveries"
+    )
     delivery_time = models.DateTimeField()
     delivery_method = models.CharField(max_length=100)  # vaginal, cesarean, vacuum, forceps
     apgar_1m = models.PositiveIntegerField()
@@ -45,6 +52,7 @@ class Delivery(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_maternity_deliveries"
+
 
 class NewbornRecord(BaseModel):
     delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE, related_name="newborns")
@@ -56,6 +64,7 @@ class NewbornRecord(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_maternity_newborns"
+
 
 class PostpartumCare(BaseModel):
     pregnancy = models.ForeignKey(Pregnancy, on_delete=models.CASCADE)

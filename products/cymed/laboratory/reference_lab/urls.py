@@ -1,5 +1,11 @@
-﻿from rest_framework.routers import DefaultRouter
-from .views import ReferenceLabViewSet, ReferenceLabRoutingViewSet, ReferenceLabOrderViewSet, ReferenceLabResultViewSet
+from rest_framework.routers import DefaultRouter
+
+from .views import (
+    ReferenceLabOrderViewSet,
+    ReferenceLabResultViewSet,
+    ReferenceLabRoutingViewSet,
+    ReferenceLabViewSet,
+)
 
 router = DefaultRouter()
 router.register("reference-labs", ReferenceLabViewSet, basename="lab-reference-labs")

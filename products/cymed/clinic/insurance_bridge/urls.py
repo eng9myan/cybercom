@@ -1,8 +1,12 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.clinic.insurance_bridge.views import (
-    PayerViewSet, InsurancePlanViewSet, EligibilityCheckViewSet,
-    AuthorizationRequestViewSet, AuthorizationResponseViewSet
+    AuthorizationRequestViewSet,
+    AuthorizationResponseViewSet,
+    EligibilityCheckViewSet,
+    InsurancePlanViewSet,
+    PayerViewSet,
 )
 
 router = DefaultRouter()

@@ -3,14 +3,16 @@ CyberCom Website Public APIs — Domain Models.
 Serves cy-com.com marketing content, lead generation, and partner operations.
 Public-facing; no tenant scoping on content. Lead capture records include source tenant slug.
 """
+
 import uuid
+
 from django.db import models
 from django.utils import timezone
-
 
 # ---------------------------------------------------------------------------
 # Enumerations
 # ---------------------------------------------------------------------------
+
 
 class ProductCategory(models.TextChoices):
     HEALTHCARE = "healthcare", "Healthcare"
@@ -85,11 +87,13 @@ class NewsletterStatus(models.TextChoices):
 # Public Product Catalog
 # ---------------------------------------------------------------------------
 
+
 class ProductListing(models.Model):
     """
     Public-facing product listings for cy-com.com.
     Separate from the internal commercial product_catalog — this is marketing content.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=120, unique=True)
@@ -137,8 +141,10 @@ class ProductListing(models.Model):
 # Industry Verticals
 # ---------------------------------------------------------------------------
 
+
 class Industry(models.Model):
     """Industry verticals for the website industries section."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=150)
     slug = models.SlugField(max_length=80, unique=True)
@@ -148,7 +154,9 @@ class Industry(models.Model):
     hero_image_url = models.URLField(blank=True)
     challenges = models.JSONField(default=list, blank=True)
     solutions = models.JSONField(default=list, blank=True)
-    relevant_products = models.ManyToManyField(ProductListing, blank=True, related_name="industries")
+    relevant_products = models.ManyToManyField(
+        ProductListing, blank=True, related_name="industries"
+    )
     stats = models.JSONField(default=list, blank=True)
     is_published = models.BooleanField(default=False, db_index=True)
     is_featured = models.BooleanField(default=False, db_index=True)
@@ -171,8 +179,10 @@ class Industry(models.Model):
 # Case Studies
 # ---------------------------------------------------------------------------
 
+
 class CaseStudy(models.Model):
     """Customer success stories and case studies."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=300)
     slug = models.SlugField(max_length=180, unique=True)
@@ -214,11 +224,13 @@ class CaseStudy(models.Model):
 # Demo Request (Lead Generation)
 # ---------------------------------------------------------------------------
 
+
 class DemoRequest(models.Model):
     """
     Inbound demo requests from cy-com.com.
     Routes to CyCom CRM via CyIntegrationHub after creation.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     reference_number = models.CharField(max_length=20, unique=True, editable=False)
 
@@ -228,10 +240,17 @@ class DemoRequest(models.Model):
     phone = models.CharField(max_length=50, blank=True)
     job_title = models.CharField(max_length=200, blank=True)
     company = models.CharField(max_length=200, blank=True)
-    company_size = models.CharField(max_length=50, blank=True, choices=[
-        ("1-10", "1–10"), ("11-50", "11–50"), ("51-200", "51–200"),
-        ("201-1000", "201–1000"), ("1001+", "1001+"),
-    ])
+    company_size = models.CharField(
+        max_length=50,
+        blank=True,
+        choices=[
+            ("1-10", "1–10"),
+            ("11-50", "11–50"),
+            ("51-200", "51–200"),
+            ("201-1000", "201–1000"),
+            ("1001+", "1001+"),
+        ],
+    )
     country = models.CharField(max_length=100, blank=True)
 
     # Request details
@@ -257,8 +276,10 @@ class DemoRequest(models.Model):
 
     # Status
     status = models.CharField(
-        max_length=20, choices=DemoRequestStatus.choices,
-        default=DemoRequestStatus.PENDING, db_index=True
+        max_length=20,
+        choices=DemoRequestStatus.choices,
+        default=DemoRequestStatus.PENDING,
+        db_index=True,
     )
     assigned_to = models.CharField(max_length=200, blank=True)
     notes = models.TextField(blank=True)
@@ -283,9 +304,8 @@ class DemoRequest(models.Model):
         if not self.reference_number:
             import random
             import string
-            self.reference_number = "CYB-" + "".join(
-                random.choices(string.digits, k=6)
-            )
+
+            self.reference_number = "CYB-" + "".join(random.choices(string.digits, k=6))
         super().save(*args, **kwargs)
 
 
@@ -293,8 +313,10 @@ class DemoRequest(models.Model):
 # Contact Message (General Enquiries)
 # ---------------------------------------------------------------------------
 
+
 class ContactMessage(models.Model):
     """General website contact form submissions."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     ticket_number = models.CharField(max_length=20, unique=True, editable=False)
 
@@ -305,16 +327,17 @@ class ContactMessage(models.Model):
     subject = models.CharField(max_length=300)
     message = models.TextField()
     department = models.CharField(
-        max_length=30, choices=ContactDepartment.choices,
-        default=ContactDepartment.GENERAL, db_index=True
+        max_length=30,
+        choices=ContactDepartment.choices,
+        default=ContactDepartment.GENERAL,
+        db_index=True,
     )
     source = models.CharField(max_length=100, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
 
     status = models.CharField(
-        max_length=20, choices=ContactStatus.choices,
-        default=ContactStatus.NEW, db_index=True
+        max_length=20, choices=ContactStatus.choices, default=ContactStatus.NEW, db_index=True
     )
     assigned_to = models.CharField(max_length=200, blank=True)
     response_notes = models.TextField(blank=True)
@@ -335,6 +358,7 @@ class ContactMessage(models.Model):
         if not self.ticket_number:
             import random
             import string
+
             self.ticket_number = "TKT-" + "".join(random.choices(string.digits, k=6))
         super().save(*args, **kwargs)
 
@@ -343,8 +367,10 @@ class ContactMessage(models.Model):
 # Partner Application
 # ---------------------------------------------------------------------------
 
+
 class PartnerListing(models.Model):
     """Published partner directory entries."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     company_name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=120, unique=True)
@@ -372,6 +398,7 @@ class PartnerListing(models.Model):
 
 class PartnerApplication(models.Model):
     """Inbound partner program applications from the website."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     reference_number = models.CharField(max_length=20, unique=True, editable=False)
 
@@ -391,8 +418,10 @@ class PartnerApplication(models.Model):
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     status = models.CharField(
-        max_length=20, choices=PartnerApplicationStatus.choices,
-        default=PartnerApplicationStatus.PENDING, db_index=True
+        max_length=20,
+        choices=PartnerApplicationStatus.choices,
+        default=PartnerApplicationStatus.PENDING,
+        db_index=True,
     )
     reviewed_by = models.CharField(max_length=200, blank=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
@@ -413,6 +442,7 @@ class PartnerApplication(models.Model):
         if not self.reference_number:
             import random
             import string
+
             self.reference_number = "PAR-" + "".join(random.choices(string.digits, k=6))
         super().save(*args, **kwargs)
 
@@ -421,14 +451,20 @@ class PartnerApplication(models.Model):
 # Documentation
 # ---------------------------------------------------------------------------
 
+
 class DocumentationSection(models.Model):
     """Top-level documentation sections (e.g. CyMed / Getting Started)."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=120, unique=True)
     description = models.TextField(blank=True)
     product = models.ForeignKey(
-        ProductListing, on_delete=models.SET_NULL, null=True, blank=True, related_name="doc_sections"
+        ProductListing,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="doc_sections",
     )
     icon_class = models.CharField(max_length=100, blank=True)
     sort_order = models.PositiveSmallIntegerField(default=0)
@@ -446,6 +482,7 @@ class DocumentationSection(models.Model):
 
 class DocumentationItem(models.Model):
     """Individual documentation page or article."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     section = models.ForeignKey(
         DocumentationSection, on_delete=models.CASCADE, related_name="items"
@@ -477,14 +514,18 @@ class DocumentationItem(models.Model):
 # Newsletter
 # ---------------------------------------------------------------------------
 
+
 class NewsletterSubscription(models.Model):
     """Website newsletter sign-ups."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, db_index=True)
     source = models.CharField(max_length=100, blank=True)
     status = models.CharField(
-        max_length=20, choices=NewsletterStatus.choices,
-        default=NewsletterStatus.PENDING, db_index=True
+        max_length=20,
+        choices=NewsletterStatus.choices,
+        default=NewsletterStatus.PENDING,
+        db_index=True,
     )
     confirmed_at = models.DateTimeField(null=True, blank=True)
     unsubscribed_at = models.DateTimeField(null=True, blank=True)
@@ -505,11 +546,13 @@ class NewsletterSubscription(models.Model):
 # API Audit Log (website-specific, lightweight)
 # ---------------------------------------------------------------------------
 
+
 class WebsiteApiLog(models.Model):
     """
     Lightweight request log for public website API calls.
     Not a security audit — tracks volume, lead sources, and API usage patterns.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     timestamp = models.DateTimeField(default=timezone.now, editable=False, db_index=True)
     endpoint = models.CharField(max_length=200, db_index=True)

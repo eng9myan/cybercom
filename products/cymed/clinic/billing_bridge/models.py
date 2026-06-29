@@ -1,19 +1,27 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 from products.cymed.core.encounters.models import Encounter
+
 
 class ChargeCode(BaseModel):
     code = models.CharField(max_length=100, unique=True)
     display = models.CharField(max_length=255)
-    category = models.CharField(max_length=50, choices=[
-        ("consultation", "Consultation"), ("procedure", "Procedure"), ("service", "Service")
-    ])
+    category = models.CharField(
+        max_length=50,
+        choices=[
+            ("consultation", "Consultation"),
+            ("procedure", "Procedure"),
+            ("service", "Service"),
+        ],
+    )
 
     class Meta:
         db_table = "cymed_clinic_charge_codes"
 
     def __str__(self) -> str:
         return f"{self.code} - {self.display}"
+
 
 class PriceList(BaseModel):
     name = models.CharField(max_length=255)
@@ -26,6 +34,7 @@ class PriceList(BaseModel):
     def __str__(self) -> str:
         return self.name
 
+
 class ClinicService(BaseModel):
     price_list = models.ForeignKey(PriceList, on_delete=models.CASCADE, related_name="services")
     charge_code = models.ForeignKey(ChargeCode, on_delete=models.PROTECT)
@@ -34,6 +43,7 @@ class ClinicService(BaseModel):
     class Meta:
         db_table = "cymed_clinic_services"
         unique_together = [("price_list", "charge_code")]
+
 
 class ChargeItem(BaseModel):
     encounter = models.ForeignKey(Encounter, on_delete=models.CASCADE, related_name="charges")

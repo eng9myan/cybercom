@@ -1,14 +1,15 @@
 from rest_framework import serializers
+
 from .models import (
-    PopulationGroup,
-    PopulationSegment,
-    HealthRisk,
-    HealthGoal,
-    PopulationProgram,
-    NationalProvider,
-    ProviderCredential,
-    NationalFacility,
     FacilityAccreditation,
+    HealthGoal,
+    HealthRisk,
+    NationalFacility,
+    NationalProvider,
+    PopulationGroup,
+    PopulationProgram,
+    PopulationSegment,
+    ProviderCredential,
 )
 
 

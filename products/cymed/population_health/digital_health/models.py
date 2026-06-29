@@ -1,6 +1,6 @@
-﻿from django.db import models
-from platform.common.models import BaseModel
+from django.db import models
 
+from platform.common.models import BaseModel
 
 ID_TYPE_CHOICES = [
     ("national_id", "National ID"),
@@ -60,9 +60,7 @@ class NationalHealthID(BaseModel):
 
     patient_id = models.UUIDField(db_index=True)
     national_id_number = models.CharField(max_length=100, unique=True)
-    id_type = models.CharField(
-        max_length=20, choices=ID_TYPE_CHOICES, default="national_id"
-    )
+    id_type = models.CharField(max_length=20, choices=ID_TYPE_CHOICES, default="national_id")
     id_status = models.CharField(
         max_length=20, choices=ID_STATUS_CHOICES, default="pending_verification"
     )
@@ -119,9 +117,7 @@ class HealthPass(BaseModel):
     valid_until = models.DateField(null=True, blank=True)
     # List of conditions/requirements met for this pass
     conditions_met = models.JSONField(default=list)
-    pass_status = models.CharField(
-        max_length=20, choices=PASS_STATUS_CHOICES, default="active"
-    )
+    pass_status = models.CharField(max_length=20, choices=PASS_STATUS_CHOICES, default="active")
     qr_code_data = models.TextField(blank=True)
     issued_by_authority = models.CharField(max_length=200, blank=True)
     revocation_reason = models.CharField(max_length=500, blank=True)

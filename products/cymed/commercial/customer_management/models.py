@@ -1,9 +1,11 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class Customer(BaseModel):
     """Master customer record — a healthcare organization buying CyMed."""
+
     CUSTOMER_TYPES = [
         ("clinic", "Clinic / Medical Center"),
         ("hospital", "Hospital"),
@@ -34,7 +36,7 @@ class Customer(BaseModel):
 
     # Licensing identity
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="prospect")
-    csm_id = models.UUIDField(null=True, blank=True)        # Customer Success Manager
+    csm_id = models.UUIDField(null=True, blank=True)  # Customer Success Manager
 
     class Meta:
         db_table = "cymed_commercial_customers"
@@ -45,6 +47,7 @@ class Customer(BaseModel):
 
 class CustomerOrganization(BaseModel):
     """Links a Customer to one or more CyMed tenant organizations."""
+
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="organizations")
     organization_name = models.CharField(max_length=255)
     organization_code = models.CharField(max_length=100)
@@ -58,6 +61,7 @@ class CustomerOrganization(BaseModel):
 
 class CustomerContract(BaseModel):
     """Formal contract between CyMed and a customer."""
+
     CONTRACT_TYPES = [
         ("saas", "SaaS Agreement"),
         ("enterprise", "Enterprise License Agreement"),
@@ -92,11 +96,12 @@ class CustomerContract(BaseModel):
 
 class CustomerDeployment(BaseModel):
     """Tracks how and where a customer's CyMed is deployed."""
+
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="deployments")
     deployment_profile_code = models.CharField(max_length=100)
     product_code = models.CharField(max_length=100)
     edition_code = models.CharField(max_length=100)
-    environment = models.CharField(max_length=50, default="production")     # production, staging, demo
+    environment = models.CharField(max_length=50, default="production")  # production, staging, demo
     go_live_date = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
@@ -107,13 +112,14 @@ class CustomerDeployment(BaseModel):
 
 class CustomerSuccessPlan(BaseModel):
     """Customer success plan with KPIs and milestones."""
+
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="success_plans")
     plan_name = models.CharField(max_length=255)
-    health_score = models.PositiveSmallIntegerField(default=80)     # 0–100
-    nps_score = models.SmallIntegerField(null=True, blank=True)     # -100 to +100
+    health_score = models.PositiveSmallIntegerField(default=80)  # 0–100
+    nps_score = models.SmallIntegerField(null=True, blank=True)  # -100 to +100
     adoption_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    next_qbr_date = models.DateField(null=True, blank=True)         # Quarterly Business Review
-    renewal_risk = models.CharField(max_length=50, default="low")   # low, medium, high
+    next_qbr_date = models.DateField(null=True, blank=True)  # Quarterly Business Review
+    renewal_risk = models.CharField(max_length=50, default="low")  # low, medium, high
     milestones = models.JSONField(default=list)
 
     class Meta:

@@ -1,7 +1,8 @@
 """
 Audit & Compliance permission classes.
 """
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
 def _roles(request) -> set:
@@ -12,12 +13,14 @@ def _roles(request) -> set:
 
 class IsAuditAdmin(BasePermission):
     """platform_admin or audit_admin role."""
+
     def has_permission(self, request, view):
         return bool(_roles(request) & {"platform_admin", "audit_admin", "cyidentity_admin"})
 
 
 class IsComplianceOfficer(BasePermission):
     """platform_admin, audit_admin, or compliance_officer."""
+
     def has_permission(self, request, view):
         return bool(_roles(request) & {"platform_admin", "audit_admin", "compliance_officer"})
 
@@ -31,17 +34,20 @@ class ReadOnlyOrAuditAdmin(BasePermission):
 
 class CanCreateLegalHold(BasePermission):
     """Legal hold creation requires platform_admin or legal_hold_admin."""
+
     def has_permission(self, request, view):
         return bool(_roles(request) & {"platform_admin", "legal_hold_admin", "audit_admin"})
 
 
 class CanReleaseLegalHold(BasePermission):
     """Release requires platform_admin only."""
+
     def has_permission(self, request, view):
         return bool(_roles(request) & {"platform_admin"})
 
 
 class CanExportAuditLogs(BasePermission):
     """Export requires audit_admin or compliance_officer."""
+
     def has_permission(self, request, view):
         return bool(_roles(request) & {"platform_admin", "audit_admin", "compliance_officer"})

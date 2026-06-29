@@ -1,15 +1,19 @@
 from rest_framework import serializers
+
 from products.cymed.core.orders.models import Order, OrderItem, OrderResult
+
 
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ["id", "code", "display", "quantity"]
 
+
 class OrderResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderResult
         fields = ["id", "result_text", "result_reference_id", "recorded_at", "recorded_by"]
+
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, required=False)
@@ -17,7 +21,20 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id", "patient", "encounter", "order_type", "priority", "status", "ordered_by", "ordered_at", "items", "results", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "patient",
+            "encounter",
+            "order_type",
+            "priority",
+            "status",
+            "ordered_by",
+            "ordered_at",
+            "items",
+            "results",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
     def create(self, validated_data):
@@ -37,11 +54,16 @@ class OrderSerializer(serializers.ModelSerializer):
 
         # Publish event
         from platform.events.models import OutboxEvent
+
         OutboxEvent.objects.create(
             tenant_id=order.tenant_id,
             topic="cymed.order.events",
             event_type="cymed.order.created",
-            payload={"order_id": str(order.id), "patient_id": str(order.patient.id), "type": order.order_type}
+            payload={
+                "order_id": str(order.id),
+                "patient_id": str(order.patient.id),
+                "type": order.order_type,
+            },
         )
 
         return order

@@ -1,10 +1,11 @@
 from rest_framework import serializers
+
 from products.cymed.provider_portal.workforce.models import (
-    ProviderSchedule,
-    ShiftAssignment,
-    LeaveRequest,
     AttendanceRecord,
     CredentialExpiry,
+    LeaveRequest,
+    ProviderSchedule,
+    ShiftAssignment,
 )
 
 

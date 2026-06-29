@@ -1,15 +1,18 @@
-﻿"""
+"""
 CyMed Population Health — Cohorts
 Covers: Cohort, CohortMember, CohortOutcome, CohortAnalysis
 Terminology: ICD-11 codes resolved via TerminologyService.
 AI-generated analyses are advisory only (is_advisory_only=True, editable=False).
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
 class Cohort(BaseModel):
     """A defined group of patients sharing common clinical or demographic characteristics."""
+
     COHORT_TYPE_CHOICES = [
         ("study", "Study"),
         ("quality", "Quality"),
@@ -41,9 +44,7 @@ class Cohort(BaseModel):
 class CohortMember(BaseModel):
     """A patient's membership record within a cohort."""
 
-    cohort = models.ForeignKey(
-        Cohort, on_delete=models.CASCADE, related_name="members"
-    )
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="members")
     patient_id = models.UUIDField(db_index=True)
     joined_at = models.DateTimeField(auto_now_add=True)
     removed_at = models.DateTimeField(null=True, blank=True)
@@ -60,6 +61,7 @@ class CohortMember(BaseModel):
 
 class CohortOutcome(BaseModel):
     """A measured outcome for a patient within a cohort context."""
+
     OUTCOME_TYPE_CHOICES = [
         ("clinical", "Clinical"),
         ("quality", "Quality"),
@@ -68,9 +70,7 @@ class CohortOutcome(BaseModel):
         ("satisfaction", "Satisfaction"),
     ]
 
-    cohort = models.ForeignKey(
-        Cohort, on_delete=models.CASCADE, related_name="outcomes"
-    )
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="outcomes")
     patient_id = models.UUIDField(db_index=True)
     outcome_name = models.CharField(max_length=200)
     outcome_type = models.CharField(max_length=30, choices=OUTCOME_TYPE_CHOICES)
@@ -89,6 +89,7 @@ class CohortOutcome(BaseModel):
 
 class CohortAnalysis(BaseModel):
     """A formal analysis performed on a cohort."""
+
     ANALYSIS_TYPE_CHOICES = [
         ("descriptive", "Descriptive"),
         ("comparative", "Comparative"),
@@ -98,9 +99,7 @@ class CohortAnalysis(BaseModel):
         ("survival", "Survival"),
     ]
 
-    cohort = models.ForeignKey(
-        Cohort, on_delete=models.PROTECT, related_name="analyses"
-    )
+    cohort = models.ForeignKey(Cohort, on_delete=models.PROTECT, related_name="analyses")
     analysis_type = models.CharField(max_length=30, choices=ANALYSIS_TYPE_CHOICES)
     analysis_name = models.CharField(max_length=200)
     analysis_date = models.DateField()

@@ -1,21 +1,20 @@
 """
 Branding Service — resolves active brand for a tenant/domain.
 """
-from typing import Optional
 
-from products.cymed.commercial.branding.models import Brand, BrandTheme, BrandLocalization
+from products.cymed.commercial.branding.models import Brand, BrandLocalization, BrandTheme
 
 
 class BrandingService:
-
     @staticmethod
-    def get_brand_for_domain(domain: str) -> Optional[Brand]:
+    def get_brand_for_domain(domain: str) -> Brand | None:
         from products.cymed.commercial.branding.models import BrandDomain
+
         bd = BrandDomain.objects.filter(domain=domain).select_related("brand").first()
         return bd.brand if bd else None
 
     @staticmethod
-    def get_brand_theme(brand: Brand) -> Optional[dict]:
+    def get_brand_theme(brand: Brand) -> dict | None:
         try:
             theme = brand.theme
             return {
@@ -34,7 +33,7 @@ class BrandingService:
             return None
 
     @staticmethod
-    def get_localization(brand: Brand, language_code: str = "en") -> Optional[dict]:
+    def get_localization(brand: Brand, language_code: str = "en") -> dict | None:
         loc = BrandLocalization.objects.filter(brand=brand, language_code=language_code).first()
         if not loc:
             return None

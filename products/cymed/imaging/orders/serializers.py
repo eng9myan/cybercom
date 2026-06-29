@@ -1,5 +1,12 @@
 from rest_framework import serializers
-from .models import ImagingProtocol, ImagingProcedure, ImagingOrder, ImagingOrderItem, ImagingOrderStatusHistory
+
+from .models import (
+    ImagingOrder,
+    ImagingOrderItem,
+    ImagingOrderStatusHistory,
+    ImagingProcedure,
+    ImagingProtocol,
+)
 
 
 class ImagingProtocolSerializer(serializers.ModelSerializer):

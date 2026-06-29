@@ -1,10 +1,11 @@
-﻿from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-from .models import CRMAccount, AccountContact
-from .serializers import CRMAccountSerializer, AccountContactSerializer
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import AccountContact, CRMAccount
+from .serializers import AccountContactSerializer, CRMAccountSerializer
 
 
 class CRMAccountListView(APIView):
@@ -30,7 +31,9 @@ class CRMAccountDetailView(APIView):
         return get_object_or_404(CRMAccount, pk=pk, tenant_id=tenant_id)
 
     def get(self, request, pk):
-        return Response(CRMAccountSerializer(self.get_object(pk, getattr(request, "tenant_id", None))).data)
+        return Response(
+            CRMAccountSerializer(self.get_object(pk, getattr(request, "tenant_id", None))).data
+        )
 
     def put(self, request, pk):
         obj = self.get_object(pk, getattr(request, "tenant_id", None))
@@ -76,7 +79,9 @@ class AccountContactDetailView(APIView):
         return get_object_or_404(AccountContact, pk=pk, tenant_id=tenant_id)
 
     def get(self, request, pk):
-        return Response(AccountContactSerializer(self.get_object(pk, getattr(request, "tenant_id", None))).data)
+        return Response(
+            AccountContactSerializer(self.get_object(pk, getattr(request, "tenant_id", None))).data
+        )
 
     def put(self, request, pk):
         obj = self.get_object(pk, getattr(request, "tenant_id", None))

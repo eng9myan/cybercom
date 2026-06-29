@@ -3,6 +3,7 @@ Migration runner — replicates conftest.py sys.path + platform namespace fix.
 Prevents local platform/ package from shadowing stdlib platform module,
 while still allowing 'from platform.common.models import BaseModel' to work.
 """
+
 import os
 import sys
 from pathlib import Path
@@ -19,7 +20,7 @@ elif "" in sys.path:
     sys_path_removed = True
 
 # Step 2: Import stdlib platform, then graft local platform/ onto it
-import platform as std_platform  # noqa: E402 — stdlib
+import platform as std_platform
 
 platform_pkg_path = os.path.join(script_dir, "platform")
 if not hasattr(std_platform, "__path__") or std_platform.__path__ is None:
@@ -40,8 +41,10 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings_test")
 os.environ.setdefault("DJANGO_SECRET_KEY", "dev-unsafe-secret-key-do-not-use-in-prod")
 os.environ.setdefault("DJANGO_DEBUG", "True")
 
-import django  # noqa: E402
+import django
+
 django.setup()
 
-from django.core.management import execute_from_command_line  # noqa: E402
+from django.core.management import execute_from_command_line
+
 execute_from_command_line(sys.argv)

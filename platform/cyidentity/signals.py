@@ -1,6 +1,7 @@
 """
 CyIdentity Django signals — lifecycle hooks for audit + metrics emission.
 """
+
 from __future__ import annotations
 
 import logging
@@ -10,7 +11,6 @@ from django.dispatch import receiver
 
 from platform.cyidentity.models import (
     BreakGlassAccess,
-    BreakGlassStatus,
     ClientSecret,
     IdentityRealm,
     LoginAudit,
@@ -42,7 +42,12 @@ def realm_status_change_audit(sender, instance: IdentityRealm, **kwargs):
         )
         IdentityEventEmitter.emit(
             "cyidentity.realm.status_changed",
-            {"realm_id": str(instance.id), "realm_name": instance.realm_name, "from": prior.status, "to": instance.status},
+            {
+                "realm_id": str(instance.id),
+                "realm_name": instance.realm_name,
+                "from": prior.status,
+                "to": instance.status,
+            },
         )
         if instance.status == RealmStatus.DECOMMISSIONED:
             metrics.realm_decommissioned_total += 1

@@ -1,15 +1,15 @@
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import ShiftSwapRequest, ShiftSwapApproval, SwapValidationLog
+from .models import ShiftSwapApproval, ShiftSwapRequest, SwapValidationLog
 from .serializers import (
-    ShiftSwapRequestSerializer,
     ShiftSwapApprovalSerializer,
+    ShiftSwapRequestSerializer,
     SwapValidationLogSerializer,
 )
 
@@ -49,7 +49,9 @@ class ShiftSwapRequestViewSet(HWMModelViewSet):
         swap.status = "rejected"
         swap.rejection_reason = "recipient_declined"
         swap.recipient_responded_at = timezone.now()
-        swap.save(update_fields=["status", "rejection_reason", "recipient_responded_at", "updated_at"])
+        swap.save(
+            update_fields=["status", "rejection_reason", "recipient_responded_at", "updated_at"]
+        )
         return Response({"status": "rejected", "id": str(swap.id)})
 
     @action(detail=True, methods=["post"])

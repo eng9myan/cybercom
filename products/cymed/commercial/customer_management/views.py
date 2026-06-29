@@ -1,12 +1,18 @@
-from products.cymed.commercial.views import CommercialModelViewSet
 from products.cymed.commercial.customer_management.models import (
-    Customer, CustomerOrganization, CustomerContract,
-    CustomerDeployment, CustomerSuccessPlan
+    Customer,
+    CustomerContract,
+    CustomerDeployment,
+    CustomerOrganization,
+    CustomerSuccessPlan,
 )
 from products.cymed.commercial.customer_management.serializers import (
-    CustomerSerializer, CustomerOrganizationSerializer, CustomerContractSerializer,
-    CustomerDeploymentSerializer, CustomerSuccessPlanSerializer
+    CustomerContractSerializer,
+    CustomerDeploymentSerializer,
+    CustomerOrganizationSerializer,
+    CustomerSerializer,
+    CustomerSuccessPlanSerializer,
 )
+from products.cymed.commercial.views import CommercialModelViewSet
 
 
 class CustomerViewSet(CommercialModelViewSet):

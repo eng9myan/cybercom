@@ -1,6 +1,10 @@
 from rest_framework import serializers
+
 from products.cymed.commercial.feature_flags.models import (
-    FeatureFlag, FeatureDependency, TenantFeature, CustomerFeature
+    CustomerFeature,
+    FeatureDependency,
+    FeatureFlag,
+    TenantFeature,
 )
 
 
@@ -30,4 +34,5 @@ class CustomerFeatureSerializer(serializers.ModelSerializer):
 
 class FeatureCheckSerializer(serializers.Serializer):
     """Check if a feature is enabled for the current tenant."""
+
     feature_code = serializers.CharField()

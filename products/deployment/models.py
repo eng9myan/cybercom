@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 DEPLOYMENT_TYPE_CHOICES = [
     ("cloud", "Cloud (SaaS)"),
@@ -59,7 +59,9 @@ class DeploymentRecord(BaseModel):
     customer_name = models.CharField(max_length=200)
     deployment_code = models.CharField(max_length=50, unique=True)
     deployment_type = models.CharField(max_length=30, choices=DEPLOYMENT_TYPE_CHOICES)
-    tenancy_model = models.CharField(max_length=20, choices=TENANCY_MODEL_CHOICES, default="single_tenant")
+    tenancy_model = models.CharField(
+        max_length=20, choices=TENANCY_MODEL_CHOICES, default="single_tenant"
+    )
     infrastructure = models.CharField(max_length=30, choices=INFRASTRUCTURE_CHOICES)
     status = models.CharField(max_length=20, choices=DEPLOYMENT_STATUS_CHOICES, default="planned")
     region = models.CharField(max_length=100, blank=True)
@@ -111,7 +113,13 @@ class DeploymentStep(BaseModel):
     step_category = models.CharField(max_length=50)
     status = models.CharField(
         max_length=20,
-        choices=[("pending", "Pending"), ("in_progress", "In Progress"), ("completed", "Completed"), ("failed", "Failed"), ("skipped", "Skipped")],
+        choices=[
+            ("pending", "Pending"),
+            ("in_progress", "In Progress"),
+            ("completed", "Completed"),
+            ("failed", "Failed"),
+            ("skipped", "Skipped"),
+        ],
         default="pending",
     )
     started_at = models.DateTimeField(null=True, blank=True)
@@ -171,7 +179,12 @@ class BackupRecord(BaseModel):
     checksum = models.CharField(max_length=200, blank=True)
     status = models.CharField(
         max_length=20,
-        choices=[("pending", "Pending"), ("in_progress", "In Progress"), ("completed", "Completed"), ("failed", "Failed")],
+        choices=[
+            ("pending", "Pending"),
+            ("in_progress", "In Progress"),
+            ("completed", "Completed"),
+            ("failed", "Failed"),
+        ],
         default="pending",
     )
     started_at = models.DateTimeField(null=True, blank=True)
@@ -193,7 +206,9 @@ class HealthCheckSnapshot(BaseModel):
         on_delete=models.CASCADE,
         related_name="health_snapshots",
     )
-    overall_status = models.CharField(max_length=20, choices=HEALTH_STATUS_CHOICES, default="unknown")
+    overall_status = models.CharField(
+        max_length=20, choices=HEALTH_STATUS_CHOICES, default="unknown"
+    )
     component_statuses = models.JSONField(default=dict)
     checked_at = models.DateTimeField(auto_now_add=True)
     uptime_seconds = models.BigIntegerField(null=True, blank=True)
@@ -221,7 +236,13 @@ class UpgradeRecord(BaseModel):
     )
     status = models.CharField(
         max_length=20,
-        choices=[("scheduled", "Scheduled"), ("in_progress", "In Progress"), ("completed", "Completed"), ("rolled_back", "Rolled Back"), ("failed", "Failed")],
+        choices=[
+            ("scheduled", "Scheduled"),
+            ("in_progress", "In Progress"),
+            ("completed", "Completed"),
+            ("rolled_back", "Rolled Back"),
+            ("failed", "Failed"),
+        ],
         default="scheduled",
     )
     scheduled_at = models.DateTimeField(null=True, blank=True)

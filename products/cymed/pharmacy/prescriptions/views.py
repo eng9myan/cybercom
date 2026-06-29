@@ -1,22 +1,35 @@
 """
 CyMed Pharmacy — Prescription Management Views
 """
+
 import uuid
+
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import status
+
 from platform.events.models import OutboxEvent
+
+from ..views import PharmacyModelViewSet
 from .models import (
-    Prescription, PrescriptionItem, MedicationOrder,
-    MedicationRenewal, MedicationRefill, PrescriptionAttachment,
-    MedicationHistory, PrescriptionStatus, MedicationPriority
+    MedicationHistory,
+    MedicationOrder,
+    MedicationRefill,
+    MedicationRenewal,
+    Prescription,
+    PrescriptionAttachment,
+    PrescriptionItem,
+    PrescriptionStatus,
 )
 from .serializers import (
-    PrescriptionSerializer, PrescriptionItemSerializer, MedicationOrderSerializer,
-    MedicationRenewalSerializer, MedicationRefillSerializer,
-    PrescriptionAttachmentSerializer, MedicationHistorySerializer
+    MedicationHistorySerializer,
+    MedicationOrderSerializer,
+    MedicationRefillSerializer,
+    MedicationRenewalSerializer,
+    PrescriptionAttachmentSerializer,
+    PrescriptionItemSerializer,
+    PrescriptionSerializer,
 )
-from ..views import PharmacyModelViewSet
 
 
 class PrescriptionViewSet(PharmacyModelViewSet):
@@ -52,11 +65,12 @@ class PrescriptionViewSet(PharmacyModelViewSet):
         if prescription.status not in (PrescriptionStatus.PENDING, PrescriptionStatus.DRAFT):
             return Response(
                 {"detail": "Prescription is not in a verifiable state."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
         prescription.status = PrescriptionStatus.ACTIVE
         prescription.verified_by = request.user.id if hasattr(request, "user") else None
         import django.utils.timezone as tz
+
         prescription.verified_at = tz.now()
         prescription.save(update_fields=["status", "verified_by", "verified_at", "updated_at"])
         OutboxEvent.objects.create(
@@ -72,8 +86,7 @@ class PrescriptionViewSet(PharmacyModelViewSet):
         """Patient's full medication history."""
         prescription = self.get_object()
         history = MedicationHistory.objects.filter(
-            tenant_id=prescription.tenant_id,
-            patient_id=prescription.patient_id
+            tenant_id=prescription.tenant_id, patient_id=prescription.patient_id
         ).order_by("-start_date")
         return Response(MedicationHistorySerializer(history, many=True).data)
 
@@ -110,7 +123,9 @@ class MedicationOrderViewSet(PharmacyModelViewSet):
     def verify(self, request, pk=None):
         """Pharmacist verification of medication order."""
         import django.utils.timezone as tz
+
         from .models import MedicationOrderStatus
+
         order = self.get_object()
         previous_status = order.status
         order.status = "verified"
@@ -119,7 +134,9 @@ class MedicationOrderViewSet(PharmacyModelViewSet):
         order.save(update_fields=["status", "verified_by", "verified_at", "updated_at"])
         MedicationOrderStatus.objects.create(
             tenant_id=order.tenant_id,
-            order=order, from_status=previous_status, to_status="verified",
+            order=order,
+            from_status=previous_status,
+            to_status="verified",
             changed_by=order.verified_by,
         )
         OutboxEvent.objects.create(

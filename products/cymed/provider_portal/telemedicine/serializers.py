@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
 from .models import (
-    ProviderTelemedicineSession,
     ConsultRequest,
+    ProviderTelemedicineSession,
     SecondOpinionRequest,
     TelemedicineDocument,
 )
@@ -11,7 +11,7 @@ from .models import (
 class TelemedicineDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = TelemedicineDocument
-        fields = '__all__'
+        fields = "__all__"
 
 
 class ProviderTelemedicineSessionSerializer(serializers.ModelSerializer):
@@ -19,16 +19,16 @@ class ProviderTelemedicineSessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProviderTelemedicineSession
-        fields = '__all__'
+        fields = "__all__"
 
 
 class ConsultRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConsultRequest
-        fields = '__all__'
+        fields = "__all__"
 
 
 class SecondOpinionRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = SecondOpinionRequest
-        fields = '__all__'
+        fields = "__all__"

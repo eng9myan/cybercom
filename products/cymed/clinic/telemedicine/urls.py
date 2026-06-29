@@ -1,7 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.clinic.telemedicine.views import (
-    VirtualVisitViewSet, VirtualSessionViewSet, VirtualRecordingViewSet, VirtualConsentViewSet
+    VirtualConsentViewSet,
+    VirtualRecordingViewSet,
+    VirtualSessionViewSet,
+    VirtualVisitViewSet,
 )
 
 router = DefaultRouter()

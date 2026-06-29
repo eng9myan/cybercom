@@ -1,10 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from platform.cyai.views import (
+    GuardrailPolicyViewSet,
+    InferenceLogViewSet,
     ModelConfigViewSet,
     PromptTemplateViewSet,
-    GuardrailPolicyViewSet,
-    InferenceLogViewSet
 )
 
 router = DefaultRouter()

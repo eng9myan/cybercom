@@ -1,19 +1,20 @@
-﻿"""
+"""
 CyMed Population Health — Quality ViewSets
 """
+
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import QualityMeasure, QualityMeasureResult, QualityImprovement, ClinicalAudit
+from .models import ClinicalAudit, QualityImprovement, QualityMeasure, QualityMeasureResult
 from .serializers import (
-    QualityMeasureSerializer,
-    QualityMeasureResultSerializer,
-    QualityImprovementSerializer,
     ClinicalAuditSerializer,
+    QualityImprovementSerializer,
+    QualityMeasureResultSerializer,
+    QualityMeasureSerializer,
 )
 
 
@@ -62,8 +63,6 @@ class ClinicalAuditViewSet(PopulationHealthModelViewSet):
         audit.status = "completed"
         # Recalculate compliance rate if sample_size is set
         if audit.sample_size > 0:
-            audit.compliance_rate = round(
-                (audit.compliant_count / audit.sample_size) * 100, 2
-            )
+            audit.compliance_rate = round((audit.compliant_count / audit.sample_size) * 100, 2)
         audit.save(update_fields=["status", "compliance_rate", "updated_at"])
         return Response(ClinicalAuditSerializer(audit).data)

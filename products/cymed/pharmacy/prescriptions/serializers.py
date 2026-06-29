@@ -1,7 +1,14 @@
 from rest_framework import serializers
+
 from .models import (
-    Prescription, PrescriptionItem, MedicationOrder, MedicationOrderStatus,
-    MedicationRenewal, MedicationRefill, PrescriptionAttachment, MedicationHistory
+    MedicationHistory,
+    MedicationOrder,
+    MedicationOrderStatus,
+    MedicationRefill,
+    MedicationRenewal,
+    Prescription,
+    PrescriptionAttachment,
+    PrescriptionItem,
 )
 
 
@@ -44,8 +51,12 @@ class PrescriptionSerializer(serializers.ModelSerializer):
         model = Prescription
         fields = "__all__"
         read_only_fields = [
-            "id", "tenant_id", "created_at", "updated_at",
-            "prescription_number", "prescribed_at"
+            "id",
+            "tenant_id",
+            "created_at",
+            "updated_at",
+            "prescription_number",
+            "prescribed_at",
         ]
 
 

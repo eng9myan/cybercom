@@ -4,26 +4,25 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_provider_workspace', '0001_initial'),
+        ("cymed_provider_workspace", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='providerworkspace',
-            name='cymed_prov_wkspc_tenant_prov_idx',
+            model_name="providerworkspace",
+            name="cymed_prov_wkspc_tenant_prov_idx",
         ),
         migrations.RemoveIndex(
-            model_name='providerworkspace',
-            name='cymed_prov_wkspc_tenant_active_idx',
+            model_name="providerworkspace",
+            name="cymed_prov_wkspc_tenant_active_idx",
         ),
         migrations.RemoveIndex(
-            model_name='workspacesession',
-            name='cymed_prov_sess_tenant_wkspc_idx',
+            model_name="workspacesession",
+            name="cymed_prov_sess_tenant_wkspc_idx",
         ),
         migrations.RemoveIndex(
-            model_name='workspacesession',
-            name='cymed_prov_sess_tenant_started_idx',
+            model_name="workspacesession",
+            name="cymed_prov_sess_tenant_started_idx",
         ),
     ]

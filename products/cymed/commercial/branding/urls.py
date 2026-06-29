@@ -1,8 +1,12 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.commercial.branding.views import (
-    BrandViewSet, BrandThemeViewSet, BrandAssetViewSet,
-    BrandDomainViewSet, BrandLocalizationViewSet
+    BrandAssetViewSet,
+    BrandDomainViewSet,
+    BrandLocalizationViewSet,
+    BrandThemeViewSet,
+    BrandViewSet,
 )
 
 router = DefaultRouter()

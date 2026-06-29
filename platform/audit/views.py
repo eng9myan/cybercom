@@ -1,37 +1,76 @@
 """
 Audit & Compliance API views.
 """
+
 import logging
-from rest_framework import viewsets, status
+
+from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from .models import (
-    AuditArchive, AuditCategory, AuditChain, AuditEntry, AuditEvent, AuditExport,
-    AuditLog, AuditRetentionPolicy, AuditSignature,
-    ComplianceAssessment, ComplianceProfile, ComplianceReport, ComplianceRule,
-    ComplianceViolation, EvidencePackage, EvidenceRecord, LegalHold,
+    AuditArchive,
+    AuditCategory,
+    AuditChain,
+    AuditEntry,
+    AuditEvent,
+    AuditExport,
+    AuditLog,
+    AuditRetentionPolicy,
+    AuditSignature,
+    ComplianceAssessment,
+    ComplianceProfile,
+    ComplianceReport,
+    ComplianceRule,
+    ComplianceViolation,
+    EvidencePackage,
+    EvidenceRecord,
+    LegalHold,
 )
 from .permissions import (
-    CanCreateLegalHold, CanExportAuditLogs, CanReleaseLegalHold,
-    IsAuditAdmin, IsComplianceOfficer, ReadOnlyOrAuditAdmin,
+    CanCreateLegalHold,
+    CanExportAuditLogs,
+    CanReleaseLegalHold,
+    IsAuditAdmin,
+    IsComplianceOfficer,
+    ReadOnlyOrAuditAdmin,
 )
 from .serializers import (
-    AuditArchiveSerializer, AuditCategorySerializer, AuditChainSerializer,
-    AuditEntrySerializer, AuditEventSerializer, AuditExportCreateSerializer,
-    AuditExportSerializer, AuditLogSerializer, AuditRetentionPolicySerializer,
-    AuditSearchSerializer, AuditSignatureSerializer, ChainVerifySerializer,
-    ComplianceAssessmentSerializer, ComplianceProfileSerializer, ComplianceReportSerializer,
-    ComplianceRuleSerializer, ComplianceViolationSerializer,
-    EvidencePackageSealSerializer, EvidencePackageSerializer, EvidenceRecordSerializer,
-    LegalHoldReleaseSerializer, LegalHoldSerializer,
-    ViolationAcceptRiskSerializer, ViolationRemediateSerializer,
+    AuditArchiveSerializer,
+    AuditCategorySerializer,
+    AuditChainSerializer,
+    AuditEntrySerializer,
+    AuditEventSerializer,
+    AuditExportCreateSerializer,
+    AuditExportSerializer,
+    AuditLogSerializer,
+    AuditRetentionPolicySerializer,
+    AuditSearchSerializer,
+    AuditSignatureSerializer,
+    ChainVerifySerializer,
+    ComplianceAssessmentSerializer,
+    ComplianceProfileSerializer,
+    ComplianceReportSerializer,
+    ComplianceRuleSerializer,
+    ComplianceViolationSerializer,
+    EvidencePackageSealSerializer,
+    EvidencePackageSerializer,
+    EvidenceRecordSerializer,
+    LegalHoldReleaseSerializer,
+    LegalHoldSerializer,
+    ViolationAcceptRiskSerializer,
+    ViolationRemediateSerializer,
 )
 from .services import (
-    AuditChainVerifier, AuditExportService, AuditMetrics, AuditSearchService,
-    ComplianceAssessmentService, ComplianceProfileService,
-    EvidenceService, LegalHoldService, ViolationService,
+    AuditChainVerifier,
+    AuditExportService,
+    AuditMetrics,
+    AuditSearchService,
+    ComplianceAssessmentService,
+    EvidenceService,
+    LegalHoldService,
+    ViolationService,
 )
 
 log = logging.getLogger(__name__)
@@ -48,6 +87,7 @@ def audit_health(request):
 @permission_classes([AllowAny])
 def audit_metrics(request):
     from django.http import HttpResponse
+
     payload = AuditMetrics().render_prometheus()
     return HttpResponse(payload, content_type="text/plain; version=0.0.4")
 
@@ -71,8 +111,12 @@ class AuditEventViewSet(viewsets.ReadOnlyModelViewSet):
         events = svc.search(**ser.validated_data)
         return Response(AuditEventSerializer(events, many=True).data)
 
-    @action(detail=False, methods=["post"], serializer_class=ChainVerifySerializer,
-            permission_classes=[IsAuditAdmin])
+    @action(
+        detail=False,
+        methods=["post"],
+        serializer_class=ChainVerifySerializer,
+        permission_classes=[IsAuditAdmin],
+    )
     def verify_chain(self, request):
         ser = ChainVerifySerializer(data=request.data)
         ser.is_valid(raise_exception=True)
@@ -147,8 +191,12 @@ class LegalHoldViewSet(viewsets.ModelViewSet):
     serializer_class = LegalHoldSerializer
     permission_classes = [CanCreateLegalHold]
 
-    @action(detail=True, methods=["post"], serializer_class=LegalHoldReleaseSerializer,
-            permission_classes=[CanReleaseLegalHold])
+    @action(
+        detail=True,
+        methods=["post"],
+        serializer_class=LegalHoldReleaseSerializer,
+        permission_classes=[CanReleaseLegalHold],
+    )
     def release(self, request, pk=None):
         hold = self.get_object()
         ser = LegalHoldReleaseSerializer(data=request.data)
@@ -175,7 +223,9 @@ class ComplianceProfileViewSet(viewsets.ModelViewSet):
             tenant_id=profile.tenant_id,
             assessed_by=str(getattr(request.user, "id", "system")),
         )
-        return Response(ComplianceAssessmentSerializer(assessment).data, status=status.HTTP_201_CREATED)
+        return Response(
+            ComplianceAssessmentSerializer(assessment).data, status=status.HTTP_201_CREATED
+        )
 
     @action(detail=True, methods=["post"], permission_classes=[IsComplianceOfficer])
     def generate_report(self, request, pk=None):

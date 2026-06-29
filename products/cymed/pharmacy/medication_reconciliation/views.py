@@ -1,13 +1,23 @@
 """CyMed Pharmacy — Medication Reconciliation Views."""
+
 import django.utils.timezone as tz
 from rest_framework.decorators import action
 from rest_framework.response import Response
+
 from platform.events.models import OutboxEvent
-from .models import MedicationReconciliation, MedicationChange, MedicationConflict, ReconciliationStatus
-from .serializers import (
-    MedicationReconciliationSerializer, MedicationChangeSerializer, MedicationConflictSerializer
-)
+
 from ..views import PharmacyModelViewSet
+from .models import (
+    MedicationChange,
+    MedicationConflict,
+    MedicationReconciliation,
+    ReconciliationStatus,
+)
+from .serializers import (
+    MedicationChangeSerializer,
+    MedicationConflictSerializer,
+    MedicationReconciliationSerializer,
+)
 
 
 class MedicationReconciliationViewSet(PharmacyModelViewSet):
@@ -23,8 +33,10 @@ class MedicationReconciliationViewSet(PharmacyModelViewSet):
         unresolved = rec.conflicts.filter(status="unresolved").count()
         if unresolved > 0:
             return Response(
-                {"detail": f"{unresolved} unresolved conflict(s) must be resolved before completion."},
-                status=400
+                {
+                    "detail": f"{unresolved} unresolved conflict(s) must be resolved before completion."
+                },
+                status=400,
             )
         rec.status = ReconciliationStatus.COMPLETED
         rec.completed_at = tz.now()
@@ -48,17 +60,20 @@ class MedicationReconciliationViewSet(PharmacyModelViewSet):
         """Compare reconciliation list with prescriptions/medication history."""
         rec = self.get_object()
         from products.cymed.pharmacy.prescriptions.models import MedicationHistory
+
         history = MedicationHistory.objects.filter(
             tenant_id=rec.tenant_id, patient_id=rec.patient_id, is_active=True
         ).values_list("drug_code", flat=True)
         current_codes = {m.get("drug_code") for m in rec.current_medications if isinstance(m, dict)}
         history_codes = set(history)
         missing_from_reconciliation = history_codes - current_codes
-        return Response({
-            "history_medication_count": len(history_codes),
-            "current_medication_count": len(current_codes),
-            "possible_omissions": list(missing_from_reconciliation),
-        })
+        return Response(
+            {
+                "history_medication_count": len(history_codes),
+                "current_medication_count": len(current_codes),
+                "possible_omissions": list(missing_from_reconciliation),
+            }
+        )
 
 
 class MedicationChangeViewSet(PharmacyModelViewSet):

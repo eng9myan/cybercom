@@ -1,11 +1,19 @@
 from rest_framework import serializers
-from products.cymed.hospital.transfer_center.models import ReceivingFacility, TransferCase, ExternalReferral, AcceptanceReview
+
 from platform.events.models import OutboxEvent
+from products.cymed.hospital.transfer_center.models import (
+    AcceptanceReview,
+    ExternalReferral,
+    ReceivingFacility,
+    TransferCase,
+)
+
 
 class ReceivingFacilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = ReceivingFacility
         fields = "__all__"
+
 
 class TransferCaseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,8 +34,8 @@ class TransferCaseSerializer(serializers.ModelSerializer):
                 "patient_id": str(tcase.patient.id),
                 "source": tcase.source_hospital_name,
                 "target": tcase.target_facility.name,
-                "reason": tcase.reason
-            }
+                "reason": tcase.reason,
+            },
         )
 
         # Trigger ERP Procurement for ambulance / transit services
@@ -39,16 +47,18 @@ class TransferCaseSerializer(serializers.ModelSerializer):
                 "encounter_id": str(tcase.id),
                 "item_code": "AMB-TRANS-SERV",
                 "quantity": 1,
-                "requestor": "TransferCenter"
-            }
+                "requestor": "TransferCenter",
+            },
         )
 
         return tcase
+
 
 class ExternalReferralSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExternalReferral
         fields = "__all__"
+
 
 class AcceptanceReviewSerializer(serializers.ModelSerializer):
     class Meta:

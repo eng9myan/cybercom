@@ -1,8 +1,9 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    FloatPoolMemberViewSet,
-    FloatDeploymentViewSet,
     AgencyStaffRegistrationViewSet,
+    FloatDeploymentViewSet,
+    FloatPoolMemberViewSet,
     StaffingShortageAlertViewSet,
 )
 

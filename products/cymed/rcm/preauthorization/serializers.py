@@ -1,9 +1,10 @@
-﻿from rest_framework import serializers
+from rest_framework import serializers
+
 from .models import (
-    Preauthorization,
-    AuthorizationRequest,
-    AuthorizationDecision,
     AuthorizationAppeal,
+    AuthorizationDecision,
+    AuthorizationRequest,
+    Preauthorization,
 )
 
 
@@ -40,6 +41,7 @@ class PreauthorizationDetailSerializer(serializers.ModelSerializer):
     Extended serializer that includes nested decisions and appeal counts
     for the retrieve action.
     """
+
     decisions = AuthorizationDecisionSerializer(many=True, read_only=True)
     appeals = AuthorizationAppealSerializer(many=True, read_only=True)
     requests = AuthorizationRequestSerializer(many=True, read_only=True)

@@ -1,5 +1,6 @@
-﻿from rest_framework.routers import DefaultRouter
-from .views import AccessionViewSet, AccessionBatchViewSet, AccessionAuditViewSet
+from rest_framework.routers import DefaultRouter
+
+from .views import AccessionAuditViewSet, AccessionBatchViewSet, AccessionViewSet
 
 router = DefaultRouter()
 router.register("accessions", AccessionViewSet, basename="lab-accessions")

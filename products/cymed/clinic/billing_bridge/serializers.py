@@ -1,21 +1,32 @@
 import random
+
 from rest_framework import serializers
-from products.cymed.clinic.billing_bridge.models import ChargeCode, PriceList, ClinicService, ChargeItem
+
+from products.cymed.clinic.billing_bridge.models import (
+    ChargeCode,
+    ChargeItem,
+    ClinicService,
+    PriceList,
+)
+
 
 class ChargeCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChargeCode
         fields = "__all__"
 
+
 class PriceListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PriceList
         fields = "__all__"
 
+
 class ClinicServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClinicService
         fields = "__all__"
+
 
 class ChargeItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,7 +44,5 @@ class ChargeItemSerializer(serializers.ModelSerializer):
         erp_tx_id = f"ERP-TX-{random.randint(10000, 99999)}"
 
         return ChargeItem.objects.create(
-            posted_to_erp=posted,
-            erp_transaction_id=erp_tx_id,
-            **validated_data
+            posted_to_erp=posted, erp_transaction_id=erp_tx_id, **validated_data
         )

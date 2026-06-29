@@ -1,8 +1,10 @@
-﻿"""
+"""
 CyMed Laboratory â€” Histopathology
 Tissue block, slide, and review workflow downstream of PathologyCase.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -19,6 +21,7 @@ class HistologyCaseStatus(models.TextChoices):
 
 class HistologyCase(BaseModel):
     """Histology workflow case â€” linked to a PathologyCase."""
+
     pathology_case = models.OneToOneField(
         "lab_pathology.PathologyCase", on_delete=models.CASCADE, related_name="histology_case"
     )
@@ -40,6 +43,7 @@ class HistologyCase(BaseModel):
 
 class TissueBlock(BaseModel):
     """Paraffin-embedded tissue block produced from a pathology specimen cassette."""
+
     EMBEDDING_STATUS = [
         ("pending", "Pending Embedding"),
         ("embedded", "Embedded"),
@@ -52,7 +56,11 @@ class TissueBlock(BaseModel):
     block_number = models.CharField(max_length=20)
     cassette_number = models.CharField(max_length=20)
     pathology_specimen = models.ForeignKey(
-        "lab_pathology.PathologySpecimen", on_delete=models.PROTECT, related_name="tissue_blocks", null=True, blank=True
+        "lab_pathology.PathologySpecimen",
+        on_delete=models.PROTECT,
+        related_name="tissue_blocks",
+        null=True,
+        blank=True,
     )
     tissue_type = models.CharField(max_length=100, blank=True)
     embedding_status = models.CharField(max_length=20, choices=EMBEDDING_STATUS, default="pending")
@@ -67,6 +75,7 @@ class TissueBlock(BaseModel):
 
 class Slide(BaseModel):
     """Glass slide cut from a tissue block, stained, and reviewed by pathologist."""
+
     STAIN_TYPES = [
         ("he", "H&E â€” Hematoxylin & Eosin"),
         ("pas", "PAS â€” Periodic Acid-Schiff"),
@@ -99,7 +108,9 @@ class Slide(BaseModel):
     stained_at = models.DateTimeField(null=True, blank=True)
     barcode = models.CharField(max_length=100, unique=True, blank=True)
     digital_scan_url = models.URLField(max_length=2000, blank=True)
-    is_request = models.BooleanField(default=False)  # True if pathologist requested additional stain
+    is_request = models.BooleanField(
+        default=False
+    )  # True if pathologist requested additional stain
 
     class Meta:
         db_table = "cymed_lab_slides"
@@ -108,6 +119,7 @@ class Slide(BaseModel):
 
 class SlideReview(BaseModel):
     """Pathologist review findings for a slide â€” may yield additional stain requests."""
+
     REVIEW_STATUS = [
         ("pending", "Pending"),
         ("in_progress", "In Progress"),
@@ -130,6 +142,7 @@ class SlideReview(BaseModel):
 
 class HistologyDiagnosis(BaseModel):
     """Final histological diagnosis for a case."""
+
     DIAGNOSIS_CATEGORIES = [
         ("benign", "Benign"),
         ("malignant", "Malignant"),
@@ -141,8 +154,8 @@ class HistologyDiagnosis(BaseModel):
     ]
 
     case = models.ForeignKey(HistologyCase, on_delete=models.CASCADE, related_name="diagnoses")
-    snomed_code = models.CharField(max_length=50, blank=True)    # via TerminologyService
-    icd11_code = models.CharField(max_length=20, blank=True)     # via TerminologyService
+    snomed_code = models.CharField(max_length=50, blank=True)  # via TerminologyService
+    icd11_code = models.CharField(max_length=20, blank=True)  # via TerminologyService
     diagnosis_text = models.TextField()
     diagnosis_category = models.CharField(max_length=20, choices=DIAGNOSIS_CATEGORIES, blank=True)
     comment = models.TextField(blank=True)

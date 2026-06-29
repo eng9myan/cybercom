@@ -1,7 +1,10 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.clinic.triage.views import (
-    TriageAssessmentViewSet, TriageVitalSignsViewSet, TriageRiskScoreViewSet
+    TriageAssessmentViewSet,
+    TriageRiskScoreViewSet,
+    TriageVitalSignsViewSet,
 )
 
 router = DefaultRouter()

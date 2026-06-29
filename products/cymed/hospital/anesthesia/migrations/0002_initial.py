@@ -5,33 +5,47 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('cymed_hospital_anesthesia', '0001_initial'),
-        ('cymed_hospital_operating_room', '0001_initial'),
+        ("cymed_hospital_anesthesia", "0001_initial"),
+        ("cymed_hospital_operating_room", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='anesthesiaassessment',
-            name='surgical_case',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='anesthesia_assessment', to='cymed_hospital_operating_room.surgicalcase'),
+            model_name="anesthesiaassessment",
+            name="surgical_case",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="anesthesia_assessment",
+                to="cymed_hospital_operating_room.surgicalcase",
+            ),
         ),
         migrations.AddField(
-            model_name='anesthesiaplan',
-            name='surgical_case',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='anesthesia_plan', to='cymed_hospital_operating_room.surgicalcase'),
+            model_name="anesthesiaplan",
+            name="surgical_case",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="anesthesia_plan",
+                to="cymed_hospital_operating_room.surgicalcase",
+            ),
         ),
         migrations.AddField(
-            model_name='anesthesiarecord',
-            name='surgical_case',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='anesthesia_record', to='cymed_hospital_operating_room.surgicalcase'),
+            model_name="anesthesiarecord",
+            name="surgical_case",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="anesthesia_record",
+                to="cymed_hospital_operating_room.surgicalcase",
+            ),
         ),
         migrations.AddField(
-            model_name='recoveryassessment',
-            name='surgical_case',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='cymed_hospital_operating_room.surgicalcase'),
+            model_name="recoveryassessment",
+            name="surgical_case",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="cymed_hospital_operating_room.surgicalcase",
+            ),
         ),
     ]

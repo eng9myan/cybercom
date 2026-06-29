@@ -1,13 +1,17 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, viewsets
+from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.response import Response
 
-from .models import Claim, ClaimLine, ClaimSubmission, ClaimResponse, ClaimStatus, ClaimAttachment
+from .models import Claim, ClaimAttachment, ClaimLine, ClaimResponse, ClaimStatus, ClaimSubmission
 from .serializers import (
-    ClaimSerializer, ClaimLineSerializer, ClaimSubmissionSerializer,
-    ClaimResponseSerializer, ClaimStatusSerializer, ClaimAttachmentSerializer,
+    ClaimAttachmentSerializer,
+    ClaimLineSerializer,
+    ClaimResponseSerializer,
+    ClaimSerializer,
+    ClaimStatusSerializer,
+    ClaimSubmissionSerializer,
 )
 
 
@@ -15,7 +19,14 @@ class ClaimViewSet(viewsets.ModelViewSet):
     queryset = Claim.objects.all()
     serializer_class = ClaimSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["patient_id", "insurance_plan_id", "status", "claim_type", "claim_date", "is_resubmission"]
+    filterset_fields = [
+        "patient_id",
+        "insurance_plan_id",
+        "status",
+        "claim_type",
+        "claim_date",
+        "is_resubmission",
+    ]
     search_fields = ["claim_number", "icd11_primary_diagnosis"]
     ordering_fields = ["created_at", "claim_date", "status"]
     ordering = ["-created_at"]
@@ -30,7 +41,10 @@ class ClaimViewSet(viewsets.ModelViewSet):
     def submit(self, request, pk=None):
         claim = self.get_object()
         if claim.status not in ("draft", "ready"):
-            return Response({"error": "Claim must be in draft or ready status to submit."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Claim must be in draft or ready status to submit."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         claim.status = "submitted"
         claim.save()
         ClaimStatus.objects.create(
@@ -46,7 +60,10 @@ class ClaimViewSet(viewsets.ModelViewSet):
     def resubmit(self, request, pk=None):
         claim = self.get_object()
         if claim.status not in ("denied",):
-            return Response({"error": "Only denied claims can be resubmitted."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Only denied claims can be resubmitted."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         claim.status = "resubmitted"
         claim.is_resubmission = True
         claim.original_claim_id = claim.id
@@ -57,7 +74,9 @@ class ClaimViewSet(viewsets.ModelViewSet):
     def void(self, request, pk=None):
         claim = self.get_object()
         if claim.status in ("paid",):
-            return Response({"error": "Paid claims cannot be voided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Paid claims cannot be voided."}, status=status.HTTP_400_BAD_REQUEST
+            )
         claim.status = "voided"
         claim.save()
         return Response({"status": "voided", "id": str(claim.id)})

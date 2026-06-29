@@ -2,10 +2,11 @@
 RFC 7807 Problem Detail exception handler for DRF. ADR-0003.
 All API errors return consistent JSON structure.
 """
+
 from typing import Any
-from rest_framework.views import exception_handler
+
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import exception_handler
 
 
 def cybercom_exception_handler(exc: Any, context: Any) -> Response | None:
@@ -13,7 +14,7 @@ def cybercom_exception_handler(exc: Any, context: Any) -> Response | None:
 
     if response is not None:
         request = context.get("request")
-        view = context.get("view")
+        context.get("view")
 
         problem = {
             "type": f"https://cybercom.io/errors/{_get_error_code(exc)}",

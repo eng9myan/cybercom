@@ -1,22 +1,37 @@
 """
 Audit & Compliance service layer. ADR-0028.
 """
-import hashlib
+
 import logging
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Optional
+
 from django.db import transaction
-from django.db.models import Count, Q
 from django.utils import timezone
 
 from .models import (
-    AuditAction, AuditCategoryCode, AuditChain, AuditEvent, AuditEntry,
-    AuditExport, AuditLog, AuditRetentionPolicy, AuditArchive, AuditSignature,
-    AuditStatus, AssessmentResult, ComplianceAssessment, ComplianceFrameworkCode,
-    ComplianceProfile, ComplianceReport, ComplianceRule, ComplianceRuleSeverity,
-    ComplianceViolation, DataClassification, EvidencePackage, EvidenceRecord,
-    LegalHold, LegalHoldStatus, ViolationStatus,
+    AssessmentResult,
+    AuditAction,
+    AuditCategoryCode,
+    AuditChain,
+    AuditEntry,
+    AuditEvent,
+    AuditExport,
+    AuditLog,
+    AuditRetentionPolicy,
+    AuditStatus,
+    ComplianceAssessment,
+    ComplianceFrameworkCode,
+    ComplianceProfile,
+    ComplianceReport,
+    ComplianceRule,
+    ComplianceRuleSeverity,
+    ComplianceViolation,
+    DataClassification,
+    EvidencePackage,
+    EvidenceRecord,
+    LegalHold,
+    LegalHoldStatus,
+    ViolationStatus,
 )
 
 log = logging.getLogger(__name__)
@@ -25,6 +40,7 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # AuditService — write canonical audit events
 # ---------------------------------------------------------------------------
+
 
 class AuditService:
     """
@@ -98,7 +114,15 @@ class AuditService:
             chain.last_hash = event.entry_hash
             chain.last_event_id = event.id
             chain.total_events += 1
-            chain.save(update_fields=["current_sequence", "last_hash", "last_event_id", "total_events", "last_updated"])
+            chain.save(
+                update_fields=[
+                    "current_sequence",
+                    "last_hash",
+                    "last_event_id",
+                    "total_events",
+                    "last_updated",
+                ]
+            )
 
             AuditEntry.objects.create(
                 event=event,
@@ -126,21 +150,37 @@ class AuditService:
         return tags
 
     def _is_high_risk(self, verb: str, category: str, classification: str) -> bool:
-        high_risk_verbs = {AuditAction.BREAK_GLASS, AuditAction.DELETE, AuditAction.PURGE, AuditAction.EXPORT}
-        high_risk_classes = {DataClassification.PHI, DataClassification.RESTRICTED, DataClassification.GOVERNMENT_SENSITIVE}
+        high_risk_verbs = {
+            AuditAction.BREAK_GLASS,
+            AuditAction.DELETE,
+            AuditAction.PURGE,
+            AuditAction.EXPORT,
+        }
+        high_risk_classes = {
+            DataClassification.PHI,
+            DataClassification.RESTRICTED,
+            DataClassification.GOVERNMENT_SENSITIVE,
+        }
         return verb in high_risk_verbs or classification in high_risk_classes
 
     def _risk_score(self, verb: str, category: str, classification: str) -> int:
         score = 0
         verb_scores = {
-            AuditAction.BREAK_GLASS: 100, AuditAction.PURGE: 90, AuditAction.DELETE: 70,
-            AuditAction.EXPORT: 60, AuditAction.UPDATE: 40, AuditAction.CREATE: 20,
+            AuditAction.BREAK_GLASS: 100,
+            AuditAction.PURGE: 90,
+            AuditAction.DELETE: 70,
+            AuditAction.EXPORT: 60,
+            AuditAction.UPDATE: 40,
+            AuditAction.CREATE: 20,
             AuditAction.READ: 10,
         }
         class_scores = {
-            DataClassification.PHI: 50, DataClassification.RESTRICTED: 40,
-            DataClassification.GOVERNMENT_SENSITIVE: 40, DataClassification.PII: 30,
-            DataClassification.FINANCIAL: 30, DataClassification.CONFIDENTIAL: 20,
+            DataClassification.PHI: 50,
+            DataClassification.RESTRICTED: 40,
+            DataClassification.GOVERNMENT_SENSITIVE: 40,
+            DataClassification.PII: 30,
+            DataClassification.FINANCIAL: 30,
+            DataClassification.CONFIDENTIAL: 20,
         }
         score += verb_scores.get(verb, 10)
         score += class_scores.get(classification, 0)
@@ -151,6 +191,7 @@ class AuditService:
 # AuditChainVerifier — tamper detection
 # ---------------------------------------------------------------------------
 
+
 class AuditChainVerifier:
     """Verifies hash chain integrity for a given chain key."""
 
@@ -160,7 +201,9 @@ class AuditChainVerifier:
         except AuditChain.DoesNotExist:
             return {"valid": False, "error": "chain_not_found", "chain_key": chain_key}
 
-        entries = AuditEntry.objects.filter(chain=chain).order_by("sequence").select_related("event")
+        entries = (
+            AuditEntry.objects.filter(chain=chain).order_by("sequence").select_related("event")
+        )
         if not entries.exists():
             return {"valid": True, "chain_key": chain_key, "checked": 0}
 
@@ -169,9 +212,13 @@ class AuditChainVerifier:
         for entry in entries:
             event = entry.event
             expected = AuditEvent(
-                id=event.id, timestamp=event.timestamp, action=event.action,
-                resource_type=event.resource_type, resource_id=event.resource_id,
-                actor_user_id=event.actor_user_id, tenant_id=event.tenant_id,
+                id=event.id,
+                timestamp=event.timestamp,
+                action=event.action,
+                resource_type=event.resource_type,
+                resource_id=event.resource_id,
+                actor_user_id=event.actor_user_id,
+                tenant_id=event.tenant_id,
                 previous_hash=prev_hash,
             ).compute_hash()
             if event.entry_hash != expected:
@@ -184,7 +231,12 @@ class AuditChainVerifier:
         chain.last_verified_at = timezone.now()
         chain.save(update_fields=["is_verified", "verification_error", "last_verified_at"])
 
-        return {"valid": valid, "chain_key": chain_key, "checked": entries.count(), "errors": errors}
+        return {
+            "valid": valid,
+            "chain_key": chain_key,
+            "checked": entries.count(),
+            "errors": errors,
+        }
 
     def verify_all(self) -> list:
         results = []
@@ -196,6 +248,7 @@ class AuditChainVerifier:
 # ---------------------------------------------------------------------------
 # AuditSearchService
 # ---------------------------------------------------------------------------
+
 
 class AuditSearchService:
     """Filtered search over AuditEvent records."""
@@ -239,20 +292,26 @@ class AuditSearchService:
             qs = qs.filter(timestamp__lte=date_to)
         if is_high_risk is not None:
             qs = qs.filter(entry__is_high_risk=is_high_risk)
-        return qs.order_by("-timestamp")[offset: offset + limit]
+        return qs.order_by("-timestamp")[offset : offset + limit]
 
 
 # ---------------------------------------------------------------------------
 # AuditExportService
 # ---------------------------------------------------------------------------
 
+
 class AuditExportService:
     """Creates and manages audit export jobs."""
 
     def create_export(
-        self, tenant_id, requested_by: str, reason: str,
-        filter_criteria: dict = None, format: str = "json",
-        period_start: datetime = None, period_end: datetime = None,
+        self,
+        tenant_id,
+        requested_by: str,
+        reason: str,
+        filter_criteria: dict = None,
+        format: str = "json",
+        period_start: datetime = None,
+        period_end: datetime = None,
     ) -> AuditExport:
         export = AuditExport.objects.create(
             tenant_id=tenant_id,
@@ -266,7 +325,9 @@ class AuditExportService:
         )
         return export
 
-    def complete_export(self, export: AuditExport, event_count: int, download_url: str = "") -> None:
+    def complete_export(
+        self, export: AuditExport, event_count: int, download_url: str = ""
+    ) -> None:
         export.status = "ready"
         export.event_count = event_count
         export.download_url = download_url
@@ -283,13 +344,20 @@ class AuditExportService:
 # LegalHoldService
 # ---------------------------------------------------------------------------
 
+
 class LegalHoldService:
     """Create, manage, and release legal holds."""
 
     def create(
-        self, tenant_id, name: str, description: str, created_by: str,
-        case_reference: str = "", resource_types: list = None,
-        resource_ids: list = None, custodians: list = None,
+        self,
+        tenant_id,
+        name: str,
+        description: str,
+        created_by: str,
+        case_reference: str = "",
+        resource_types: list = None,
+        resource_ids: list = None,
+        custodians: list = None,
         expires_at: datetime = None,
     ) -> LegalHold:
         hold = LegalHold.objects.create(
@@ -344,44 +412,120 @@ class LegalHoldService:
 # ComplianceProfileService
 # ---------------------------------------------------------------------------
 
+
 class ComplianceProfileService:
     """Manage compliance profiles and seed rules for known frameworks."""
 
     FRAMEWORK_RULES = {
         ComplianceFrameworkCode.HIPAA: [
-            ("HIPAA-AC-1", "Unique User Identification", ComplianceRuleSeverity.CRITICAL, "authentication"),
-            ("HIPAA-AC-2", "Emergency Access Procedure (Break Glass)", ComplianceRuleSeverity.CRITICAL, "clinical"),
-            ("HIPAA-AU-1", "Audit Controls — Activity Logs", ComplianceRuleSeverity.CRITICAL, "security"),
+            (
+                "HIPAA-AC-1",
+                "Unique User Identification",
+                ComplianceRuleSeverity.CRITICAL,
+                "authentication",
+            ),
+            (
+                "HIPAA-AC-2",
+                "Emergency Access Procedure (Break Glass)",
+                ComplianceRuleSeverity.CRITICAL,
+                "clinical",
+            ),
+            (
+                "HIPAA-AU-1",
+                "Audit Controls — Activity Logs",
+                ComplianceRuleSeverity.CRITICAL,
+                "security",
+            ),
             ("HIPAA-AU-2", "Audit Review and Reporting", ComplianceRuleSeverity.HIGH, "security"),
-            ("HIPAA-TM-1", "Transmission Security — TLS", ComplianceRuleSeverity.CRITICAL, "security"),
-            ("HIPAA-PHI-1", "PHI Isolation via RLS or T-DB", ComplianceRuleSeverity.CRITICAL, "clinical"),
-            ("HIPAA-MFA-1", "MFA for Workforce Members", ComplianceRuleSeverity.HIGH, "authentication"),
+            (
+                "HIPAA-TM-1",
+                "Transmission Security — TLS",
+                ComplianceRuleSeverity.CRITICAL,
+                "security",
+            ),
+            (
+                "HIPAA-PHI-1",
+                "PHI Isolation via RLS or T-DB",
+                ComplianceRuleSeverity.CRITICAL,
+                "clinical",
+            ),
+            (
+                "HIPAA-MFA-1",
+                "MFA for Workforce Members",
+                ComplianceRuleSeverity.HIGH,
+                "authentication",
+            ),
         ],
         ComplianceFrameworkCode.GDPR: [
-            ("GDPR-LB-1", "Lawful Basis Documented", ComplianceRuleSeverity.CRITICAL, "administrative"),
-            ("GDPR-DSR-1", "Data Subject Rights Mechanism", ComplianceRuleSeverity.HIGH, "administrative"),
-            ("GDPR-DM-1", "Data Minimization Controls", ComplianceRuleSeverity.MEDIUM, "configuration"),
+            (
+                "GDPR-LB-1",
+                "Lawful Basis Documented",
+                ComplianceRuleSeverity.CRITICAL,
+                "administrative",
+            ),
+            (
+                "GDPR-DSR-1",
+                "Data Subject Rights Mechanism",
+                ComplianceRuleSeverity.HIGH,
+                "administrative",
+            ),
+            (
+                "GDPR-DM-1",
+                "Data Minimization Controls",
+                ComplianceRuleSeverity.MEDIUM,
+                "configuration",
+            ),
             ("GDPR-BR-1", "Breach Notification < 72h", ComplianceRuleSeverity.CRITICAL, "security"),
             ("GDPR-DR-1", "Data Residency Enforced", ComplianceRuleSeverity.HIGH, "configuration"),
             ("GDPR-RT-1", "Retention Policy Active", ComplianceRuleSeverity.HIGH, "configuration"),
         ],
         ComplianceFrameworkCode.SOC2: [
-            ("SOC2-CC1-1", "Security Policies Documented", ComplianceRuleSeverity.HIGH, "administrative"),
-            ("SOC2-CC6-1", "Logical Access Controls", ComplianceRuleSeverity.CRITICAL, "authorization"),
+            (
+                "SOC2-CC1-1",
+                "Security Policies Documented",
+                ComplianceRuleSeverity.HIGH,
+                "administrative",
+            ),
+            (
+                "SOC2-CC6-1",
+                "Logical Access Controls",
+                ComplianceRuleSeverity.CRITICAL,
+                "authorization",
+            ),
             ("SOC2-CC7-1", "Continuous Monitoring", ComplianceRuleSeverity.HIGH, "security"),
-            ("SOC2-CC8-1", "Change Management Process", ComplianceRuleSeverity.MEDIUM, "configuration"),
+            (
+                "SOC2-CC8-1",
+                "Change Management Process",
+                ComplianceRuleSeverity.MEDIUM,
+                "configuration",
+            ),
             ("SOC2-A1-1", "System Availability SLO", ComplianceRuleSeverity.HIGH, "system"),
         ],
         ComplianceFrameworkCode.ISO27001: [
-            ("ISO-A5-1", "Information Security Policies", ComplianceRuleSeverity.HIGH, "administrative"),
+            (
+                "ISO-A5-1",
+                "Information Security Policies",
+                ComplianceRuleSeverity.HIGH,
+                "administrative",
+            ),
             ("ISO-A9-1", "Access Control Policy", ComplianceRuleSeverity.CRITICAL, "authorization"),
-            ("ISO-A12-1", "Operational Procedures Documented", ComplianceRuleSeverity.MEDIUM, "administrative"),
+            (
+                "ISO-A12-1",
+                "Operational Procedures Documented",
+                ComplianceRuleSeverity.MEDIUM,
+                "administrative",
+            ),
             ("ISO-A16-1", "Incident Management Process", ComplianceRuleSeverity.HIGH, "security"),
             ("ISO-A18-1", "Compliance Review", ComplianceRuleSeverity.MEDIUM, "administrative"),
         ],
         ComplianceFrameworkCode.NCA_ECC: [
             ("NCA-1-1", "Asset Management", ComplianceRuleSeverity.HIGH, "administrative"),
-            ("NCA-2-1", "Access Control — Privileged Accounts", ComplianceRuleSeverity.CRITICAL, "authorization"),
+            (
+                "NCA-2-1",
+                "Access Control — Privileged Accounts",
+                ComplianceRuleSeverity.CRITICAL,
+                "authorization",
+            ),
             ("NCA-3-1", "Security Event Logging", ComplianceRuleSeverity.CRITICAL, "security"),
             ("NCA-4-1", "Data Classification", ComplianceRuleSeverity.HIGH, "configuration"),
             ("NCA-5-1", "Incident Response Plan", ComplianceRuleSeverity.HIGH, "security"),
@@ -402,17 +546,19 @@ class ComplianceProfileService:
 
     def _seed_rules(self, profile: ComplianceProfile) -> None:
         rules = self.FRAMEWORK_RULES.get(profile.framework, [])
-        ComplianceRule.objects.bulk_create([
-            ComplianceRule(
-                profile=profile,
-                rule_id=rule_id,
-                name=name,
-                description=name,
-                severity=severity,
-                category=category,
-            )
-            for rule_id, name, severity, category in rules
-        ])
+        ComplianceRule.objects.bulk_create(
+            [
+                ComplianceRule(
+                    profile=profile,
+                    rule_id=rule_id,
+                    name=name,
+                    description=name,
+                    severity=severity,
+                    category=category,
+                )
+                for rule_id, name, severity, category in rules
+            ]
+        )
 
     def get_or_create(self, framework: str, tenant_id=None) -> ComplianceProfile:
         profile, created = ComplianceProfile.objects.get_or_create(
@@ -429,10 +575,13 @@ class ComplianceProfileService:
 # ComplianceAssessmentService
 # ---------------------------------------------------------------------------
 
+
 class ComplianceAssessmentService:
     """Run automated compliance assessment for a profile."""
 
-    def assess(self, profile: ComplianceProfile, tenant_id=None, assessed_by: str = "system") -> ComplianceAssessment:
+    def assess(
+        self, profile: ComplianceProfile, tenant_id=None, assessed_by: str = "system"
+    ) -> ComplianceAssessment:
         rules = list(profile.rules.filter(is_active=True))
         total = len(rules)
         passed = 0
@@ -531,12 +680,18 @@ class ComplianceAssessmentService:
 # ViolationService
 # ---------------------------------------------------------------------------
 
+
 class ViolationService:
     """Record and manage compliance violations."""
 
     def record(
-        self, rule: ComplianceRule, tenant_id=None, description: str = "",
-        resource_type: str = "", resource_id: str = "", evidence: dict = None,
+        self,
+        rule: ComplianceRule,
+        tenant_id=None,
+        description: str = "",
+        resource_type: str = "",
+        resource_id: str = "",
+        evidence: dict = None,
     ) -> ComplianceViolation:
         return ComplianceViolation.objects.create(
             rule=rule,
@@ -558,13 +713,19 @@ class ViolationService:
 # EvidenceService
 # ---------------------------------------------------------------------------
 
+
 class EvidenceService:
     """Collect and package evidence records."""
 
     def collect(
-        self, tenant_id, title: str, evidence_type: str,
-        content: dict = None, collected_by: str = "",
-        source_system: str = "", reference_id: str = "",
+        self,
+        tenant_id,
+        title: str,
+        evidence_type: str,
+        content: dict = None,
+        collected_by: str = "",
+        source_system: str = "",
+        reference_id: str = "",
     ) -> EvidenceRecord:
         return EvidenceRecord.objects.create(
             tenant_id=tenant_id,
@@ -577,8 +738,14 @@ class EvidenceService:
         )
 
     def create_package(
-        self, tenant_id, name: str, purpose: str, created_by: str,
-        record_ids: list = None, legal_hold_id=None, case_reference: str = "",
+        self,
+        tenant_id,
+        name: str,
+        purpose: str,
+        created_by: str,
+        record_ids: list = None,
+        legal_hold_id=None,
+        case_reference: str = "",
     ) -> EvidencePackage:
         pkg = EvidencePackage.objects.create(
             tenant_id=tenant_id,
@@ -600,14 +767,29 @@ class EvidenceService:
 # RetentionService
 # ---------------------------------------------------------------------------
 
+
 class RetentionService:
     """Enforce retention policies and schedule archival."""
 
     DEFAULT_POLICIES = [
-        ("authentication", DataClassification.INTERNAL, 90, 365, 7, ComplianceFrameworkCode.ISO27001),
+        (
+            "authentication",
+            DataClassification.INTERNAL,
+            90,
+            365,
+            7,
+            ComplianceFrameworkCode.ISO27001,
+        ),
         ("clinical", DataClassification.PHI, 90, 365, 10, ComplianceFrameworkCode.HIPAA),
         ("financial", DataClassification.FINANCIAL, 90, 365, 7, ComplianceFrameworkCode.SOC2),
-        ("government", DataClassification.GOVERNMENT_SENSITIVE, 90, 365, 10, ComplianceFrameworkCode.NCA_ECC),
+        (
+            "government",
+            DataClassification.GOVERNMENT_SENSITIVE,
+            90,
+            365,
+            10,
+            ComplianceFrameworkCode.NCA_ECC,
+        ),
         ("security", DataClassification.CONFIDENTIAL, 90, 365, 7, ComplianceFrameworkCode.ISO27001),
         ("ai", DataClassification.INTERNAL, 90, 180, 3, ComplianceFrameworkCode.ISO27001),
     ]
@@ -630,23 +812,36 @@ class RetentionService:
                 created.append(policy)
         return created
 
-    def get_policy(self, category: str, classification: str, tenant_id=None) -> Optional[AuditRetentionPolicy]:
-        return AuditRetentionPolicy.objects.filter(
-            tenant_id=tenant_id, category=category, data_classification=classification, is_active=True
-        ).first() or AuditRetentionPolicy.objects.filter(
-            tenant_id=None, category=category, data_classification=classification, is_active=True
-        ).first()
+    def get_policy(
+        self, category: str, classification: str, tenant_id=None
+    ) -> AuditRetentionPolicy | None:
+        return (
+            AuditRetentionPolicy.objects.filter(
+                tenant_id=tenant_id,
+                category=category,
+                data_classification=classification,
+                is_active=True,
+            ).first()
+            or AuditRetentionPolicy.objects.filter(
+                tenant_id=None,
+                category=category,
+                data_classification=classification,
+                is_active=True,
+            ).first()
+        )
 
 
 # ---------------------------------------------------------------------------
 # AuditMetrics — Prometheus exposition
 # ---------------------------------------------------------------------------
 
+
 class AuditMetrics:
     """Platform-wide audit and compliance metrics."""
 
     def render_prometheus(self) -> str:
-        from .models import AuditEvent, ComplianceViolation, LegalHold, AuditExport
+        from .models import AuditEvent, AuditExport, ComplianceViolation, LegalHold
+
         total_events = AuditEvent.objects.count()
         high_risk = AuditEvent.objects.filter(entry__is_high_risk=True).count()
         open_violations = ComplianceViolation.objects.filter(status=ViolationStatus.OPEN).count()

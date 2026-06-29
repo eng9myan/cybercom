@@ -5,175 +5,188 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_rcm_insurance', '0001_initial'),
+        ("cymed_rcm_insurance", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='coverage',
-            new_name='cymed_rcm_i_tenant__78911c_idx',
-            old_name='cymed_rcm_ins_cov_tenant_type_idx',
+            model_name="coverage",
+            new_name="cymed_rcm_i_tenant__78911c_idx",
+            old_name="cymed_rcm_ins_cov_tenant_type_idx",
         ),
         migrations.RenameIndex(
-            model_name='coverage',
-            new_name='cymed_rcm_i_tenant__b55fb8_idx',
-            old_name='cymed_rcm_ins_cov_tenant_active_idx',
+            model_name="coverage",
+            new_name="cymed_rcm_i_tenant__b55fb8_idx",
+            old_name="cymed_rcm_ins_cov_tenant_active_idx",
         ),
         migrations.RenameIndex(
-            model_name='coveragerule',
-            new_name='cymed_rcm_i_tenant__a05fcd_idx',
-            old_name='cymed_rcm_ins_rule_tenant_type_idx',
+            model_name="coveragerule",
+            new_name="cymed_rcm_i_tenant__a05fcd_idx",
+            old_name="cymed_rcm_ins_rule_tenant_type_idx",
         ),
         migrations.RenameIndex(
-            model_name='coveragerule',
-            new_name='cymed_rcm_i_tenant__c0e518_idx',
-            old_name='cymed_rcm_ins_rule_tenant_active_idx',
+            model_name="coveragerule",
+            new_name="cymed_rcm_i_tenant__c0e518_idx",
+            old_name="cymed_rcm_ins_rule_tenant_active_idx",
         ),
         migrations.RenameIndex(
-            model_name='insurancecard',
-            new_name='cymed_rcm_i_tenant__22da02_idx',
-            old_name='cymed_rcm_ins_card_tenant_curr_idx',
+            model_name="insurancecard",
+            new_name="cymed_rcm_i_tenant__22da02_idx",
+            old_name="cymed_rcm_ins_card_tenant_curr_idx",
         ),
         migrations.RenameIndex(
-            model_name='insurancecompany',
-            new_name='cymed_rcm_i_tenant__8162b0_idx',
-            old_name='cymed_rcm_ins_co_tenant_active_idx',
+            model_name="insurancecompany",
+            new_name="cymed_rcm_i_tenant__8162b0_idx",
+            old_name="cymed_rcm_ins_co_tenant_active_idx",
         ),
         migrations.RenameIndex(
-            model_name='insurancecompany',
-            new_name='cymed_rcm_i_tenant__80eb4a_idx',
-            old_name='cymed_rcm_ins_co_tenant_type_idx',
+            model_name="insurancecompany",
+            new_name="cymed_rcm_i_tenant__80eb4a_idx",
+            old_name="cymed_rcm_ins_co_tenant_type_idx",
         ),
         migrations.RenameIndex(
-            model_name='insurancemember',
-            new_name='cymed_rcm_i_tenant__96482f_idx',
-            old_name='cymed_rcm_ins_mbr_tenant_patient_idx',
+            model_name="insurancemember",
+            new_name="cymed_rcm_i_tenant__96482f_idx",
+            old_name="cymed_rcm_ins_mbr_tenant_patient_idx",
         ),
         migrations.RenameIndex(
-            model_name='insurancemember',
-            new_name='cymed_rcm_i_tenant__4527e4_idx',
-            old_name='cymed_rcm_ins_mbr_tenant_active_idx',
+            model_name="insurancemember",
+            new_name="cymed_rcm_i_tenant__4527e4_idx",
+            old_name="cymed_rcm_ins_mbr_tenant_active_idx",
         ),
         migrations.RenameIndex(
-            model_name='insurancemember',
-            new_name='cymed_rcm_i_tenant__222418_idx',
-            old_name='cymed_rcm_ins_mbr_tenant_priority_idx',
+            model_name="insurancemember",
+            new_name="cymed_rcm_i_tenant__222418_idx",
+            old_name="cymed_rcm_ins_mbr_tenant_priority_idx",
         ),
         migrations.RenameIndex(
-            model_name='insuranceplan',
-            new_name='cymed_rcm_i_tenant__ff02ae_idx',
-            old_name='cymed_rcm_ins_plan_tenant_active_idx',
+            model_name="insuranceplan",
+            new_name="cymed_rcm_i_tenant__ff02ae_idx",
+            old_name="cymed_rcm_ins_plan_tenant_active_idx",
         ),
         migrations.RenameIndex(
-            model_name='insuranceplan',
-            new_name='cymed_rcm_i_tenant__be7c7c_idx',
-            old_name='cymed_rcm_ins_plan_tenant_type_idx',
+            model_name="insuranceplan",
+            new_name="cymed_rcm_i_tenant__be7c7c_idx",
+            old_name="cymed_rcm_ins_plan_tenant_type_idx",
         ),
         migrations.AlterField(
-            model_name='benefit',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="benefit",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='benefit',
-            name='tenant_id',
+            model_name="benefit",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='benefit',
-            name='updated_at',
+            model_name="benefit",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='coverage',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="coverage",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='coverage',
-            name='tenant_id',
+            model_name="coverage",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='coverage',
-            name='updated_at',
+            model_name="coverage",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='coveragerule',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="coveragerule",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='coveragerule',
-            name='tenant_id',
+            model_name="coveragerule",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='coveragerule',
-            name='updated_at',
+            model_name="coveragerule",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='insurancecard',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="insurancecard",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='insurancecard',
-            name='tenant_id',
+            model_name="insurancecard",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='insurancecard',
-            name='updated_at',
+            model_name="insurancecard",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='insurancecompany',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="insurancecompany",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='insurancecompany',
-            name='tenant_id',
+            model_name="insurancecompany",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='insurancecompany',
-            name='updated_at',
+            model_name="insurancecompany",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='insurancemember',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="insurancemember",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='insurancemember',
-            name='tenant_id',
+            model_name="insurancemember",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='insurancemember',
-            name='updated_at',
+            model_name="insurancemember",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='insuranceplan',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="insuranceplan",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='insuranceplan',
-            name='tenant_id',
+            model_name="insuranceplan",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='insuranceplan',
-            name='updated_at',
+            model_name="insuranceplan",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

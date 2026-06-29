@@ -1,17 +1,17 @@
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import DutyHourLog, WeeklyHoursSummary, FatigueViolation, DisasterOverride
+from .models import DisasterOverride, DutyHourLog, FatigueViolation, WeeklyHoursSummary
 from .serializers import (
-    DutyHourLogSerializer,
-    WeeklyHoursSummarySerializer,
-    FatigueViolationSerializer,
     DisasterOverrideSerializer,
+    DutyHourLogSerializer,
+    FatigueViolationSerializer,
+    WeeklyHoursSummarySerializer,
 )
 
 
@@ -33,7 +33,13 @@ class HWMModelViewSet(viewsets.ModelViewSet):
 class DutyHourLogViewSet(HWMModelViewSet):
     queryset = DutyHourLog.objects.all()
     serializer_class = DutyHourLogSerializer
-    filterset_fields = ["workforce_profile_id", "facility_id", "is_resident", "is_night_shift", "is_weekend"]
+    filterset_fields = [
+        "workforce_profile_id",
+        "facility_id",
+        "is_resident",
+        "is_night_shift",
+        "is_weekend",
+    ]
     ordering_fields = ["clock_in", "hours_worked", "created_at"]
 
 
@@ -48,7 +54,12 @@ class WeeklyHoursSummaryViewSet(HWMModelViewSet):
 class FatigueViolationViewSet(HWMModelViewSet):
     queryset = FatigueViolation.objects.all()
     serializer_class = FatigueViolationSerializer
-    filterset_fields = ["workforce_profile_id", "violation_type", "status", "prescribing_authority_revoked"]
+    filterset_fields = [
+        "workforce_profile_id",
+        "violation_type",
+        "status",
+        "prescribing_authority_revoked",
+    ]
     ordering_fields = ["detected_at", "status", "created_at"]
 
     @action(detail=True, methods=["post"])

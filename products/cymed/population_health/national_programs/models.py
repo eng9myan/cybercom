@@ -1,6 +1,6 @@
-﻿from django.db import models
-from platform.common.models import BaseModel
+from django.db import models
 
+from platform.common.models import BaseModel
 
 PROGRAM_TYPE_CHOICES = [
     ("vaccination", "Vaccination"),
@@ -70,9 +70,7 @@ class HealthProgram(BaseModel):
     target_population_size = models.PositiveIntegerField(default=0)
     enrolled_count = models.PositiveIntegerField(default=0)
     completion_count = models.PositiveIntegerField(default=0)
-    status = models.CharField(
-        max_length=20, choices=PROGRAM_STATUS_CHOICES, default="planning"
-    )
+    status = models.CharField(max_length=20, choices=PROGRAM_STATUS_CHOICES, default="planning")
     program_manager_id = models.UUIDField(null=True, blank=True)
     # ICD-11 codes sourced from TerminologyService — no local term table
     related_icd11_codes = models.JSONField(default=list)
@@ -97,9 +95,7 @@ class ProgramEnrollment(BaseModel):
     enrollment_date = models.DateField()
     enrolled_by_user_id = models.UUIDField(null=True, blank=True)
     enrollment_facility_id = models.UUIDField(null=True, blank=True)
-    status = models.CharField(
-        max_length=20, choices=ENROLLMENT_STATUS_CHOICES, default="active"
-    )
+    status = models.CharField(max_length=20, choices=ENROLLMENT_STATUS_CHOICES, default="active")
     notes = models.TextField(blank=True)
     expected_completion_date = models.DateField(null=True, blank=True)
     actual_completion_date = models.DateField(null=True, blank=True)
@@ -146,12 +142,8 @@ class ProgramMetric(BaseModel):
     metric_name = models.CharField(max_length=200)
     metric_type = models.CharField(max_length=20, choices=METRIC_TYPE_CHOICES)
     metric_date = models.DateField()
-    target_value = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True
-    )
-    actual_value = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0
-    )
+    target_value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    actual_value = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     unit = models.CharField(max_length=50, blank=True)
     meets_target = models.BooleanField(default=False)
     calculation_notes = models.TextField(blank=True)

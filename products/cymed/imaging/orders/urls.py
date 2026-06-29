@@ -1,7 +1,11 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    ImagingProtocolViewSet, ImagingProcedureViewSet, ImagingOrderViewSet,
-    ImagingOrderItemViewSet, ImagingOrderStatusHistoryViewSet,
+    ImagingOrderItemViewSet,
+    ImagingOrderStatusHistoryViewSet,
+    ImagingOrderViewSet,
+    ImagingProcedureViewSet,
+    ImagingProtocolViewSet,
 )
 
 router = DefaultRouter()

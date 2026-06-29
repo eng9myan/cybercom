@@ -1,6 +1,7 @@
 """
 CyIdentity DRF serializers. ADR-0005 + ADR-0017.
 """
+
 from __future__ import annotations
 
 from rest_framework import serializers
@@ -18,7 +19,6 @@ from platform.cyidentity.models import (
     LoginAudit,
     Permission,
     RealmConfiguration,
-    RealmStatus,
     RealmType,
     Role,
     RoleAssignment,
@@ -79,7 +79,14 @@ class IdentityRealmSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "status", "activated_at", "suspended_at", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "status",
+            "activated_at",
+            "suspended_at",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class IdentityRealmProvisionSerializer(serializers.Serializer):
@@ -389,7 +396,14 @@ class UserSessionSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "started_at", "last_activity_at", "revoked_at", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "started_at",
+            "last_activity_at",
+            "revoked_at",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class LoginAuditSerializer(serializers.ModelSerializer):
@@ -439,7 +453,15 @@ class DeviceRegistrationSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "device_id", "last_used_at", "revoked_at", "is_active", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "device_id",
+            "last_used_at",
+            "revoked_at",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class WebAuthnCredentialSerializer(serializers.ModelSerializer):
@@ -465,7 +487,14 @@ class WebAuthnCredentialSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         # NEVER expose public_key via API — it's stored for future assertions
-        read_only_fields = ["id", "last_used_at", "revoked_at", "is_active", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "last_used_at",
+            "revoked_at",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class BreakGlassAccessSerializer(serializers.ModelSerializer):

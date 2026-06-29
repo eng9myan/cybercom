@@ -1,7 +1,9 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 from products.cymed.core.facilities.models import Bed
 from products.cymed.core.patients.models import Patient
+
 
 class BedAssignment(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
@@ -12,6 +14,7 @@ class BedAssignment(BaseModel):
     class Meta:
         db_table = "cymed_hospital_bed_assignments"
 
+
 class BedOccupancy(BaseModel):
     bed = models.ForeignKey(Bed, on_delete=models.CASCADE)
     occupied_date = models.DateField()
@@ -19,6 +22,7 @@ class BedOccupancy(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_bed_occupancy"
+
 
 class BedReservation(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
@@ -30,16 +34,20 @@ class BedReservation(BaseModel):
     class Meta:
         db_table = "cymed_hospital_bed_reservations"
 
+
 class BedCleaning(BaseModel):
     bed = models.ForeignKey(Bed, on_delete=models.CASCADE)
-    status = models.CharField(max_length=50, choices=[
-        ("scheduled", "Scheduled"), ("cleaning", "Cleaning"), ("completed", "Completed")
-    ], default="scheduled")
+    status = models.CharField(
+        max_length=50,
+        choices=[("scheduled", "Scheduled"), ("cleaning", "Cleaning"), ("completed", "Completed")],
+        default="scheduled",
+    )
     cleaner_name = models.CharField(max_length=255, blank=True)
     logged_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "cymed_hospital_bed_cleaning"
+
 
 class BedMaintenance(BaseModel):
     bed = models.ForeignKey(Bed, on_delete=models.CASCADE)
@@ -49,6 +57,7 @@ class BedMaintenance(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_bed_maintenance"
+
 
 class BedBlocking(BaseModel):
     bed = models.ForeignKey(Bed, on_delete=models.CASCADE)

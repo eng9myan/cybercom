@@ -1,14 +1,15 @@
 """
 Initial migration for products.website — public website integration APIs.
 """
+
 import uuid
+
 import django.db.models.deletion
 import django.utils.timezone
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -17,23 +18,45 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="ProductListing",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
                 ("name", models.CharField(max_length=200)),
                 ("slug", models.SlugField(max_length=120, unique=True)),
                 ("tagline", models.CharField(blank=True, max_length=300)),
                 ("short_description", models.TextField(blank=True)),
                 ("description", models.TextField(blank=True)),
-                ("category", models.CharField(choices=[
-                    ("healthcare", "Healthcare"), ("erp", "ERP & Business"),
-                    ("government", "Government"), ("ai", "AI Platform"),
-                    ("identity", "Identity & Security"), ("integration", "Integration"),
-                    ("data", "Data Platform"), ("communications", "Communications"),
-                    ("citizen", "Citizen Services"),
-                ], db_index=True, max_length=30)),
-                ("parent_product", models.ForeignKey(
-                    blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                    related_name="sub_products", to="website.productlisting",
-                )),
+                (
+                    "category",
+                    models.CharField(
+                        choices=[
+                            ("healthcare", "Healthcare"),
+                            ("erp", "ERP & Business"),
+                            ("government", "Government"),
+                            ("ai", "AI Platform"),
+                            ("identity", "Identity & Security"),
+                            ("integration", "Integration"),
+                            ("data", "Data Platform"),
+                            ("communications", "Communications"),
+                            ("citizen", "Citizen Services"),
+                        ],
+                        db_index=True,
+                        max_length=30,
+                    ),
+                ),
+                (
+                    "parent_product",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="sub_products",
+                        to="website.productlisting",
+                    ),
+                ),
                 ("icon_class", models.CharField(blank=True, max_length=100)),
                 ("hero_color", models.CharField(blank=True, max_length=20)),
                 ("hero_image_url", models.URLField(blank=True)),
@@ -52,7 +75,10 @@ class Migration(migrations.Migration):
                 ("seo_title", models.CharField(blank=True, max_length=200)),
                 ("seo_description", models.CharField(blank=True, max_length=500)),
                 ("seo_keywords", models.JSONField(default=list)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={"db_table": "website_product_listings", "ordering": ["sort_order", "name"]},
@@ -60,7 +86,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Industry",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
                 ("name", models.CharField(max_length=150)),
                 ("slug", models.SlugField(max_length=80, unique=True)),
                 ("description", models.TextField(blank=True)),
@@ -69,35 +100,61 @@ class Migration(migrations.Migration):
                 ("hero_image_url", models.URLField(blank=True)),
                 ("challenges", models.JSONField(blank=True, default=list)),
                 ("solutions", models.JSONField(blank=True, default=list)),
-                ("relevant_products", models.ManyToManyField(
-                    blank=True, related_name="industries", to="website.productlisting"
-                )),
+                (
+                    "relevant_products",
+                    models.ManyToManyField(
+                        blank=True, related_name="industries", to="website.productlisting"
+                    ),
+                ),
                 ("stats", models.JSONField(blank=True, default=list)),
                 ("is_published", models.BooleanField(db_index=True, default=False)),
                 ("is_featured", models.BooleanField(db_index=True, default=False)),
                 ("sort_order", models.PositiveSmallIntegerField(default=0)),
                 ("seo_title", models.CharField(blank=True, max_length=200)),
                 ("seo_description", models.CharField(blank=True, max_length=500)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
             ],
-            options={"db_table": "website_industries", "ordering": ["sort_order", "name"], "verbose_name_plural": "industries"},
+            options={
+                "db_table": "website_industries",
+                "ordering": ["sort_order", "name"],
+                "verbose_name_plural": "industries",
+            },
         ),
         migrations.CreateModel(
             name="CaseStudy",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
                 ("title", models.CharField(max_length=300)),
                 ("slug", models.SlugField(max_length=180, unique=True)),
                 ("customer_name", models.CharField(max_length=200)),
                 ("customer_logo_url", models.URLField(blank=True)),
                 ("country", models.CharField(blank=True, max_length=100)),
                 ("region", models.CharField(blank=True, max_length=100)),
-                ("industry", models.ForeignKey(
-                    blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                    related_name="case_studies", to="website.industry",
-                )),
-                ("products", models.ManyToManyField(blank=True, related_name="case_studies", to="website.productlisting")),
+                (
+                    "industry",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="case_studies",
+                        to="website.industry",
+                    ),
+                ),
+                (
+                    "products",
+                    models.ManyToManyField(
+                        blank=True, related_name="case_studies", to="website.productlisting"
+                    ),
+                ),
                 ("summary", models.TextField(blank=True)),
                 ("challenge", models.TextField(blank=True)),
                 ("solution", models.TextField(blank=True)),
@@ -112,15 +169,27 @@ class Migration(migrations.Migration):
                 ("published_at", models.DateTimeField(blank=True, null=True)),
                 ("seo_title", models.CharField(blank=True, max_length=200)),
                 ("seo_description", models.CharField(blank=True, max_length=500)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
             ],
-            options={"db_table": "website_case_studies", "ordering": ["-published_at", "-created_at"], "verbose_name_plural": "case studies"},
+            options={
+                "db_table": "website_case_studies",
+                "ordering": ["-published_at", "-created_at"],
+                "verbose_name_plural": "case studies",
+            },
         ),
         migrations.CreateModel(
             name="DemoRequest",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
                 ("reference_number", models.CharField(editable=False, max_length=20, unique=True)),
                 ("full_name", models.CharField(max_length=200)),
                 ("email", models.EmailField(db_index=True)),
@@ -144,15 +213,31 @@ class Migration(migrations.Migration):
                 ("tenant_slug", models.CharField(blank=True, db_index=True, max_length=100)),
                 ("crm_lead_id", models.CharField(blank=True, max_length=200)),
                 ("crm_synced_at", models.DateTimeField(blank=True, null=True)),
-                ("status", models.CharField(
-                    choices=[("pending","Pending"),("contacted","Contacted"),("scheduled","Scheduled"),("completed","Demo Completed"),("closed","Closed")],
-                    db_index=True, default="pending", max_length=20,
-                )),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("contacted", "Contacted"),
+                            ("scheduled", "Scheduled"),
+                            ("completed", "Demo Completed"),
+                            ("closed", "Closed"),
+                        ],
+                        db_index=True,
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
                 ("assigned_to", models.CharField(blank=True, max_length=200)),
                 ("notes", models.TextField(blank=True)),
                 ("gdpr_consent", models.BooleanField(default=False)),
                 ("marketing_consent", models.BooleanField(default=False)),
-                ("created_at", models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        db_index=True, default=django.utils.timezone.now, editable=False
+                    ),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={"db_table": "website_demo_requests", "ordering": ["-created_at"]},
@@ -160,7 +245,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="ContactMessage",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
                 ("ticket_number", models.CharField(editable=False, max_length=20, unique=True)),
                 ("full_name", models.CharField(max_length=200)),
                 ("email", models.EmailField(db_index=True)),
@@ -168,22 +258,49 @@ class Migration(migrations.Migration):
                 ("phone", models.CharField(blank=True, max_length=50)),
                 ("subject", models.CharField(max_length=300)),
                 ("message", models.TextField()),
-                ("department", models.CharField(
-                    choices=[("sales","Sales"),("support","Support"),("partnerships","Partnerships"),("press","Press & Media"),("careers","Careers"),("general","General")],
-                    db_index=True, default="general", max_length=30,
-                )),
+                (
+                    "department",
+                    models.CharField(
+                        choices=[
+                            ("sales", "Sales"),
+                            ("support", "Support"),
+                            ("partnerships", "Partnerships"),
+                            ("press", "Press & Media"),
+                            ("careers", "Careers"),
+                            ("general", "General"),
+                        ],
+                        db_index=True,
+                        default="general",
+                        max_length=30,
+                    ),
+                ),
                 ("source", models.CharField(blank=True, max_length=100)),
                 ("ip_address", models.GenericIPAddressField(blank=True, null=True)),
                 ("user_agent", models.TextField(blank=True)),
-                ("status", models.CharField(
-                    choices=[("new","New"),("in_progress","In Progress"),("resolved","Resolved"),("closed","Closed")],
-                    db_index=True, default="new", max_length=20,
-                )),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("new", "New"),
+                            ("in_progress", "In Progress"),
+                            ("resolved", "Resolved"),
+                            ("closed", "Closed"),
+                        ],
+                        db_index=True,
+                        default="new",
+                        max_length=20,
+                    ),
+                ),
                 ("assigned_to", models.CharField(blank=True, max_length=200)),
                 ("response_notes", models.TextField(blank=True)),
                 ("responded_at", models.DateTimeField(blank=True, null=True)),
                 ("gdpr_consent", models.BooleanField(default=False)),
-                ("created_at", models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        db_index=True, default=django.utils.timezone.now, editable=False
+                    ),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={"db_table": "website_contact_messages", "ordering": ["-created_at"]},
@@ -191,16 +308,32 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="PartnerListing",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
                 ("company_name", models.CharField(max_length=200)),
                 ("slug", models.SlugField(max_length=120, unique=True)),
                 ("logo_url", models.URLField(blank=True)),
                 ("website", models.URLField(blank=True)),
                 ("description", models.TextField(blank=True)),
-                ("partner_type", models.CharField(
-                    choices=[("reseller","Reseller"),("implementation","Implementation Partner"),("technology","Technology Partner"),("isv","ISV / Software Partner"),("referral","Referral Partner"),("strategic","Strategic Alliance")],
-                    db_index=True, max_length=30,
-                )),
+                (
+                    "partner_type",
+                    models.CharField(
+                        choices=[
+                            ("reseller", "Reseller"),
+                            ("implementation", "Implementation Partner"),
+                            ("technology", "Technology Partner"),
+                            ("isv", "ISV / Software Partner"),
+                            ("referral", "Referral Partner"),
+                            ("strategic", "Strategic Alliance"),
+                        ],
+                        db_index=True,
+                        max_length=30,
+                    ),
+                ),
                 ("expertise_areas", models.JSONField(blank=True, default=list)),
                 ("countries", models.JSONField(blank=True, default=list)),
                 ("languages", models.JSONField(blank=True, default=list)),
@@ -208,15 +341,26 @@ class Migration(migrations.Migration):
                 ("is_featured", models.BooleanField(db_index=True, default=False)),
                 ("is_published", models.BooleanField(db_index=True, default=False)),
                 ("sort_order", models.PositiveSmallIntegerField(default=0)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
             ],
-            options={"db_table": "website_partner_listings", "ordering": ["sort_order", "company_name"]},
+            options={
+                "db_table": "website_partner_listings",
+                "ordering": ["sort_order", "company_name"],
+            },
         ),
         migrations.CreateModel(
             name="PartnerApplication",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
                 ("reference_number", models.CharField(editable=False, max_length=20, unique=True)),
                 ("company_name", models.CharField(max_length=200)),
                 ("contact_name", models.CharField(max_length=200)),
@@ -237,7 +381,12 @@ class Migration(migrations.Migration):
                 ("reviewed_at", models.DateTimeField(blank=True, null=True)),
                 ("review_notes", models.TextField(blank=True)),
                 ("gdpr_consent", models.BooleanField(default=False)),
-                ("created_at", models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(
+                        db_index=True, default=django.utils.timezone.now, editable=False
+                    ),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={"db_table": "website_partner_applications", "ordering": ["-created_at"]},
@@ -245,18 +394,32 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="DocumentationSection",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
                 ("title", models.CharField(max_length=200)),
                 ("slug", models.SlugField(max_length=120, unique=True)),
                 ("description", models.TextField(blank=True)),
-                ("product", models.ForeignKey(
-                    blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                    related_name="doc_sections", to="website.productlisting",
-                )),
+                (
+                    "product",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="doc_sections",
+                        to="website.productlisting",
+                    ),
+                ),
                 ("icon_class", models.CharField(blank=True, max_length=100)),
                 ("sort_order", models.PositiveSmallIntegerField(default=0)),
                 ("is_published", models.BooleanField(db_index=True, default=False)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={"db_table": "website_doc_sections", "ordering": ["sort_order", "title"]},
@@ -264,14 +427,37 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="DocumentationItem",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ("section", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="items", to="website.documentationsection")),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
+                (
+                    "section",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="items",
+                        to="website.documentationsection",
+                    ),
+                ),
                 ("title", models.CharField(max_length=300)),
                 ("slug", models.SlugField(max_length=200)),
-                ("content_type", models.CharField(
-                    choices=[("guide","Guide"),("reference","API Reference"),("tutorial","Tutorial"),("release_note","Release Note"),("faq","FAQ"),("changelog","Changelog")],
-                    db_index=True, max_length=30,
-                )),
+                (
+                    "content_type",
+                    models.CharField(
+                        choices=[
+                            ("guide", "Guide"),
+                            ("reference", "API Reference"),
+                            ("tutorial", "Tutorial"),
+                            ("release_note", "Release Note"),
+                            ("faq", "FAQ"),
+                            ("changelog", "Changelog"),
+                        ],
+                        db_index=True,
+                        max_length=30,
+                    ),
+                ),
                 ("summary", models.TextField(blank=True)),
                 ("content_url", models.URLField(blank=True)),
                 ("external_url", models.URLField(blank=True)),
@@ -280,15 +466,27 @@ class Migration(migrations.Migration):
                 ("sort_order", models.PositiveSmallIntegerField(default=0)),
                 ("is_published", models.BooleanField(db_index=True, default=False)),
                 ("published_at", models.DateTimeField(blank=True, null=True)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
             ],
-            options={"db_table": "website_doc_items", "ordering": ["sort_order", "title"], "unique_together": {("section", "slug")}},
+            options={
+                "db_table": "website_doc_items",
+                "ordering": ["sort_order", "title"],
+                "unique_together": {("section", "slug")},
+            },
         ),
         migrations.CreateModel(
             name="NewsletterSubscription",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
                 ("email", models.EmailField(db_index=True, unique=True)),
                 ("source", models.CharField(blank=True, max_length=100)),
                 ("status", models.CharField(db_index=True, default="pending", max_length=20)),
@@ -296,7 +494,10 @@ class Migration(migrations.Migration):
                 ("unsubscribed_at", models.DateTimeField(blank=True, null=True)),
                 ("gdpr_consent", models.BooleanField(default=False)),
                 ("ip_address", models.GenericIPAddressField(blank=True, null=True)),
-                ("created_at", models.DateTimeField(default=django.utils.timezone.now, editable=False)),
+                (
+                    "created_at",
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
+                ),
                 ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={"db_table": "website_newsletter_subscriptions", "ordering": ["-created_at"]},
@@ -304,8 +505,18 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="WebsiteApiLog",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ("timestamp", models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
+                (
+                    "timestamp",
+                    models.DateTimeField(
+                        db_index=True, default=django.utils.timezone.now, editable=False
+                    ),
+                ),
                 ("endpoint", models.CharField(db_index=True, max_length=200)),
                 ("method", models.CharField(max_length=10)),
                 ("status_code", models.PositiveSmallIntegerField(db_index=True)),
@@ -326,7 +537,9 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="productlisting",
-            index=models.Index(fields=["is_featured", "is_published"], name="website_pl_feat_pub_idx"),
+            index=models.Index(
+                fields=["is_featured", "is_published"], name="website_pl_feat_pub_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="demorequest",

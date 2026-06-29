@@ -1,23 +1,23 @@
-﻿from django.utils import timezone
+from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
+    BenefitVerification,
+    CoverageVerification,
     EligibilityRequest,
     EligibilityResponse,
-    CoverageVerification,
-    BenefitVerification,
 )
 from .serializers import (
-    EligibilityRequestSerializer,
-    EligibilityResponseSerializer,
+    BenefitVerificationSerializer,
     CoverageVerificationSerializer,
     CoverageVerificationWriteSerializer,
-    BenefitVerificationSerializer,
+    EligibilityRequestSerializer,
+    EligibilityResponseSerializer,
 )
 
 
@@ -46,7 +46,9 @@ class EligibilityRequestViewSet(ModelViewSet):
 
         if eligibility_request.status != "pending":
             return Response(
-                {"detail": f"Cannot submit a request with status '{eligibility_request.status}'. Only 'pending' requests can be submitted."},
+                {
+                    "detail": f"Cannot submit a request with status '{eligibility_request.status}'. Only 'pending' requests can be submitted."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -78,9 +80,17 @@ class CoverageVerificationViewSet(ModelViewSet):
     Supports CRUD operations and a `verify` action to mark a verification as complete.
     """
 
-    queryset = CoverageVerification.objects.prefetch_related("benefit_verifications").order_by("-created_at")
+    queryset = CoverageVerification.objects.prefetch_related("benefit_verifications").order_by(
+        "-created_at"
+    )
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["patient_id", "encounter_id", "insurance_plan_id", "coverage_confirmed", "verification_method"]
+    filterset_fields = [
+        "patient_id",
+        "encounter_id",
+        "insurance_plan_id",
+        "coverage_confirmed",
+        "verification_method",
+    ]
     search_fields = ["notes"]
     ordering_fields = ["created_at", "verified_at"]
     ordering = ["-created_at"]
@@ -103,7 +113,9 @@ class CoverageVerificationViewSet(ModelViewSet):
         if request.user and request.user.is_authenticated:
             coverage_verification.verified_by_user_id = request.user.id
 
-        coverage_verification.save(update_fields=["coverage_confirmed", "verified_at", "verified_by_user_id", "updated_at"])
+        coverage_verification.save(
+            update_fields=["coverage_confirmed", "verified_at", "verified_by_user_id", "updated_at"]
+        )
 
         serializer = CoverageVerificationSerializer(coverage_verification)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -117,7 +129,13 @@ class BenefitVerificationViewSet(ModelViewSet):
     queryset = BenefitVerification.objects.all().order_by("benefit_type")
     serializer_class = BenefitVerificationSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["coverage_verification", "benefit_type", "is_covered", "requires_preauth", "network_status"]
+    filterset_fields = [
+        "coverage_verification",
+        "benefit_type",
+        "is_covered",
+        "requires_preauth",
+        "network_status",
+    ]
     search_fields = ["benefit_notes"]
     ordering_fields = ["benefit_type", "created_at"]
     ordering = ["benefit_type"]

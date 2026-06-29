@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import OnCallRoster, OnCallAssignment, OnCallPage, OnCallEscalation, CallSwapRequest
+
+from .models import CallSwapRequest, OnCallAssignment, OnCallEscalation, OnCallPage, OnCallRoster
 
 
 class OnCallRosterSerializer(serializers.ModelSerializer):

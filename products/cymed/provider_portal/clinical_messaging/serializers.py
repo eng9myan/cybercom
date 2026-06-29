@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
 from products.cymed.provider_portal.clinical_messaging.models import (
-    ClinicalMessageThread,
-    ClinicalMessage,
-    MessageAttachment,
     ClinicalGroup,
+    ClinicalMessage,
+    ClinicalMessageThread,
+    MessageAttachment,
     MessageThreadParticipant,
 )
 

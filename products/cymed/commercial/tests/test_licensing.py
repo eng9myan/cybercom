@@ -2,18 +2,17 @@
 Tests for CyMed Commercial — Licensing Engine.
 Covers: models, services, API endpoints, offline activation, compliance.
 """
+
 import uuid
-import hashlib
-import hmac
 from datetime import date, timedelta
 from unittest.mock import patch
 
 import pytest
-from django.utils import timezone
 
 from products.cymed.commercial.licensing.models import (
-    License, LicenseKey, LicenseActivation, LicenseAudit,
-    LicenseUsage, LicenseServer, OfflineActivationPackage
+    License,
+    LicenseAudit,
+    LicenseKey,
 )
 from products.cymed.commercial.licensing.services import LicensingService
 
@@ -129,19 +128,25 @@ class TestLicensingService:
         assert result["in_grace_period"] is True
 
     def test_record_usage_snapshot(self, license_obj):
-        usage = LicensingService.record_usage_snapshot(license_obj, {
-            "active_users": 5,
-            "active_providers": 2,
-            "active_beds": 0,
-            "api_calls": 100,
-        })
+        usage = LicensingService.record_usage_snapshot(
+            license_obj,
+            {
+                "active_users": 5,
+                "active_providers": 2,
+                "active_beds": 0,
+                "api_calls": 100,
+            },
+        )
         assert usage.active_users == 5
         assert usage.is_over_limit is False
 
     def test_record_usage_over_limit(self, license_obj):
-        usage = LicensingService.record_usage_snapshot(license_obj, {
-            "active_users": 15,  # max is 10
-        })
+        usage = LicensingService.record_usage_snapshot(
+            license_obj,
+            {
+                "active_users": 15,  # max is 10
+            },
+        )
         assert usage.is_over_limit is True
 
     def test_renew_license(self, license_obj):

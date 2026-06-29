@@ -1,5 +1,5 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -126,7 +126,9 @@ class AuthorizationRequest(BaseModel):
     supporting_documents = models.JSONField(default=list)
     # Transaction ID returned by the payer at submission
     payer_reference_number = models.CharField(max_length=200, blank=True, null=True)
-    submission_method = models.CharField(max_length=20, choices=SUBMISSION_METHOD_CHOICES, default="electronic")
+    submission_method = models.CharField(
+        max_length=20, choices=SUBMISSION_METHOD_CHOICES, default="electronic"
+    )
 
     class Meta:
         app_label = "cymed_rcm_preauthorization"

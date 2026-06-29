@@ -1,7 +1,13 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.core.clinical.views import (
-    ConditionViewSet, AllergyViewSet, VitalSignViewSet, ObservationViewSet, ClinicalFlagViewSet, BreakGlassView
+    AllergyViewSet,
+    BreakGlassView,
+    ClinicalFlagViewSet,
+    ConditionViewSet,
+    ObservationViewSet,
+    VitalSignViewSet,
 )
 
 router = DefaultRouter()

@@ -1,8 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.hospital.transfer_center.views import (
-    ReceivingFacilityViewSet, TransferCaseViewSet, ExternalReferralViewSet,
-    AcceptanceReviewViewSet
+    AcceptanceReviewViewSet,
+    ExternalReferralViewSet,
+    ReceivingFacilityViewSet,
+    TransferCaseViewSet,
 )
 
 router = DefaultRouter()

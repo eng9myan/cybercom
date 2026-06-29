@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import PriceList, ServicePrice, PackagePrice, DiscountRule
+
+from .models import DiscountRule, PackagePrice, PriceList, ServicePrice
 
 
 class PriceListSerializer(serializers.ModelSerializer):

@@ -2,6 +2,7 @@
 CyberCom Platform — Django Settings
 ADR-0001, ADR-0002, ADR-0009, ADR-0034 compliant.
 """
+
 import os
 import sys
 from pathlib import Path
@@ -12,7 +13,11 @@ ROOT_DIR = BASE_DIR.parent
 # ---------------------------------------------------------------------------
 # SECURITY
 # ---------------------------------------------------------------------------
-SECRET_KEY = os.environ["DJANGO_SECRET_KEY"] if not os.environ.get("DJANGO_DEBUG", "False") == "True" else os.environ.get("DJANGO_SECRET_KEY", "dev-unsafe-secret-key-do-not-use-in-prod")
+SECRET_KEY = (
+    os.environ["DJANGO_SECRET_KEY"]
+    if not os.environ.get("DJANGO_DEBUG", "False") == "True"
+    else os.environ.get("DJANGO_SECRET_KEY", "dev-unsafe-secret-key-do-not-use-in-prod")
+)
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
 
@@ -73,7 +78,6 @@ PRODUCT_APPS = [
     "products.cycom.inventory",
     "products.cycom.assets",
     "products.cycom.bi",
-
     "products.cymed.core.patients",
     "products.cymed.core.providers",
     "products.cymed.core.organizations",
@@ -86,7 +90,6 @@ PRODUCT_APPS = [
     "products.cymed.core.scheduling",
     "products.cymed.core.consents",
     "products.cymed.core.registries",
-
     # CyMed Commercial Foundation (Program 3.C0)
     "products.cymed.commercial.licensing",
     "products.cymed.commercial.editions",
@@ -98,7 +101,6 @@ PRODUCT_APPS = [
     "products.cymed.commercial.usage_metering",
     "products.cymed.commercial.customer_management",
     "products.cymed.commercial.partner_management",
-
     # CyMed Clinic Edition (Program 3.1)
     "products.cymed.clinic.reception",
     "products.cymed.clinic.appointments",
@@ -111,7 +113,6 @@ PRODUCT_APPS = [
     "products.cymed.clinic.clinical_forms",
     "products.cymed.clinic.billing_bridge",
     "products.cymed.clinic.insurance_bridge",
-
     # CyMed Hospital Edition (Program 3.2)
     "products.cymed.hospital.adt",
     "products.cymed.hospital.bed_management",
@@ -126,7 +127,6 @@ PRODUCT_APPS = [
     "products.cymed.hospital.discharge",
     "products.cymed.hospital.clinical_command_center",
     "products.cymed.hospital.capacity_management",
-
     # CyMed Laboratory Edition (Program 3.3)
     "products.cymed.laboratory.orders",
     "products.cymed.laboratory.specimens",
@@ -140,7 +140,6 @@ PRODUCT_APPS = [
     "products.cymed.laboratory.blood_bank_foundation",
     "products.cymed.laboratory.analytics",
     "products.cymed.laboratory.reference_lab",
-
     # CyMed Imaging Edition (Program 3.4)
     "products.cymed.imaging.orders",
     "products.cymed.imaging.modality_worklist",
@@ -152,7 +151,6 @@ PRODUCT_APPS = [
     "products.cymed.imaging.teleradiology",
     "products.cymed.imaging.quality",
     "products.cymed.imaging.analytics",
-
     # CyMed Pharmacy Edition (Program 3.5)
     "products.cymed.pharmacy.prescriptions",
     "products.cymed.pharmacy.dispensing",
@@ -164,7 +162,6 @@ PRODUCT_APPS = [
     "products.cymed.pharmacy.analytics",
     "products.cymed.pharmacy.inventory_bridge",
     "products.cymed.pharmacy.procurement_bridge",
-
     # CyMed Population Health Edition (Program 3.9)
     "products.cymed.population_health.registries",
     "products.cymed.population_health.public_health",
@@ -178,7 +175,6 @@ PRODUCT_APPS = [
     "products.cymed.population_health.analytics",
     "products.cymed.population_health.reporting",
     "products.cymed.population_health.digital_health",
-
     # CyMed Patient Portal (Program 3.6)
     "products.cymed.patient_portal.accounts",
     "products.cymed.patient_portal.directory",
@@ -196,7 +192,6 @@ PRODUCT_APPS = [
     "products.cymed.patient_portal.consents",
     "products.cymed.patient_portal.wallet",
     "products.cymed.patient_portal.health_journey",
-
     # CyMed Provider Portal (Program 3.7)
     "products.cymed.provider_portal.workspace",
     "products.cymed.provider_portal.patient_lists",
@@ -212,7 +207,6 @@ PRODUCT_APPS = [
     "products.cymed.provider_portal.approvals",
     "products.cymed.provider_portal.analytics",
     "products.cymed.provider_portal.mobile",
-
     # CyMed RCM & Insurance Platform (Program 3.8)
     "products.cymed.rcm.eligibility",
     "products.cymed.rcm.insurance",
@@ -226,7 +220,6 @@ PRODUCT_APPS = [
     "products.cymed.rcm.pricing",
     "products.cymed.rcm.revenue_analytics",
     "products.cymed.rcm.payer_portal",
-
     # CyMed Healthcare Workforce Management (Program 3.10)
     "products.cymed.workforce_management.workforce_profiles",
     "products.cymed.workforce_management.scheduling",
@@ -238,25 +231,18 @@ PRODUCT_APPS = [
     "products.cymed.workforce_management.fatigue",
     "products.cymed.workforce_management.forecasting",
     "products.cymed.workforce_management.analytics",
-
     # CyberCom Sales Demo Platform (Program 3.11)
     "products.demo",
-
     # CyberCom Deployment Platform (Program 3.12)
     "products.deployment",
-
     # CyberCom Implementation Methodology (Program 3.13)
     "products.implementation",
-
     # CyberCom Academy (Program 3.14)
     "products.academy",
-
     # CyberCom Commercial Readiness (Program 3.15)
     "products.commercial_readiness",
-
     # CyberCom Partner Ecosystem (Program 3.16)
     "products.partner_ecosystem",
-
     # Website Public APIs & CMS Backend
     "products.website",
 ]
@@ -366,7 +352,9 @@ KAFKA_SCHEMA_REGISTRY_URL = os.environ.get("KAFKA_SCHEMA_REGISTRY_URL", "http://
 # IDENTITY — CyIdentity / Keycloak (ADR-0005)
 # ---------------------------------------------------------------------------
 CYIDENTITY_ISSUER = os.environ.get("CYIDENTITY_ISSUER", "http://localhost:8080/realms/cybercom")
-CYIDENTITY_JWKS_URI = os.environ.get("CYIDENTITY_JWKS_URI", f"{CYIDENTITY_ISSUER}/protocol/openid-connect/certs")
+CYIDENTITY_JWKS_URI = os.environ.get(
+    "CYIDENTITY_JWKS_URI", f"{CYIDENTITY_ISSUER}/protocol/openid-connect/certs"
+)
 CYIDENTITY_CLIENT_ID = os.environ.get("CYIDENTITY_CLIENT_ID", "cybercom-backend")
 JWT_SIGNING_KEY = os.environ.get("JWT_PUBLIC_KEY", "")
 JWT_ALGORITHMS = ["RS256"]
@@ -521,7 +509,10 @@ TENANT_BYPASS_PATHS = [
 # ---------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 12}},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 12},
+    },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]

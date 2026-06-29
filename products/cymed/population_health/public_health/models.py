@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 GROUP_TYPE_CHOICES = [
     ("geographic", "Geographic"),

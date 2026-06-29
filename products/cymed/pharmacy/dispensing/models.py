@@ -6,7 +6,9 @@ Covers: Pharmacist Verification, Dispensing Workflow, Barcode Verification,
         Batch Verification, Medication Pickup
 FHIR: MedicationDispense
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -28,6 +30,7 @@ class DispenseOrder(BaseModel):
     Tracks the complete dispensing lifecycle from queue to patient pickup.
     FHIR: MedicationDispense
     """
+
     DISPENSE_TYPES = [
         ("retail", "Retail Dispense"),
         ("inpatient", "Inpatient / Unit Dose"),
@@ -59,8 +62,8 @@ class DispenseOrder(BaseModel):
     pickup_method = models.CharField(max_length=30, choices=PICKUP_METHODS, default="counter")
 
     # Pharmacy assignment
-    pharmacist_id = models.UUIDField(null=True, blank=True)           # Assigned pharmacist
-    technician_id = models.UUIDField(null=True, blank=True)           # Assigned technician
+    pharmacist_id = models.UUIDField(null=True, blank=True)  # Assigned pharmacist
+    technician_id = models.UUIDField(null=True, blank=True)  # Assigned technician
     pharmacy_location = models.CharField(max_length=255, blank=True)
     dispensing_counter = models.CharField(max_length=50, blank=True)
 
@@ -85,7 +88,7 @@ class DispenseOrder(BaseModel):
     counseling_notes = models.TextField(blank=True)
 
     # Automation
-    automation_device_id = models.UUIDField(null=True, blank=True)    # CyIntegrationHub device
+    automation_device_id = models.UUIDField(null=True, blank=True)  # CyIntegrationHub device
 
     notes = models.TextField(blank=True)
 
@@ -104,6 +107,7 @@ class DispenseOrder(BaseModel):
 
 class DispenseItem(BaseModel):
     """Individual medication line dispensed within a DispenseOrder."""
+
     ITEM_STATUS = [
         ("pending", "Pending"),
         ("picked", "Picked"),
@@ -120,7 +124,7 @@ class DispenseItem(BaseModel):
     # Drug identification
     drug_code = models.CharField(max_length=100, db_index=True)
     drug_name = models.CharField(max_length=500)
-    ndc_code = models.CharField(max_length=50, blank=True)            # NDC barcode
+    ndc_code = models.CharField(max_length=50, blank=True)  # NDC barcode
     lot_number = models.CharField(max_length=100, blank=True)
     expiry_date = models.DateField(null=True, blank=True)
 
@@ -156,6 +160,7 @@ class DispenseBatch(BaseModel):
     Batch dispensing record — groups multiple DispenseOrders for ward distribution
     or ADC restocking. Used for inpatient unit-dose cassette filling.
     """
+
     BATCH_TYPES = [
         ("unit_dose", "Unit Dose Batch"),
         ("ward_distribution", "Ward Distribution"),
@@ -197,6 +202,7 @@ class DispenseVerification(BaseModel):
     Pharmacist double-check verification record for high-risk medications.
     Independent of the primary dispense flow — captures dual-check workflows.
     """
+
     VERIFICATION_TYPES = [
         ("first_check", "First Check"),
         ("second_check", "Second Check (Dual Verify)"),
@@ -213,8 +219,7 @@ class DispenseVerification(BaseModel):
         DispenseOrder, on_delete=models.CASCADE, related_name="verifications"
     )
     dispense_item = models.ForeignKey(
-        DispenseItem, on_delete=models.CASCADE, related_name="verifications",
-        null=True, blank=True
+        DispenseItem, on_delete=models.CASCADE, related_name="verifications", null=True, blank=True
     )
     verification_type = models.CharField(max_length=30, choices=VERIFICATION_TYPES)
     verified_by = models.UUIDField()
@@ -233,6 +238,7 @@ class DispenseAudit(BaseModel):
     Immutable audit log for all dispense-related state changes.
     Supports compliance, regulatory, and controlled substance monitoring.
     """
+
     ACTION_TYPES = [
         ("created", "Order Created"),
         ("assigned", "Assigned to Pharmacist"),

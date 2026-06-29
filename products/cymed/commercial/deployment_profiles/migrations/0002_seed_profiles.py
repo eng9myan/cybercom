@@ -1,8 +1,10 @@
 """
 Data migration: seeds the standard CyMed deployment profiles and their capabilities.
 """
-from django.db import migrations
+
 import uuid
+
+from django.db import migrations
 
 PLATFORM_TENANT = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
@@ -15,7 +17,13 @@ PROFILES = [
         "supports_auto_update": True,
         "supports_telemetry": True,
         "requires_government_clearance": False,
-        "capabilities": ["online_activation", "auto_update", "telemetry", "cloud_backup", "multi_tenant"],
+        "capabilities": [
+            "online_activation",
+            "auto_update",
+            "telemetry",
+            "cloud_backup",
+            "multi_tenant",
+        ],
     },
     {
         "code": "private_cloud",
@@ -45,7 +53,13 @@ PROFILES = [
         "supports_auto_update": True,
         "supports_telemetry": True,
         "requires_government_clearance": False,
-        "capabilities": ["online_activation", "auto_update", "telemetry", "local_backup", "cloud_sync"],
+        "capabilities": [
+            "online_activation",
+            "auto_update",
+            "telemetry",
+            "local_backup",
+            "cloud_sync",
+        ],
     },
     {
         "code": "air_gapped",
@@ -55,7 +69,13 @@ PROFILES = [
         "supports_auto_update": False,
         "supports_telemetry": False,
         "requires_government_clearance": True,
-        "capabilities": ["offline_activation", "manual_update", "local_backup", "fips_compliance", "data_sovereignty"],
+        "capabilities": [
+            "offline_activation",
+            "manual_update",
+            "local_backup",
+            "fips_compliance",
+            "data_sovereignty",
+        ],
     },
 ]
 

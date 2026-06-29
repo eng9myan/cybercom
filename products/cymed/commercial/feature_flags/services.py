@@ -2,21 +2,19 @@
 Feature Flag Service — central evaluation engine for edition/country/tenant/customer feature access.
 No hardcoded feature access anywhere in CyMed — all checks flow through this service.
 """
-from typing import Optional
-import uuid
 
 from django.core.cache import cache
 
 from products.cymed.commercial.feature_flags.models import (
-    FeatureFlag, TenantFeature, CustomerFeature
+    CustomerFeature,
+    FeatureFlag,
+    TenantFeature,
 )
-
 
 CACHE_TTL = 300  # 5 minutes
 
 
 class FeatureFlagService:
-
     @staticmethod
     def _cache_key(scope: str, identifier: str, feature_code: str) -> str:
         return f"cymed:feature:{scope}:{identifier}:{feature_code}"
@@ -25,9 +23,9 @@ class FeatureFlagService:
     def is_enabled(
         cls,
         feature_code: str,
-        tenant_id: Optional[str] = None,
-        customer_id: Optional[str] = None,
-        country_code: Optional[str] = None,
+        tenant_id: str | None = None,
+        customer_id: str | None = None,
+        country_code: str | None = None,
     ) -> bool:
         """
         Evaluation order:
@@ -46,9 +44,7 @@ class FeatureFlagService:
             cached = cache.get(cache_key)
             if cached is not None:
                 return cached
-            override = CustomerFeature.objects.filter(
-                customer_id=customer_id, feature=flag
-            ).first()
+            override = CustomerFeature.objects.filter(customer_id=customer_id, feature=flag).first()
             if override is not None:
                 cache.set(cache_key, override.is_enabled, CACHE_TTL)
                 return override.is_enabled
@@ -59,9 +55,7 @@ class FeatureFlagService:
             cached = cache.get(cache_key)
             if cached is not None:
                 return cached
-            override = TenantFeature.objects.filter(
-                tenant_id=tenant_id, feature=flag
-            ).first()
+            override = TenantFeature.objects.filter(tenant_id=tenant_id, feature=flag).first()
             if override is not None:
                 cache.set(cache_key, override.is_enabled, CACHE_TTL)
                 return override.is_enabled
@@ -74,8 +68,7 @@ class FeatureFlagService:
         flags = FeatureFlag.objects.all()
         result = {}
         overrides = {
-            tf.feature_id: tf.is_enabled
-            for tf in TenantFeature.objects.filter(tenant_id=tenant_id)
+            tf.feature_id: tf.is_enabled for tf in TenantFeature.objects.filter(tenant_id=tenant_id)
         }
         for flag in flags:
             result[flag.code] = overrides.get(flag.id, flag.default_enabled)
@@ -118,14 +111,16 @@ CLINIC_STARTER_FEATURES = [
     "clinic.telemedicine",
 ]
 
-CLINIC_PROFESSIONAL_FEATURES = CLINIC_STARTER_FEATURES + [
+CLINIC_PROFESSIONAL_FEATURES = [
+    *CLINIC_STARTER_FEATURES,
     "clinic.specialty_templates",
     "clinic.advanced_scheduling",
     "clinic.referral_management",
     "clinic.insurance_verification",
 ]
 
-CLINIC_ENTERPRISE_FEATURES = CLINIC_PROFESSIONAL_FEATURES + [
+CLINIC_ENTERPRISE_FEATURES = [
+    *CLINIC_PROFESSIONAL_FEATURES,
     "clinic.multi_clinic",
     "clinic.enterprise_reporting",
     "clinic.advanced_workforce",
@@ -142,7 +137,8 @@ HOSPITAL_COMMUNITY_FEATURES = [
     "hospital.discharge",
 ]
 
-HOSPITAL_ENTERPRISE_FEATURES = HOSPITAL_COMMUNITY_FEATURES + [
+HOSPITAL_ENTERPRISE_FEATURES = [
+    *HOSPITAL_COMMUNITY_FEATURES,
     "hospital.icu",
     "hospital.operating_room",
     "hospital.anesthesia",
@@ -151,7 +147,8 @@ HOSPITAL_ENTERPRISE_FEATURES = HOSPITAL_COMMUNITY_FEATURES + [
     "hospital.capacity_management",
 ]
 
-HOSPITAL_MEDICAL_CITY_FEATURES = HOSPITAL_ENTERPRISE_FEATURES + [
+HOSPITAL_MEDICAL_CITY_FEATURES = [
+    *HOSPITAL_ENTERPRISE_FEATURES,
     "hospital.clinical_command_center",
     "hospital.multi_hospital",
     "hospital.academic_center",
@@ -168,7 +165,8 @@ LAB_BASIC_FEATURES = [
     "lab.blood_bank",
 ]
 
-LAB_ADVANCED_FEATURES = LAB_BASIC_FEATURES + [
+LAB_ADVANCED_FEATURES = [
+    *LAB_BASIC_FEATURES,
     "lab.microbiology",
     "lab.pathology",
     "lab.histopathology",
@@ -176,13 +174,15 @@ LAB_ADVANCED_FEATURES = LAB_BASIC_FEATURES + [
     "lab.analytics",
 ]
 
-LAB_REFERENCE_FEATURES = LAB_ADVANCED_FEATURES + [
+LAB_REFERENCE_FEATURES = [
+    *LAB_ADVANCED_FEATURES,
     "lab.reference_lab",
     "lab.multi_site",
     "lab.cross_lab_routing",
 ]
 
-LAB_NATIONAL_FEATURES = LAB_REFERENCE_FEATURES + [
+LAB_NATIONAL_FEATURES = [
+    *LAB_REFERENCE_FEATURES,
     "lab.public_health",
     "lab.national_registry",
     "lab.population_analytics",
@@ -197,7 +197,8 @@ IMAGING_BASIC_FEATURES = [
     "imaging.results",
 ]
 
-IMAGING_ENTERPRISE_FEATURES = IMAGING_BASIC_FEATURES + [
+IMAGING_ENTERPRISE_FEATURES = [
+    *IMAGING_BASIC_FEATURES,
     "imaging.pacs",
     "imaging.dicom",
     "imaging.worklist",
@@ -205,14 +206,16 @@ IMAGING_ENTERPRISE_FEATURES = IMAGING_BASIC_FEATURES + [
     "imaging.analytics",
 ]
 
-IMAGING_TELERADIOLOGY_FEATURES = IMAGING_ENTERPRISE_FEATURES + [
+IMAGING_TELERADIOLOGY_FEATURES = [
+    *IMAGING_ENTERPRISE_FEATURES,
     "imaging.teleradiology",
     "imaging.second_opinion",
     "imaging.multi_site",
     "imaging.reading_network",
 ]
 
-IMAGING_NATIONAL_FEATURES = IMAGING_TELERADIOLOGY_FEATURES + [
+IMAGING_NATIONAL_FEATURES = [
+    *IMAGING_TELERADIOLOGY_FEATURES,
     "imaging.national_registry",
     "imaging.government",
     "imaging.population_analytics",

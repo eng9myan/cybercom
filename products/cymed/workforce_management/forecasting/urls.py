@@ -1,9 +1,10 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
     CensusDataPointViewSet,
-    StaffingForecastViewSet,
     ForecastAdjustmentViewSet,
     ForecastRosterMappingViewSet,
+    StaffingForecastViewSet,
 )
 
 router = DefaultRouter()

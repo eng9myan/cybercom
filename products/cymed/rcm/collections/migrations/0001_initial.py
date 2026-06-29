@@ -1,10 +1,10 @@
-﻿import uuid
+import uuid
+
 import django.db.models.deletion
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -93,9 +93,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "ai_collection_risk_score",
-                    models.DecimalField(
-                        blank=True, decimal_places=2, max_digits=5, null=True
-                    ),
+                    models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True),
                 ),
                 ("notes", models.TextField(blank=True)),
             ],
@@ -150,9 +148,7 @@ class Migration(migrations.Migration):
                 ("notes", models.TextField(blank=True)),
                 (
                     "amount_collected",
-                    models.DecimalField(
-                        decimal_places=2, default=0, max_digits=12
-                    ),
+                    models.DecimalField(decimal_places=2, default=0, max_digits=12),
                 ),
                 (
                     "next_action_date",
@@ -214,9 +210,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "amount_paid",
-                    models.DecimalField(
-                        decimal_places=2, default=0, max_digits=14
-                    ),
+                    models.DecimalField(decimal_places=2, default=0, max_digits=14),
                 ),
                 (
                     "amount_remaining",
@@ -285,15 +279,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "amount_recovered",
-                    models.DecimalField(
-                        decimal_places=2, default=0, max_digits=14
-                    ),
+                    models.DecimalField(decimal_places=2, default=0, max_digits=14),
                 ),
                 (
                     "amount_written_off",
-                    models.DecimalField(
-                        decimal_places=2, default=0, max_digits=14
-                    ),
+                    models.DecimalField(decimal_places=2, default=0, max_digits=14),
                 ),
                 ("notes", models.TextField(blank=True)),
             ],

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import MedicationConsumptionEvent, InventoryQueryResult
+
+from .models import InventoryQueryResult, MedicationConsumptionEvent
 
 
 class MedicationConsumptionEventSerializer(serializers.ModelSerializer):

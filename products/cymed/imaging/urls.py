@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import include, path
 
 urlpatterns = [
     path("orders/", include("products.cymed.imaging.orders.urls")),

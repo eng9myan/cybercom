@@ -1,5 +1,15 @@
-﻿from rest_framework import serializers
-from .models import Specimen, SpecimenContainer, SpecimenCollection, SpecimenTransport, SpecimenStorage, SpecimenRejection, SpecimenChainOfCustody
+from rest_framework import serializers
+
+from .models import (
+    Specimen,
+    SpecimenChainOfCustody,
+    SpecimenCollection,
+    SpecimenContainer,
+    SpecimenRejection,
+    SpecimenStorage,
+    SpecimenTransport,
+)
+
 
 class SpecimenSerializer(serializers.ModelSerializer):
     class Meta:
@@ -7,11 +17,13 @@ class SpecimenSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
 
+
 class SpecimenContainerSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecimenContainer
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
 
 class SpecimenCollectionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -19,11 +31,13 @@ class SpecimenCollectionSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
 
+
 class SpecimenTransportSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecimenTransport
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
 
 class SpecimenStorageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,11 +45,13 @@ class SpecimenStorageSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
 
+
 class SpecimenRejectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecimenRejection
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
 
 class SpecimenChainOfCustodySerializer(serializers.ModelSerializer):
     class Meta:

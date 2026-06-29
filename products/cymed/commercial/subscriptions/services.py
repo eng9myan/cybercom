@@ -1,18 +1,21 @@
 """
 Subscription Service — lifecycle management for CyMed subscriptions.
 """
+
 import uuid
 from datetime import date
+
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 
 from products.cymed.commercial.subscriptions.models import (
-    Subscription, SubscriptionPlan, SubscriptionUsage, SubscriptionInvoice
+    Subscription,
+    SubscriptionInvoice,
+    SubscriptionPlan,
 )
 
 
 class SubscriptionService:
-
     CYCLE_MONTHS = {
         "monthly": 1,
         "quarterly": 3,
@@ -64,6 +67,7 @@ class SubscriptionService:
     def generate_invoice(cls, subscription: Subscription) -> SubscriptionInvoice:
         plan = subscription.plan
         from decimal import Decimal
+
         base = Decimal(str(plan.base_price))
         overage = Decimal("0")
         if plan.per_user_price and subscription.contracted_users:

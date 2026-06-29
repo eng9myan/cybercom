@@ -1,8 +1,13 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    ReportTemplateViewSet, RadiologyReportViewSet, RadiologyFindingViewSet,
-    RadiologyImpressionViewSet, CriticalFindingViewSet, StructuredReportViewSet,
+    CriticalFindingViewSet,
+    RadiologyFindingViewSet,
+    RadiologyImpressionViewSet,
+    RadiologyReportViewSet,
     ReportAmendmentViewSet,
+    ReportTemplateViewSet,
+    StructuredReportViewSet,
 )
 
 router = DefaultRouter()

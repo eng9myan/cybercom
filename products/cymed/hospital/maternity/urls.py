@@ -1,8 +1,13 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from products.cymed.hospital.maternity.views import (
-    PregnancyViewSet, PrenatalEncounterViewSet, LaborEpisodeViewSet,
-    DeliveryViewSet, NewbornRecordViewSet, PostpartumCareViewSet
+    DeliveryViewSet,
+    LaborEpisodeViewSet,
+    NewbornRecordViewSet,
+    PostpartumCareViewSet,
+    PregnancyViewSet,
+    PrenatalEncounterViewSet,
 )
 
 router = DefaultRouter()

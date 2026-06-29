@@ -1,17 +1,23 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import DiseaseRegistry, RegistryPatient, RegistryEnrollment, RegistryStatus, RegistryOutcome
+from .models import (
+    DiseaseRegistry,
+    RegistryEnrollment,
+    RegistryOutcome,
+    RegistryPatient,
+    RegistryStatus,
+)
 from .serializers import (
     DiseaseRegistrySerializer,
-    RegistryPatientSerializer,
     RegistryEnrollmentSerializer,
-    RegistryStatusSerializer,
     RegistryOutcomeSerializer,
+    RegistryPatientSerializer,
+    RegistryStatusSerializer,
 )
 
 

@@ -1,10 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from platform.cyintegrationhub.views import (
-    IntegrationPartnerViewSet,
     ConnectorConfigViewSet,
+    IntegrationPartnerViewSet,
+    MessageAuditLogViewSet,
     TransformationMappingViewSet,
-    MessageAuditLogViewSet
 )
 
 router = DefaultRouter()

@@ -1,6 +1,6 @@
-﻿from django.db import models
-from platform.common.models import BaseModel
+from django.db import models
 
+from platform.common.models import BaseModel
 
 STUDY_TYPE_CHOICES = [
     ("cohort", "Cohort"),
@@ -71,9 +71,7 @@ class EpidemiologyStudy(BaseModel):
     population_scope = models.CharField(max_length=200, blank=True)
     sample_size = models.PositiveIntegerField(null=True, blank=True)
     study_lead_id = models.UUIDField(null=True, blank=True)
-    status = models.CharField(
-        max_length=20, choices=STUDY_STATUS_CHOICES, default="planning"
-    )
+    status = models.CharField(max_length=20, choices=STUDY_STATUS_CHOICES, default="planning")
     objectives = models.TextField(blank=True)
     methodology = models.TextField(blank=True)
     fhir_research_study_id = models.CharField(max_length=200, blank=True, null=True)
@@ -86,7 +84,9 @@ class DiseaseTrend(BaseModel):
     class Meta:
         app_label = "cymed_ph_epidemiology"
         db_table = "cymed_ph_epi_disease_trends"
-        unique_together = [["tenant_id", "disease_code", "period_type", "period_date", "geographic_scope"]]
+        unique_together = [
+            ["tenant_id", "disease_code", "period_type", "period_date", "geographic_scope"]
+        ]
 
     # ICD-11 code sourced from TerminologyService — no local term table
     disease_code = models.CharField(max_length=20)
@@ -95,15 +95,9 @@ class DiseaseTrend(BaseModel):
     period_date = models.DateField()
     case_count = models.PositiveIntegerField(default=0)
     # Per 100,000 population
-    incidence_rate = models.DecimalField(
-        max_digits=10, decimal_places=4, null=True, blank=True
-    )
-    prevalence_rate = models.DecimalField(
-        max_digits=10, decimal_places=4, null=True, blank=True
-    )
-    mortality_rate = models.DecimalField(
-        max_digits=10, decimal_places=4, null=True, blank=True
-    )
+    incidence_rate = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    prevalence_rate = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    mortality_rate = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
     geographic_scope = models.CharField(max_length=200, blank=True)
     population_denominator = models.PositiveIntegerField(null=True, blank=True)
     data_source = models.CharField(max_length=200, blank=True)

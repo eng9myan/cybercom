@@ -5,95 +5,102 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_portal_medical_records', '0001_initial'),
+        ("cymed_portal_medical_records", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='medicalrecordaccess',
-            new_name='cymed_porta_account_0ad46b_idx',
-            old_name='cymed_rec_access_acct_type_idx',
+            model_name="medicalrecordaccess",
+            new_name="cymed_porta_account_0ad46b_idx",
+            old_name="cymed_rec_access_acct_type_idx",
         ),
         migrations.RenameIndex(
-            model_name='medicalrecordaccess',
-            new_name='cymed_porta_patient_1beb9b_idx',
-            old_name='cymed_rec_access_patient_date_idx',
+            model_name="medicalrecordaccess",
+            new_name="cymed_porta_patient_1beb9b_idx",
+            old_name="cymed_rec_access_patient_date_idx",
         ),
         migrations.RenameIndex(
-            model_name='patientdocument',
-            new_name='cymed_porta_account_26b305_idx',
-            old_name='cymed_patient_doc_acct_type_idx',
+            model_name="patientdocument",
+            new_name="cymed_porta_account_26b305_idx",
+            old_name="cymed_patient_doc_acct_type_idx",
         ),
         migrations.RenameIndex(
-            model_name='recorddownloadhistory',
-            new_name='cymed_porta_account_e7ea03_idx',
-            old_name='cymed_dl_hist_acct_date_idx',
+            model_name="recorddownloadhistory",
+            new_name="cymed_porta_account_e7ea03_idx",
+            old_name="cymed_dl_hist_acct_date_idx",
         ),
         migrations.RenameIndex(
-            model_name='sharedrecord',
-            new_name='cymed_porta_account_0df8de_idx',
-            old_name='cymed_shared_rec_acct_revoked_idx',
+            model_name="sharedrecord",
+            new_name="cymed_porta_account_0df8de_idx",
+            old_name="cymed_shared_rec_acct_revoked_idx",
         ),
         migrations.AlterField(
-            model_name='medicalrecordaccess',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="medicalrecordaccess",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='medicalrecordaccess',
-            name='tenant_id',
+            model_name="medicalrecordaccess",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='medicalrecordaccess',
-            name='updated_at',
+            model_name="medicalrecordaccess",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='patientdocument',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="patientdocument",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='patientdocument',
-            name='tenant_id',
+            model_name="patientdocument",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='patientdocument',
-            name='updated_at',
+            model_name="patientdocument",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='recorddownloadhistory',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="recorddownloadhistory",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='recorddownloadhistory',
-            name='tenant_id',
+            model_name="recorddownloadhistory",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='recorddownloadhistory',
-            name='updated_at',
+            model_name="recorddownloadhistory",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='sharedrecord',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="sharedrecord",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='sharedrecord',
-            name='tenant_id',
+            model_name="sharedrecord",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='sharedrecord',
-            name='updated_at',
+            model_name="sharedrecord",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

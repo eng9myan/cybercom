@@ -1,18 +1,18 @@
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import OnCallRoster, OnCallAssignment, OnCallPage, OnCallEscalation, CallSwapRequest
+from .models import CallSwapRequest, OnCallAssignment, OnCallEscalation, OnCallPage, OnCallRoster
 from .serializers import (
-    OnCallRosterSerializer,
-    OnCallAssignmentSerializer,
-    OnCallPageSerializer,
-    OnCallEscalationSerializer,
     CallSwapRequestSerializer,
+    OnCallAssignmentSerializer,
+    OnCallEscalationSerializer,
+    OnCallPageSerializer,
+    OnCallRosterSerializer,
 )
 
 
@@ -58,7 +58,14 @@ class OnCallRosterViewSet(HWMModelViewSet):
 class OnCallAssignmentViewSet(HWMModelViewSet):
     queryset = OnCallAssignment.objects.select_related("oncall_roster")
     serializer_class = OnCallAssignmentSerializer
-    filterset_fields = ["oncall_roster", "workforce_profile_id", "call_mode", "call_tier", "call_seniority", "is_active"]
+    filterset_fields = [
+        "oncall_roster",
+        "workforce_profile_id",
+        "call_mode",
+        "call_tier",
+        "call_seniority",
+        "is_active",
+    ]
     ordering_fields = ["created_at"]
 
 
@@ -96,7 +103,12 @@ class OnCallPageViewSet(HWMModelViewSet):
 class OnCallEscalationViewSet(HWMModelViewSet):
     queryset = OnCallEscalation.objects.select_related("page")
     serializer_class = OnCallEscalationSerializer
-    filterset_fields = ["page", "escalation_level", "escalated_to_profile_id", "department_chair_alerted"]
+    filterset_fields = [
+        "page",
+        "escalation_level",
+        "escalated_to_profile_id",
+        "department_chair_alerted",
+    ]
     ordering_fields = ["triggered_at", "escalation_level", "created_at"]
     http_method_names = ["get", "post", "head", "options"]
 
@@ -111,7 +123,12 @@ class OnCallEscalationViewSet(HWMModelViewSet):
 class CallSwapRequestViewSet(HWMModelViewSet):
     queryset = CallSwapRequest.objects.select_related("original_assignment")
     serializer_class = CallSwapRequestSerializer
-    filterset_fields = ["original_assignment", "requester_profile_id", "recipient_profile_id", "status"]
+    filterset_fields = [
+        "original_assignment",
+        "requester_profile_id",
+        "recipient_profile_id",
+        "status",
+    ]
     ordering_fields = ["created_at"]
 
     @action(detail=True, methods=["post"])
@@ -121,7 +138,9 @@ class CallSwapRequestViewSet(HWMModelViewSet):
         swap.approver_id = request.data.get("approver_id")
         swap.approver_role = request.data.get("approver_role", "")
         swap.approved_at = timezone.now()
-        swap.save(update_fields=["status", "approver_id", "approver_role", "approved_at", "updated_at"])
+        swap.save(
+            update_fields=["status", "approver_id", "approver_role", "approved_at", "updated_at"]
+        )
         return Response({"status": "approved", "id": str(swap.id)})
 
     @action(detail=True, methods=["post"])

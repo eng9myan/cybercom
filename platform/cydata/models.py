@@ -1,12 +1,16 @@
 import uuid
+
 from django.db import models
 from django.utils import timezone
+
 from platform.common.models import PlatformModel
+
 
 class DataAsset(PlatformModel):
     """
     Catalog of all logical tables, views, and object stores across the platform (Data Catalog).
     """
+
     ASSET_TYPE_CHOICES = [
         ("table", "Database Table"),
         ("lakehouse", "Iceberg Lakehouse Table"),
@@ -18,7 +22,9 @@ class DataAsset(PlatformModel):
     physical_path = models.CharField(max_length=1000)
     schema_definition = models.JSONField(default=dict)
     pii_columns = models.JSONField(default=list, blank=True)  # Columns marked as PII
-    phi_columns = models.JSONField(default=list, blank=True)  # Columns marked as PHI (HIPAA protection)
+    phi_columns = models.JSONField(
+        default=list, blank=True
+    )  # Columns marked as PHI (HIPAA protection)
     data_residency_region = models.CharField(max_length=100, default="me-central-1")
 
     class Meta:
@@ -32,10 +38,15 @@ class DataLineage(models.Model):
     """
     Directed lineage graph tracing how data flows between source assets and target metrics.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
-    source_asset = models.ForeignKey(DataAsset, on_delete=models.CASCADE, related_name="downstream_lineage")
-    target_asset = models.ForeignKey(DataAsset, on_delete=models.CASCADE, related_name="upstream_lineage")
+    source_asset = models.ForeignKey(
+        DataAsset, on_delete=models.CASCADE, related_name="downstream_lineage"
+    )
+    target_asset = models.ForeignKey(
+        DataAsset, on_delete=models.CASCADE, related_name="upstream_lineage"
+    )
     transformation_job = models.CharField(max_length=255)  # dbt model name or Airflow DAG ID
     updated_at = models.DateTimeField(default=timezone.now)
 
@@ -48,6 +59,7 @@ class DataQualityRule(PlatformModel):
     """
     Assertions run by the Data Quality Engine to validate data assets.
     """
+
     asset = models.ForeignKey(DataAsset, on_delete=models.CASCADE, related_name="quality_rules")
     column_name = models.CharField(max_length=255)
     assertion_type = models.CharField(max_length=50)  # not_null, min_value, format_email, unique
@@ -65,6 +77,7 @@ class MasterDataMap(PlatformModel):
     """
     Entity mappings and record linkage for golden record merging (Patient, Citizen, Customer).
     """
+
     entity_type = models.CharField(max_length=100, db_index=True)  # Patient, Employee, Citizen
     source_system = models.CharField(max_length=100)  # Epic, Cerner, Odoo, SAP
     source_id = models.CharField(max_length=255)
@@ -80,6 +93,7 @@ class CDCPipelineLog(models.Model):
     """
     Audit logging for CDC pipelines monitoring database WAL changes.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     table_name = models.CharField(max_length=255)

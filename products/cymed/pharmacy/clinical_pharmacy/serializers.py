@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import MedicationReview, ClinicalIntervention, PharmacistRecommendation, MedicationTherapyManagement
+
+from .models import (
+    ClinicalIntervention,
+    MedicationReview,
+    MedicationTherapyManagement,
+    PharmacistRecommendation,
+)
 
 
 class ClinicalInterventionSerializer(serializers.ModelSerializer):

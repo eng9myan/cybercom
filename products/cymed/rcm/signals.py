@@ -5,6 +5,7 @@ from django.dispatch import receiver
 def _publish(tenant_id, event_type, payload):
     try:
         from platform.events.outbox import OutboxEvent
+
         OutboxEvent.publish(tenant_id=tenant_id, event_type=event_type, payload=payload)
     except Exception:
         pass
@@ -14,6 +15,7 @@ def _push_to_cycom(tenant_id, event_type, payload):
     """Route financial data to CyCom Finance via CyIntegrationHub — no shared ORM."""
     try:
         from platform.integrations.hub import CyIntegrationHub
+
         CyIntegrationHub.send(
             tenant_id=tenant_id,
             destination="cycom_finance",

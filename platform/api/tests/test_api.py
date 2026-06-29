@@ -2,25 +2,48 @@
 Program 2.4 — API Framework test suite.
 Target: 90% coverage.
 """
-import hashlib
+
 import uuid
+
 import pytest
 from django.utils import timezone
 
 from platform.api.idempotency import IdempotencyService
 from platform.api.models import (
-    ApiApplication, ApiCatalog, ApiClassification, ApiContract, ApiEndpoint,
-    ApiKey, ApiKeyStatus, ApiPolicy, ApiRateLimit, ApiScope, ApiStatus,
-    ApiSubscription, ApiUsage, ApiVersion, ApiWebhook, ApiWebhookDelivery,
-    IdempotencyKey, RateLimitScope, VersionLifecycle, WebhookDeliveryStatus,
-    WebhookStatus, HttpMethod,
+    ApiApplication,
+    ApiCatalog,
+    ApiClassification,
+    ApiEndpoint,
+    ApiKey,
+    ApiKeyStatus,
+    ApiPolicy,
+    ApiRateLimit,
+    ApiScope,
+    ApiStatus,
+    ApiSubscription,
+    ApiUsage,
+    ApiVersion,
+    ApiWebhook,
+    ApiWebhookDelivery,
+    HttpMethod,
+    IdempotencyKey,
+    RateLimitScope,
+    VersionLifecycle,
+    WebhookDeliveryStatus,
+    WebhookStatus,
 )
 from platform.api.pagination import CyberComCursorPagination
 from platform.api.rate_limit import InMemoryRateLimiter, RateLimitService
 from platform.api.services import (
-    ApiApplicationService, ApiCatalogService, ApiContractService,
-    ApiKeyService, ApiSubscriptionService, ApiVersionService,
-    FHIRService, SDKGeneratorService, WebhookService,
+    ApiApplicationService,
+    ApiCatalogService,
+    ApiContractService,
+    ApiKeyService,
+    ApiSubscriptionService,
+    ApiVersionService,
+    FHIRService,
+    SDKGeneratorService,
+    WebhookService,
 )
 
 pytestmark = pytest.mark.django_db
@@ -30,6 +53,7 @@ pytestmark = pytest.mark.django_db
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def version():
     return ApiVersion.objects.create(major=1, minor=0, patch=0, lifecycle=VersionLifecycle.STABLE)
@@ -38,15 +62,19 @@ def version():
 @pytest.fixture
 def catalog(version):
     return ApiCatalog.objects.create(
-        name="Test API", slug="test-api", classification=ApiClassification.INTERNAL,
-        base_path="/api/v1/test/", current_version=version,
+        name="Test API",
+        slug="test-api",
+        classification=ApiClassification.INTERNAL,
+        base_path="/api/v1/test/",
+        current_version=version,
     )
 
 
 @pytest.fixture
 def application():
     return ApiApplication.objects.create(
-        name="Test App", slug="test-app",
+        name="Test App",
+        slug="test-app",
         classification=ApiClassification.INTERNAL,
     )
 
@@ -59,6 +87,7 @@ def tenant_id():
 # ---------------------------------------------------------------------------
 # TestApiVersion
 # ---------------------------------------------------------------------------
+
 
 class TestApiVersion:
     def test_create(self):
@@ -86,6 +115,7 @@ class TestApiVersion:
 # TestApiCatalog
 # ---------------------------------------------------------------------------
 
+
 class TestApiCatalog:
     def test_create(self, catalog):
         assert catalog.slug == "test-api"
@@ -108,6 +138,7 @@ class TestApiCatalog:
 # TestApiApplication
 # ---------------------------------------------------------------------------
 
+
 class TestApiApplication:
     def test_create(self, application):
         assert application.status == ApiStatus.ACTIVE
@@ -128,6 +159,7 @@ class TestApiApplication:
 # ---------------------------------------------------------------------------
 # TestApiKey
 # ---------------------------------------------------------------------------
+
 
 class TestApiKey:
     def test_generate_produces_raw_key(self, application):
@@ -160,8 +192,10 @@ class TestApiKey:
 
     def test_is_valid_expired(self, application):
         from datetime import timedelta
+
         key, _ = ApiKey.generate(
-            application=application, name="test-key-7",
+            application=application,
+            name="test-key-7",
             expires_at=timezone.now() - timedelta(hours=1),
         )
         assert not key.is_valid
@@ -175,6 +209,7 @@ class TestApiKey:
 # ---------------------------------------------------------------------------
 # TestApiKeyService
 # ---------------------------------------------------------------------------
+
 
 class TestApiKeyService:
     def setup_method(self):
@@ -207,6 +242,7 @@ class TestApiKeyService:
 # TestApiScope
 # ---------------------------------------------------------------------------
 
+
 class TestApiScope:
     def test_create(self, catalog):
         scope = ApiScope.objects.create(
@@ -225,18 +261,23 @@ class TestApiScope:
 # TestApiSubscription
 # ---------------------------------------------------------------------------
 
+
 class TestApiSubscription:
     def test_subscribe(self, application, catalog):
         sub = ApiSubscription.objects.create(
-            application=application, catalog=catalog,
-            approved_scopes=["read:patients"], status=ApiStatus.ACTIVE,
+            application=application,
+            catalog=catalog,
+            approved_scopes=["read:patients"],
+            status=ApiStatus.ACTIVE,
         )
         assert sub.is_active
 
     def test_expired_subscription_not_active(self, application, catalog):
         from datetime import timedelta
+
         sub = ApiSubscription.objects.create(
-            application=application, catalog=catalog,
+            application=application,
+            catalog=catalog,
             status=ApiStatus.ACTIVE,
             expires_at=timezone.now() - timedelta(days=1),
         )
@@ -258,11 +299,14 @@ class TestApiSubscription:
 # TestApiRateLimit
 # ---------------------------------------------------------------------------
 
+
 class TestApiRateLimit:
     def test_create(self, catalog):
         rl = ApiRateLimit.objects.create(
-            catalog=catalog, scope=RateLimitScope.TENANT,
-            requests_per_minute=100, burst_size=20,
+            catalog=catalog,
+            scope=RateLimitScope.TENANT,
+            requests_per_minute=100,
+            burst_size=20,
         )
         assert rl.requests_per_minute == 100
 
@@ -276,6 +320,7 @@ class TestApiRateLimit:
 # ---------------------------------------------------------------------------
 # TestInMemoryRateLimiter
 # ---------------------------------------------------------------------------
+
 
 class TestInMemoryRateLimiter:
     def test_allows_under_limit(self):
@@ -320,6 +365,7 @@ class TestInMemoryRateLimiter:
 # TestRateLimitService
 # ---------------------------------------------------------------------------
 
+
 class TestRateLimitService:
     def test_tenant_check(self):
         svc = RateLimitService()
@@ -340,6 +386,7 @@ class TestRateLimitService:
 # ---------------------------------------------------------------------------
 # TestIdempotencyService
 # ---------------------------------------------------------------------------
+
 
 class TestIdempotencyService:
     def setup_method(self):
@@ -370,10 +417,14 @@ class TestIdempotencyService:
 
     def test_purge_expired(self, tenant_id):
         from datetime import timedelta
+
         key = str(uuid.uuid4())
         IdempotencyKey.objects.create(
-            key=key, tenant_id=tenant_id, request_method="POST",
-            request_path="/test/", request_hash="abc",
+            key=key,
+            tenant_id=tenant_id,
+            request_method="POST",
+            request_path="/test/",
+            request_hash="abc",
             expires_at=timezone.now() - timedelta(hours=1),
         )
         purged = self.svc.purge_expired()
@@ -384,22 +435,31 @@ class TestIdempotencyService:
 # TestIdempotencyKey
 # ---------------------------------------------------------------------------
 
+
 class TestIdempotencyKey:
     def test_is_expired(self, tenant_id):
         from datetime import timedelta
+
         key = IdempotencyKey.objects.create(
-            key=str(uuid.uuid4()), tenant_id=tenant_id,
-            request_method="POST", request_path="/",
-            request_hash="x", expires_at=timezone.now() - timedelta(minutes=1),
+            key=str(uuid.uuid4()),
+            tenant_id=tenant_id,
+            request_method="POST",
+            request_path="/",
+            request_hash="x",
+            expires_at=timezone.now() - timedelta(minutes=1),
         )
         assert key.is_expired
 
     def test_complete(self, tenant_id):
         from datetime import timedelta
+
         key = IdempotencyKey.objects.create(
-            key=str(uuid.uuid4()), tenant_id=tenant_id,
-            request_method="POST", request_path="/",
-            request_hash="y", expires_at=timezone.now() + timedelta(hours=24),
+            key=str(uuid.uuid4()),
+            tenant_id=tenant_id,
+            request_method="POST",
+            request_path="/",
+            request_hash="y",
+            expires_at=timezone.now() + timedelta(hours=24),
         )
         key.complete(200, '{"ok":true}')
         assert key.response_status == 200
@@ -410,10 +470,12 @@ class TestIdempotencyKey:
 # TestApiWebhook
 # ---------------------------------------------------------------------------
 
+
 class TestApiWebhook:
     def test_create_with_secret(self, application):
         wh = ApiWebhook.create_with_secret(
-            application=application, name="my-hook",
+            application=application,
+            name="my-hook",
             target_url="https://example.com/hook",
             events=["patient.created"],
         )
@@ -422,7 +484,8 @@ class TestApiWebhook:
 
     def test_compute_signature(self, application):
         wh = ApiWebhook.create_with_secret(
-            application=application, name="sig-hook",
+            application=application,
+            name="sig-hook",
             target_url="https://example.com/hook",
             events=["*"],
         )
@@ -432,16 +495,20 @@ class TestApiWebhook:
 
     def test_pause(self, application):
         wh = ApiWebhook.create_with_secret(
-            application=application, name="pause-hook",
-            target_url="https://example.com/hook", events=["*"],
+            application=application,
+            name="pause-hook",
+            target_url="https://example.com/hook",
+            events=["*"],
         )
         wh.pause()
         assert wh.status == WebhookStatus.PAUSED
 
     def test_disable(self, application):
         wh = ApiWebhook.create_with_secret(
-            application=application, name="disable-hook",
-            target_url="https://example.com/hook", events=["*"],
+            application=application,
+            name="disable-hook",
+            target_url="https://example.com/hook",
+            events=["*"],
         )
         wh.disable()
         assert wh.status == WebhookStatus.DISABLED
@@ -451,14 +518,19 @@ class TestApiWebhook:
 # TestApiWebhookDelivery
 # ---------------------------------------------------------------------------
 
+
 class TestApiWebhookDelivery:
     def _make_delivery(self, application):
         wh = ApiWebhook.create_with_secret(
-            application=application, name=f"wh-{uuid.uuid4()}",
-            target_url="https://example.com/hook", events=["*"],
+            application=application,
+            name=f"wh-{uuid.uuid4()}",
+            target_url="https://example.com/hook",
+            events=["*"],
         )
         return ApiWebhookDelivery.objects.create(
-            webhook=wh, event_type="test.event", payload={"foo": "bar"},
+            webhook=wh,
+            event_type="test.event",
+            payload={"foo": "bar"},
             max_attempts=3,
         )
 
@@ -486,12 +558,15 @@ class TestApiWebhookDelivery:
 # TestWebhookService
 # ---------------------------------------------------------------------------
 
+
 class TestWebhookService:
     def setup_method(self):
         self.svc = WebhookService()
 
     def test_register(self, application):
-        wh = self.svc.register(application, "svc-hook", "https://example.com/wh", ["patient.created"])
+        wh = self.svc.register(
+            application, "svc-hook", "https://example.com/wh", ["patient.created"]
+        )
         assert wh.status == WebhookStatus.ACTIVE
 
     def test_dispatch_no_matching_webhooks(self, application, tenant_id):
@@ -499,18 +574,22 @@ class TestWebhookService:
         assert deliveries == []
 
     def test_dispatch_wildcard(self, application, tenant_id):
-        wh = ApiWebhook.create_with_secret(
-            application=application, name=f"wc-{uuid.uuid4()}",
+        ApiWebhook.create_with_secret(
+            application=application,
+            name=f"wc-{uuid.uuid4()}",
             target_url="https://example.com/wh",
-            events=["*"], tenant_id=tenant_id,
+            events=["*"],
+            tenant_id=tenant_id,
         )
         deliveries = self.svc.dispatch("any.event", {"key": "val"}, tenant_id=tenant_id)
         assert len(deliveries) >= 1
 
     def test_verify_signature(self, application):
         wh = ApiWebhook.create_with_secret(
-            application=application, name="verify-hook",
-            target_url="https://example.com/wh", events=["*"],
+            application=application,
+            name="verify-hook",
+            target_url="https://example.com/wh",
+            events=["*"],
         )
         payload = '{"test": true}'
         sig = wh.compute_signature(payload)
@@ -518,8 +597,10 @@ class TestWebhookService:
 
     def test_verify_wrong_signature(self, application):
         wh = ApiWebhook.create_with_secret(
-            application=application, name="verify-bad-hook",
-            target_url="https://example.com/wh", events=["*"],
+            application=application,
+            name="verify-bad-hook",
+            target_url="https://example.com/wh",
+            events=["*"],
         )
         assert not self.svc.verify_signature(wh, '{"test": true}', "wrong_sig")
 
@@ -527,6 +608,7 @@ class TestWebhookService:
 # ---------------------------------------------------------------------------
 # TestApiContract
 # ---------------------------------------------------------------------------
+
 
 class TestApiContract:
     def test_register_and_validate_same(self, catalog, version):
@@ -555,21 +637,29 @@ class TestApiContract:
 # TestApiUsage
 # ---------------------------------------------------------------------------
 
+
 class TestApiUsage:
     def test_record(self, catalog, application, tenant_id):
         usage = ApiUsage.objects.create(
-            catalog=catalog, application=application, tenant_id=tenant_id,
-            endpoint_path="/api/v1/test/", http_method="GET",
-            status_code=200, latency_ms=45,
+            catalog=catalog,
+            application=application,
+            tenant_id=tenant_id,
+            endpoint_path="/api/v1/test/",
+            http_method="GET",
+            status_code=200,
+            latency_ms=45,
         )
         assert not usage.is_error
         assert usage.latency_ms == 45
 
     def test_is_error_on_4xx(self, catalog, tenant_id):
         usage = ApiUsage.objects.create(
-            catalog=catalog, tenant_id=tenant_id,
-            endpoint_path="/api/v1/test/", http_method="POST",
-            status_code=404, is_error=True,
+            catalog=catalog,
+            tenant_id=tenant_id,
+            endpoint_path="/api/v1/test/",
+            http_method="POST",
+            status_code=404,
+            is_error=True,
         )
         assert usage.is_error
 
@@ -578,11 +668,14 @@ class TestApiUsage:
 # TestApiEndpoint
 # ---------------------------------------------------------------------------
 
+
 class TestApiEndpoint:
     def test_create(self, catalog):
         ep = ApiEndpoint.objects.create(
-            catalog=catalog, path="/api/v1/patients/",
-            method=HttpMethod.GET, operation_id="listPatients",
+            catalog=catalog,
+            path="/api/v1/patients/",
+            method=HttpMethod.GET,
+            operation_id="listPatients",
         )
         assert ep.method == "GET"
         assert "GET" in str(ep)
@@ -592,10 +685,13 @@ class TestApiEndpoint:
 # TestApiPolicy
 # ---------------------------------------------------------------------------
 
+
 class TestApiPolicy:
     def test_create(self, catalog):
         policy = ApiPolicy.objects.create(
-            catalog=catalog, name="auth-policy", policy_type="auth",
+            catalog=catalog,
+            name="auth-policy",
+            policy_type="auth",
             config={"scheme": "bearer"},
         )
         assert policy.is_active
@@ -610,6 +706,7 @@ class TestApiPolicy:
 # ---------------------------------------------------------------------------
 # TestFHIRService
 # ---------------------------------------------------------------------------
+
 
 class TestFHIRService:
     def setup_method(self):
@@ -651,6 +748,7 @@ class TestFHIRService:
 # TestSDKGeneratorService
 # ---------------------------------------------------------------------------
 
+
 class TestSDKGeneratorService:
     def setup_method(self):
         self.svc = SDKGeneratorService()
@@ -681,6 +779,7 @@ class TestSDKGeneratorService:
 # ---------------------------------------------------------------------------
 # TestApiVersionService
 # ---------------------------------------------------------------------------
+
 
 class TestApiVersionService:
     def setup_method(self):
@@ -718,6 +817,7 @@ class TestApiVersionService:
 # TestApiCatalogService
 # ---------------------------------------------------------------------------
 
+
 class TestApiCatalogService:
     def setup_method(self):
         self.svc = ApiCatalogService()
@@ -734,6 +834,7 @@ class TestApiCatalogService:
 # ---------------------------------------------------------------------------
 # TestApiApplicationService
 # ---------------------------------------------------------------------------
+
 
 class TestApiApplicationService:
     def setup_method(self):
@@ -754,6 +855,7 @@ class TestApiApplicationService:
 # ---------------------------------------------------------------------------
 # TestPagination
 # ---------------------------------------------------------------------------
+
 
 class TestCursorPagination:
     def test_defaults(self):

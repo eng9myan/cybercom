@@ -5,85 +5,94 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_provider_analytics', '0001_initial'),
+        ("cymed_provider_analytics", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='clinicalqualitymetric',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="clinicalqualitymetric",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='clinicalqualitymetric',
-            name='tenant_id',
+            model_name="clinicalqualitymetric",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='clinicalqualitymetric',
-            name='updated_at',
+            model_name="clinicalqualitymetric",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='executivedashboardmetric',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="executivedashboardmetric",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='executivedashboardmetric',
-            name='tenant_id',
+            model_name="executivedashboardmetric",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='executivedashboardmetric',
-            name='updated_at',
+            model_name="executivedashboardmetric",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='provideraiinsight',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="provideraiinsight",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='provideraiinsight',
-            name='tenant_id',
+            model_name="provideraiinsight",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='provideraiinsight',
-            name='updated_at',
+            model_name="provideraiinsight",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='providerproductivitysnapshot',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="providerproductivitysnapshot",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='providerproductivitysnapshot',
-            name='tenant_id',
+            model_name="providerproductivitysnapshot",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='providerproductivitysnapshot',
-            name='updated_at',
+            model_name="providerproductivitysnapshot",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='workforcedashboardsnapshot',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="workforcedashboardsnapshot",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='workforcedashboardsnapshot',
-            name='tenant_id',
+            model_name="workforcedashboardsnapshot",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='workforcedashboardsnapshot',
-            name='updated_at',
+            model_name="workforcedashboardsnapshot",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]

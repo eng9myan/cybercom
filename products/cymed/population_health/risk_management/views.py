@@ -1,19 +1,20 @@
-﻿"""
+"""
 CyMed Population Health — Risk Management ViewSets
 """
+
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import RiskScore, RiskFactor, RiskCategory, RiskAssessment
+from .models import RiskAssessment, RiskCategory, RiskFactor, RiskScore
 from .serializers import (
-    RiskScoreSerializer,
-    RiskFactorSerializer,
-    RiskCategorySerializer,
     RiskAssessmentSerializer,
+    RiskCategorySerializer,
+    RiskFactorSerializer,
+    RiskScoreSerializer,
 )
 
 
@@ -35,7 +36,13 @@ class PopulationHealthModelViewSet(viewsets.ModelViewSet):
 class RiskScoreViewSet(PopulationHealthModelViewSet):
     queryset = RiskScore.objects.all()
     serializer_class = RiskScoreSerializer
-    filterset_fields = ["patient_id", "risk_category", "risk_level", "score_date", "is_ai_generated"]
+    filterset_fields = [
+        "patient_id",
+        "risk_category",
+        "risk_level",
+        "score_date",
+        "is_ai_generated",
+    ]
 
 
 class RiskFactorViewSet(PopulationHealthModelViewSet):

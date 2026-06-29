@@ -1,18 +1,46 @@
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from platform.terminology.providers.base import TerminologyProvider
+
 
 class ICD11Provider(TerminologyProvider):
     """
     Terminology provider for WHO ICD-11 (MMS).
     Supports stem codes, extension codes, post-coordination parsing, and ICD-10 crosswalks.
     """
+
     STEM_CODES = {
-        "1B10.0": {"display": "Type 1 diabetes mellitus", "definition": "A form of diabetes characterized by autoimmune destruction of pancreatic beta cells.", "parents": ["1B10"], "children": []},
-        "1B10.1": {"display": "Type 2 diabetes mellitus", "definition": "A form of diabetes characterized by insulin resistance and relative insulin deficiency.", "parents": ["1B10"], "children": []},
-        "FA80": {"display": "Osteoarthritis of hip", "definition": "Degenerative joint disease of the hip joint.", "parents": ["FA8"], "children": ["FA80.0", "FA80.1"]},
-        "FA81": {"display": "Osteoarthritis of knee", "definition": "Degenerative joint disease of the knee joint.", "parents": ["FA8"], "children": ["FA81.0", "FA81.1"]},
-        "CA00": {"display": "Acute nasopharyngitis [common cold]", "definition": "Acute viral infection of the upper respiratory tract.", "parents": ["CA0"], "children": []},
+        "1B10.0": {
+            "display": "Type 1 diabetes mellitus",
+            "definition": "A form of diabetes characterized by autoimmune destruction of pancreatic beta cells.",
+            "parents": ["1B10"],
+            "children": [],
+        },
+        "1B10.1": {
+            "display": "Type 2 diabetes mellitus",
+            "definition": "A form of diabetes characterized by insulin resistance and relative insulin deficiency.",
+            "parents": ["1B10"],
+            "children": [],
+        },
+        "FA80": {
+            "display": "Osteoarthritis of hip",
+            "definition": "Degenerative joint disease of the hip joint.",
+            "parents": ["FA8"],
+            "children": ["FA80.0", "FA80.1"],
+        },
+        "FA81": {
+            "display": "Osteoarthritis of knee",
+            "definition": "Degenerative joint disease of the knee joint.",
+            "parents": ["FA8"],
+            "children": ["FA81.0", "FA81.1"],
+        },
+        "CA00": {
+            "display": "Acute nasopharyngitis [common cold]",
+            "definition": "Acute viral infection of the upper respiratory tract.",
+            "parents": ["CA0"],
+            "children": [],
+        },
     }
 
     EXTENSION_CODES = {
@@ -30,17 +58,21 @@ class ICD11Provider(TerminologyProvider):
         "J00": "CA00",
     }
 
-    def search(self, query: str, limit: int = 10, **kwargs) -> List[Dict[str, Any]]:
+    def search(self, query: str, limit: int = 10, **kwargs) -> list[dict[str, Any]]:
         results = []
         q = query.lower()
-        
+
         # Search stem codes
         for code, details in self.STEM_CODES.items():
-            if q in code.lower() or q in details["display"].lower() or q in details["definition"].lower():
+            if (
+                q in code.lower()
+                or q in details["display"].lower()
+                or q in details["definition"].lower()
+            ):
                 results.append({"code": code, "display": details["display"], "type": "stem"})
                 if len(results) >= limit:
                     return results
-                    
+
         # Search extension codes
         for code, details in self.EXTENSION_CODES.items():
             if q in code.lower() or q in details["display"].lower():
@@ -50,35 +82,35 @@ class ICD11Provider(TerminologyProvider):
 
         return results
 
-    def lookup(self, code: str, **kwargs) -> Optional[Dict[str, Any]]:
+    def lookup(self, code: str, **kwargs) -> dict[str, Any] | None:
         # Handle post-coordinated cluster (e.g. FA81&XY1Y&XS17)
         if "&" in code or "/" in code:
             parts = re.split(r"[&/]", code)
             stem_code = parts[0]
             extensions = parts[1:]
-            
+
             if stem_code not in self.STEM_CODES:
                 return None
-                
+
             stem_details = self.STEM_CODES[stem_code]
             display_parts = [stem_details["display"]]
             extension_details = []
-            
+
             for ext in extensions:
                 if ext in self.EXTENSION_CODES:
                     ext_info = self.EXTENSION_CODES[ext]
                     display_parts.append(ext_info["display"])
                     extension_details.append({"code": ext, **ext_info})
-                    
+
             return {
                 "code": code,
                 "display": ", ".join(display_parts),
                 "is_post_coordinated": True,
                 "stem_code": stem_code,
                 "extensions": extension_details,
-                "definition": stem_details["definition"]
+                "definition": stem_details["definition"],
             }
-            
+
         # Single code lookup
         if code in self.STEM_CODES:
             details = self.STEM_CODES[code]
@@ -86,7 +118,7 @@ class ICD11Provider(TerminologyProvider):
                 "code": code,
                 "display": details["display"],
                 "is_post_coordinated": False,
-                "definition": details["definition"]
+                "definition": details["definition"],
             }
         elif code in self.EXTENSION_CODES:
             details = self.EXTENSION_CODES[code]
@@ -94,7 +126,7 @@ class ICD11Provider(TerminologyProvider):
                 "code": code,
                 "display": details["display"],
                 "is_post_coordinated": False,
-                "definition": f"ICD-11 Extension code for {details['type']}."
+                "definition": f"ICD-11 Extension code for {details['type']}.",
             }
         return None
 
@@ -111,7 +143,7 @@ class ICD11Provider(TerminologyProvider):
                 return False
         return True
 
-    def translate(self, code: str, target_system: str, **kwargs) -> Optional[Dict[str, Any]]:
+    def translate(self, code: str, target_system: str, **kwargs) -> dict[str, Any] | None:
         target_system = target_system.lower()
         if target_system in ("icd10", "icd-10"):
             # Translate from ICD-11 to ICD-10
@@ -124,10 +156,17 @@ class ICD11Provider(TerminologyProvider):
             if code in self.ICD10_CROSSWALK:
                 icd11_code = self.ICD10_CROSSWALK[code]
                 display = self.STEM_CODES[icd11_code]["display"]
-                return {"code": icd11_code, "display": display, "system": "ICD-11", "relationship": "equivalent"}
+                return {
+                    "code": icd11_code,
+                    "display": display,
+                    "system": "ICD-11",
+                    "relationship": "equivalent",
+                }
         return None
 
-    def expand(self, value_set: str, filter_str: Optional[str] = None, **kwargs) -> List[Dict[str, Any]]:
+    def expand(
+        self, value_set: str, filter_str: str | None = None, **kwargs
+    ) -> list[dict[str, Any]]:
         # Returns subset of ICD-11 based on value_set string
         results = []
         if "diabetes" in value_set.lower():
@@ -141,25 +180,28 @@ class ICD11Provider(TerminologyProvider):
         else:
             for code, details in self.STEM_CODES.items():
                 results.append({"code": code, "display": details["display"]})
-                
+
         if filter_str:
             f = filter_str.lower()
             results = [r for r in results if f in r["code"].lower() or f in r["display"].lower()]
         return results
 
-    def get_children(self, code: str, **kwargs) -> List[Dict[str, Any]]:
+    def get_children(self, code: str, **kwargs) -> list[dict[str, Any]]:
         if code in self.STEM_CODES:
             children_codes = self.STEM_CODES[code].get("children", [])
-            return [{"code": c, "display": f"Subtype of {self.STEM_CODES[code]['display']}"} for c in children_codes]
+            return [
+                {"code": c, "display": f"Subtype of {self.STEM_CODES[code]['display']}"}
+                for c in children_codes
+            ]
         return []
 
-    def get_parents(self, code: str, **kwargs) -> List[Dict[str, Any]]:
+    def get_parents(self, code: str, **kwargs) -> list[dict[str, Any]]:
         if code in self.STEM_CODES:
             parent_codes = self.STEM_CODES[code].get("parents", [])
             return [{"code": p, "display": f"Parent category {p}"} for p in parent_codes]
         return []
 
-    def get_synonyms(self, code: str, **kwargs) -> List[str]:
+    def get_synonyms(self, code: str, **kwargs) -> list[str]:
         synonyms = {
             "1B10.0": ["Type 1 Diabetes", "IDDM", "Juvenile onset diabetes"],
             "1B10.1": ["Type 2 Diabetes", "NIDDM", "Adult-onset diabetes"],
@@ -168,7 +210,7 @@ class ICD11Provider(TerminologyProvider):
         }
         return synonyms.get(code, [])
 
-    def get_mappings(self, code: str, target_system: str, **kwargs) -> List[Dict[str, Any]]:
+    def get_mappings(self, code: str, target_system: str, **kwargs) -> list[dict[str, Any]]:
         translated = self.translate(code, target_system)
         return [translated] if translated else []
 

@@ -1,8 +1,9 @@
 # Compatibility shim: ensures 'from platform import X' works for stdlib consumers
 # when this package shadows the stdlib platform module.
-import sys as _sys
-import os as _os
 import importlib.util as _ilu
+import os as _os
+import sys as _sys
+
 
 def _load_stdlib_platform():
     """Load the real stdlib platform module, bypassing this package."""
@@ -19,6 +20,7 @@ def _load_stdlib_platform():
                 _spec.loader.exec_module(_mod)
                 return _mod
     return None
+
 
 _stdlib = _load_stdlib_platform()
 if _stdlib is not None:

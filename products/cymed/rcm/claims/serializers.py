@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Claim, ClaimLine, ClaimSubmission, ClaimResponse, ClaimStatus, ClaimAttachment
+
+from .models import Claim, ClaimAttachment, ClaimLine, ClaimResponse, ClaimStatus, ClaimSubmission
 
 
 class ClaimSerializer(serializers.ModelSerializer):

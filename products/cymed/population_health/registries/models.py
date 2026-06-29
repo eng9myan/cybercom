@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 REGISTRY_TYPE_CHOICES = [
     ("cancer", "Cancer"),
@@ -87,9 +87,7 @@ class RegistryPatient(BaseModel):
     )
     patient_id = models.UUIDField(db_index=True)
     enrollment_date = models.DateField()
-    status = models.CharField(
-        max_length=20, choices=PATIENT_STATUS_CHOICES, default="active"
-    )
+    status = models.CharField(max_length=20, choices=PATIENT_STATUS_CHOICES, default="active")
     # Hashed national ID used for cross-registry deduplication
     national_id_hash = models.CharField(max_length=200, blank=True)
     enrollment_source = models.CharField(

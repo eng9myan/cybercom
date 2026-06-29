@@ -9,10 +9,13 @@ Features:
 - SurveillanceService
 - QualityMeasureService
 """
+
 from __future__ import annotations
-import uuid
+
 import logging
-from typing import Any, Dict, List, Optional
+import uuid
+from typing import Any
+
 from django.db import transaction
 from django.utils import timezone
 
@@ -23,6 +26,7 @@ def _emit_outbox_event(tenant_id: str, topic: str, event_type: str, payload: dic
     """Helper to write to the platform transactional outbox."""
     try:
         from platform.events.models import OutboxEvent
+
         OutboxEvent.objects.create(
             tenant_id=uuid.UUID(str(tenant_id)),
             topic=topic,
@@ -37,6 +41,7 @@ def _emit_outbox_event(tenant_id: str, topic: str, event_type: str, payload: dic
 # 1. RiskStratificationService
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class RiskStratificationService:
     """
     Computes population health clinical risk profiles using clinical parameters.
@@ -48,14 +53,14 @@ class RiskStratificationService:
         """
         Calculates patient risk score (0-100) and writes to risk scores registry.
         """
-        from products.cymed.population_health.risk_management.models import RiskScore, RiskCategory
-        from products.cymed.core.patients.models import Patient
         from products.cymed.core.clinical.services import ClinicalAIService
+        from products.cymed.core.patients.models import Patient
+        from products.cymed.population_health.risk_management.models import RiskCategory, RiskScore
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         patient_uuid = uuid.UUID(str(patient_id))
 
-        patient = Patient.objects.get(id=patient_uuid, tenant_id=tenant_uuid)
+        Patient.objects.get(id=patient_uuid, tenant_id=tenant_uuid)
 
         # Call ClinicalAIService for risk scoring
         patient_data = {
@@ -81,7 +86,7 @@ class RiskStratificationService:
                 "category_name": f"{model.upper()} Risk Profile",
                 "description": "Calculated by ClinicalAIService",
                 "is_active": True,
-            }
+            },
         )
 
         score = RiskScore.objects.create(
@@ -115,6 +120,7 @@ class RiskStratificationService:
         Lists high risk patients.
         """
         from products.cymed.population_health.risk_management.models import RiskScore
+
         tenant_uuid = uuid.UUID(str(tenant_id))
 
         qs = RiskScore.objects.filter(
@@ -133,7 +139,7 @@ class RiskStratificationService:
         ]
 
     @classmethod
-    def stratify_population(cls, tenant_id: str, cohort_id: Optional[str] = None) -> dict:
+    def stratify_population(cls, tenant_id: str, cohort_id: str | None = None) -> dict:
         """
         Rolls up cohort distribution.
         """
@@ -144,12 +150,14 @@ class RiskStratificationService:
                 "moderate": 24,
                 "high": 11,
                 "very_high": 3,
-            }
+            },
         }
 
     @classmethod
     @transaction.atomic
-    def update_risk_score(cls, tenant_id: str, patient_id: str, new_score: float, reason: str = "") -> dict:
+    def update_risk_score(
+        cls, tenant_id: str, patient_id: str, new_score: float, reason: str = ""
+    ) -> dict:
         """
         Manually overrides a score.
         """
@@ -170,6 +178,7 @@ class RiskStratificationService:
 # 2. CareGapService
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class CareGapService:
     """
     Manages preventive care screenings and vaccine care gaps.
@@ -181,6 +190,7 @@ class CareGapService:
         Checks patient history against clinical guidelines (e.g. breast cancer screening, HbA1c).
         """
         import datetime
+
         return [
             {
                 "measure_code": "COL-01",
@@ -193,14 +203,23 @@ class CareGapService:
                 "measure_code": "DM-01",
                 "measure_name": "Annual HbA1c monitoring",
                 "due_date": (datetime.date.today() + datetime.timedelta(days=15)).isoformat(),
-                "last_done_date": (datetime.date.today() - datetime.timedelta(days=350)).isoformat(),
+                "last_done_date": (
+                    datetime.date.today() - datetime.timedelta(days=350)
+                ).isoformat(),
                 "priority": "medium",
-            }
+            },
         ]
 
     @classmethod
     @transaction.atomic
-    def close_care_gap(cls, tenant_id: str, patient_id: str, measure_code: str, closed_by: str, closure_evidence: str = "") -> dict:
+    def close_care_gap(
+        cls,
+        tenant_id: str,
+        patient_id: str,
+        measure_code: str,
+        closed_by: str,
+        closure_evidence: str = "",
+    ) -> dict:
         """
         Closes care gap with evidence.
         """
@@ -217,7 +236,7 @@ class CareGapService:
             defaults={
                 "gap_description": f"Care gap for {measure_code}",
                 "status": "open",
-            }
+            },
         )
         gap.status = "closed"
         gap.save()
@@ -232,14 +251,21 @@ class CareGapService:
         return {"gap_id": str(gap.id), "status": gap.status}
 
     @classmethod
-    def get_gap_summary(cls, tenant_id: str, provider_id: Optional[str] = None) -> dict:
+    def get_gap_summary(cls, tenant_id: str, provider_id: str | None = None) -> dict:
         """
         Returns summary.
         """
         return {"total_gaps": 12847, "closed_mtd": 842, "compliance_rate": 84.7}
 
     @classmethod
-    def schedule_gap_closure(cls, tenant_id: str, patient_id: str, measure_code: str, scheduled_date: Any, provider_id: str) -> dict:
+    def schedule_gap_closure(
+        cls,
+        tenant_id: str,
+        patient_id: str,
+        measure_code: str,
+        scheduled_date: Any,
+        provider_id: str,
+    ) -> dict:
         """
         Schedules appointment to close gap.
         """
@@ -250,6 +276,7 @@ class CareGapService:
 # 3. RegistryService
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class RegistryService:
     """
     Enrolls and tracks cohorts in chronic condition registries.
@@ -257,11 +284,21 @@ class RegistryService:
 
     @classmethod
     @transaction.atomic
-    def enroll_patient(cls, tenant_id: str, patient_id: str, registry_code: str, enrolled_by: str, icd_code: Optional[str] = None) -> dict:
+    def enroll_patient(
+        cls,
+        tenant_id: str,
+        patient_id: str,
+        registry_code: str,
+        enrolled_by: str,
+        icd_code: str | None = None,
+    ) -> dict:
         """
         Enrolls a patient into a registry (e.g. DM, HTN).
         """
-        from products.cymed.population_health.registries.models import DiseaseRegistry, RegistryPatient
+        from products.cymed.population_health.registries.models import (
+            DiseaseRegistry,
+            RegistryPatient,
+        )
 
         tenant_uuid = uuid.UUID(str(tenant_id))
         patient_uuid = uuid.UUID(str(patient_id))
@@ -273,7 +310,7 @@ class RegistryService:
                 "registry_type": "diabetes" if "DM" in registry_code else "hypertension",
                 "start_date": timezone.now().date(),
                 "is_active": True,
-            }
+            },
         )
 
         rp = RegistryPatient.objects.create(
@@ -290,13 +327,17 @@ class RegistryService:
             "patient_id": str(patient_id),
             "registry_code": registry_code,
         }
-        _emit_outbox_event(tenant_id, "cymed.ph.registry.enrolled", "PatientEnrolledInRegistry", payload)
+        _emit_outbox_event(
+            tenant_id, "cymed.ph.registry.enrolled", "PatientEnrolledInRegistry", payload
+        )
 
         return {"registry_patient_id": str(rp.id), "status": rp.status}
 
     @classmethod
     @transaction.atomic
-    def unenroll_patient(cls, tenant_id: str, patient_id: str, registry_code: str, reason: str) -> dict:
+    def unenroll_patient(
+        cls, tenant_id: str, patient_id: str, registry_code: str, reason: str
+    ) -> dict:
         """
         Unenrolls a patient.
         """
@@ -325,16 +366,21 @@ class RegistryService:
         return {"enrolled_count": 8432, "active": 8100, "controlled_pct": 68.0}
 
     @classmethod
-    def get_registry_patients(cls, tenant_id: str, registry_code: str, controlled_only: bool = False) -> list:
+    def get_registry_patients(
+        cls, tenant_id: str, registry_code: str, controlled_only: bool = False
+    ) -> list:
         """
         Lists patients.
         """
-        return [{"patient_id": str(uuid.uuid4()), "enrollment_date": timezone.now().date().isoformat()}]
+        return [
+            {"patient_id": str(uuid.uuid4()), "enrollment_date": timezone.now().date().isoformat()}
+        ]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. SurveillanceService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class SurveillanceService:
     """
@@ -343,7 +389,14 @@ class SurveillanceService:
 
     @classmethod
     @transaction.atomic
-    def report_communicable_disease(cls, tenant_id: str, patient_id: str, disease_code: str, report_date: Any, confirmed: bool = False) -> dict:
+    def report_communicable_disease(
+        cls,
+        tenant_id: str,
+        patient_id: str,
+        disease_code: str,
+        report_date: Any,
+        confirmed: bool = False,
+    ) -> dict:
         """
         Logs a surveillance case and triggers MoH mandatory alerts if needed.
         """
@@ -375,12 +428,20 @@ class SurveillanceService:
             "disease_code": disease_code,
             "notifiable": case.is_notifiable,
         }
-        _emit_outbox_event(tenant_id, "cymed.ph.surveillance.reported", "SurveillanceCaseReported", payload)
+        _emit_outbox_event(
+            tenant_id, "cymed.ph.surveillance.reported", "SurveillanceCaseReported", payload
+        )
 
         return {"case_id": str(case.id), "status": case.status}
 
     @classmethod
-    def get_epidemic_curve(cls, tenant_id: str, disease_code: str, date_from: Optional[Any] = None, date_to: Optional[Any] = None) -> dict:
+    def get_epidemic_curve(
+        cls,
+        tenant_id: str,
+        disease_code: str,
+        date_from: Any | None = None,
+        date_to: Any | None = None,
+    ) -> dict:
         """
         Returns curve coordinates.
         """
@@ -390,11 +451,13 @@ class SurveillanceService:
                 {"date": "2026-06-01", "new_cases": 12, "cumulative": 12},
                 {"date": "2026-06-08", "new_cases": 24, "cumulative": 36},
                 {"date": "2026-06-15", "new_cases": 45, "cumulative": 81},
-            ]
+            ],
         }
 
     @classmethod
-    def detect_outbreak(cls, tenant_id: str, disease_code: str, threshold: int = 3, window_days: int = 7) -> dict:
+    def detect_outbreak(
+        cls, tenant_id: str, disease_code: str, threshold: int = 3, window_days: int = 7
+    ) -> dict:
         """
         Detects clusters.
         """
@@ -406,14 +469,18 @@ class SurveillanceService:
         Active alerts.
         """
         return [
-            {"alert_id": str(uuid.uuid4()), "message": "Seasonal Influenza cases increasing rapidly in Central Ward."},
-            {"alert_id": str(uuid.uuid4()), "message": "MoH notifiable TB case logged."}
+            {
+                "alert_id": str(uuid.uuid4()),
+                "message": "Seasonal Influenza cases increasing rapidly in Central Ward.",
+            },
+            {"alert_id": str(uuid.uuid4()), "message": "MoH notifiable TB case logged."},
         ]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 5. QualityMeasureService
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class QualityMeasureService:
     """
@@ -422,11 +489,16 @@ class QualityMeasureService:
 
     @classmethod
     @transaction.atomic
-    def calculate_measure(cls, tenant_id: str, measure_code: str, period_start: Any, period_end: Any) -> dict:
+    def calculate_measure(
+        cls, tenant_id: str, measure_code: str, period_start: Any, period_end: Any
+    ) -> dict:
         """
         Rolls up HEDIS numerator/denominator metrics.
         """
-        from products.cymed.population_health.quality.models import QualityMeasure, QualityMeasureResult
+        from products.cymed.population_health.quality.models import (
+            QualityMeasure,
+            QualityMeasureResult,
+        )
 
         tenant_uuid = uuid.UUID(str(tenant_id))
 
@@ -448,7 +520,7 @@ class QualityMeasureService:
                 "target_percentage": 90.0,
                 "benchmark_percentage": 85.0,
                 "is_active": True,
-            }
+            },
         )
 
         res = QualityMeasureResult.objects.create(
@@ -474,7 +546,7 @@ class QualityMeasureService:
         }
 
     @classmethod
-    def get_quality_dashboard(cls, tenant_id: str, facility_id: Optional[str] = None) -> dict:
+    def get_quality_dashboard(cls, tenant_id: str, facility_id: str | None = None) -> dict:
         """
         Dashboard rollup.
         """

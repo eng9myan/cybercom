@@ -1,27 +1,51 @@
 from django.db import models as db_models
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
 from .models import (
-    PricingPlan, Quotation, Proposal, LicenseKey,
-    ComplianceCertification, CompetitiveBenchmark,
-    License, Subscription, ProductEdition, FeatureFlag,
-    TenantFeatureFlagOverride, WhiteLabelConfig, ConcurrentLicenseSession,
-    CustomerPortalAccess, SupportTicket, MarketplaceListing,
-    MarketplaceInstallation, CommercialMetricsSnapshot,
+    CommercialMetricsSnapshot,
+    CompetitiveBenchmark,
+    ComplianceCertification,
+    ConcurrentLicenseSession,
+    CustomerPortalAccess,
+    FeatureFlag,
+    License,
+    LicenseKey,
+    MarketplaceInstallation,
+    MarketplaceListing,
+    PricingPlan,
+    ProductEdition,
+    Proposal,
+    Quotation,
+    Subscription,
+    SupportTicket,
+    TenantFeatureFlagOverride,
+    WhiteLabelConfig,
 )
 from .serializers import (
-    PricingPlanSerializer, QuotationSerializer, ProposalSerializer, LicenseKeySerializer,
-    ComplianceCertificationSerializer, CompetitiveBenchmarkSerializer,
-    LicenseSerializer, SubscriptionSerializer, ProductEditionSerializer, FeatureFlagSerializer,
-    TenantFeatureFlagOverrideSerializer, WhiteLabelConfigSerializer, ConcurrentLicenseSessionSerializer,
-    CustomerPortalAccessSerializer, SupportTicketSerializer, MarketplaceListingSerializer,
-    MarketplaceInstallationSerializer, CommercialMetricsSnapshotSerializer,
+    CommercialMetricsSnapshotSerializer,
+    CompetitiveBenchmarkSerializer,
+    ComplianceCertificationSerializer,
+    ConcurrentLicenseSessionSerializer,
+    CustomerPortalAccessSerializer,
+    FeatureFlagSerializer,
+    LicenseKeySerializer,
+    LicenseSerializer,
+    MarketplaceInstallationSerializer,
+    MarketplaceListingSerializer,
+    PricingPlanSerializer,
+    ProductEditionSerializer,
+    ProposalSerializer,
+    QuotationSerializer,
+    SubscriptionSerializer,
+    SupportTicketSerializer,
+    TenantFeatureFlagOverrideSerializer,
+    WhiteLabelConfigSerializer,
 )
 
 
@@ -67,7 +91,9 @@ class QuotationViewSet(BaseViewSet):
         quotation.status = "accepted"
         quotation.accepted_at = timezone.now()
         quotation.save(update_fields=["status", "accepted_at", "updated_at"])
-        return Response({"status": "accepted", "accepted_at": quotation.accepted_at, "id": str(quotation.id)})
+        return Response(
+            {"status": "accepted", "accepted_at": quotation.accepted_at, "id": str(quotation.id)}
+        )
 
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
@@ -82,7 +108,13 @@ class ProposalViewSet(BaseViewSet):
     serializer_class = ProposalSerializer
     filterset_fields = ["status", "currency"]
     search_fields = ["proposal_title", "customer_name", "opportunity_id", "rfp_reference"]
-    ordering_fields = ["proposal_title", "total_value", "submission_date", "decision_date", "created_at"]
+    ordering_fields = [
+        "proposal_title",
+        "total_value",
+        "submission_date",
+        "decision_date",
+        "created_at",
+    ]
 
     @action(detail=True, methods=["post"])
     def submit(self, request, pk=None):
@@ -127,7 +159,9 @@ class LicenseKeyViewSet(BaseViewSet):
         license_key.is_active = True
         license_key.activated_at = timezone.now()
         license_key.save(update_fields=["is_active", "activated_at", "updated_at"])
-        return Response({"is_active": True, "activated_at": license_key.activated_at, "id": str(license_key.id)})
+        return Response(
+            {"is_active": True, "activated_at": license_key.activated_at, "id": str(license_key.id)}
+        )
 
     @action(detail=True, methods=["post"])
     def deactivate(self, request, pk=None):
@@ -162,7 +196,11 @@ class LicenseViewSet(BaseViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs.filter(tenant_id=getattr(self.request, "tenant_id", None)) if getattr(self.request, "tenant_id", None) else qs.none()
+        return (
+            qs.filter(tenant_id=getattr(self.request, "tenant_id", None))
+            if getattr(self.request, "tenant_id", None)
+            else qs.none()
+        )
 
     @action(detail=True, methods=["post"])
     def activate(self, request, pk=None):
@@ -183,6 +221,7 @@ class LicenseViewSet(BaseViewSet):
     def renew(self, request, pk=None):
         license = self.get_object()
         from dateutil.relativedelta import relativedelta
+
         if license.valid_until:
             license.valid_until = license.valid_until + relativedelta(years=1)
         license.status = "active"
@@ -292,6 +331,7 @@ class SupportTicketViewSet(BaseViewSet):
 
     def perform_create(self, serializer):
         import uuid
+
         ticket_number = f"TKT-{str(uuid.uuid4().hex[:8]).upper()}"
         serializer.save(
             tenant_id=getattr(self.request, "tenant_id", None),

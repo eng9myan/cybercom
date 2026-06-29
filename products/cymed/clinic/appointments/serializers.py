@@ -1,17 +1,27 @@
-from rest_framework import serializers
-from products.cymed.clinic.appointments.models import ClinicAppointment, AppointmentReminder, AppointmentWaitlist, AppointmentTemplate, AppointmentRule
-from products.cymed.core.scheduling.models import Appointment, AppointmentParticipant
 from django.utils import timezone
+from rest_framework import serializers
+
+from products.cymed.clinic.appointments.models import (
+    AppointmentReminder,
+    AppointmentRule,
+    AppointmentTemplate,
+    AppointmentWaitlist,
+    ClinicAppointment,
+)
+from products.cymed.core.scheduling.models import AppointmentParticipant
+
 
 class AppointmentTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentTemplate
         fields = "__all__"
 
+
 class AppointmentRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentRule
         fields = "__all__"
+
 
 class ClinicAppointmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,12 +36,11 @@ class ClinicAppointmentSerializer(serializers.ModelSerializer):
         # Enforce Conflict Rules Check
         appt = validated_data["appointment"]
         specialty = validated_data["specialty_code"]
-        
+
         rule = AppointmentRule.objects.filter(
-            tenant_id=validated_data["tenant_id"],
-            specialty_code=specialty
+            tenant_id=validated_data["tenant_id"], specialty_code=specialty
         ).first()
-        
+
         if rule and not rule.allow_conflicting_bookings:
             # Check for double booking of participants in the core scheduling system
             participants = appt.participants.all()
@@ -41,9 +50,9 @@ class ClinicAppointmentSerializer(serializers.ModelSerializer):
                     actor_id=p.actor_id,
                     actor_type=p.actor_type,
                     appointment__start_time__lt=appt.end_time,
-                    appointment__end_time__gt=appt.start_time
+                    appointment__end_time__gt=appt.start_time,
                 ).exclude(appointment=appt)
-                
+
                 if conflicts.exists():
                     raise serializers.ValidationError(
                         f"Participant {p.actor_id} has a conflicting appointment."
@@ -57,15 +66,17 @@ class ClinicAppointmentSerializer(serializers.ModelSerializer):
             clinic_appointment=clinic_appt,
             channel="sms",
             scheduled_time=appt.start_time - timezone.timedelta(hours=24),
-            status="pending"
+            status="pending",
         )
 
         return clinic_appt
+
 
 class AppointmentReminderSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppointmentReminder
         fields = "__all__"
+
 
 class AppointmentWaitlistSerializer(serializers.ModelSerializer):
     class Meta:

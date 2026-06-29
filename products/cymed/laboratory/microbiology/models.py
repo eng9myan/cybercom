@@ -1,9 +1,11 @@
-﻿"""
+"""
 CyMed Laboratory â€” Microbiology
 Culture tracking, organism ID, antibiotic sensitivity, resistance profiling.
 Organism codes resolved via SNOMED-CT through TerminologyService.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -27,6 +29,7 @@ class SensitivityResult(models.TextChoices):
 
 class Culture(BaseModel):
     """Tracks a single microbiology culture from inoculation through result."""
+
     order_item = models.ForeignKey(
         "lab_orders.LabOrderItem", on_delete=models.CASCADE, related_name="cultures"
     )
@@ -34,11 +37,15 @@ class Culture(BaseModel):
         "lab_specimens.Specimen", on_delete=models.PROTECT, related_name="cultures"
     )
     culture_number = models.CharField(max_length=100, unique=True)
-    culture_type = models.CharField(max_length=100)    # aerobic, anaerobic, fungal, TB, viral
+    culture_type = models.CharField(max_length=100)  # aerobic, anaerobic, fungal, TB, viral
     medium = models.CharField(max_length=100, blank=True)
-    incubation_temperature_celsius = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
+    incubation_temperature_celsius = models.DecimalField(
+        max_digits=5, decimal_places=1, null=True, blank=True
+    )
     incubation_hours = models.PositiveIntegerField(default=24)
-    status = models.CharField(max_length=20, choices=CultureStatus.choices, default=CultureStatus.PENDING)
+    status = models.CharField(
+        max_length=20, choices=CultureStatus.choices, default=CultureStatus.PENDING
+    )
     inoculated_at = models.DateTimeField(null=True, blank=True)
     inoculated_by = models.UUIDField(null=True, blank=True)
     read_at_24h = models.DateTimeField(null=True, blank=True)
@@ -57,6 +64,7 @@ class Culture(BaseModel):
 
 class Organism(BaseModel):
     """Organism identified from a culture. SNOMED-CT code from TerminologyService."""
+
     GRAM_STAIN = [
         ("gram_positive", "Gram Positive"),
         ("gram_negative", "Gram Negative"),
@@ -83,13 +91,15 @@ class Organism(BaseModel):
     ]
 
     culture = models.ForeignKey(Culture, on_delete=models.CASCADE, related_name="organisms")
-    snomed_code = models.CharField(max_length=50, blank=True)   # SNOMED-CT via TerminologyService
+    snomed_code = models.CharField(max_length=50, blank=True)  # SNOMED-CT via TerminologyService
     organism_name = models.CharField(max_length=255)
     gram_stain = models.CharField(max_length=20, choices=GRAM_STAIN, blank=True)
     morphology = models.CharField(max_length=20, choices=MORPHOLOGY, blank=True)
     growth_level = models.CharField(max_length=20, choices=GROWTH_LEVEL, blank=True)
     identification_method = models.CharField(max_length=100, blank=True)  # MALDI-TOF, API, VITEK
-    identification_confidence = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    identification_confidence = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
     is_contaminant = models.BooleanField(default=False)
     identified_at = models.DateTimeField(null=True, blank=True)
     identified_by = models.UUIDField(null=True, blank=True)
@@ -100,12 +110,15 @@ class Organism(BaseModel):
 
 class Sensitivity(BaseModel):
     """Antibiotic sensitivity test result for a single drug-organism pair."""
+
     organism = models.ForeignKey(Organism, on_delete=models.CASCADE, related_name="sensitivities")
     antibiotic_code = models.CharField(max_length=50)
     antibiotic_name = models.CharField(max_length=255)
-    method = models.CharField(max_length=50, blank=True)   # disk_diffusion, MIC, E-test
-    result = models.CharField(max_length=5, choices=SensitivityResult.choices, default=SensitivityResult.NOT_TESTED)
-    mic_value = models.CharField(max_length=20, blank=True)   # e.g., "<=0.5", "16", ">128"
+    method = models.CharField(max_length=50, blank=True)  # disk_diffusion, MIC, E-test
+    result = models.CharField(
+        max_length=5, choices=SensitivityResult.choices, default=SensitivityResult.NOT_TESTED
+    )
+    mic_value = models.CharField(max_length=20, blank=True)  # e.g., "<=0.5", "16", ">128"
     disk_zone_mm = models.PositiveSmallIntegerField(null=True, blank=True)
     breakpoint_standard = models.CharField(max_length=50, blank=True)  # CLSI, EUCAST
     tested_at = models.DateTimeField(null=True, blank=True)
@@ -118,6 +131,7 @@ class Sensitivity(BaseModel):
 
 class ResistanceProfile(BaseModel):
     """Resistance mechanisms detected in an organism (e.g., MRSA, ESBL, CRE)."""
+
     RESISTANCE_MECHANISMS = [
         ("mrsa", "MRSA â€” Methicillin-Resistant S. aureus"),
         ("esbl", "ESBL â€” Extended-Spectrum Beta-Lactamase"),
@@ -130,7 +144,9 @@ class ResistanceProfile(BaseModel):
         ("other", "Other Resistance Mechanism"),
     ]
 
-    organism = models.ForeignKey(Organism, on_delete=models.CASCADE, related_name="resistance_profiles")
+    organism = models.ForeignKey(
+        Organism, on_delete=models.CASCADE, related_name="resistance_profiles"
+    )
     resistance_mechanism = models.CharField(max_length=30, choices=RESISTANCE_MECHANISMS)
     confirmed = models.BooleanField(default=False)
     detection_method = models.CharField(max_length=100, blank=True)
@@ -144,6 +160,7 @@ class ResistanceProfile(BaseModel):
 
 class MicrobiologyResult(BaseModel):
     """Final interpretive report for a microbiology order item."""
+
     order_item = models.OneToOneField(
         "lab_orders.LabOrderItem", on_delete=models.CASCADE, related_name="microbiology_result"
     )

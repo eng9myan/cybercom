@@ -1,23 +1,30 @@
 from django.db import models
+
 from platform.common.models import BaseModel
 from products.cymed.core.patients.models import Patient
+
 
 class EmergencyVisit(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     arrival_time = models.DateTimeField(auto_now_add=True)
     arrival_method = models.CharField(max_length=100)  # ambulance, walk-in, police, flight
     presenting_complaint = models.TextField()
-    status = models.CharField(max_length=50, choices=[
-        ("triage", "Triage"),
-        ("fast_track", "Fast Track"),
-        ("resuscitation", "Resuscitation"),
-        ("observation", "Observation"),
-        ("admitted", "Admitted"),
-        ("discharged", "Discharged")
-    ], default="triage")
+    status = models.CharField(
+        max_length=50,
+        choices=[
+            ("triage", "Triage"),
+            ("fast_track", "Fast Track"),
+            ("resuscitation", "Resuscitation"),
+            ("observation", "Observation"),
+            ("admitted", "Admitted"),
+            ("discharged", "Discharged"),
+        ],
+        default="triage",
+    )
 
     class Meta:
         db_table = "cymed_hospital_emergency_visits"
+
 
 class EmergencyTriage(BaseModel):
     visit = models.OneToOneField(EmergencyVisit, on_delete=models.CASCADE, related_name="triage")
@@ -29,6 +36,7 @@ class EmergencyTriage(BaseModel):
     class Meta:
         db_table = "cymed_hospital_emergency_triages"
 
+
 class EmergencyAcuity(BaseModel):
     visit = models.ForeignKey(EmergencyVisit, on_delete=models.CASCADE)
     news2_score = models.PositiveIntegerField()
@@ -37,14 +45,18 @@ class EmergencyAcuity(BaseModel):
     class Meta:
         db_table = "cymed_hospital_emergency_acuities"
 
+
 class EmergencyDisposition(BaseModel):
-    visit = models.OneToOneField(EmergencyVisit, on_delete=models.CASCADE, related_name="disposition")
+    visit = models.OneToOneField(
+        EmergencyVisit, on_delete=models.CASCADE, related_name="disposition"
+    )
     disposition_type = models.CharField(max_length=100)  # discharged, admitted, transferred, AMA
     notes = models.TextField(blank=True)
     logged_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "cymed_hospital_emergency_dispositions"
+
 
 class EmergencyObservation(BaseModel):
     visit = models.ForeignKey(EmergencyVisit, on_delete=models.CASCADE)
@@ -59,6 +71,7 @@ class EmergencyObservation(BaseModel):
 
     class Meta:
         db_table = "cymed_hospital_emergency_observations"
+
 
 class EmergencyTracking(BaseModel):
     visit = models.ForeignKey(EmergencyVisit, on_delete=models.CASCADE)

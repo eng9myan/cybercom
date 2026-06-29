@@ -1,16 +1,20 @@
-from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 
-from products.cymed.commercial.views import CommercialModelViewSet
 from products.cymed.commercial.feature_flags.models import (
-    FeatureFlag, FeatureDependency, TenantFeature, CustomerFeature
+    CustomerFeature,
+    FeatureDependency,
+    FeatureFlag,
+    TenantFeature,
 )
 from products.cymed.commercial.feature_flags.serializers import (
-    FeatureFlagSerializer, FeatureDependencySerializer,
-    TenantFeatureSerializer, CustomerFeatureSerializer, FeatureCheckSerializer
+    CustomerFeatureSerializer,
+    FeatureCheckSerializer,
+    FeatureDependencySerializer,
+    FeatureFlagSerializer,
+    TenantFeatureSerializer,
 )
+from products.cymed.commercial.views import CommercialModelViewSet
 
 
 class FeatureFlagViewSet(CommercialModelViewSet):

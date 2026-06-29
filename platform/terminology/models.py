@@ -1,16 +1,21 @@
 import uuid
+
 from django.db import models
 from django.utils import timezone
+
 
 class TerminologyAuditLog(models.Model):
     """
     Audit ledger tracking clinical terminology requests.
     Enforces multi-tenant visibility and records performance metrics.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     provider = models.CharField(max_length=100, db_index=True)  # icd11, snomed, loinc, etc.
-    operation = models.CharField(max_length=100, db_index=True) # search, lookup, validate, translate, expand
+    operation = models.CharField(
+        max_length=100, db_index=True
+    )  # search, lookup, validate, translate, expand
     query = models.CharField(max_length=1000, blank=True)
     code = models.CharField(max_length=500, blank=True)
     records_returned = models.PositiveIntegerField(default=0)

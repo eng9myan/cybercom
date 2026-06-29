@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 CASE_TYPE_CHOICES = [
     ("confirmed", "Confirmed"),
@@ -80,15 +80,11 @@ class SurveillanceCase(BaseModel):
     # ICD-11 code sourced from TerminologyService — no local table
     disease_code = models.CharField(max_length=20)
     disease_name = models.CharField(max_length=200)
-    case_type = models.CharField(
-        max_length=20, choices=CASE_TYPE_CHOICES, default="suspected"
-    )
+    case_type = models.CharField(max_length=20, choices=CASE_TYPE_CHOICES, default="suspected")
     case_date = models.DateField()
     reporting_facility_id = models.UUIDField(null=True, blank=True)
     reporting_provider_id = models.UUIDField(null=True, blank=True)
-    status = models.CharField(
-        max_length=20, choices=CASE_STATUS_CHOICES, default="open"
-    )
+    status = models.CharField(max_length=20, choices=CASE_STATUS_CHOICES, default="open")
     # True when disease requires mandatory reporting to public health authorities
     is_notifiable = models.BooleanField(default=False)
     outbreak_id = models.UUIDField(null=True, blank=True)
@@ -117,12 +113,8 @@ class Outbreak(BaseModel):
     suspected_count = models.PositiveIntegerField(default=0)
     confirmed_count = models.PositiveIntegerField(default=0)
     deaths_count = models.PositiveIntegerField(default=0)
-    status = models.CharField(
-        max_length=20, choices=OUTBREAK_STATUS_CHOICES, default="active"
-    )
-    severity_level = models.CharField(
-        max_length=10, choices=SEVERITY_LEVEL_CHOICES, default="low"
-    )
+    status = models.CharField(max_length=20, choices=OUTBREAK_STATUS_CHOICES, default="active")
+    severity_level = models.CharField(max_length=10, choices=SEVERITY_LEVEL_CHOICES, default="low")
     is_reported_to_authority = models.BooleanField(default=False)
 
     def __str__(self):
@@ -139,9 +131,7 @@ class OutbreakAlert(BaseModel):
         on_delete=models.CASCADE,
         related_name="alerts",
     )
-    alert_level = models.CharField(
-        max_length=10, choices=ALERT_LEVEL_CHOICES, default="yellow"
-    )
+    alert_level = models.CharField(max_length=10, choices=ALERT_LEVEL_CHOICES, default="yellow")
     alert_date = models.DateTimeField(auto_now_add=True)
     description = models.TextField()
     issued_by_authority = models.CharField(max_length=200, blank=True)
@@ -163,9 +153,7 @@ class PublicHealthEvent(BaseModel):
     end_date = models.DateField(null=True, blank=True)
     description = models.TextField(blank=True)
     geographic_scope = models.CharField(max_length=200, blank=True)
-    severity = models.CharField(
-        max_length=10, choices=SEVERITY_LEVEL_CHOICES, default="low"
-    )
+    severity = models.CharField(max_length=10, choices=SEVERITY_LEVEL_CHOICES, default="low")
     response_status = models.CharField(
         max_length=20, choices=RESPONSE_STATUS_CHOICES, default="planning"
     )

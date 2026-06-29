@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import ImagingRoom, ImagingAppointment, ModalitySchedule, RadiologistSchedule
+
+from .models import ImagingAppointment, ImagingRoom, ModalitySchedule, RadiologistSchedule
 
 
 class ImagingRoomSerializer(serializers.ModelSerializer):

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Modality, ModalityWorklist, WorklistEntry, StudyQueue
+
+from .models import Modality, ModalityWorklist, StudyQueue, WorklistEntry
 
 
 class ModalitySerializer(serializers.ModelSerializer):

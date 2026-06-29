@@ -1,8 +1,11 @@
 from products.cymed.imaging.views import ImagingModelViewSet
-from .models import ReadingQueue, TeleradiologyCase, ReadingAssignment, SecondOpinion
+
+from .models import ReadingAssignment, ReadingQueue, SecondOpinion, TeleradiologyCase
 from .serializers import (
-    ReadingQueueSerializer, TeleradiologyCaseSerializer,
-    ReadingAssignmentSerializer, SecondOpinionSerializer,
+    ReadingAssignmentSerializer,
+    ReadingQueueSerializer,
+    SecondOpinionSerializer,
+    TeleradiologyCaseSerializer,
 )
 
 
@@ -13,7 +16,9 @@ class ReadingQueueViewSet(ImagingModelViewSet):
 
 
 class TeleradiologyCaseViewSet(ImagingModelViewSet):
-    queryset = TeleradiologyCase.objects.select_related("reading_queue").prefetch_related("assignments")
+    queryset = TeleradiologyCase.objects.select_related("reading_queue").prefetch_related(
+        "assignments"
+    )
     serializer_class = TeleradiologyCaseSerializer
     required_feature = "imaging.teleradiology"
 

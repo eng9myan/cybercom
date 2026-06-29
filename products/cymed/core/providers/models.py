@@ -1,6 +1,7 @@
-import uuid
 from django.db import models
+
 from platform.common.models import BaseModel, SoftDeleteMixin
+
 
 class ProviderType(models.TextChoices):
     PHYSICIAN = "physician", "Physician"
@@ -10,6 +11,7 @@ class ProviderType(models.TextChoices):
     LAB_TECHNICIAN = "lab_technician", "Lab Technician"
     THERAPIST = "therapist", "Therapist"
     ADMINISTRATOR = "administrator", "Administrator"
+
 
 class Provider(BaseModel, SoftDeleteMixin):
     user_id = models.UUIDField(db_index=True)  # maps to cyidentity UserProfile id

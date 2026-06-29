@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import DICOMStudy, DICOMSeries, DICOMInstance, StudyArchive
+
+from .models import DICOMInstance, DICOMSeries, DICOMStudy, StudyArchive
 
 
 class DICOMInstanceSerializer(serializers.ModelSerializer):

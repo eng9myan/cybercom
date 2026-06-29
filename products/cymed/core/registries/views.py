@@ -1,7 +1,12 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+
 from products.cymed.core.registries.models import CohortRegistry, RegistryEntry
-from products.cymed.core.registries.serializers import CohortRegistrySerializer, RegistryEntrySerializer
+from products.cymed.core.registries.serializers import (
+    CohortRegistrySerializer,
+    RegistryEntrySerializer,
+)
+
 
 class CohortRegistryViewSet(viewsets.ModelViewSet):
     queryset = CohortRegistry.objects.filter(is_active=True)

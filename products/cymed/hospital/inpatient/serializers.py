@@ -1,16 +1,34 @@
 from rest_framework import serializers
-from products.cymed.hospital.inpatient.models import HospitalStay, DailyRound, ProgressReview, InpatientCarePlan, DischargePlanning
+
 from platform.events.models import OutboxEvent
+from products.cymed.hospital.inpatient.models import (
+    DailyRound,
+    DischargePlanning,
+    HospitalStay,
+    InpatientCarePlan,
+    ProgressReview,
+)
+
 
 class HospitalStaySerializer(serializers.ModelSerializer):
     class Meta:
         model = HospitalStay
         fields = "__all__"
 
+
 class DailyRoundSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyRound
-        fields = ["id", "stay", "clinician_id", "round_time", "subjective_notes", "objective_notes", "assessment_notes", "plan_notes"]
+        fields = [
+            "id",
+            "stay",
+            "clinician_id",
+            "round_time",
+            "subjective_notes",
+            "objective_notes",
+            "assessment_notes",
+            "plan_notes",
+        ]
         read_only_fields = ["round_time"]
 
     def create(self, validated_data):
@@ -27,21 +45,24 @@ class DailyRoundSerializer(serializers.ModelSerializer):
                 "charge_type": "physician_round",
                 "amount": 100.00,
                 "currency": "AED",
-                "service_code": "RND-PHY-01"
-            }
+                "service_code": "RND-PHY-01",
+            },
         )
 
         return round_obj
+
 
 class ProgressReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProgressReview
         fields = "__all__"
 
+
 class InpatientCarePlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = InpatientCarePlan
         fields = "__all__"
+
 
 class DischargePlanningSerializer(serializers.ModelSerializer):
     class Meta:

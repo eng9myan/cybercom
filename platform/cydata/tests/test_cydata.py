@@ -1,14 +1,22 @@
 import uuid
+
+import jwt
 import pytest
 from rest_framework.test import APIClient
-import jwt
 
-from platform.cydata.models import DataAsset, DataLineage, DataQualityRule, MasterDataMap, CDCPipelineLog
-from platform.cydata.services import DataQualityEngine, MasterDataReconciler, CDCPipelineClient
+from platform.cydata.models import (
+    DataAsset,
+    DataLineage,
+    DataQualityRule,
+    MasterDataMap,
+)
+from platform.cydata.services import CDCPipelineClient, DataQualityEngine, MasterDataReconciler
+
 
 @pytest.fixture
 def test_tenant_id():
     return uuid.uuid4()
+
 
 @pytest.fixture
 def auth_client(test_tenant_id):
@@ -28,6 +36,7 @@ def auth_client(test_tenant_id):
     )
     return client
 
+
 @pytest.mark.django_db
 class TestDataModels:
     def test_data_asset(self):
@@ -38,43 +47,37 @@ class TestDataModels:
             schema_definition={"columns": ["id", "email", "age"]},
             pii_columns=["email"],
             phi_columns=["id"],
-            data_residency_region="me-central-1"
+            data_residency_region="me-central-1",
         )
         assert asset.name == "patient_records"
         assert asset.data_residency_region == "me-central-1"
 
     def test_data_lineage(self, test_tenant_id):
         asset_src = DataAsset.objects.create(
-            name="patients_raw",
-            asset_type="table",
-            physical_path="s3://patients_raw"
+            name="patients_raw", asset_type="table", physical_path="s3://patients_raw"
         )
         asset_dst = DataAsset.objects.create(
-            name="patients_clean",
-            asset_type="table",
-            physical_path="s3://patients_clean"
+            name="patients_clean", asset_type="table", physical_path="s3://patients_clean"
         )
         lineage = DataLineage.objects.create(
             tenant_id=test_tenant_id,
             source_asset=asset_src,
             target_asset=asset_dst,
-            transformation_job="spark_etl_patients"
+            transformation_job="spark_etl_patients",
         )
         assert lineage.source_asset == asset_src
         assert lineage.target_asset == asset_dst
 
     def test_data_quality_rule(self):
         asset = DataAsset.objects.create(
-            name="patients",
-            asset_type="table",
-            physical_path="s3://patients"
+            name="patients", asset_type="table", physical_path="s3://patients"
         )
         rule = DataQualityRule.objects.create(
             asset=asset,
             column_name="email",
             assertion_type="not_null",
             assertion_params={},
-            active=True
+            active=True,
         )
         assert rule.column_name == "email"
 
@@ -84,7 +87,7 @@ class TestDataModels:
             source_system="Epic",
             source_id="EPIC-1",
             golden_record_id=uuid.uuid4(),
-            match_confidence=100.00
+            match_confidence=100.00,
         )
         assert mapping.entity_type == "Patient"
 
@@ -93,23 +96,18 @@ class TestDataModels:
 class TestDataQualityEngine:
     def test_quality_assertions(self):
         asset = DataAsset.objects.create(
-            name="test_asset",
-            asset_type="table",
-            physical_path="s3://test"
+            name="test_asset", asset_type="table", physical_path="s3://test"
         )
         # Add Rules
         DataQualityRule.objects.create(
-            asset=asset,
-            column_name="email",
-            assertion_type="not_null",
-            active=True
+            asset=asset, column_name="email", assertion_type="not_null", active=True
         )
         DataQualityRule.objects.create(
             asset=asset,
             column_name="age",
             assertion_type="min_value",
             assertion_params={"min": 18},
-            active=True
+            active=True,
         )
 
         records = [
@@ -133,7 +131,7 @@ class TestMasterDataReconciler:
             entity_type="Patient",
             source_system="Epic",
             source_id="EPIC-101",
-            matching_fields={"email": "p1@cybercom.io"}
+            matching_fields={"email": "p1@cybercom.io"},
         )
         assert map1.match_confidence == 100.00
         gold_id = map1.golden_record_id
@@ -143,7 +141,7 @@ class TestMasterDataReconciler:
             entity_type="Patient",
             source_system="Epic",
             source_id="EPIC-101",
-            matching_fields={"email": "p1@cybercom.io"}
+            matching_fields={"email": "p1@cybercom.io"},
         )
         assert map2.id == map1.id
         assert map2.golden_record_id == gold_id
@@ -168,11 +166,11 @@ class TestDataAPIs:
 
     def test_evaluate_quality_api(self, auth_client):
         asset = DataAsset.objects.create(name="asset_2", asset_type="table", physical_path="s3://2")
-        DataQualityRule.objects.create(asset=asset, column_name="age", assertion_type="not_null", active=True)
+        DataQualityRule.objects.create(
+            asset=asset, column_name="age", assertion_type="not_null", active=True
+        )
         resp = auth_client.post(
-            f"/api/v1/data/assets/{asset.id}/evaluate/",
-            {"records": [{"age": 30}]},
-            format="json"
+            f"/api/v1/data/assets/{asset.id}/evaluate/", {"records": [{"age": 30}]}, format="json"
         )
         assert resp.status_code == 200
         assert resp.data["success"] is True
@@ -184,9 +182,9 @@ class TestDataAPIs:
                 "entity_type": "Patient",
                 "source_system": "Epic",
                 "source_id": "EPIC-202",
-                "matching_fields": {"email": "p2@cybercom.io"}
+                "matching_fields": {"email": "p2@cybercom.io"},
             },
-            format="json"
+            format="json",
         )
         assert resp.status_code == 200
         assert resp.data["entity_type"] == "Patient"
@@ -197,9 +195,9 @@ class TestDataAPIs:
             {
                 "tenant_id": str(test_tenant_id),
                 "table_name": "clinical_encounter",
-                "records_count": 15
+                "records_count": 15,
             },
-            format="json"
+            format="json",
         )
         assert resp.status_code == 201
         assert resp.data["table_name"] == "clinical_encounter"

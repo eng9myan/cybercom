@@ -2,12 +2,17 @@
 Tests for CyMed Commercial — Feature Flag Framework.
 Covers: models, service evaluation, tenant overrides, customer overrides, caching.
 """
+
 import uuid
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from products.cymed.commercial.feature_flags.models import (
-    FeatureFlag, FeatureDependency, TenantFeature, CustomerFeature
+    CustomerFeature,
+    FeatureDependency,
+    FeatureFlag,
+    TenantFeature,
 )
 from products.cymed.commercial.feature_flags.services import FeatureFlagService
 
@@ -70,6 +75,7 @@ class TestFeatureFlagModel:
 
     def test_unique_code(self, db, flag):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             FeatureFlag.objects.create(
                 tenant_id=PLATFORM_TENANT, code="clinic.appointments", name="Dup"
@@ -90,17 +96,19 @@ class TestFeatureFlagService:
         assert result is False
 
     @patch("products.cymed.commercial.feature_flags.services.cache")
-    def test_tenant_override_enables_disabled_flag(self, mock_cache, tenant_override_enabled, flag_disabled):
+    def test_tenant_override_enables_disabled_flag(
+        self, mock_cache, tenant_override_enabled, flag_disabled
+    ):
         mock_cache.get.return_value = None
         result = FeatureFlagService.is_enabled("clinic.icu", tenant_id=str(TENANT))
         assert result is True
 
     @patch("products.cymed.commercial.feature_flags.services.cache")
-    def test_customer_override_enables_disabled_flag(self, mock_cache, customer_override_enabled, flag_disabled):
+    def test_customer_override_enables_disabled_flag(
+        self, mock_cache, customer_override_enabled, flag_disabled
+    ):
         mock_cache.get.return_value = None
-        result = FeatureFlagService.is_enabled(
-            "clinic.icu", customer_id=str(CUSTOMER_ID)
-        )
+        result = FeatureFlagService.is_enabled("clinic.icu", customer_id=str(CUSTOMER_ID))
         assert result is True
 
     @patch("products.cymed.commercial.feature_flags.services.cache")

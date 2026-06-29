@@ -1,7 +1,13 @@
 from rest_framework.routers import DefaultRouter
+
 from .views import (
-    CourseViewSet, CourseModuleViewSet, EnrollmentViewSet, ExamViewSet,
-    ExamAttemptViewSet, CertificateViewSet, LearningPathViewSet,
+    CertificateViewSet,
+    CourseModuleViewSet,
+    CourseViewSet,
+    EnrollmentViewSet,
+    ExamAttemptViewSet,
+    ExamViewSet,
+    LearningPathViewSet,
 )
 
 router = DefaultRouter()

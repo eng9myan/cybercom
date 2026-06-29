@@ -1,19 +1,19 @@
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework import viewsets
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.permissions import IsAuthenticated
 
 from products.cymed.provider_portal.orders.models import (
-    ProviderOrderRequest,
     OrderModification,
-    OrderStatusUpdate,
     OrderSet,
+    OrderStatusUpdate,
+    ProviderOrderRequest,
 )
 from products.cymed.provider_portal.orders.serializers import (
-    ProviderOrderRequestSerializer,
     OrderModificationSerializer,
-    OrderStatusUpdateSerializer,
     OrderSetSerializer,
+    OrderStatusUpdateSerializer,
+    ProviderOrderRequestSerializer,
 )
 
 
@@ -23,8 +23,12 @@ class ProviderOrderRequestViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = [
-        "patient_id", "ordering_provider_id", "order_category",
-        "priority", "status", "cymed_encounter_id",
+        "patient_id",
+        "ordering_provider_id",
+        "order_category",
+        "priority",
+        "status",
+        "cymed_encounter_id",
     ]
     search_fields = ["order_name", "order_type", "ordering_provider_name", "clinical_indication"]
     ordering_fields = ["submitted_at", "created_at"]
@@ -76,7 +80,13 @@ class OrderSetViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSetSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["order_set_type", "specialty", "created_by_provider_id", "is_shared", "is_active"]
+    filterset_fields = [
+        "order_set_type",
+        "specialty",
+        "created_by_provider_id",
+        "is_shared",
+        "is_active",
+    ]
     search_fields = ["name", "description", "specialty"]
     ordering_fields = ["name", "usage_count", "created_at"]
     ordering = ["-created_at"]

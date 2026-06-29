@@ -1,16 +1,16 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import CensusDataPoint, StaffingForecast, ForecastAdjustment, ForecastRosterMapping
+from .models import CensusDataPoint, ForecastAdjustment, ForecastRosterMapping, StaffingForecast
 from .serializers import (
     CensusDataPointSerializer,
-    StaffingForecastSerializer,
     ForecastAdjustmentSerializer,
     ForecastRosterMappingSerializer,
+    StaffingForecastSerializer,
 )
 
 
@@ -39,7 +39,13 @@ class CensusDataPointViewSet(HWMModelViewSet):
 class StaffingForecastViewSet(HWMModelViewSet):
     queryset = StaffingForecast.objects.all()
     serializer_class = StaffingForecastSerializer
-    filterset_fields = ["facility_id", "department_id", "forecast_date", "status", "surge_predicted"]
+    filterset_fields = [
+        "facility_id",
+        "department_id",
+        "forecast_date",
+        "status",
+        "surge_predicted",
+    ]
     ordering_fields = ["forecast_date", "generated_at", "created_at"]
 
     @action(detail=True, methods=["get"])

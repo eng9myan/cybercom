@@ -1,7 +1,9 @@
 from django.db import models
 from django.utils import timezone
+
 from platform.common.models import BaseModel
 from products.cymed.core.patients.models import Patient
+
 
 class ConsentCategory(models.TextChoices):
     TREATMENT = "treatment", "Treatment Consent"
@@ -9,12 +11,15 @@ class ConsentCategory(models.TextChoices):
     DATA_SHARING = "data_sharing", "Data Sharing Consent"
     TELEMEDICINE = "telemedicine", "Telemedicine Consent"
 
+
 class Consent(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="consents")
     category = models.CharField(max_length=30, choices=ConsentCategory.choices)
-    status = models.CharField(max_length=30, choices=[
-        ("active", "Active"), ("inactive", "Inactive"), ("proposed", "Proposed")
-    ], default="active")
+    status = models.CharField(
+        max_length=30,
+        choices=[("active", "Active"), ("inactive", "Inactive"), ("proposed", "Proposed")],
+        default="active",
+    )
     policy_rule = models.TextField()
     start_time = models.DateTimeField(default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)

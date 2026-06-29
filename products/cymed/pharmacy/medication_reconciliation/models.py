@@ -7,7 +7,9 @@ Supports: Admission, Transfer, Discharge reconciliation.
 Terminology: Drug codes via TerminologyService (RxNorm, SNOMED).
 FHIR: MedicationStatement, MedicationAdministration.
 """
+
 from django.db import models
+
 from platform.common.models import BaseModel
 
 
@@ -33,6 +35,7 @@ class MedicationReconciliation(BaseModel):
     Ensures complete medication list accuracy at admission, transfer, and discharge.
     FHIR: MedicationStatement collection per patient encounter.
     """
+
     patient_id = models.UUIDField(db_index=True)
     encounter_id = models.UUIDField(db_index=True)
     admission_id = models.UUIDField(null=True, blank=True)
@@ -42,17 +45,19 @@ class MedicationReconciliation(BaseModel):
     status = models.CharField(
         max_length=30, choices=ReconciliationStatus.choices, default=ReconciliationStatus.INITIATED
     )
-    initiated_by = models.UUIDField()                                  # Nurse or pharmacist
+    initiated_by = models.UUIDField()  # Nurse or pharmacist
     pharmacist_id = models.UUIDField(null=True, blank=True)
     prescriber_id = models.UUIDField(null=True, blank=True)
 
     # Medication lists
-    home_medications = models.JSONField(default=list)                  # Patient-reported list
-    current_medications = models.JSONField(default=list)               # Active prescriptions/orders
-    reconciled_medications = models.JSONField(default=list)            # Final verified list
+    home_medications = models.JSONField(default=list)  # Patient-reported list
+    current_medications = models.JSONField(default=list)  # Active prescriptions/orders
+    reconciled_medications = models.JSONField(default=list)  # Final verified list
 
     # Information sources used
-    sources_consulted = models.JSONField(default=list)                 # ["patient", "caregiver", "pharmacy", "emr"]
+    sources_consulted = models.JSONField(
+        default=list
+    )  # ["patient", "caregiver", "pharmacy", "emr"]
     medications_count = models.PositiveSmallIntegerField(default=0)
     conflicts_identified = models.PositiveSmallIntegerField(default=0)
     changes_made = models.PositiveSmallIntegerField(default=0)
@@ -80,6 +85,7 @@ class MedicationChange(BaseModel):
     Records each medication change identified during reconciliation.
     Documents why a medication was continued, discontinued, modified, or added.
     """
+
     CHANGE_TYPES = [
         ("continued", "Continued Unchanged"),
         ("dose_changed", "Dose Changed"),
@@ -119,6 +125,7 @@ class MedicationConflict(BaseModel):
     Documents discrepancies and conflicts found during reconciliation.
     Requires pharmacist or prescriber resolution before completion.
     """
+
     CONFLICT_TYPES = [
         ("omission", "Medication Omission"),
         ("commission", "Unintended Medication Added"),
@@ -147,7 +154,7 @@ class MedicationConflict(BaseModel):
     clinical_significance = models.CharField(
         max_length=20,
         choices=[("minor", "Minor"), ("moderate", "Moderate"), ("major", "Major")],
-        default="moderate"
+        default="moderate",
     )
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="unresolved")
     resolved_by = models.UUIDField(null=True, blank=True)

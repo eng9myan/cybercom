@@ -2,7 +2,8 @@
 CyMed Laboratory — API URL configuration.
 Mounted at: /api/v1/lab/
 """
-from django.urls import path, include
+
+from django.urls import include, path
 
 urlpatterns = [
     path("orders/", include("products.cymed.laboratory.orders.urls")),

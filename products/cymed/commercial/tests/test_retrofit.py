@@ -2,15 +2,11 @@
 Tests for Program 3.C0 Retrofit — Clinic Edition and Hospital Edition commercial integration.
 Verifies that edition-aware base views enforce feature gates correctly.
 """
-import uuid
-import pytest
-from unittest.mock import patch, MagicMock
-from rest_framework.test import APIRequestFactory
-from rest_framework.exceptions import PermissionDenied
 
-from products.cymed.commercial.feature_flags.services import (
-    FeatureFlagService, EDITION_FEATURE_MAP
-)
+import uuid
+from unittest.mock import MagicMock, patch
+
+from products.cymed.commercial.feature_flags.services import EDITION_FEATURE_MAP, FeatureFlagService
 
 
 class TestClinicEditionFeatureMap:
@@ -97,6 +93,7 @@ class TestBulkEditionProvisioning:
     @patch("products.cymed.commercial.feature_flags.services.cache")
     def test_bulk_enable_clinic_starter(self, mock_cache, db):
         from products.cymed.commercial.feature_flags.models import FeatureFlag, TenantFeature
+
         PLATFORM_TENANT = uuid.UUID("00000000-0000-0000-0000-000000000001")
         tenant_id = str(uuid.uuid4())
 
@@ -109,7 +106,7 @@ class TestBulkEditionProvisioning:
                     "name": code,
                     "scope": "edition",
                     "default_enabled": False,
-                }
+                },
             )
 
         mock_cache.get.return_value = None

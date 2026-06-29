@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import ImagingResult, StructuredMeasurement, ResultCommunication
+
+from .models import ImagingResult, ResultCommunication, StructuredMeasurement
 
 
 class StructuredMeasurementSerializer(serializers.ModelSerializer):

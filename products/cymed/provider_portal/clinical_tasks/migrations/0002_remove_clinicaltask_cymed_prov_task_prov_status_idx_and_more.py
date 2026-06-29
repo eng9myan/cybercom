@@ -4,38 +4,37 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_provider_clinical_tasks', '0001_initial'),
+        ("cymed_provider_clinical_tasks", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveIndex(
-            model_name='clinicaltask',
-            name='cymed_prov_task_prov_status_idx',
+            model_name="clinicaltask",
+            name="cymed_prov_task_prov_status_idx",
         ),
         migrations.RemoveIndex(
-            model_name='clinicaltask',
-            name='cymed_prov_task_patient_status_idx',
+            model_name="clinicaltask",
+            name="cymed_prov_task_patient_status_idx",
         ),
         migrations.RemoveIndex(
-            model_name='clinicaltask',
-            name='cymed_prov_task_priority_status_idx',
+            model_name="clinicaltask",
+            name="cymed_prov_task_priority_status_idx",
         ),
         migrations.RemoveIndex(
-            model_name='clinicaltask',
-            name='cymed_prov_task_tenant_due_idx',
+            model_name="clinicaltask",
+            name="cymed_prov_task_tenant_due_idx",
         ),
         migrations.RemoveIndex(
-            model_name='taskassignment',
-            name='cymed_prov_taskassign_task_prov_idx',
+            model_name="taskassignment",
+            name="cymed_prov_taskassign_task_prov_idx",
         ),
         migrations.RemoveIndex(
-            model_name='taskcomment',
-            name='cymed_prov_taskcomment_task_idx',
+            model_name="taskcomment",
+            name="cymed_prov_taskcomment_task_idx",
         ),
         migrations.RemoveIndex(
-            model_name='taskescalation',
-            name='cymed_prov_taskesc_task_idx',
+            model_name="taskescalation",
+            name="cymed_prov_taskesc_task_idx",
         ),
     ]

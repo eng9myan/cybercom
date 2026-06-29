@@ -1,8 +1,16 @@
 from products.cymed.imaging.views import ImagingModelViewSet
-from .models import ImagingOperationsDashboard, RadiologistProductivity, TeleradiologyDashboard, ImagingRevenueEvent
+
+from .models import (
+    ImagingOperationsDashboard,
+    ImagingRevenueEvent,
+    RadiologistProductivity,
+    TeleradiologyDashboard,
+)
 from .serializers import (
-    ImagingOperationsDashboardSerializer, RadiologistProductivitySerializer,
-    TeleradiologyDashboardSerializer, ImagingRevenueEventSerializer,
+    ImagingOperationsDashboardSerializer,
+    ImagingRevenueEventSerializer,
+    RadiologistProductivitySerializer,
+    TeleradiologyDashboardSerializer,
 )
 
 

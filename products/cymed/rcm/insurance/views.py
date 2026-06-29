@@ -1,28 +1,28 @@
 from django.db import models
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
 from .models import (
-    InsuranceCompany,
-    InsurancePlan,
-    InsuranceMember,
-    Coverage,
     Benefit,
+    Coverage,
     CoverageRule,
     InsuranceCard,
+    InsuranceCompany,
+    InsuranceMember,
+    InsurancePlan,
 )
 from .serializers import (
-    InsuranceCompanySerializer,
-    InsurancePlanSerializer,
-    InsuranceMemberSerializer,
-    CoverageSerializer,
     BenefitSerializer,
     CoverageRuleSerializer,
+    CoverageSerializer,
     InsuranceCardSerializer,
+    InsuranceCompanySerializer,
+    InsuranceMemberSerializer,
+    InsurancePlanSerializer,
 )
 
 
@@ -81,10 +81,18 @@ class InsuranceMemberViewSet(ModelViewSet):
     ViewSet for managing patient insurance memberships.
     """
 
-    queryset = InsuranceMember.objects.select_related("insurance_plan__company").order_by("patient_id", "priority_order")
+    queryset = InsuranceMember.objects.select_related("insurance_plan__company").order_by(
+        "patient_id", "priority_order"
+    )
     serializer_class = InsuranceMemberSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["patient_id", "insurance_plan", "priority_order", "is_active", "member_relationship"]
+    filterset_fields = [
+        "patient_id",
+        "insurance_plan",
+        "priority_order",
+        "is_active",
+        "member_relationship",
+    ]
     search_fields = ["member_id", "group_number"]
     ordering_fields = ["patient_id", "priority_order", "effective_date", "created_at"]
     ordering = ["patient_id", "priority_order"]
@@ -95,7 +103,9 @@ class CoverageViewSet(ModelViewSet):
     ViewSet for managing coverage details for insurance members.
     """
 
-    queryset = Coverage.objects.select_related("insurance_member").order_by("insurance_member", "coverage_type")
+    queryset = Coverage.objects.select_related("insurance_member").order_by(
+        "insurance_member", "coverage_type"
+    )
     serializer_class = CoverageSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ["insurance_member", "coverage_type", "is_active"]
@@ -123,7 +133,9 @@ class CoverageRuleViewSet(ModelViewSet):
     ViewSet for managing coverage rules at the insurance plan level.
     """
 
-    queryset = CoverageRule.objects.select_related("insurance_plan").order_by("insurance_plan", "rule_type")
+    queryset = CoverageRule.objects.select_related("insurance_plan").order_by(
+        "insurance_plan", "rule_type"
+    )
     serializer_class = CoverageRuleSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ["insurance_plan", "rule_type", "is_active"]
@@ -144,4 +156,3 @@ class InsuranceCardViewSet(ModelViewSet):
     search_fields = []
     ordering_fields = ["issued_date", "expiry_date", "created_at"]
     ordering = ["-created_at"]
-

@@ -1,17 +1,24 @@
 from rest_framework import serializers
+
 from products.cymed.core.encounters.models import (
-    Encounter, EncounterParticipant, EncounterDiagnosis, EpisodeOfCare
+    Encounter,
+    EncounterDiagnosis,
+    EncounterParticipant,
+    EpisodeOfCare,
 )
+
 
 class EncounterParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = EncounterParticipant
         fields = ["id", "provider", "role"]
 
+
 class EncounterDiagnosisSerializer(serializers.ModelSerializer):
     class Meta:
         model = EncounterDiagnosis
         fields = ["id", "condition_code", "display", "use"]
+
 
 class EncounterSerializer(serializers.ModelSerializer):
     participants = EncounterParticipantSerializer(many=True, required=False)
@@ -20,9 +27,19 @@ class EncounterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Encounter
         fields = [
-            "id", "patient", "episode_of_care", "encounter_type", "status",
-            "start_time", "end_time", "organization", "facility",
-            "participants", "diagnoses", "created_at", "updated_at"
+            "id",
+            "patient",
+            "episode_of_care",
+            "encounter_type",
+            "status",
+            "start_time",
+            "end_time",
+            "organization",
+            "facility",
+            "participants",
+            "diagnoses",
+            "created_at",
+            "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
 
@@ -43,6 +60,7 @@ class EncounterSerializer(serializers.ModelSerializer):
 
         # Publish outbox event
         from platform.events.models import OutboxEvent
+
         OutboxEvent.objects.create(
             tenant_id=enc.tenant_id,
             topic="cymed.encounter.events",
@@ -51,8 +69,8 @@ class EncounterSerializer(serializers.ModelSerializer):
                 "encounter_id": str(enc.id),
                 "patient_id": str(enc.patient.id),
                 "encounter_type": enc.encounter_type,
-                "status": enc.status
-            }
+                "status": enc.status,
+            },
         )
 
         return enc

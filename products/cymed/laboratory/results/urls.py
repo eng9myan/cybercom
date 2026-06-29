@@ -1,5 +1,13 @@
-﻿from rest_framework.routers import DefaultRouter
-from .views import LabResultViewSet, ResultValueViewSet, ReferenceRangeViewSet, CriticalResultViewSet, ResultCorrectionViewSet, ResultApprovalViewSet
+from rest_framework.routers import DefaultRouter
+
+from .views import (
+    CriticalResultViewSet,
+    LabResultViewSet,
+    ReferenceRangeViewSet,
+    ResultApprovalViewSet,
+    ResultCorrectionViewSet,
+    ResultValueViewSet,
+)
 
 router = DefaultRouter()
 router.register("results", LabResultViewSet, basename="lab-results")

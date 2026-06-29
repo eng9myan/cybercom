@@ -1,6 +1,6 @@
 from django.db import models
-from platform.common.models import BaseModel
 
+from platform.common.models import BaseModel
 
 SWAP_STATUS_CHOICES = [
     ("pending_recipient", "Pending Recipient Acceptance"),
@@ -40,8 +40,12 @@ class ShiftSwapRequest(BaseModel):
     requester_slot_id = models.UUIDField(db_index=True)
     recipient_slot_id = models.UUIDField(db_index=True, null=True, blank=True)
 
-    status = models.CharField(max_length=30, choices=SWAP_STATUS_CHOICES, default="pending_recipient")
-    rejection_reason = models.CharField(max_length=40, choices=SWAP_REJECTION_REASON_CHOICES, blank=True)
+    status = models.CharField(
+        max_length=30, choices=SWAP_STATUS_CHOICES, default="pending_recipient"
+    )
+    rejection_reason = models.CharField(
+        max_length=40, choices=SWAP_REJECTION_REASON_CHOICES, blank=True
+    )
     rejection_detail = models.TextField(blank=True)
 
     proposed_at = models.DateTimeField(auto_now_add=True)
@@ -67,7 +71,9 @@ class ShiftSwapApproval(BaseModel):
     )
     approver_id = models.UUIDField(db_index=True)
     approver_role = models.CharField(max_length=100)
-    decision = models.CharField(max_length=10, choices=[("approved", "Approved"), ("rejected", "Rejected")])
+    decision = models.CharField(
+        max_length=10, choices=[("approved", "Approved"), ("rejected", "Rejected")]
+    )
     reason = models.TextField(blank=True)
     decided_at = models.DateTimeField(auto_now_add=True)
 

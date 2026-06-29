@@ -1,7 +1,13 @@
 from rest_framework import serializers
+
 from .models import (
-    ReportTemplate, RadiologyReport, RadiologyFinding, RadiologyImpression,
-    CriticalFinding, StructuredReport, ReportAmendment,
+    CriticalFinding,
+    RadiologyFinding,
+    RadiologyImpression,
+    RadiologyReport,
+    ReportAmendment,
+    ReportTemplate,
+    StructuredReport,
 )
 
 

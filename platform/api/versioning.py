@@ -1,4 +1,5 @@
 """API versioning support. ADR-0003: URL-path versioning."""
+
 from rest_framework.versioning import URLPathVersioning
 
 

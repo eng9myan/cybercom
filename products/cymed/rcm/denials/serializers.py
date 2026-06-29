@@ -1,5 +1,6 @@
-﻿from rest_framework import serializers
-from .models import Denial, DenialReason, Appeal, AppealOutcome, CorrectiveAction
+from rest_framework import serializers
+
+from .models import Appeal, AppealOutcome, CorrectiveAction, Denial, DenialReason
 
 
 class DenialReasonSerializer(serializers.ModelSerializer):

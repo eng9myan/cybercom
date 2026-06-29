@@ -1,11 +1,12 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
+from platform.events.models import OutboxEvent
 from products.cymed.core.scheduling.models import Appointment, ScheduleSlot
 from products.cymed.core.scheduling.serializers import AppointmentSerializer, ScheduleSlotSerializer
-from platform.events.models import OutboxEvent
+
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
@@ -30,7 +31,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             tenant_id=appt.tenant_id,
             topic="cymed.appointment.events",
             event_type="cymed.appointment.cancelled",
-            payload={"appointment_id": str(appt.id), "cancelled_by": str(request.user)}
+            payload={"appointment_id": str(appt.id), "cancelled_by": str(request.user)},
         )
 
         return Response({"status": appt.status})
@@ -47,7 +48,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             tenant_id=appt.tenant_id,
             topic="cymed.appointment.events",
             event_type="cymed.appointment.completed",
-            payload={"appointment_id": str(appt.id)}
+            payload={"appointment_id": str(appt.id)},
         )
 
         return Response({"status": appt.status})

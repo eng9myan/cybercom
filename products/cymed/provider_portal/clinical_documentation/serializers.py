@@ -2,9 +2,9 @@ from rest_framework import serializers
 
 from .models import (
     DocumentationTemplate,
-    SmartPhrase,
-    ProviderClinicalNote,
     NoteCoSignature,
+    ProviderClinicalNote,
+    SmartPhrase,
     VoiceDictation,
 )
 
@@ -12,25 +12,25 @@ from .models import (
 class DocumentationTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = DocumentationTemplate
-        fields = '__all__'
+        fields = "__all__"
 
 
 class SmartPhraseSerializer(serializers.ModelSerializer):
     class Meta:
         model = SmartPhrase
-        fields = '__all__'
+        fields = "__all__"
 
 
 class NoteCoSignatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = NoteCoSignature
-        fields = '__all__'
+        fields = "__all__"
 
 
 class VoiceDictationSerializer(serializers.ModelSerializer):
     class Meta:
         model = VoiceDictation
-        fields = '__all__'
+        fields = "__all__"
 
 
 class ProviderClinicalNoteSerializer(serializers.ModelSerializer):
@@ -39,4 +39,4 @@ class ProviderClinicalNoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProviderClinicalNote
-        fields = '__all__'
+        fields = "__all__"

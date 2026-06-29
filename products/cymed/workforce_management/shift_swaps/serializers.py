@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import ShiftSwapRequest, ShiftSwapApproval, SwapValidationLog
+
+from .models import ShiftSwapApproval, ShiftSwapRequest, SwapValidationLog
 
 
 class ShiftSwapRequestSerializer(serializers.ModelSerializer):

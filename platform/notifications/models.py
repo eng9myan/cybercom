@@ -2,9 +2,9 @@
 Notification channel models. Platform-level, tenant-scoped.
 Supports email, SMS, push (FCM/APNs), in-app, webhooks.
 """
-import uuid
+
 from django.db import models
-from django.utils import timezone
+
 from platform.common.models import BaseModel
 
 
@@ -26,6 +26,7 @@ class NotificationStatus(models.TextChoices):
 
 class NotificationTemplate(BaseModel):
     """Reusable notification template per tenant."""
+
     name = models.CharField(max_length=200)
     channel = models.CharField(max_length=20, choices=NotificationChannel.choices)
     subject = models.CharField(max_length=500, blank=True)
@@ -43,6 +44,7 @@ class NotificationTemplate(BaseModel):
 
 class Notification(BaseModel):
     """Individual notification record."""
+
     template = models.ForeignKey(
         NotificationTemplate, on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -52,8 +54,10 @@ class Notification(BaseModel):
     subject = models.CharField(max_length=500, blank=True)
     body = models.TextField()
     status = models.CharField(
-        max_length=20, choices=NotificationStatus.choices,
-        default=NotificationStatus.PENDING, db_index=True
+        max_length=20,
+        choices=NotificationStatus.choices,
+        default=NotificationStatus.PENDING,
+        db_index=True,
     )
     scheduled_at = models.DateTimeField(null=True, blank=True)
     sent_at = models.DateTimeField(null=True, blank=True)

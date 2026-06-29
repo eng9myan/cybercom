@@ -5,80 +5,87 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cymed_portal_telemedicine', '0001_initial'),
+        ("cymed_portal_telemedicine", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='telemedicinesession',
-            new_name='cymed_porta_account_cffc89_idx',
-            old_name='cymed_tele_sess_acct_status_idx',
+            model_name="telemedicinesession",
+            new_name="cymed_porta_account_cffc89_idx",
+            old_name="cymed_tele_sess_acct_status_idx",
         ),
         migrations.RenameIndex(
-            model_name='telemedicinesession',
-            new_name='cymed_porta_provide_e89c66_idx',
-            old_name='cymed_tele_sess_provider_date_idx',
+            model_name="telemedicinesession",
+            new_name="cymed_porta_provide_e89c66_idx",
+            old_name="cymed_tele_sess_provider_date_idx",
         ),
         migrations.AlterField(
-            model_name='telemedicinechat',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="telemedicinechat",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='telemedicinechat',
-            name='tenant_id',
+            model_name="telemedicinechat",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='telemedicinechat',
-            name='updated_at',
+            model_name="telemedicinechat",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='telemedicinedocument',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="telemedicinedocument",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='telemedicinedocument',
-            name='tenant_id',
+            model_name="telemedicinedocument",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='telemedicinedocument',
-            name='updated_at',
+            model_name="telemedicinedocument",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='telemedicinerating',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="telemedicinerating",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='telemedicinerating',
-            name='tenant_id',
+            model_name="telemedicinerating",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='telemedicinerating',
-            name='updated_at',
+            model_name="telemedicinerating",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
         migrations.AlterField(
-            model_name='telemedicinesession',
-            name='created_at',
-            field=models.DateTimeField(db_index=True, default=django.utils.timezone.now, editable=False),
+            model_name="telemedicinesession",
+            name="created_at",
+            field=models.DateTimeField(
+                db_index=True, default=django.utils.timezone.now, editable=False
+            ),
         ),
         migrations.AlterField(
-            model_name='telemedicinesession',
-            name='tenant_id',
+            model_name="telemedicinesession",
+            name="tenant_id",
             field=models.UUIDField(db_index=True, editable=False),
         ),
         migrations.AlterField(
-            model_name='telemedicinesession',
-            name='updated_at',
+            model_name="telemedicinesession",
+            name="updated_at",
             field=models.DateTimeField(auto_now=True, db_index=True),
         ),
     ]
