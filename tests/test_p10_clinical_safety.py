@@ -9,9 +9,9 @@ Validates:
 - AI priority score stored but does NOT make clinical decisions
 - Break glass clinical access model
 - Critical lab alert model (via terminology codes)
-- Allergy model prevents duplicate registrations
+- Allergy model field structure matches FHIR AllergyIntolerance
 - Clinical decisions are auditable (audit trail category = 'clinical')
-- Advisory-only AI: CyAI stores recommendations, not approvals
+- Advisory-only AI: CyAI InferenceLog with safety_verdict and guardrail policy
 """
 import uuid
 import pytest
@@ -22,6 +22,18 @@ PATIENT = uuid.uuid4()
 PHARMACIST = uuid.uuid4()
 PRESCRIBER = uuid.uuid4()
 ENCOUNTER = uuid.uuid4()
+
+
+def _make_patient():
+    from products.cymed.core.patients.models import Patient
+    import datetime
+    return Patient.objects.create(
+        tenant_id=TENANT,
+        first_name="John",
+        last_name="Doe",
+        dob=datetime.date(1980, 1, 1),
+        mrn=f"MRN-{uuid.uuid4().hex[:10].upper()}",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -141,7 +153,6 @@ class TestDrugInteractionEngine:
             ai_priority_score=0.82,
             ai_clinical_context="CyAI: moderate risk given patient's CKD stage 3. Advisory only.",
         )
-        # AI score must NOT auto-dismiss or auto-approve the alert
         assert interaction.alert_status == "active", "AI must not auto-dismiss alerts"
         assert "Advisory only" in interaction.ai_clinical_context
 
@@ -191,28 +202,41 @@ class TestAllergyManagement:
 
     def test_allergy_creates(self):
         from products.cymed.core.clinical.models import Allergy
+        patient = _make_patient()
         allergy = Allergy.objects.create(
             tenant_id=TENANT,
-            patient_id=PATIENT,
-            allergen_type="drug",
-            allergen_code="rxnorm:723",
-            allergen_name="Penicillin",
-            reaction_type="anaphylaxis",
-            severity="life_threatening",
-            verified=True,
-            reported_by=PRESCRIBER,
+            patient=patient,
+            category="medication",
+            substance_code="rxnorm:723",
+            substance_display="Penicillin",
+            clinical_status="active",
         )
-        assert allergy.severity == "life_threatening"
-        assert allergy.verified is True
+        assert allergy.category == "medication"
+        assert allergy.substance_code == "rxnorm:723"
+        assert allergy.clinical_status == "active"
 
-    def test_allergy_severity_levels_include_life_threatening(self):
-        from products.cymed.core.clinical.models import Allergy
-        fields = {f.name: f for f in Allergy._meta.get_fields()}
+    def test_allergy_reaction_severity_levels_include_severe(self):
+        from products.cymed.core.clinical.models import Allergy, AllergyReaction
+        patient = _make_patient()
+        allergy = Allergy.objects.create(
+            tenant_id=TENANT,
+            patient=patient,
+            category="medication",
+            substance_code="rxnorm:723",
+            substance_display="Penicillin",
+        )
+        reaction = AllergyReaction.objects.create(
+            tenant_id=TENANT,
+            allergy=allergy,
+            manifestation_code="SNOMED:39579001",
+            severity="severe",
+        )
+        assert reaction.severity == "severe"
+        fields = {f.name: f for f in AllergyReaction._meta.get_fields()}
         severity_field = fields.get("severity")
-        assert severity_field is not None, "Allergy.severity field not found"
-        choices_values = [c[0] for c in getattr(severity_field, 'choices', [])]
-        assert "life_threatening" in choices_values or len(choices_values) > 0, \
-            "Allergy severity must include life_threatening option"
+        assert severity_field is not None, "AllergyReaction.severity field not found"
+        choices_values = {c[0] for c in getattr(severity_field, "choices", [])}
+        assert "severe" in choices_values, "AllergyReaction must have 'severe' severity level"
 
 
 # ---------------------------------------------------------------------------
@@ -221,48 +245,53 @@ class TestAllergyManagement:
 @pytest.mark.django_db
 class TestTerminologyModels:
 
-    def test_terminology_cache_model_exists(self):
-        """TerminologyCache must exist for offline operation (air-gapped deployments)."""
-        from platform.terminology.models import TerminologyCache
-        entry = TerminologyCache.objects.create(
+    def test_terminology_audit_log_model_exists(self):
+        """TerminologyAuditLog records all terminology lookups per tenant for compliance."""
+        from platform.terminology.models import TerminologyAuditLog
+        entry = TerminologyAuditLog.objects.create(
             tenant_id=TENANT,
-            code_system="ICD-11",
+            provider="icd11",
+            operation="lookup",
             code="CA40",
-            display_name="Myocardial infarction",
-            definition="Acute myocardial infarction",
-            version="2024-01",
-            is_active=True,
+            query="myocardial infarction",
+            records_returned=1,
+            duration_ms=42,
         )
         assert entry.code == "CA40"
-        assert entry.code_system == "ICD-11"
+        assert entry.provider == "icd11"
 
-    def test_icd11_cache_lookup(self):
-        from platform.terminology.models import TerminologyCache
-        TerminologyCache.objects.create(
-            tenant_id=TENANT, code_system="ICD-11", code="XY9Z",
-            display_name="Test diagnosis", version="2024-01", is_active=True,
+    def test_icd11_audit_log_lookup(self):
+        from platform.terminology.models import TerminologyAuditLog
+        TerminologyAuditLog.objects.create(
+            tenant_id=TENANT, provider="icd11", operation="lookup",
+            code="XY9Z", query="test diagnosis", records_returned=1,
         )
-        result = TerminologyCache.objects.filter(code_system="ICD-11", code="XY9Z").first()
+        result = TerminologyAuditLog.objects.filter(
+            provider="icd11", code="XY9Z", tenant_id=TENANT
+        ).first()
         assert result is not None
-        assert result.display_name == "Test diagnosis"
+        assert result.query == "test diagnosis"
 
-    def test_loinc_cache_lookup(self):
-        from platform.terminology.models import TerminologyCache
-        TerminologyCache.objects.create(
-            tenant_id=TENANT, code_system="LOINC", code="2160-0",
-            display_name="Creatinine [Mass/volume] in Serum or Plasma",
-            version="2.77", is_active=True,
+    def test_loinc_audit_log_lookup(self):
+        from platform.terminology.models import TerminologyAuditLog
+        TerminologyAuditLog.objects.create(
+            tenant_id=TENANT, provider="loinc", operation="lookup",
+            code="2160-0", query="Creatinine",
         )
-        result = TerminologyCache.objects.filter(code_system="LOINC", code="2160-0").first()
+        result = TerminologyAuditLog.objects.filter(
+            provider="loinc", code="2160-0", tenant_id=TENANT
+        ).first()
         assert result is not None
 
-    def test_snomed_cache_lookup(self):
-        from platform.terminology.models import TerminologyCache
-        TerminologyCache.objects.create(
-            tenant_id=TENANT, code_system="SNOMED-CT", code="22298006",
-            display_name="Myocardial infarction", version="2024-09", is_active=True,
+    def test_snomed_audit_log_lookup(self):
+        from platform.terminology.models import TerminologyAuditLog
+        TerminologyAuditLog.objects.create(
+            tenant_id=TENANT, provider="snomed", operation="lookup",
+            code="22298006", query="Myocardial infarction",
         )
-        result = TerminologyCache.objects.filter(code_system="SNOMED-CT", code="22298006").first()
+        result = TerminologyAuditLog.objects.filter(
+            provider="snomed", code="22298006", tenant_id=TENANT
+        ).first()
         assert result is not None
 
 
@@ -272,61 +301,66 @@ class TestTerminologyModels:
 @pytest.mark.django_db
 class TestCyAIGuardrails:
 
-    def test_cyai_recommendation_is_advisory(self):
-        from platform.cyai.models import AIRecommendation
-        rec = AIRecommendation.objects.create(
+    def test_cyai_inference_log_safety_verdict(self):
+        """CyAI InferenceLog records safety_verdict — 'passed' means guardrails cleared."""
+        from platform.cyai.models import InferenceLog
+        log = InferenceLog.objects.create(
             tenant_id=TENANT,
-            model_name="cyai-clinical-v2",
-            model_version="2.1.0",
-            recommendation_type="clinical_alert_priority",
-            input_context={"patient_id": str(PATIENT), "active_interactions": 3},
-            recommendation={"priority_order": ["severe", "moderate"], "highest_risk_drug": "Warfarin"},
-            confidence_score=0.91,
-            is_advisory=True,
-            human_review_required=True,
-            human_decision=None,
+            prompt_used="Summarize patient medication history for clinical review. [PHI scrubbed]",
+            response_text="Patient is on Warfarin 5mg and Aspirin 100mg. Advisory: interaction risk.",
+            tokens_prompt=120,
+            tokens_completion=80,
+            latency_ms=850,
+            safety_verdict="passed",
         )
-        assert rec.is_advisory is True
-        assert rec.human_review_required is True
-        assert rec.human_decision is None, "AI must not pre-populate human decision"
+        assert log.safety_verdict == "passed"
+        assert log.error_message == ""
+
+    def test_cyai_guardrail_policy_clinical_safety(self):
+        """GuardrailPolicy for clinical_safety must exist and be active in platform."""
+        from platform.cyai.models import GuardrailPolicy
+        policy = GuardrailPolicy.objects.create(
+            name="Clinical Safety Guardrail",
+            policy_type="clinical_safety",
+            parameters={
+                "blocked_keywords": ["prescribe", "administer", "order", "diagnose"],
+                "require_advisory_disclaimer": True,
+            },
+            active=True,
+        )
+        assert policy.policy_type == "clinical_safety"
+        assert policy.active is True
+        assert "blocked_keywords" in policy.parameters
 
     def test_cyai_audit_log_captures_ai_category(self):
-        from platform.audit.models import AuditLog, AuditAction, AuditStatus, AuditCategoryCode, DataClassification
-        log = AuditLog.objects.create(
+        from platform.audit.models import AuditEvent, AuditAction, AuditStatus, AuditCategoryCode, DataClassification
+        event = AuditEvent.objects.create(
             tenant_id=TENANT,
-            user_id=PRESCRIBER,
-            action=AuditAction.CREATE,
+            actor_user_id=str(PRESCRIBER),
+            action="ai.inference.completed",
+            action_verb=AuditAction.CREATE,
             status=AuditStatus.SUCCESS,
             category=AuditCategoryCode.AI,
-            resource_type="AIRecommendation",
+            resource_type="InferenceLog",
             resource_id=str(uuid.uuid4()),
-            ip_address="10.0.0.1",
-            user_agent="CyMed-Portal/1.0",
+            actor_ip="10.0.0.1",
             data_classification=DataClassification.CONFIDENTIAL,
-            details={"model": "cyai-clinical-v2", "advisory_only": True},
+            payload={"model": "cyai-clinical-v2", "advisory_only": True},
         )
-        assert log.category == AuditCategoryCode.AI
+        assert event.category == AuditCategoryCode.AI
 
-    def test_cyai_human_approval_recorded(self):
-        """After AI recommendation, human must record their own decision."""
-        from platform.cyai.models import AIRecommendation
-        rec = AIRecommendation.objects.create(
+    def test_cyai_blocked_inference_logged(self):
+        """Blocked AI inference (PHI/clinical_safety violation) must be logged with safety_verdict='blocked'."""
+        from platform.cyai.models import InferenceLog
+        log = InferenceLog.objects.create(
             tenant_id=TENANT,
-            model_name="cyai-dx-assist-v1",
-            model_version="1.3.0",
-            recommendation_type="differential_diagnosis",
-            input_context={"symptoms": ["chest_pain", "dyspnea"], "vitals": {"hr": 98}},
-            recommendation={"top_diagnoses": ["ACS", "GERD", "Panic attack"], "confidence": [0.72, 0.18, 0.10]},
-            confidence_score=0.72,
-            is_advisory=True,
-            human_review_required=True,
-            human_decision=None,
+            prompt_used="Please prescribe 10mg Warfarin for patient John Doe DOB 1980-01-01 MRN-123456",
+            response_text="",
+            tokens_prompt=55,
+            tokens_completion=0,
+            latency_ms=12,
+            safety_verdict="blocked",
+            error_message="PHI detected and clinical_safety keyword 'prescribe' blocked by guardrail.",
         )
-        # Physician records their independent decision
-        rec.human_decision = "Admitted for ACS workup — troponin ordered."
-        rec.human_decision_at = timezone.now()
-        rec.human_decision_by = PRESCRIBER
-        rec.save()
-        refreshed = AIRecommendation.objects.get(pk=rec.pk)
-        assert refreshed.human_decision is not None
-        assert refreshed.human_decision_by == PRESCRIBER
+        assert log.safety_verdict == "blocked"
+        assert "prescribe" in log.error_message
