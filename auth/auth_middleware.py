@@ -1,17 +1,27 @@
 import jwt
+from jwt import PyJWKClient, ExpiredSignatureError, InvalidTokenError
 from django.http import JsonResponse
 from django.conf import settings
 
+# JWKS client is module-level so the key set is cached across requests.
+_jwks_client: PyJWKClient | None = None
+
+def _get_jwks_client() -> PyJWKClient:
+    global _jwks_client
+    if _jwks_client is None:
+        _jwks_client = PyJWKClient(settings.CYIDENTITY_JWKS_URI, cache_keys=True)
+    return _jwks_client
+
+
 class CyIdentityAuthMiddleware:
     """
-    Decodes and validates JWT tokens issued by CyIdentity.
+    Validates RS256 JWT tokens issued by CyIdentity/Keycloak via JWKS.
     Injects request.user_session containing roles, permissions, and tenant ID.
     """
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # Allow health checks, metrics and token validation to bypass auth
         if request.path in [
             '/health', '/health/liveness', '/health/readiness',
             '/api/v1/identity/healthz/', '/api/v1/identity/metrics',
@@ -19,7 +29,6 @@ class CyIdentityAuthMiddleware:
         ]:
             return self.get_response(request)
 
-        # Allow public website marketing APIs to bypass authentication
         if request.path.startswith('/api/v1/public/'):
             return self.get_response(request)
 
@@ -29,8 +38,13 @@ class CyIdentityAuthMiddleware:
 
         token = auth_header.split(' ')[1]
         try:
-            # In production, this validates against cached JWKS. Moked for bootstrap.
-            payload = jwt.decode(token, settings.JWT_SIGNING_KEY, algorithms=['RS256'], options={"verify_signature": False})
+            signing_key = _get_jwks_client().get_signing_key_from_jwt(token)
+            payload = jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=['RS256'],
+                options={"require": ["exp", "iat", "sub"]},
+            )
             request.auth_claims = payload
             request.user_session = {
                 "user_id": payload.get("sub"),
@@ -39,9 +53,9 @@ class CyIdentityAuthMiddleware:
                 "roles": payload.get("roles") or payload.get("realm_access", {}).get("roles", []),
                 "permissions": payload.get("permissions", [])
             }
-        except jwt.ExpiredSignatureError:
+        except ExpiredSignatureError:
             return JsonResponse({"detail": "Token has expired."}, status=401)
-        except jwt.InvalidTokenError:
+        except InvalidTokenError:
             return JsonResponse({"detail": "Invalid token."}, status=401)
 
         return self.get_response(request)
