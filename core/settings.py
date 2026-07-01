@@ -349,6 +349,20 @@ KAFKA_SASL_PASSWORD = os.environ.get("KAFKA_SASL_PASSWORD", "")
 KAFKA_SCHEMA_REGISTRY_URL = os.environ.get("KAFKA_SCHEMA_REGISTRY_URL", "http://localhost:8081")
 
 # ---------------------------------------------------------------------------
+# TERMINOLOGY API CONFIGURATION
+# ---------------------------------------------------------------------------
+# ICD-11 (WHO) — Bearer token from https://icdaccessmanagement.who.int/
+# Leave empty to use fallback hardcoded codes (safe at launch).
+ICD11_API_TOKEN = os.environ.get("ICD11_API_TOKEN", "")
+
+# FHIR Terminology Server — used by FHIRTerminologyProvider for $lookup / $expand.
+# Public tx.fhir.org is the default; set to an internal server in production.
+FHIR_TERMINOLOGY_SERVER = os.environ.get("FHIR_TERMINOLOGY_SERVER", "https://tx.fhir.org/r4")
+
+# Timeout (seconds) applied to all outbound terminology HTTP calls.
+TERMINOLOGY_REQUESTS_TIMEOUT = int(os.environ.get("TERMINOLOGY_REQUESTS_TIMEOUT", "10"))
+
+# ---------------------------------------------------------------------------
 # IDENTITY — CyIdentity / Keycloak (ADR-0005)
 # ---------------------------------------------------------------------------
 CYIDENTITY_ISSUER = os.environ.get("CYIDENTITY_ISSUER", "http://localhost:8080/realms/cybercom")

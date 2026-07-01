@@ -1,14 +1,54 @@
+import logging
+import time
 from typing import Any
 
+import httpx
+from django.conf import settings
+
 from platform.terminology.providers.base import TerminologyProvider
+
+logger = logging.getLogger("cybercom.terminology.loinc")
+
+# ---------------------------------------------------------------------------
+# Module-level in-memory cache (TTL 1 hour)
+# ---------------------------------------------------------------------------
+_CACHE_TTL = 3600  # seconds
+_search_cache: dict[str, tuple[list[dict[str, Any]], float]] = {}
+
+LOINC_FHIR_EXPAND_URL = "https://loinc.org/fhir/ValueSet/$expand"
+
+
+def _cache_get(key: str) -> list[dict[str, Any]] | None:
+    entry = _search_cache.get(key)
+    if entry is not None:
+        value, expiry = entry
+        if time.monotonic() < expiry:
+            return value
+        del _search_cache[key]
+    return None
+
+
+def _cache_set(key: str, value: list[dict[str, Any]]) -> None:
+    _search_cache[key] = (value, time.monotonic() + _CACHE_TTL)
+
+
+def _get_timeout() -> int:
+    return getattr(settings, "TERMINOLOGY_REQUESTS_TIMEOUT", 10)
 
 
 class LOINCProvider(TerminologyProvider):
     """
     Terminology provider for LOINC (Logical Observation Identifiers Names and Codes).
     Supports laboratory measurements, clinical observations, and mappings to other standards.
+
+    Live search uses the NLM LOINC FHIR API (https://loinc.org/fhir/ValueSet/$expand).
+    No authentication required for basic queries.
+    Falls back to hardcoded observations on any network or API failure.
     """
 
+    # ------------------------------------------------------------------
+    # Fallback / seed data
+    # ------------------------------------------------------------------
     OBSERVATIONS = {
         "2339-0": {
             "display": "Glucose [Mass/volume] in Blood",
@@ -48,10 +88,14 @@ class LOINCProvider(TerminologyProvider):
         },
     }
 
-    def search(self, query: str, limit: int = 10, **kwargs) -> list[dict[str, Any]]:
-        results = []
-        q = query.lower()
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
+    def _search_mock(self, query: str, limit: int) -> list[dict[str, Any]]:
+        """Fallback search over hardcoded OBSERVATIONS."""
+        results: list[dict[str, Any]] = []
+        q = query.lower()
         for code, details in self.OBSERVATIONS.items():
             matches_synonym = any(q in s.lower() for s in details["synonyms"])
             if (
@@ -64,6 +108,64 @@ class LOINCProvider(TerminologyProvider):
                 if len(results) >= limit:
                     return results
         return results
+
+    # ------------------------------------------------------------------
+    # TerminologyProvider interface
+    # ------------------------------------------------------------------
+
+    def search(self, query: str, limit: int = 10, **kwargs) -> list[dict[str, Any]]:
+        """
+        Search LOINC codes via the NLM FHIR ValueSet $expand endpoint (public, no auth).
+        Falls back to hardcoded data on failure.
+        """
+        cache_key = f"loinc_search|{query}|{limit}"
+        cached = _cache_get(cache_key)
+        if cached is not None:
+            return cached
+
+        try:
+            params: dict[str, Any] = {
+                "filter": query,
+                "count": limit,
+            }
+            headers = {"Accept": "application/fhir+json"}
+            with httpx.Client(timeout=_get_timeout()) as client:
+                response = client.get(LOINC_FHIR_EXPAND_URL, headers=headers, params=params)
+
+            if response.status_code != 200:
+                logger.warning(
+                    "LOINC FHIR API returned HTTP %d for query '%s' — falling back to mock data",
+                    response.status_code,
+                    query,
+                )
+                return self._search_mock(query, limit)
+
+            data = response.json()
+            expansion = data.get("expansion", {})
+            results: list[dict[str, Any]] = []
+            for item in expansion.get("contains", [])[:limit]:
+                code = item.get("code", "")
+                display = item.get("display", "")
+                if code and display:
+                    results.append(
+                        {
+                            "code": code,
+                            "display": display,
+                            "type": "observation",
+                            "system": item.get("system", "http://loinc.org"),
+                        }
+                    )
+
+            _cache_set(cache_key, results)
+            return results
+
+        except Exception as exc:
+            logger.warning(
+                "LOINC FHIR API call failed for query '%s': %s — falling back to mock data",
+                query,
+                exc,
+            )
+            return self._search_mock(query, limit)
 
     def lookup(self, code: str, **kwargs) -> dict[str, Any] | None:
         if code in self.OBSERVATIONS:
@@ -113,7 +215,7 @@ class LOINCProvider(TerminologyProvider):
         return results
 
     def get_children(self, code: str, **kwargs) -> list[dict[str, Any]]:
-        # Flat structure for LOINC in this mock
+        # LOINC uses a flat (part-based) hierarchy not expressed in this provider
         return []
 
     def get_parents(self, code: str, **kwargs) -> list[dict[str, Any]]:

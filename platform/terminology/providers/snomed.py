@@ -1,14 +1,54 @@
+import logging
+import time
 from typing import Any
 
+import httpx
+from django.conf import settings
+
 from platform.terminology.providers.base import TerminologyProvider
+
+logger = logging.getLogger("cybercom.terminology.snomed")
+
+# ---------------------------------------------------------------------------
+# Module-level in-memory cache (TTL 1 hour)
+# ---------------------------------------------------------------------------
+_CACHE_TTL = 3600  # seconds
+_search_cache: dict[str, tuple[list[dict[str, Any]], float]] = {}
+
+SNOWSTORM_BASE_URL = "https://browser.ihtsdotools.org/snowstorm/snomed-ct"
+SNOWSTORM_CONCEPTS_URL = f"{SNOWSTORM_BASE_URL}/MAIN/concepts"
+
+
+def _cache_get(key: str) -> list[dict[str, Any]] | None:
+    entry = _search_cache.get(key)
+    if entry is not None:
+        value, expiry = entry
+        if time.monotonic() < expiry:
+            return value
+        del _search_cache[key]
+    return None
+
+
+def _cache_set(key: str, value: list[dict[str, Any]]) -> None:
+    _search_cache[key] = (value, time.monotonic() + _CACHE_TTL)
+
+
+def _get_timeout() -> int:
+    return getattr(settings, "TERMINOLOGY_REQUESTS_TIMEOUT", 10)
 
 
 class SNOMEDProvider(TerminologyProvider):
     """
     Terminology provider for SNOMED CT (Systematized Nomenclature of Medicine Clinical Terms).
     Supports clinical concepts, synonyms, hierarchies, and ICD-11 mappings.
+
+    Live search uses the SNOMED International Snowstorm Browser API (public, no auth required).
+    Falls back to hardcoded concepts on any network or API failure.
     """
 
+    # ------------------------------------------------------------------
+    # Fallback / seed data
+    # ------------------------------------------------------------------
     CONCEPTS = {
         "111553001": {
             "display": "Type 1 diabetes mellitus (disorder)",
@@ -63,10 +103,14 @@ class SNOMEDProvider(TerminologyProvider):
         "371038006": "FA81",
     }
 
-    def search(self, query: str, limit: int = 10, **kwargs) -> list[dict[str, Any]]:
-        results = []
-        q = query.lower()
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
+    def _search_mock(self, query: str, limit: int) -> list[dict[str, Any]]:
+        """Fallback search over hardcoded CONCEPTS."""
+        results: list[dict[str, Any]] = []
+        q = query.lower()
         for code, details in self.CONCEPTS.items():
             matches_synonym = any(q in s.lower() for s in details["synonyms"])
             if (
@@ -79,6 +123,66 @@ class SNOMEDProvider(TerminologyProvider):
                 if len(results) >= limit:
                     return results
         return results
+
+    # ------------------------------------------------------------------
+    # TerminologyProvider interface
+    # ------------------------------------------------------------------
+
+    def search(self, query: str, limit: int = 10, **kwargs) -> list[dict[str, Any]]:
+        """
+        Search SNOMED CT concepts via the Snowstorm Browser API (public, no auth).
+        Falls back to hardcoded data on failure.
+        """
+        cache_key = f"snomed_search|{query}|{limit}"
+        cached = _cache_get(cache_key)
+        if cached is not None:
+            return cached
+
+        try:
+            params: dict[str, Any] = {
+                "term": query,
+                "activeFilter": "true",
+                "limit": limit,
+            }
+            headers = {"Accept": "application/json"}
+            with httpx.Client(timeout=_get_timeout()) as client:
+                response = client.get(SNOWSTORM_CONCEPTS_URL, headers=headers, params=params)
+
+            if response.status_code != 200:
+                logger.warning(
+                    "SNOMED Snowstorm API returned HTTP %d for query '%s' — falling back to mock data",
+                    response.status_code,
+                    query,
+                )
+                return self._search_mock(query, limit)
+
+            data = response.json()
+            results: list[dict[str, Any]] = []
+            for item in data.get("items", [])[:limit]:
+                concept_id = item.get("conceptId", "")
+                # Preferred term lives under pt.term; fsn.term is the fully-specified name
+                pt = item.get("pt") or {}
+                display = pt.get("term") or item.get("fsn", {}).get("term", "")
+                if concept_id and display:
+                    results.append(
+                        {
+                            "code": concept_id,
+                            "display": display,
+                            "type": "concept",
+                            "active": item.get("active", True),
+                        }
+                    )
+
+            _cache_set(cache_key, results)
+            return results
+
+        except Exception as exc:
+            logger.warning(
+                "SNOMED Snowstorm API call failed for query '%s': %s — falling back to mock data",
+                query,
+                exc,
+            )
+            return self._search_mock(query, limit)
 
     def lookup(self, code: str, **kwargs) -> dict[str, Any] | None:
         if code in self.CONCEPTS:

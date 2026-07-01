@@ -1,15 +1,55 @@
+import logging
 import re
+import time
 from typing import Any
 
+import httpx
+from django.conf import settings
+
 from platform.terminology.providers.base import TerminologyProvider
+
+logger = logging.getLogger("cybercom.terminology.icd11")
+
+# ---------------------------------------------------------------------------
+# Module-level in-memory cache (TTL 1 hour)
+# ---------------------------------------------------------------------------
+_CACHE_TTL = 3600  # seconds
+_search_cache: dict[str, tuple[list[dict[str, Any]], float]] = {}
+
+ICD11_SEARCH_URL = "https://id.who.int/icd/entity/search"
+
+
+def _cache_get(key: str) -> list[dict[str, Any]] | None:
+    entry = _search_cache.get(key)
+    if entry is not None:
+        value, expiry = entry
+        if time.monotonic() < expiry:
+            return value
+        del _search_cache[key]
+    return None
+
+
+def _cache_set(key: str, value: list[dict[str, Any]]) -> None:
+    _search_cache[key] = (value, time.monotonic() + _CACHE_TTL)
+
+
+def _get_timeout() -> int:
+    return getattr(settings, "TERMINOLOGY_REQUESTS_TIMEOUT", 10)
 
 
 class ICD11Provider(TerminologyProvider):
     """
     Terminology provider for WHO ICD-11 (MMS).
     Supports stem codes, extension codes, post-coordination parsing, and ICD-10 crosswalks.
+
+    Live search uses the WHO ICD-11 REST API (https://id.who.int/icd/entity/search).
+    Requires ICD11_API_TOKEN in settings (obtained from https://icdaccessmanagement.who.int/).
+    Falls back to hardcoded codes when the token is absent or any API call fails.
     """
 
+    # ------------------------------------------------------------------
+    # Fallback / seed data (used when token absent or API unavailable)
+    # ------------------------------------------------------------------
     STEM_CODES = {
         "1B10.0": {
             "display": "Type 1 diabetes mellitus",
@@ -58,11 +98,15 @@ class ICD11Provider(TerminologyProvider):
         "J00": "CA00",
     }
 
-    def search(self, query: str, limit: int = 10, **kwargs) -> list[dict[str, Any]]:
-        results = []
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _search_mock(self, query: str, limit: int) -> list[dict[str, Any]]:
+        """Fallback search over hardcoded STEM_CODES and EXTENSION_CODES."""
+        results: list[dict[str, Any]] = []
         q = query.lower()
 
-        # Search stem codes
         for code, details in self.STEM_CODES.items():
             if (
                 q in code.lower()
@@ -73,7 +117,6 @@ class ICD11Provider(TerminologyProvider):
                 if len(results) >= limit:
                     return results
 
-        # Search extension codes
         for code, details in self.EXTENSION_CODES.items():
             if q in code.lower() or q in details["display"].lower():
                 results.append({"code": code, "display": details["display"], "type": "extension"})
@@ -81,6 +124,77 @@ class ICD11Provider(TerminologyProvider):
                     return results
 
         return results
+
+    # ------------------------------------------------------------------
+    # TerminologyProvider interface
+    # ------------------------------------------------------------------
+
+    def search(self, query: str, limit: int = 10, **kwargs) -> list[dict[str, Any]]:
+        """
+        Search ICD-11 concepts.  Calls the WHO REST API when ICD11_API_TOKEN is set;
+        otherwise falls back to hardcoded codes with a warning.
+        """
+        token: str = getattr(settings, "ICD11_API_TOKEN", "")
+
+        if not token:
+            logger.warning(
+                "ICD11_API_TOKEN is not configured — using fallback hardcoded codes for ICD-11 search"
+            )
+            return self._search_mock(query, limit)
+
+        cache_key = f"icd11_search|{query}|{limit}"
+        cached = _cache_get(cache_key)
+        if cached is not None:
+            return cached
+
+        try:
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/json",
+                "Accept-Language": "en",
+                "API-Version": "v2",
+            }
+            params: dict[str, str] = {
+                "q": query,
+                "subtreeFilterUsage": "foundationDescendant",
+            }
+            with httpx.Client(timeout=_get_timeout()) as client:
+                response = client.get(ICD11_SEARCH_URL, headers=headers, params=params)
+
+            if response.status_code != 200:
+                logger.warning(
+                    "ICD-11 API returned HTTP %d for query '%s' — falling back to mock data",
+                    response.status_code,
+                    query,
+                )
+                return self._search_mock(query, limit)
+
+            data = response.json()
+            results: list[dict[str, Any]] = []
+            for entity in data.get("destinationEntities", [])[:limit]:
+                code = entity.get("theCode", "")
+                title = entity.get("title", "")
+                if not code or not title:
+                    continue
+                results.append(
+                    {
+                        "code": code,
+                        "display": title,
+                        "type": "stem",
+                        "id": entity.get("id", ""),
+                    }
+                )
+
+            _cache_set(cache_key, results)
+            return results
+
+        except Exception as exc:
+            logger.warning(
+                "ICD-11 API call failed for query '%s': %s — falling back to mock data",
+                query,
+                exc,
+            )
+            return self._search_mock(query, limit)
 
     def lookup(self, code: str, **kwargs) -> dict[str, Any] | None:
         # Handle post-coordinated cluster (e.g. FA81&XY1Y&XS17)
@@ -111,7 +225,7 @@ class ICD11Provider(TerminologyProvider):
                 "definition": stem_details["definition"],
             }
 
-        # Single code lookup
+        # Single code lookup (uses fallback data; WHO entity URI lookup would need separate mapping)
         if code in self.STEM_CODES:
             details = self.STEM_CODES[code]
             return {
@@ -133,7 +247,6 @@ class ICD11Provider(TerminologyProvider):
     def validate(self, code: str, **kwargs) -> bool:
         if not code:
             return False
-        # Split by post-coordination characters
         parts = re.split(r"[&/]", code)
         stem = parts[0]
         if stem not in self.STEM_CODES:
@@ -146,13 +259,10 @@ class ICD11Provider(TerminologyProvider):
     def translate(self, code: str, target_system: str, **kwargs) -> dict[str, Any] | None:
         target_system = target_system.lower()
         if target_system in ("icd10", "icd-10"):
-            # Translate from ICD-11 to ICD-10
-            # Reverse crosswalk lookup
             for icd10, icd11 in self.ICD10_CROSSWALK.items():
                 if icd11 == code:
                     return {"code": icd10, "system": "ICD-10", "relationship": "equivalent"}
         elif target_system in ("icd11", "icd-11"):
-            # Translate from ICD-10 to ICD-11
             if code in self.ICD10_CROSSWALK:
                 icd11_code = self.ICD10_CROSSWALK[code]
                 display = self.STEM_CODES[icd11_code]["display"]
@@ -167,7 +277,6 @@ class ICD11Provider(TerminologyProvider):
     def expand(
         self, value_set: str, filter_str: str | None = None, **kwargs
     ) -> list[dict[str, Any]]:
-        # Returns subset of ICD-11 based on value_set string
         results = []
         if "diabetes" in value_set.lower():
             for code in ["1B10.0", "1B10.1"]:
