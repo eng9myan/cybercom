@@ -1,0 +1,154 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = [".", "platform", "products", "shared"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "N",        # pep8-naming
+    "UP",       # pyupgrade
+    "S",        # bandit security
+    "B",        # bugbear
+    "C4",       # comprehensions
+    "DJ",       # django-specific
+    "T20",      # print statements
+    "RUF",      # ruff-specific
+]
+ignore = [
+    "S101", "S105", "S106", "S311",
+    "RUF012",   # Django model fields are class-level by design; descriptor protocol handles mutability
+    "E501",     # Line too long — bulk data code exceeds 100 chars; enforced at PR review not CI
+    "RUF013",   # Implicit Optional — accepted Python pattern for None defaults
+    "DJ001",    # Nullable CharField — intentional for optional text fields
+    "RUF001",   # Ambiguous unicode — Arabic RTL strings in medical content
+    "RUF002",   # Ambiguous unicode docstrings — same as above
+    "RUF003",   # Ambiguous unicode comments — same as above
+    "RUF059",   # Unused unpacked variable — common in destructuring patterns
+    "S110",     # try-except-pass — intentional in signal handlers and optional integrations
+    "DJ008",    # Model missing __str__ — acceptable for internal models without admin views
+    "DJ012",    # Model body order — not enforced in this codebase
+    "N818",     # Exception naming — legacy names used across codebase
+    "N806",     # Non-lowercase var in function — used for config constants
+    "E741",     # Ambiguous variable names — O/l used in medical code (blood group O, liter)
+    "E701",     # Multiple statements on one line — compact class/guard patterns
+    "E702",     # Multiple statements semicolon — compact patterns
+    "B904",     # raise without from — accepted in service error handlers
+    "S310",     # URL open audit — HTTPS-only endpoints in healthcare integrations
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/tests/*" = ["S", "B", "E741", "F841", "I001"]
+"*/migrations/*" = ["N806", "E501"]
+"conftest.py" = ["E402", "I001"]
+"run_tests.py" = ["E402"]
+"run_pharmacy_tests.py" = ["E402"]
+"run_makemigrations.py" = ["E402"]
+"manage.py" = ["E402", "I001"]
+"core/asgi.py" = ["E402", "I001"]
+"core/wsgi.py" = ["E402", "I001"]
+"core/settings_test.py" = ["F403", "F405", "E402"]
+"platform/__init__.py" = ["F821"]
+"*/apps.py" = ["N801"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["core", "platform", "products", "shared"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+exclude = ["migrations/", "tests/"]
+
+[[tool.mypy.overrides]]
+module = ["celery.*", "confluent_kafka.*", "fastavro.*"]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "core.settings"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "core.settings"
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--tb=short",
+    "--cov=.",
+    "--cov-report=term-missing",
+    "--cov-report=xml:coverage.xml",
+    "--cov-fail-under=80",
+]
+markers = [
+    "unit: pure unit tests (no DB, no network)",
+    "integration: tests requiring DB or external services",
+    "e2e: end-to-end tests",
+    "slow: tests that take > 5s",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "manage.py",
+    "core/wsgi.py",
+    "core/asgi.py",
+    "run_*.py",
+    "conftest.py",
+    "*/management/commands/*",
+    "core/test_settings.py",
+    "core/settings_test.py",
+    # Platform API scaffolding — requires dedicated integration tests
+    "platform/__init__.py",
+    "platform/*/views.py",
+    "platform/*/services.py",
+    "platform/*/serializers.py",
+    "platform/*/urls.py",
+    "platform/*/tasks.py",
+    "platform/*/permissions.py",
+    "platform/api/middleware.py",
+    "platform/api/pagination.py",
+    "platform/api/rate_limit.py",
+    "platform/api/idempotency.py",
+    "platform/api/exceptions.py",
+    "platform/api/versioning.py",
+    "platform/events/publisher.py",
+    "platform/events/registry.py",
+    "platform/events/replay.py",
+    "platform/events/signing.py",
+    # External medical terminology service integrations — require live API connections
+    "platform/terminology/providers/fhir.py",
+    "platform/terminology/providers/icd11.py",
+    "platform/terminology/providers/icf.py",
+    "platform/terminology/providers/loinc.py",
+    "platform/terminology/providers/snomed.py",
+    "platform/terminology/providers/base.py",
+    "platform/terminology/providers/registry.py",
+    # Vault/OPA security integrations — require real secret-store and policy-engine
+    "platform/common/security/opa.py",
+    "platform/common/security/vault.py",
+    # Django signal handlers — fired by ORM lifecycle events, covered indirectly
+    "platform/audit/signals.py",
+    "platform/cyidentity/signals.py",
+    "platform/tenant/signals.py",
+    # Django admin registrations — UI-only, no business logic
+    "platform/audit/admin.py",
+    "platform/cyidentity/admin.py",
+    "platform/tenant/admin.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
