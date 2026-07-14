@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signing in — CyberCom</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Lato',system-ui,sans-serif;
+      background:#0c0c0e;color:#f0f0f0;
+      display:flex;align-items:center;justify-content:center;
+      min-height:100vh;text-align:center;
+    }
+    .card{
+      background:#131317;border:1px solid rgba(237,108,0,.18);
+      border-radius:12px;padding:3rem 2.5rem;max-width:400px;width:90%;
+    }
+    .spinner{
+      width:48px;height:48px;border:3px solid rgba(237,108,0,.2);
+      border-top-color:#ed6c00;border-radius:50%;
+      animation:spin .8s linear infinite;margin:0 auto 1.5rem;
+    }
+    h1{font-size:1.2rem;font-weight:900;margin-bottom:.5rem}
+    p{font-size:.88rem;color:#7a7a8c;line-height:1.65}
+    .error-msg{color:#ef4444;margin-top:1rem;font-size:.85rem;display:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="spinner" id="spinner"></div>
+  <h1>Signing you in…</h1>
+  <p>Completing authentication with CyIdentity. You will be redirected shortly.</p>
+  <div class="error-msg" id="error-msg"></div>
+</div>
+<script>
+  (async function handleOAuthCallback() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var code = params.get('code');
+      var state = params.get('state');
+      var error = params.get('error');
+      var errorDesc = params.get('error_description');
+
+      if (error) throw new Error(errorDesc || error);
+      if (!code || !state) throw new Error('Missing auth parameters in callback URL.');
+
+      var storedState = sessionStorage.getItem('cy_oauth_state');
+      if (state !== storedState) throw new Error('State mismatch — possible CSRF. Please try again.');
+
+      var verifier = sessionStorage.getItem('cy_pkce_verifier');
+      if (!verifier) throw new Error('Missing PKCE verifier. Please restart the login flow.');
+
+      var issuer = sessionStorage.getItem('cy_issuer') || 'https://identity.cy-com.com';
+      var clientId = sessionStorage.getItem('cy_client_id') || 'cybercom-website-public';
+      var redirectUri = window.location.origin + '/auth/callback';
+      var tokenEndpoint = issuer + '/oauth/token';
+
+      var body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        code: code,
+        code_verifier: verifier,
+      });
+
+      var resp = await fetch(tokenEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+        credentials: 'include',
+      });
+
+      if (!resp.ok) {
+        var e = await resp.json().catch(function() { return {}; });
+        throw new Error(e.error_description || e.error || 'Token exchange failed');
+      }
+
+      var tokens = await resp.json();
+      var expiresAt = Date.now() + tokens.expires_in * 1000 - 30000;
+      sessionStorage.setItem('cy_access_token', tokens.access_token);
+      sessionStorage.setItem('cy_token_expiry', String(expiresAt));
+      if (tokens.id_token) sessionStorage.setItem('cy_id_token', tokens.id_token);
+
+      ['cy_pkce_verifier','cy_oauth_state','cy_oauth_nonce','cy_issuer','cy_client_id']
+        .forEach(function(k) { sessionStorage.removeItem(k); });
+
+      var returnUrl = sessionStorage.getItem('cy_return_url') || '/';
+      sessionStorage.removeItem('cy_return_url');
+      window.location.replace(returnUrl);
+
+    } catch (err) {
+      document.getElementById('spinner').style.display = 'none';
+      var errEl = document.getElementById('error-msg');
+      errEl.style.display = 'block';
+      errEl.textContent = 'Authentication failed: ' + (err.message || 'Unknown error. Please try again.');
+    }
+  })();
+</script>
+</body>
+</html>

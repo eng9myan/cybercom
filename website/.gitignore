@@ -1,0 +1,43 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Node / Next.js / Turborepo
+node_modules/
+.pnp.*
+.yarn/install-state.gz
+.next/
+out/
+dist/
+build/
+.turbo/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+logs/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.pem
+*.key
+*.crt
+
+# Misc
+tmp/
+.cache/

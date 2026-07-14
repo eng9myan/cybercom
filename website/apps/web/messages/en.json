@@ -1,0 +1,180 @@
+{
+  "nav": {
+    "products": "Products",
+    "industries": "Industries",
+    "partners": "Partners",
+    "docs": "Documentation",
+    "about": "About",
+    "contact": "Contact",
+    "solutions": "Solutions",
+    "pricing": "Pricing",
+    "blog": "Blog",
+    "careers": "Careers",
+    "investors": "Investors",
+    "requestDemo": "Request Demo",
+    "login": "Login",
+    "portal": "Customer Portal",
+    "marketplace": "Marketplace",
+    "partnerPortal": "Partner Portal",
+    "demoCenter": "Demo Center"
+  },
+  "hero": {
+    "eyebrow": "Enterprise Platform Suite — Three Products, One Ecosystem",
+    "headlinePrefix": "Intelligent Software for",
+    "words": {
+      "healthcare": "Healthcare",
+      "retail": "Retail",
+      "enterprise": "Enterprise"
+    },
+    "description": "CyMed · CyShop · CyCom ERP — built on one identity layer, one API gateway, one audit trail. Deploy as SaaS, on-premise, or hybrid.",
+    "cta": {
+      "demo": "Request a Demo",
+      "explore": "Explore Products"
+    },
+    "highlights": {
+      "fhir": "FHIR-native EHR",
+      "ai": "AI-powered forecasting",
+      "inventory": "Real-time inventory",
+      "security": "Zero Trust security"
+    },
+    "stats": {
+      "platformsLabel": "Enterprise Platforms",
+      "erpLabel": "ERP Modules",
+      "clinicalLabel": "Clinical Solutions",
+      "uptimeLabel": "Uptime SLA"
+    }
+  },
+  "products": {
+    "title": "The CyberCom Ecosystem",
+    "subtitle": "Nine integrated platforms that power the digital transformation of healthcare, government, and enterprise.",
+    "viewAll": "View All Products",
+    "cymed": {
+      "name": "CyMed",
+      "tagline": "Intelligent Healthcare Platform",
+      "description": "FHIR-native, ICD-11 ready clinical platform covering the complete healthcare continuum."
+    },
+    "cycom": {
+      "name": "CyCom",
+      "tagline": "Enterprise ERP Platform",
+      "description": "Unified ERP covering finance, HR, procurement, manufacturing, and CRM."
+    },
+    "cygov": {
+      "name": "CyGov",
+      "tagline": "Government Digital Platform",
+      "description": "Digital transformation for citizen services, national registries, and government workflows."
+    },
+    "cyidentity": {
+      "name": "CyIdentity",
+      "tagline": "Identity & Access Platform",
+      "description": "OAuth 2.1, OIDC, passkeys, SSO, RBAC/ABAC, and Zero Trust security."
+    },
+    "cyintegrationhub": {
+      "name": "CyIntegrationHub",
+      "tagline": "Integration Middleware Platform",
+      "description": "FHIR, HL7, DICOM, REST, Kafka, EDI, SOAP, LDAP, and SFTP integration fabric."
+    },
+    "cyai": {
+      "name": "CyAI",
+      "tagline": "AI & Intelligence Platform",
+      "description": "Clinical AI, government AI, predictive analytics, and enterprise intelligence."
+    },
+    "cydata": {
+      "name": "CyData",
+      "tagline": "Data & Analytics Platform",
+      "description": "Lakehouse architecture, BI, data governance, and population health analytics."
+    },
+    "cyconnect": {
+      "name": "CyConnect",
+      "tagline": "Communications Platform",
+      "description": "Unified messaging, notifications, communications, and collaboration."
+    },
+    "cycitizen": {
+      "name": "CyCitizen",
+      "tagline": "Citizen Experience Platform",
+      "description": "Citizen portal, digital wallet, government services, and national identity."
+    }
+  },
+  "industries": {
+    "title": "Built for Your Industry",
+    "subtitle": "Deep domain expertise across the sectors that matter most.",
+    "healthcare": {
+      "name": "Healthcare",
+      "description": "End-to-end clinical platform for hospitals, clinics, labs, and pharmacies."
+    },
+    "government": {
+      "name": "Government",
+      "description": "Digital government platforms for citizen services and national programs."
+    },
+    "retail": {
+      "name": "Retail & Commerce",
+      "description": "Unified commerce, inventory, and customer experience platforms."
+    },
+    "manufacturing": {
+      "name": "Manufacturing",
+      "description": "Production, quality, and supply chain management platforms."
+    },
+    "education": {
+      "name": "Education",
+      "description": "Learning management and institutional administration systems."
+    },
+    "financial": {
+      "name": "Financial Services",
+      "description": "Core banking, insurance, and financial operations platforms."
+    },
+    "insurance": {
+      "name": "Insurance",
+      "description": "Policy management, claims processing, and actuarial platforms."
+    },
+    "telecom": {
+      "name": "Telecommunications",
+      "description": "BSS/OSS, billing, and customer management platforms."
+    }
+  },
+  "demo": {
+    "title": "See CyberCom in Action",
+    "subtitle": "Schedule a personalized demonstration with our product specialists.",
+    "form": {
+      "fullName": "Full Name",
+      "email": "Work Email",
+      "phone": "Phone Number",
+      "jobTitle": "Job Title",
+      "company": "Company Name",
+      "companySize": "Company Size",
+      "country": "Country",
+      "productInterests": "Products of Interest",
+      "message": "Message (optional)",
+      "preferredTime": "Preferred Demo Time",
+      "gdprConsent": "I agree to the Privacy Policy and consent to being contacted by CyberCom.",
+      "submit": "Request Demo",
+      "submitting": "Submitting...",
+      "success": "Thank you! We'll contact you within 24 hours.",
+      "reference": "Your reference number:"
+    }
+  },
+  "contact": {
+    "title": "Get in Touch",
+    "subtitle": "Our team is ready to help you plan your digital transformation.",
+    "sales": "Sales",
+    "support": "Support",
+    "partnerships": "Partnerships",
+    "general": "General"
+  },
+  "footer": {
+    "tagline": "Transforming Healthcare, Government and Enterprise through intelligent platforms.",
+    "productsHeading": "Products",
+    "companyHeading": "Company",
+    "newsletterDesc": "Product updates, healthcare tech insights, and platform news.",
+    "newsletter": {
+      "title": "Stay Updated",
+      "placeholder": "Your work email",
+      "subscribe": "Subscribe",
+      "success": "Subscribed!"
+    },
+    "legal": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "cookies": "Cookie Policy"
+    },
+    "copyright": "© 2026 CyberCom Revolution. All rights reserved."
+  }
+}

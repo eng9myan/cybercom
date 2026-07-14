@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Provider Portal — CyberCom</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Lato',system-ui,sans-serif;background:#0c0c0e;color:#f0f0f0;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;}
+    .card{background:#131317;border:1px solid rgba(237,108,0,.2);border-radius:12px;padding:3rem 2.5rem;max-width:420px;width:90%;}
+    .portal-icon{width:64px;height:64px;border-radius:14px;background:rgba(237,108,0,.1);border:1px solid rgba(237,108,0,.25);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:1.8rem;}
+    h1{font-size:1.4rem;font-weight:900;margin-bottom:.5rem}
+    p{font-size:.88rem;color:#7a7a8c;line-height:1.65;margin-bottom:1.8rem}
+    .btn{display:inline-block;background:#ed6c00;color:#fff;padding:.85rem 2.2rem;border-radius:6px;font-family:'Lato',sans-serif;font-weight:900;font-size:.88rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;width:100%;transition:background .2s;}
+    .btn:hover{background:#ff8c2a}
+    .security-badge{display:flex;align-items:center;gap:.6rem;font-size:.75rem;color:#7a7a8c;margin-top:1.2rem;padding:.7rem;background:rgba(237,108,0,.05);border:1px solid rgba(237,108,0,.12);border-radius:6px;text-align:left;}
+    .security-badge svg{flex-shrink:0}
+    .spinner{width:32px;height:32px;border:3px solid rgba(237,108,0,.2);border-top-color:#ed6c00;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+    .hidden{display:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="portal-icon">👨‍⚕️</div>
+  <h1>Provider Portal</h1>
+  <p>Secure access to your clinical workspace, patient lists, orders, results, and provider tools.</p>
+  <button class="btn" id="login-btn" onclick="startLogin()">Sign In with MFA</button>
+  <div class="spinner hidden" id="spinner"></div>
+  <div class="security-badge">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed6c00" stroke-width="2">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+    <span>MFA required &bull; Device registration enforced &bull; Session timeout: 8 hours</span>
+  </div>
+</div>
+<script>
+  var IDENTITY_URL = 'https://identity.cy-com.com';
+  var CLIENT_ID = 'cybercom-website-public';
+  var REDIRECT_URI = 'https://cy-com.com/auth/callback';
+  var PROVIDER_RETURN = 'https://provider.cy-com.com';
+  var SCOPES = 'openid profile email cymed.clinical.read cymed.clinical.write cymed.orders.write cymed.prescriptions.write cymed.results.read cymed.provider.manage';
+
+  async function startLogin() {
+    document.getElementById('login-btn').classList.add('hidden');
+    document.getElementById('spinner').classList.remove('hidden');
+
+    try {
+      var array = new Uint8Array(48);
+      crypto.getRandomValues(array);
+      var verifier = btoa(String.fromCharCode.apply(null, array)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+      var data = new TextEncoder().encode(verifier);
+      var digest = await crypto.subtle.digest('SHA-256', data);
+      var challenge = btoa(String.fromCharCode.apply(null, new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+      var stateArr = new Uint8Array(16);
+      crypto.getRandomValues(stateArr);
+      var state = btoa(String.fromCharCode.apply(null, stateArr)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+
+      sessionStorage.setItem('cy_pkce_verifier', verifier);
+      sessionStorage.setItem('cy_oauth_state', state);
+      sessionStorage.setItem('cy_issuer', IDENTITY_URL);
+      sessionStorage.setItem('cy_client_id', CLIENT_ID);
+      var returnUrl = new URLSearchParams(window.location.search).get('return_url') || PROVIDER_RETURN;
+      sessionStorage.setItem('cy_return_url', returnUrl);
+
+      var params = new URLSearchParams({
+        response_type: 'code',
+        client_id: CLIENT_ID,
+        redirect_uri: REDIRECT_URI,
+        scope: SCOPES,
+        state: state,
+        code_challenge: challenge,
+        code_challenge_method: 'S256',
+        acr_values: 'portal:provider mfa:required device:registered',
+        prompt: 'login',
+      });
+
+      window.location.href = IDENTITY_URL + '/oauth/authorize?' + params.toString();
+    } catch(err) {
+      document.getElementById('spinner').classList.add('hidden');
+      document.getElementById('login-btn').classList.remove('hidden');
+    }
+  }
+</script>
+</body>
+</html>

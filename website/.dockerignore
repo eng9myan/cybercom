@@ -1,0 +1,15 @@
+.git
+.github
+.next
+**/.next
+node_modules
+**/node_modules
+.turbo
+**/.turbo
+coverage
+**/coverage
+.env
+.env.*
+!.env.example
+*.log
+Website_Oracle_GoLive_Report.md

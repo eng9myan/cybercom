@@ -1,0 +1,196 @@
+import { setRequestLocale } from "next-intl/server";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { buildMetadata } from "@/lib/metadata";
+import { type Locale } from "@/lib/i18n";
+import { ArrowRight, Star, Building2, FlaskConical, Microscope, ShoppingBag, Factory } from "lucide-react";
+
+interface CustomersPageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({ params }: CustomersPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  return buildMetadata({
+    title: "Customers",
+    description: "CyberCom Revolution serves hospitals, clinics, laboratories, imaging centers, pharmacies, retail businesses, and enterprises across the Middle East. See how our platforms transform operations.",
+    path: "/customers",
+    locale,
+  });
+}
+
+const INDUSTRIES = [
+  { icon: Building2, label: "Hospital & Health Systems", color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", desc: "Multi-specialty hospitals, health ministry networks, and private hospital chains using CyMed Hospital for end-to-end inpatient operations." },
+  { icon: FlaskConical, label: "Clinics & Outpatient Centers", color: "text-teal-400", bg: "bg-teal-500/10 border-teal-500/20", desc: "General practice, specialist, and multi-specialty outpatient centers with CyMed Clinic for EMR, scheduling, and billing." },
+  { icon: Microscope, label: "Laboratories & Pathology", color: "text-sky-400", bg: "bg-sky-500/10 border-sky-500/20", desc: "Clinical laboratories using CyMed Laboratory LIS for LOINC-coded results, auto-verification, and analyzer interfacing." },
+  { icon: ShoppingBag, label: "Retail & F&B", color: "text-cy-orange", bg: "bg-cy-orange/10 border-cy-orange/20", desc: "Restaurants, grocery chains, bakeries, and convenience stores using CyShop for omnichannel POS and inventory management." },
+  { icon: Factory, label: "Enterprise & Manufacturing", color: "text-blue-400", bg: "bg-blue-500/10 border-blue-500/20", desc: "Manufacturing, distribution, and enterprise businesses using CyCom ERP for finance, procurement, inventory, and HR." },
+];
+
+const TESTIMONIALS = [
+  {
+    quote: "CyMed transformed how our hospital manages patient flow, clinical documentation, and billing. The FHIR-native integration with our existing lab systems was seamless. Arabic interface out of the box was critical for our team.",
+    name: "Dr. Ahmad Al-Rasheed",
+    role: "Medical Director",
+    org: "Regional Medical Center",
+    country: "Jordan",
+    product: "CyMed Hospital",
+    color: "text-emerald-400",
+  },
+  {
+    quote: "CyShop replaced three separate systems — our POS, inventory, and loyalty program. Now everything is connected. The AI sales forecast feature alone paid back the investment in the first quarter.",
+    name: "Sami Khouri",
+    role: "Operations Director",
+    org: "Fresh Market Chain",
+    country: "UAE",
+    product: "CyShop",
+    color: "text-cy-orange",
+  },
+  {
+    quote: "CyCom ERP gave us full visibility across finance, procurement, and inventory in one system. The WPS payroll export for GCC compliance saved our HR team hours every month. Bilingual reports are excellent.",
+    name: "Nour Al-Mansouri",
+    role: "CFO",
+    org: "Manufacturing Group",
+    country: "Saudi Arabia",
+    product: "CyCom ERP",
+    color: "text-blue-400",
+  },
+  {
+    quote: "The drug interaction checking engine in CyMed Pharmacy prevented a serious contraindicated prescription on day three. The clinical pharmacist review workflow is exactly what we needed for patient safety.",
+    name: "Dr. Lana Haddad",
+    role: "Chief Pharmacist",
+    org: "University Hospital Pharmacy",
+    country: "Jordan",
+    product: "CyMed Pharmacy",
+    color: "text-violet-400",
+  },
+  {
+    quote: "Our lab went from paper-based result reporting to fully automated LOINC-coded results with auto-verification in six weeks. The critical value alerting has dramatically improved our response times.",
+    name: "Dr. Karim Barakat",
+    role: "Laboratory Director",
+    org: "Diagnostic Center",
+    country: "Lebanon",
+    product: "CyMed Laboratory",
+    color: "text-teal-400",
+  },
+  {
+    quote: "The restaurant POS, kitchen display, and delivery management all in one platform was exactly what we needed. The offline mode has been a lifesaver during network outages.",
+    name: "Maya Saleh",
+    role: "CEO",
+    org: "Restaurant Group",
+    country: "UAE",
+    product: "CyShop",
+    color: "text-cy-orange",
+  },
+];
+
+export default async function CustomersPage({ params }: CustomersPageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const l = locale as Locale;
+
+  return (
+    <div className="min-h-dvh pt-16">
+      {/* Hero */}
+      <section className="relative py-24 overflow-hidden" aria-labelledby="customers-heading">
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="glow-orb w-[600px] h-[600px] -top-32 right-0 bg-emerald-500/5" />
+          <div className="glow-orb w-[400px] h-[400px] bottom-0 left-0 bg-cy-orange/5" />
+        </div>
+        <div className="section-container relative z-10 text-center max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cy-orange/20 bg-cy-orange/5 mb-6">
+            <div className="w-1.5 h-1.5 rounded-full bg-cy-orange animate-pulse" aria-hidden="true" />
+            <span className="text-xs font-medium text-cy-orange tracking-wider uppercase">Customer Success</span>
+          </div>
+          <h1 id="customers-heading" className="text-4xl sm:text-5xl font-heading font-semibold text-white mb-6 leading-tight">
+            Trusted by Healthcare Providers,<br />
+            <span className="text-gradient-orange">Retailers & Enterprises</span>
+          </h1>
+          <p className="text-lg text-cy-gray-400 leading-relaxed max-w-2xl mx-auto mb-8">
+            Organizations across Jordan, Saudi Arabia, UAE, and beyond use CyberCom Revolution platforms to transform their operations, improve patient outcomes, and grow their businesses.
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Link href={`/${l}/demo`} className="btn-primary px-6 py-3 text-sm inline-flex items-center gap-2">
+              Request a Demo
+              <ArrowRight className="w-4 h-4 rtl:rotate-180" aria-hidden="true" />
+            </Link>
+            <Link href={`/${l}/contact`} className="btn-secondary px-6 py-3 text-sm">
+              Contact Sales
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Industries We Serve */}
+      <section className="py-20 bg-cy-dark/30" aria-labelledby="industries-heading">
+        <div className="section-container">
+          <div className="text-center mb-14">
+            <h2 id="industries-heading" className="text-3xl font-heading font-semibold text-white mb-4">Industries We Serve</h2>
+            <p className="text-cy-gray-400 max-w-2xl mx-auto">Three enterprise platforms purpose-built for the industries that need them most.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {INDUSTRIES.map((ind) => (
+              <div key={ind.label} className={`glass-card rounded-xl p-6 border ${ind.bg}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border mb-4 ${ind.bg}`}>
+                  <ind.icon className={`w-5 h-5 ${ind.color}`} aria-hidden="true" />
+                </div>
+                <h3 className={`text-sm font-heading font-semibold ${ind.color} mb-2`}>{ind.label}</h3>
+                <p className="text-sm text-cy-gray-400 leading-relaxed">{ind.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20" aria-labelledby="testimonials-heading">
+        <div className="section-container">
+          <div className="text-center mb-14">
+            <h2 id="testimonials-heading" className="text-3xl font-heading font-semibold text-white mb-4">What Our Customers Say</h2>
+            <p className="text-cy-gray-400 max-w-2xl mx-auto">Real results from organizations using CyberCom platforms in production.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t) => (
+              <div key={t.name} className="glass-card rounded-2xl p-7 flex flex-col">
+                <div className="flex items-center gap-1 mb-4" aria-label="5 stars">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="w-4 h-4 text-cy-orange fill-cy-orange" aria-hidden="true" />
+                  ))}
+                </div>
+                <blockquote className="text-sm text-cy-gray-200 leading-relaxed flex-1 mb-6 italic">
+                  &ldquo;{t.quote}&rdquo;
+                </blockquote>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium text-white">{t.name}</div>
+                    <div className="text-xs text-cy-gray-400">{t.role}</div>
+                    <div className="text-xs text-cy-gray-400">{t.org} · {t.country}</div>
+                  </div>
+                  <span className={`product-badge text-xs ${t.color} border-current/20 bg-current/5 flex-shrink-0`}>{t.product}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-20 bg-cy-dark/30" aria-labelledby="cta-heading">
+        <div className="section-container text-center max-w-3xl mx-auto">
+          <h2 id="cta-heading" className="text-3xl font-heading font-semibold text-white mb-4">Ready to Join Them?</h2>
+          <p className="text-cy-gray-400 mb-8">See how CyberCom Revolution can transform your organization. Book a personalized demo with our team.</p>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Link href={`/${l}/demo`} className="btn-primary px-8 py-3 text-sm inline-flex items-center gap-2">
+              Book a Demo
+              <ArrowRight className="w-4 h-4 rtl:rotate-180" aria-hidden="true" />
+            </Link>
+            <Link href={`/${l}/contact`} className="btn-secondary px-8 py-3 text-sm">
+              Contact Sales
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

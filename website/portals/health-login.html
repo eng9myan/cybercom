@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Healthcare Portal — CyberCom</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Lato',system-ui,sans-serif;background:#0c0c0e;color:#f0f0f0;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;}
+    .card{background:#131317;border:1px solid rgba(89,195,225,.2);border-radius:12px;padding:3rem 2.5rem;max-width:420px;width:90%;}
+    .portal-icon{width:64px;height:64px;border-radius:14px;background:rgba(89,195,225,.1);border:1px solid rgba(89,195,225,.25);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:1.8rem;}
+    h1{font-size:1.4rem;font-weight:900;margin-bottom:.5rem}
+    p{font-size:.88rem;color:#7a7a8c;line-height:1.65;margin-bottom:1.8rem}
+    .role-tabs{display:flex;gap:.5rem;margin-bottom:1.5rem}
+    .role-tab{flex:1;padding:.6rem;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:transparent;color:#7a7a8c;font-family:'Lato',sans-serif;font-weight:700;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+    .role-tab.active{background:rgba(89,195,225,.1);border-color:rgba(89,195,225,.3);color:#59c3e1}
+    .btn{display:inline-block;background:#59c3e1;color:#0c0c0e;padding:.85rem 2.2rem;border-radius:6px;font-family:'Lato',sans-serif;font-weight:900;font-size:.88rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border:none;width:100%;transition:background .2s;}
+    .btn:hover{background:#8dd8ee}
+    .mfa-notice{font-size:.75rem;color:#eab308;margin-top:1rem;padding:.6rem;background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.2);border-radius:6px;}
+    .spinner{width:32px;height:32px;border:3px solid rgba(89,195,225,.2);border-top-color:#59c3e1;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+    .hidden{display:none}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="portal-icon">⚕️</div>
+  <h1>CyMed Health Portal</h1>
+  <div class="role-tabs">
+    <button class="role-tab active" id="tab-patient" onclick="setRole('patient')">Patient</button>
+    <button class="role-tab" id="tab-provider" onclick="setRole('provider')">Provider</button>
+  </div>
+  <p id="role-desc">Access your health records, lab results, and care team communications.</p>
+  <button class="btn" id="login-btn" onclick="startLogin()">Sign In Securely</button>
+  <div class="spinner hidden" id="spinner"></div>
+  <div class="mfa-notice" id="mfa-notice" style="display:none">⚠ Clinical access requires multi-factor authentication</div>
+</div>
+<script>
+  var currentRole = 'patient';
+  var IDENTITY_URL = 'https://identity.cy-com.com';
+  var CLIENT_ID = 'cybercom-website-public';
+  var REDIRECT_URI = 'https://cy-com.com/auth/callback';
+  var HEALTH_RETURN = 'https://health.cy-com.com';
+
+  var ROLE_CONFIG = {
+    patient: {
+      scopes: 'openid profile email cymed.patient.read cymed.health_records.read',
+      desc: 'Access your health records, lab results, and care team communications.',
+      acr: 'portal:health',
+      showMfa: false,
+    },
+    provider: {
+      scopes: 'openid profile email cymed.clinical.read cymed.clinical.write cymed.orders.write cymed.results.read',
+      desc: 'Access clinical workspace, patient lists, orders, and results.',
+      acr: 'portal:health mfa:required',
+      showMfa: true,
+    },
+  };
+
+  function setRole(role) {
+    currentRole = role;
+    document.getElementById('tab-patient').classList.toggle('active', role === 'patient');
+    document.getElementById('tab-provider').classList.toggle('active', role === 'provider');
+    document.getElementById('role-desc').textContent = ROLE_CONFIG[role].desc;
+    document.getElementById('mfa-notice').style.display = ROLE_CONFIG[role].showMfa ? 'block' : 'none';
+  }
+
+  async function startLogin() {
+    document.getElementById('login-btn').classList.add('hidden');
+    document.getElementById('spinner').classList.remove('hidden');
+
+    try {
+      var cfg = ROLE_CONFIG[currentRole];
+      var array = new Uint8Array(48);
+      crypto.getRandomValues(array);
+      var verifier = btoa(String.fromCharCode.apply(null, array)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+      var data = new TextEncoder().encode(verifier);
+      var digest = await crypto.subtle.digest('SHA-256', data);
+      var challenge = btoa(String.fromCharCode.apply(null, new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+      var stateArr = new Uint8Array(16);
+      crypto.getRandomValues(stateArr);
+      var state = btoa(String.fromCharCode.apply(null, stateArr)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+
+      sessionStorage.setItem('cy_pkce_verifier', verifier);
+      sessionStorage.setItem('cy_oauth_state', state);
+      sessionStorage.setItem('cy_issuer', IDENTITY_URL);
+      sessionStorage.setItem('cy_client_id', CLIENT_ID);
+      var returnUrl = new URLSearchParams(window.location.search).get('return_url') || HEALTH_RETURN;
+      sessionStorage.setItem('cy_return_url', returnUrl);
+
+      var params = new URLSearchParams({
+        response_type: 'code',
+        client_id: CLIENT_ID,
+        redirect_uri: REDIRECT_URI,
+        scope: cfg.scopes,
+        state: state,
+        code_challenge: challenge,
+        code_challenge_method: 'S256',
+        acr_values: cfg.acr,
+        prompt: 'login',
+      });
+
+      window.location.href = IDENTITY_URL + '/oauth/authorize?' + params.toString();
+    } catch(err) {
+      document.getElementById('spinner').classList.add('hidden');
+      document.getElementById('login-btn').classList.remove('hidden');
+    }
+  }
+</script>
+</body>
+</html>

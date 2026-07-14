@@ -1,0 +1,10 @@
+{
+  "name": "@cybercom/config",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./tailwind": "./tailwind/index.js",
+    "./typescript/base": "./typescript/base.json",
+    "./typescript/nextjs": "./typescript/nextjs.json"
+  }
+}

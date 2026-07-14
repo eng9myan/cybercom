@@ -1,0 +1,461 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 6%;
+    --card-foreground: 210 40% 98%;
+    --primary: 24 100% 46%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 199 70% 59%;
+    --accent-foreground: 222 47% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 33% 14%;
+    --input: 217 33% 14%;
+    --ring: 24 100% 46%;
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-cy-black text-cy-white font-body;
+    font-size: 1rem;
+    line-height: 1.625;
+  }
+
+  /* RTL support */
+  [dir="rtl"] {
+    font-family: 'Source Sans 3', 'Noto Sans Arabic', system-ui, sans-serif;
+  }
+
+  [dir="rtl"] h1,
+  [dir="rtl"] h2,
+  [dir="rtl"] h3,
+  [dir="rtl"] h4,
+  [dir="rtl"] h5,
+  [dir="rtl"] h6 {
+    font-family: 'Lexend', 'Noto Sans Arabic', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading font-semibold;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  /* Focus ring */
+  :focus-visible {
+    @apply outline-none ring-2 ring-cy-orange ring-offset-2 ring-offset-cy-black;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-cy-slate rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-cy-gray-600;
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(237, 108, 0, 0.25);
+    color: #fff;
+  }
+
+  /* Skip link */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-cy-orange focus:text-white focus:rounded-lg focus:text-sm focus:font-medium;
+  }
+}
+
+@layer components {
+  /* ── Glass cards ──────────────────────────────────── */
+  .glass-card {
+    @apply bg-cy-glass-bg border border-cy-glass-border backdrop-blur-md rounded-2xl;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), 0 8px 32px rgba(0,0,0,0.4);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, background-color 0.3s ease, transform 0.3s ease;
+  }
+  .glass-card:hover {
+    @apply bg-cy-glass-bg-hover border-white/[0.14];
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 20px 60px rgba(0,0,0,0.55);
+    transform: translateY(-2px);
+  }
+
+  /* Premium card — animated gradient border */
+  .glass-card-premium {
+    position: relative;
+    @apply rounded-2xl;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+  }
+  .glass-card-premium::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 50%, rgba(237,108,0,0.2) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .glass-card-premium:hover::before {
+    background: linear-gradient(135deg, rgba(237,108,0,0.4) 0%, rgba(89,195,225,0.2) 60%, rgba(255,255,255,0.1) 100%);
+    transition: background 0.4s ease;
+  }
+
+  /* Bento card */
+  .bento-card {
+    @apply relative rounded-3xl overflow-hidden;
+    background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  }
+  .bento-card:hover {
+    border-color: rgba(237,108,0,0.25);
+    box-shadow: 0 0 40px rgba(237,108,0,0.08), 0 20px 60px rgba(0,0,0,0.4);
+    transform: translateY(-2px);
+  }
+
+  /* ── Gradient text ────────────────────────────────── */
+  .text-gradient {
+    @apply bg-gradient-cy bg-clip-text text-transparent;
+  }
+  .text-gradient-orange {
+    background: linear-gradient(135deg, #ed6c00 0%, #f59332 100%);
+    @apply bg-clip-text text-transparent;
+  }
+  .text-gradient-aurora {
+    background: linear-gradient(135deg, #f59332 0%, #ed6c00 40%, #59c3e1 100%);
+    @apply bg-clip-text text-transparent;
+  }
+  .text-gradient-emerald {
+    background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+    @apply bg-clip-text text-transparent;
+  }
+  .text-gradient-blue {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    @apply bg-clip-text text-transparent;
+  }
+
+  /* ── Shimmer ──────────────────────────────────────── */
+  .shimmer-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.07) 50%, transparent 60%);
+    background-size: 200% 100%;
+    animation: shimmer 2.4s linear infinite;
+    pointer-events: none;
+  }
+
+  /* ── Marquee ──────────────────────────────────────── */
+  .marquee-track {
+    display: flex;
+    gap: 0.75rem;
+    white-space: nowrap;
+    animation: marquee 32s linear infinite;
+    width: max-content;
+  }
+
+  /* ── Product badge ────────────────────────────────── */
+  .product-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border;
+  }
+
+  /* ── Section container ────────────────────────────── */
+  .section-container {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* ── Glow orb ─────────────────────────────────────── */
+  .glow-orb {
+    @apply absolute rounded-full blur-3xl pointer-events-none;
+  }
+
+  /* ── Animated flow line ───────────────────────────── */
+  .flow-line {
+    stroke-dasharray: 8 4;
+    animation: flow 2s linear infinite;
+  }
+
+  /* ── Section divider ──────────────────────────────── */
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08) 30%, rgba(237,108,0,0.15) 50%, rgba(255,255,255,0.08) 70%, transparent);
+  }
+
+  /* ── Buttons ──────────────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-cy-orange text-white font-medium text-sm transition-all duration-200 cursor-pointer;
+    @apply hover:bg-cy-orange-light hover:shadow-orange-glow;
+    @apply focus-visible:ring-2 focus-visible:ring-cy-orange focus-visible:ring-offset-2 focus-visible:ring-offset-cy-black;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary-glow {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-white font-semibold text-sm cursor-pointer relative overflow-hidden;
+    @apply focus-visible:ring-2 focus-visible:ring-cy-orange focus-visible:ring-offset-2 focus-visible:ring-offset-cy-black;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, #ed6c00 0%, #f07b1a 100%);
+    box-shadow: 0 0 0 1px rgba(237,108,0,0.4), 0 4px 20px rgba(237,108,0,0.3);
+    transition: box-shadow 0.25s ease, transform 0.2s ease;
+  }
+  .btn-primary-glow::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
+    background-size: 200% 100%;
+    animation: shimmer 2.4s linear infinite;
+  }
+  .btn-primary-glow:hover {
+    box-shadow: 0 0 0 1px rgba(237,108,0,0.6), 0 8px 32px rgba(237,108,0,0.5);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-white/[0.12] bg-white/[0.05] text-white font-medium text-sm transition-all duration-200 cursor-pointer backdrop-blur-sm;
+    @apply hover:bg-white/[0.09] hover:border-white/[0.22];
+    @apply focus-visible:ring-2 focus-visible:ring-cy-orange focus-visible:ring-offset-2 focus-visible:ring-offset-cy-black;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white/50 font-medium text-sm transition-all duration-200 cursor-pointer;
+    @apply hover:text-white hover:bg-white/[0.06];
+  }
+
+  /* ── Form inputs ──────────────────────────────────── */
+  .form-input {
+    @apply w-full px-4 py-3 rounded-xl bg-cy-glass-bg border border-cy-glass-border text-white placeholder:text-cy-gray-600 text-sm transition-all duration-200;
+    @apply focus:outline-none focus:border-cy-orange/50 focus:ring-1 focus:ring-cy-orange/30;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .form-label {
+    @apply block text-sm font-medium text-cy-gray-200 mb-1.5;
+  }
+  .form-error {
+    @apply mt-1.5 text-xs text-destructive flex items-center gap-1;
+  }
+}
+
+@layer utilities {
+  /* Fluid animation utilities */
+  .animate-once {
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+  }
+
+  /* RTL flip */
+  .rtl-flip {
+    transform: scaleX(-1);
+  }
+  [dir="rtl"] .rtl-flip {
+    transform: scaleX(1);
+  }
+
+  /* Noise texture overlay */
+  .noise::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.03;
+  }
+
+  /* Container query utilities */
+  .cq-sm { container-type: inline-size; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHT MODE OVERRIDES — applied when <html class="light">
+   ═══════════════════════════════════════════════════════════ */
+
+.light body {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* Page sections */
+.light section {
+  position: relative;
+}
+
+/* Typography */
+.light .text-white,
+.light .text-white\/88,
+.light .text-white\/65,
+.light .text-white\/50,
+.light .text-white\/45,
+.light .text-white\/42,
+.light .text-white\/40,
+.light .text-white\/35,
+.light .text-white\/30,
+.light .text-white\/25,
+.light .text-white\/22 {
+  color: #0f172a !important;
+}
+
+.light .text-cy-gray-400,
+.light .text-cy-gray-300,
+.light .text-cy-gray-200 {
+  color: #64748b !important;
+}
+.light .text-cy-gray-500 { color: #94a3b8 !important; }
+
+/* Glass cards */
+.light .glass-card {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 4px 20px rgba(0,0,0,0.07) !important;
+  color: #0f172a;
+}
+.light .glass-card:hover {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1), 0 12px 40px rgba(0,0,0,0.1) !important;
+}
+
+.light .glass-card-premium {
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.light .bento-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+.light .bento-card:hover {
+  border-color: rgba(237, 108, 0, 0.3) !important;
+  box-shadow: 0 0 40px rgba(237,108,0,0.08), 0 12px 40px rgba(0,0,0,0.1) !important;
+}
+
+/* Dark section backgrounds */
+.light .bg-cy-black { background: #f8fafc !important; }
+.light .bg-cy-dark  { background: #f1f5f9 !important; }
+.light .bg-cy-glass-bg { background: rgba(0,0,0,0.03) !important; }
+
+/* Borders */
+.light .border-cy-glass-border { border-color: rgba(0,0,0,0.1) !important; }
+.light .border-white\/\[0\.12\] { border-color: rgba(0,0,0,0.12) !important; }
+.light .border-white\/\[0\.07\] { border-color: rgba(0,0,0,0.07) !important; }
+.light .border-white\/\[0\.06\] { border-color: rgba(0,0,0,0.06) !important; }
+
+/* Navbar */
+.light header {
+  background: rgba(248, 250, 252, 0.95) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.1) !important;
+}
+.light .shadow-glass {
+  box-shadow: 0 1px 20px rgba(0,0,0,0.08) !important;
+}
+
+/* Buttons — secondary/ghost in light mode */
+.light .btn-secondary {
+  background: rgba(0,0,0,0.05) !important;
+  border-color: rgba(0,0,0,0.15) !important;
+  color: #0f172a !important;
+}
+.light .btn-secondary:hover {
+  background: rgba(0,0,0,0.08) !important;
+  border-color: rgba(0,0,0,0.22) !important;
+}
+.light .btn-ghost {
+  color: #475569 !important;
+}
+.light .btn-ghost:hover {
+  color: #0f172a !important;
+  background: rgba(0,0,0,0.06) !important;
+}
+
+/* Form inputs */
+.light .form-input {
+  background: rgba(0,0,0,0.03) !important;
+  border-color: rgba(0,0,0,0.12) !important;
+  color: #0f172a !important;
+}
+
+/* Product cards inline bg */
+.light [style*="rgba(255,255,255,0.03)"] {
+  background: rgba(0,0,0,0.03) !important;
+}
+.light [style*="rgba(255,255,255,0.04)"] {
+  background: rgba(0,0,0,0.04) !important;
+}
+.light [style*="rgba(255,255,255,0.06)"] {
+  background: rgba(0,0,0,0.04) !important;
+}
+
+/* Stats band & social proof cards */
+.light [style*="rgba(255,255,255,0.055)"],
+.light [style*="rgba(255,255,255,0.05)"] {
+  background: rgba(0,0,0,0.04) !important;
+}
+
+/* Dividers */
+.light .section-divider {
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.08) 30%, rgba(237,108,0,0.2) 50%, rgba(0,0,0,0.08) 70%, transparent) !important;
+}
+
+/* Marquee edge fades */
+.light [style*="linear-gradient(to right, #0a0a0f"] {
+  background: linear-gradient(to right, #f8fafc, transparent) !important;
+}
+.light [style*="linear-gradient(to left, #0a0a0f"] {
+  background: linear-gradient(to left, #f8fafc, transparent) !important;
+}
+
+/* Hero aurora vignettes */
+.light [style*="from-cy-black"],
+.light .bg-gradient-to-b.from-cy-black { background: transparent !important; }
+
+/* Scrollbar */
+.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+}
+
+/* Focus ring offset in light mode */
+.light :focus-visible {
+  @apply ring-offset-white;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   END LIGHT MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════ */
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

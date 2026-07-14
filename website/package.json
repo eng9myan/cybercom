@@ -1,0 +1,36 @@
+{
+  "name": "cybercom-website",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
+    "build:legacy-sdk": "esbuild src/lib/index.ts --bundle --outfile=dist/cybercom-api.js --platform=browser --target=es2020 --minify",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.0",
+    "turbo": "^2.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0",
+    "esbuild": "^0.28.1"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.8.0",
+  "allowScripts": {
+    "esbuild@0.21.5": true,
+    "esbuild@0.28.1": true,
+    "sharp@0.33.5": true,
+    "unrs-resolver@1.12.2": true
+  }
+}

@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CyberCom Revolution — Powering the Future</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange:  #ed6c00;
+      --orange2: #ff8c2a;
+      --cyan:    #59c3e1;
+      --cyan2:   #8dd8ee;
+      --dark:    #0c0c0e;
+      --dark2:   #131317;
+      --dark3:   #1a1a20;
+      --dark4:   #222229;
+      --glass:   rgba(255,255,255,0.04);
+      --glass-b: rgba(255,255,255,0.07);
+      --border:  rgba(237,108,0,0.18);
+      --border2: rgba(89,195,225,0.15);
+      --text:    #f0f0f0;
+      --muted:   #7a7a8c;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Source Sans 3', 'Lato', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: var(--dark); }
+    ::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 2px; }
+
+    #particles-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── LOGO SVG ─── */
+    .logo-svg { height: 44px; width: auto; }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.1rem 5rem;
+      background: rgba(12,12,14,0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(237,108,0,0.12);
+      transition: padding .3s, background .3s;
+    }
+    nav.scrolled {
+      padding: .7rem 5rem;
+      background: rgba(12,12,14,0.92);
+    }
+
+    .nav-logo { display: flex; align-items: center; text-decoration: none; }
+
+    .nav-links {
+      display: flex;
+      gap: 2.8rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-family: 'Lato', sans-serif;
+      font-size: .88rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      transition: color .2s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -5px; left: 0; right: 0;
+      height: 2px;
+      background: var(--orange);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform .3s;
+    }
+    .nav-links a:hover { color: var(--orange); }
+    .nav-links a:hover::after { transform: scaleX(1); }
+
+    .nav-cta {
+      background: var(--orange);
+      border: none;
+      padding: .6rem 1.6rem;
+      border-radius: 4px;
+      color: #fff;
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+      font-size: .85rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .2s, transform .2s, box-shadow .2s;
+      text-decoration: none;
+      box-shadow: 0 4px 24px rgba(237,108,0,.3);
+    }
+    .nav-cta:hover {
+      background: var(--orange2);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 32px rgba(237,108,0,.45);
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 9rem 2rem 5rem;
+      z-index: 1;
+    }
+
+    .hero-glow {
+      position: absolute;
+      width: 800px; height: 800px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(237,108,0,.07) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      pointer-events: none;
+    }
+    .hero-glow2 {
+      position: absolute;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(89,195,225,.05) 0%, transparent 70%);
+      top: 25%; left: 15%;
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      background: rgba(237,108,0,.08);
+      border: 1px solid rgba(237,108,0,.3);
+      border-radius: 3px;
+      padding: .4rem 1.1rem;
+      font-family: 'Lato', sans-serif;
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--orange);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-bottom: 1.8rem;
+      animation: fadeInDown .8s both;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 10px var(--orange);
+      animation: pulseDot 2s infinite;
+    }
+
+    .hero h1 {
+      font-family: 'Lato', sans-serif;
+      font-size: clamp(2.6rem, 6.5vw, 6rem);
+      font-weight: 900;
+      line-height: 1.06;
+      letter-spacing: -.02em;
+      animation: fadeInUp .9s .1s both;
+    }
+    .hero h1 .accent-orange {
+      color: var(--orange);
+      text-shadow: 0 0 60px rgba(237,108,0,.4);
+    }
+    .hero h1 .accent-cyan {
+      color: var(--cyan);
+      text-shadow: 0 0 60px rgba(89,195,225,.3);
+    }
+
+    .hero-sub {
+      max-width: 600px;
+      font-size: 1.08rem;
+      color: var(--muted);
+      line-height: 1.75;
+      margin: 1.6rem auto 2.8rem;
+      animation: fadeInUp .9s .2s both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeInUp .9s .3s both;
+    }
+    .btn-primary {
+      background: var(--orange);
+      border: none;
+      padding: .95rem 2.4rem;
+      border-radius: 4px;
+      color: #fff;
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+      font-size: .9rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .2s, transform .2s, box-shadow .2s;
+      text-decoration: none;
+      box-shadow: 0 6px 28px rgba(237,108,0,.35);
+    }
+    .btn-primary:hover {
+      background: var(--orange2);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 40px rgba(237,108,0,.5);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1.5px solid rgba(89,195,225,.35);
+      padding: .95rem 2.4rem;
+      border-radius: 4px;
+      color: var(--cyan);
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+      font-size: .9rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color .2s, color .2s, background .2s, transform .2s;
+      text-decoration: none;
+    }
+    .btn-ghost:hover {
+      border-color: var(--cyan);
+      background: rgba(89,195,225,.07);
+      transform: translateY(-2px);
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 4rem;
+      margin-top: 5rem;
+      animation: fadeInUp .9s .45s both;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding-top: 3rem;
+      border-top: 1px solid rgba(237,108,0,.12);
+      width: 100%;
+      max-width: 720px;
+    }
+    .hero-stat { text-align: center; }
+    .stat-num {
+      font-family: 'Lato', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--orange);
+    }
+    .stat-label {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: .3rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+    }
+
+    /* ─── SECTION HELPERS ─── */
+    section { position: relative; z-index: 1; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 2.5rem; }
+    .section-tag {
+      display: inline-block;
+      font-family: 'Lato', sans-serif;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: .75rem;
+    }
+    .section-title {
+      font-family: 'Lato', sans-serif;
+      font-size: clamp(1.8rem, 3.8vw, 3rem);
+      font-weight: 900;
+      line-height: 1.12;
+      letter-spacing: -.02em;
+    }
+    .section-title .hl { color: var(--orange); }
+    .section-title .hl2 { color: var(--cyan); }
+    .section-desc {
+      color: var(--muted);
+      max-width: 560px;
+      line-height: 1.75;
+      margin-top: .8rem;
+      font-size: .98rem;
+    }
+
+    /* ─── TECH BAND ─── */
+    .tech-band {
+      padding: 2.5rem 0;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: rgba(237,108,0,.03);
+    }
+    .tech-track {
+      display: flex;
+      gap: 3.5rem;
+      animation: marquee 32s linear infinite;
+      white-space: nowrap;
+    }
+    .tech-item {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-family: 'Lato', sans-serif;
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+    .tech-item .ti-dot { color: var(--orange); font-size: 1rem; }
+
+    /* ─── DIVISIONS ─── */
+    .divisions { padding: 7rem 0; }
+    .divisions-header { text-align: center; margin-bottom: 4.5rem; }
+    .divisions-header .section-desc { margin: .8rem auto 0; }
+
+    .divisions-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .division-card {
+      position: relative;
+      background: var(--dark2);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 12px;
+      padding: 2.5rem;
+      overflow: hidden;
+      transition: transform .35s, box-shadow .35s, border-color .35s;
+    }
+    .division-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 12px 12px 0 0;
+    }
+    .division-card:hover {
+      transform: translateY(-8px);
+    }
+
+    /* CyMed — cyan */
+    .division-cymed::before { background: var(--cyan); }
+    .division-cymed:hover { border-color: rgba(89,195,225,.3); box-shadow: 0 24px 60px rgba(89,195,225,.08); }
+    .division-cymed .div-icon { background: rgba(89,195,225,.1); border-color: rgba(89,195,225,.2); }
+    .division-cymed .div-icon svg { fill: var(--cyan); }
+    .division-cymed .div-tag { color: var(--cyan); border-color: rgba(89,195,225,.25); background: rgba(89,195,225,.06); }
+    .division-cymed .div-link { color: var(--cyan); }
+    .division-cymed .div-features li::before { background: var(--cyan); }
+
+    /* CyShop — orange */
+    .division-cyshop::before { background: var(--orange); }
+    .division-cyshop:hover { border-color: rgba(237,108,0,.35); box-shadow: 0 24px 60px rgba(237,108,0,.1); }
+    .division-cyshop .div-icon { background: rgba(237,108,0,.1); border-color: rgba(237,108,0,.2); }
+    .division-cyshop .div-icon svg { fill: var(--orange); }
+    .division-cyshop .div-tag { color: var(--orange); border-color: rgba(237,108,0,.25); background: rgba(237,108,0,.06); }
+    .division-cyshop .div-link { color: var(--orange); }
+    .division-cyshop .div-features li::before { background: var(--orange); }
+
+    /* CyCom — gradient */
+    .division-cycom::before { background: linear-gradient(90deg, var(--orange), var(--cyan)); }
+    .division-cycom:hover { border-color: rgba(237,108,0,.3); box-shadow: 0 24px 60px rgba(237,108,0,.08); }
+    .division-cycom .div-icon { background: linear-gradient(135deg, rgba(237,108,0,.1), rgba(89,195,225,.1)); border-color: rgba(237,108,0,.2); }
+    .division-cycom .div-icon svg { fill: var(--orange2); }
+    .division-cycom .div-tag { color: var(--orange2); border-color: rgba(237,108,0,.25); background: rgba(237,108,0,.06); }
+    .division-cycom .div-link { color: var(--orange2); }
+    .division-cycom .div-features li::before { background: linear-gradient(135deg, var(--orange), var(--cyan)); }
+
+    .div-icon {
+      width: 56px; height: 56px;
+      border-radius: 12px;
+      border: 1px solid;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+    .div-icon svg { width: 26px; height: 26px; }
+    .div-tag {
+      display: inline-block;
+      font-family: 'Lato', sans-serif;
+      font-size: .67rem;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      padding: .22rem .7rem;
+      border-radius: 3px;
+      border: 1px solid;
+      margin-bottom: 1rem;
+    }
+    .division-card h3 {
+      font-family: 'Lato', sans-serif;
+      font-size: 1.7rem;
+      font-weight: 900;
+      letter-spacing: -.01em;
+      margin-bottom: .6rem;
+    }
+    .division-card p {
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+    .div-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: .55rem;
+      margin-bottom: 2rem;
+    }
+    .div-features li {
+      display: flex;
+      align-items: center;
+      gap: .65rem;
+      font-size: .86rem;
+      color: #94a3b8;
+    }
+    .div-features li::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .div-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      font-family: 'Lato', sans-serif;
+      font-size: .83rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: gap .2s;
+    }
+    .div-link:hover { gap: .75rem; }
+
+    /* ─── METRICS ─── */
+    .metrics-section {
+      padding: 5rem 0;
+      background: var(--dark2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      text-align: center;
+    }
+    .metric {
+      padding: 2.2rem 1.5rem;
+      background: var(--dark3);
+      border: 1px solid rgba(255,255,255,.05);
+      border-radius: 10px;
+      transition: border-color .3s, transform .3s;
+    }
+    .metric:hover { border-color: var(--border); transform: translateY(-3px); }
+    .metric-num {
+      font-family: 'Lato', sans-serif;
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--orange);
+    }
+    .metric-label {
+      font-family: 'Lato', sans-serif;
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-top: .4rem;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+    }
+    .metric-sub {
+      font-size: .78rem;
+      color: var(--cyan);
+      margin-top: .35rem;
+      font-weight: 600;
+    }
+
+    /* ─── AI SECTION ─── */
+    .ai-section {
+      padding: 8rem 0;
+    }
+    .ai-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6rem;
+      align-items: center;
+    }
+
+    .ai-visual {
+      position: relative;
+      height: 500px;
+    }
+    .ai-orb {
+      position: absolute;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      background: radial-gradient(circle at 35% 35%, rgba(237,108,0,.25), rgba(89,195,225,.15), transparent 70%);
+      animation: orbPulse 5s ease-in-out infinite;
+    }
+    .ai-orb::before {
+      content: '';
+      position: absolute;
+      inset: 18px;
+      border-radius: 50%;
+      border: 1px solid rgba(237,108,0,.25);
+      animation: spin 10s linear infinite;
+    }
+    .ai-orb::after {
+      content: '';
+      position: absolute;
+      inset: 50px;
+      border-radius: 50%;
+      border: 1px dashed rgba(89,195,225,.2);
+      animation: spin 14s linear infinite reverse;
+    }
+
+    .ai-ring {
+      position: absolute;
+      border-radius: 50%;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      animation: ringPulse 4s ease-in-out infinite;
+    }
+    .ai-ring:nth-child(2) { width: 340px; height: 340px; border: 1px solid rgba(237,108,0,.12); animation-delay: .5s; }
+    .ai-ring:nth-child(3) { width: 400px; height: 400px; border: 1px solid rgba(89,195,225,.08); animation-delay: 1s; }
+    .ai-ring:nth-child(4) { width: 460px; height: 460px; border: 1px solid rgba(237,108,0,.05); animation-delay: 1.5s; }
+
+    .ai-nodes { position: absolute; inset: 0; }
+    .ai-node {
+      position: absolute;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+    .ai-node::after {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: 1px solid;
+      opacity: .4;
+    }
+    .ai-node:nth-child(1) { top: 8%; left: 50%; background: var(--orange); box-shadow: 0 0 14px var(--orange); animation: nodeFloat 3s ease-in-out infinite; }
+    .ai-node:nth-child(1)::after { border-color: var(--orange); }
+    .ai-node:nth-child(2) { top: 28%; left: 87%; background: var(--cyan); box-shadow: 0 0 14px var(--cyan); animation: nodeFloat 3.5s ease-in-out infinite .5s; }
+    .ai-node:nth-child(2)::after { border-color: var(--cyan); }
+    .ai-node:nth-child(3) { top: 72%; left: 88%; background: var(--orange2); box-shadow: 0 0 14px var(--orange2); animation: nodeFloat 4s ease-in-out infinite 1s; }
+    .ai-node:nth-child(3)::after { border-color: var(--orange2); }
+    .ai-node:nth-child(4) { top: 90%; left: 50%; background: var(--cyan); box-shadow: 0 0 14px var(--cyan); animation: nodeFloat 3.2s ease-in-out infinite 1.5s; }
+    .ai-node:nth-child(4)::after { border-color: var(--cyan); }
+    .ai-node:nth-child(5) { top: 72%; left: 12%; background: var(--orange); box-shadow: 0 0 14px var(--orange); animation: nodeFloat 3.8s ease-in-out infinite 2s; }
+    .ai-node:nth-child(5)::after { border-color: var(--orange); }
+    .ai-node:nth-child(6) { top: 28%; left: 13%; background: var(--cyan2); box-shadow: 0 0 14px var(--cyan2); animation: nodeFloat 4.2s ease-in-out infinite .8s; }
+    .ai-node:nth-child(6)::after { border-color: var(--cyan2); }
+
+    .ai-center-badge {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      background: var(--dark3);
+      border: 1px solid rgba(237,108,0,.35);
+      border-radius: 10px;
+      padding: 1.3rem 2rem;
+      text-align: center;
+      z-index: 2;
+      box-shadow: 0 0 40px rgba(237,108,0,.1);
+    }
+    .ai-center-badge .ai-label {
+      font-family: 'Lato', sans-serif;
+      font-size: .68rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--orange);
+      font-weight: 700;
+    }
+    .ai-center-badge .ai-val {
+      font-family: 'Lato', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #fff;
+      margin-top: .3rem;
+      letter-spacing: .04em;
+    }
+
+    .ai-features {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      margin-top: 2.5rem;
+    }
+    .ai-feat {
+      display: flex;
+      gap: 1.1rem;
+      align-items: flex-start;
+      padding: 1.3rem;
+      background: var(--dark2);
+      border: 1px solid rgba(255,255,255,.06);
+      border-left: 3px solid var(--orange);
+      border-radius: 0 10px 10px 0;
+      transition: border-color .3s, transform .3s, background .3s;
+    }
+    .ai-feat:hover {
+      border-left-color: var(--cyan);
+      background: var(--dark3);
+      transform: translateX(4px);
+    }
+    .ai-feat-icon {
+      width: 44px; height: 44px;
+      border-radius: 8px;
+      background: rgba(237,108,0,.1);
+      border: 1px solid rgba(237,108,0,.2);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .ai-feat-icon svg { width: 20px; height: 20px; fill: var(--orange); }
+    .ai-feat h4 {
+      font-family: 'Lato', sans-serif;
+      font-size: .95rem;
+      font-weight: 700;
+      margin-bottom: .3rem;
+    }
+    .ai-feat p { font-size: .85rem; color: var(--muted); line-height: 1.65; }
+
+    /* ─── FEATURES GRID ─── */
+    .features-section { padding: 7rem 0; background: var(--dark2); }
+    .features-header { text-align: center; margin-bottom: 4rem; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    .feat-card {
+      background: var(--dark3);
+      border: 1px solid rgba(255,255,255,.05);
+      border-radius: 10px;
+      padding: 2rem;
+      transition: transform .3s, border-color .3s;
+    }
+    .feat-card:hover { transform: translateY(-4px); border-color: var(--border); }
+    .feat-card-icon {
+      width: 48px; height: 48px;
+      border-radius: 10px;
+      background: rgba(237,108,0,.08);
+      border: 1px solid rgba(237,108,0,.18);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1.2rem;
+    }
+    .feat-card-icon svg { width: 22px; height: 22px; fill: var(--orange); }
+    .feat-card h4 {
+      font-family: 'Lato', sans-serif;
+      font-size: .98rem;
+      font-weight: 700;
+      margin-bottom: .5rem;
+    }
+    .feat-card p { font-size: .86rem; color: var(--muted); line-height: 1.65; }
+
+    /* ─── TESTIMONIALS ─── */
+    .testimonials { padding: 7rem 0; }
+    .testimonials-header { text-align: center; margin-bottom: 4rem; }
+    .testi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+    .testi-card {
+      background: var(--dark2);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 10px;
+      padding: 2rem;
+      transition: transform .3s, border-color .3s;
+    }
+    .testi-card:hover { transform: translateY(-4px); border-color: var(--border); }
+    .testi-stars { display: flex; gap: .2rem; margin-bottom: 1rem; }
+    .testi-stars svg { width: 15px; height: 15px; fill: var(--orange); }
+    .testi-text { font-size: .9rem; color: #94a3b8; line-height: 1.75; margin-bottom: 1.5rem; }
+    .testi-author { display: flex; align-items: center; gap: .8rem; }
+    .testi-avatar {
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--orange), var(--cyan));
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Lato', sans-serif;
+      font-weight: 900;
+      font-size: .85rem;
+      color: #fff;
+    }
+    .testi-name { font-family: 'Lato', sans-serif; font-weight: 700; font-size: .9rem; }
+    .testi-role { font-size: .78rem; color: var(--muted); }
+
+    /* ─── CTA ─── */
+    .cta-section { padding: 7rem 0; }
+    .cta-box {
+      max-width: 720px;
+      margin: 0 auto;
+      background: var(--dark2);
+      border: 1px solid rgba(237,108,0,.2);
+      border-radius: 14px;
+      padding: 4.5rem 3.5rem;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(237,108,0,.06), transparent 65%);
+      pointer-events: none;
+    }
+    .cta-box::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--orange), var(--cyan), var(--orange));
+    }
+    .cta-box h2 {
+      font-family: 'Lato', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    .cta-box p {
+      color: var(--muted);
+      margin-bottom: 2.2rem;
+      position: relative;
+      line-height: 1.75;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .cta-form {
+      display: flex;
+      gap: .75rem;
+      max-width: 460px;
+      margin: 0 auto;
+      position: relative;
+    }
+    .cta-form input {
+      flex: 1;
+      background: var(--dark3);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 4px;
+      padding: .85rem 1.3rem;
+      color: var(--text);
+      font-size: .9rem;
+      font-family: 'Source Sans 3', sans-serif;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .cta-form input::placeholder { color: var(--muted); }
+    .cta-form input:focus { border-color: var(--orange); }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--dark2);
+      border-top: 1px solid var(--border);
+      padding: 4.5rem 0 2rem;
+      position: relative;
+      z-index: 1;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2.2fr 1fr 1fr 1fr;
+      gap: 3rem;
+      margin-bottom: 3.5rem;
+    }
+    .footer-brand p {
+      font-size: .87rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 270px;
+      margin-top: 1.1rem;
+    }
+    .footer-social {
+      display: flex;
+      gap: .65rem;
+      margin-top: 1.5rem;
+    }
+    .social-btn {
+      width: 36px; height: 36px;
+      border-radius: 7px;
+      background: var(--dark3);
+      border: 1px solid rgba(255,255,255,.07);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      text-decoration: none;
+    }
+    .social-btn:hover { border-color: var(--orange); background: rgba(237,108,0,.08); }
+    .social-btn svg { width: 15px; height: 15px; fill: var(--muted); transition: fill .2s; }
+    .social-btn:hover svg { fill: var(--orange); }
+
+    .footer-col h5 {
+      font-family: 'Lato', sans-serif;
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin-bottom: 1.3rem;
+    }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: .65rem; }
+    .footer-col a {
+      font-size: .88rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .footer-col a:hover { color: var(--orange); }
+
+    .footer-divider { height: 1px; background: var(--border); margin-bottom: 2rem; }
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: .8rem;
+      color: var(--muted);
+      font-family: 'Lato', sans-serif;
+    }
+
+    /* ─── KEYFRAMES ─── */
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulseDot {
+      0%,100% { box-shadow: 0 0 8px var(--orange); }
+      50%      { box-shadow: 0 0 20px var(--orange), 0 0 40px rgba(237,108,0,.3); }
+    }
+    @keyframes orbPulse {
+      0%,100% { transform: translate(-50%,-50%) scale(1); }
+      50%      { transform: translate(-50%,-50%) scale(1.07); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes ringPulse {
+      0%,100% { opacity: .3; }
+      50%      { opacity: 1; }
+    }
+    @keyframes nodeFloat {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-10px); }
+    }
+    @keyframes marquee {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity .7s, transform .7s;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 1024px) {
+      nav { padding: 1rem 2rem; }
+      nav.scrolled { padding: .7rem 2rem; }
+      .nav-links { display: none; }
+      .divisions-grid { grid-template-columns: 1fr; }
+      .ai-inner { grid-template-columns: 1fr; }
+      .ai-visual { height: 340px; margin-bottom: 2rem; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .metrics-grid { grid-template-columns: 1fr 1fr; }
+      .testi-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: 1fr; }
+      .footer-bottom { flex-direction: column; gap: 1rem; text-align: center; }
+      .hero-stats { gap: 2rem; }
+      .cta-form { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="particles-canvas"></canvas>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">
+    <!-- Inline SVG logo matching brand guidelines -->
+    <svg class="logo-svg" viewBox="0 0 260 58" xmlns="http://www.w3.org/2000/svg">
+      <!-- C arc (orange) -->
+      <path d="M36 8 A22 22 0 1 0 36 50" stroke="#ed6c00" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <!-- Cyan teardrop accent -->
+      <ellipse cx="37.5" cy="50" rx="4.5" ry="6" fill="#59c3e1" transform="rotate(-15,37.5,50)"/>
+      <!-- CYBERCOM text -->
+      <text x="68" y="34" font-family="Lato,sans-serif" font-weight="900" font-size="22" fill="#ffffff" letter-spacing="3">CYBERCOM</text>
+      <!-- Divider line left -->
+      <line x1="68" y1="41" x2="84" y2="41" stroke="#555" stroke-width="1"/>
+      <!-- REVOLUTION text -->
+      <text x="86" y="45" font-family="'Source Sans 3',sans-serif" font-weight="400" font-size="9" fill="#888" letter-spacing="4.5">REVOLUTION</text>
+      <!-- Divider line right -->
+      <line x1="175" y1="41" x2="256" y2="41" stroke="#555" stroke-width="1"/>
+    </svg>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#divisions">Divisions</a></li>
+    <li><a href="#ai">AI Engine</a></li>
+    <li><a href="#solutions">Solutions</a></li>
+    <li><a href="#company">Company</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Get Started</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-glow2"></div>
+  <div class="hero-badge">
+    <span class="badge-dot"></span>
+    Powering the Digital Revolution
+  </div>
+  <h1>The Future of<br /><span class="accent-orange">Technology</span> &amp; <span class="accent-cyan">Care</span><br />Starts Here</h1>
+  <p class="hero-sub">
+    CyberCom Revolution unites AI-driven healthcare, next-generation commerce,
+    and enterprise communications into one unstoppable ecosystem.
+  </p>
+  <div class="hero-actions">
+    <a href="#divisions" class="btn-primary">Explore Our Divisions</a>
+    <a href="#ai" class="btn-ghost">See AI in Action →</a>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="stat-num" data-count="500">0</div>
+      <div class="stat-label">Enterprise Clients</div>
+    </div>
+    <div class="hero-stat">
+      <div class="stat-num" data-count="99">0</div>
+      <div class="stat-label">Uptime %</div>
+    </div>
+    <div class="hero-stat">
+      <div class="stat-num" data-count="48">0</div>
+      <div class="stat-label">Countries Reached</div>
+    </div>
+    <div class="hero-stat">
+      <div class="stat-num" data-count="2">0</div>
+      <div class="stat-label">Million AI Requests/day</div>
+    </div>
+  </div>
+</section>
+
+<!-- TECH BAND -->
+<div class="tech-band">
+  <div class="tech-track" id="techTrack">
+    <div class="tech-item"><span class="ti-dot">✦</span> Artificial Intelligence</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Machine Learning</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Digital Health</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> E-Commerce AI</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> 5G Connectivity</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Cloud Infrastructure</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Neural Networks</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Real-time Analytics</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Blockchain Security</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Edge Computing</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Artificial Intelligence</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Machine Learning</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Digital Health</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> E-Commerce AI</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> 5G Connectivity</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Cloud Infrastructure</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Neural Networks</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Real-time Analytics</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Blockchain Security</div>
+    <div class="tech-item"><span class="ti-dot">✦</span> Edge Computing</div>
+  </div>
+</div>
+
+<!-- DIVISIONS -->
+<section class="divisions" id="divisions">
+  <div class="container">
+    <div class="divisions-header reveal">
+      <div class="section-tag">Our Ecosystem</div>
+      <h2 class="section-title">Three Pillars of <span class="hl">Unstoppable</span> Innovation</h2>
+      <p class="section-desc">Each division is a powerhouse in its own right — united by one vision: to lead every industry we touch.</p>
+    </div>
+    <div class="divisions-grid">
+
+      <!-- CyMed -->
+      <div class="division-card division-cymed reveal">
+        <div class="div-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm1 14h-2v-4H7v-2h4V6h2v4h4v2h-4v4z"/></svg>
+        </div>
+        <div class="div-tag">Healthcare AI</div>
+        <h3>CyMed</h3>
+        <p>Revolutionizing healthcare with AI-powered diagnostics, predictive analytics, and intelligent patient management systems that save lives and transform care delivery.</p>
+        <ul class="div-features">
+          <li>AI-Powered Diagnostics & Medical Imaging</li>
+          <li>Predictive Patient Analytics</li>
+          <li>Smart EMR & Hospital Management</li>
+          <li>Telemedicine & Remote Care Platform</li>
+          <li>Drug Discovery Acceleration</li>
+        </ul>
+        <a href="https://cymed.cy-com.com" target="_blank" class="div-link">Explore CyMed <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+
+      <!-- CyShop -->
+      <div class="division-card division-cyshop reveal">
+        <div class="div-icon">
+          <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zm0 5a1 1 0 0 1 0-2h12a1 1 0 0 1 0 2H6zm6 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8z"/></svg>
+        </div>
+        <div class="div-tag">Commerce AI</div>
+        <h3>CyShop</h3>
+        <p>Redefining e-commerce with hyper-personalized AI shopping experiences, intelligent inventory management, and predictive demand engines that maximize every transaction.</p>
+        <ul class="div-features">
+          <li>AI-Driven Product Recommendations</li>
+          <li>Dynamic Pricing Intelligence</li>
+          <li>Fraud Detection & Prevention</li>
+          <li>Smart Inventory Optimization</li>
+          <li>Omni-Channel Commerce Platform</li>
+        </ul>
+        <a href="#" class="div-link">Explore CyShop <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+
+      <!-- CyCom -->
+      <div class="division-card division-cycom reveal">
+        <div class="div-icon">
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.07 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3 1.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.09a16 16 0 0 0 8 8l.42-.42a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </div>
+        <div class="div-tag">Enterprise Tech</div>
+        <h3>CyCom</h3>
+        <p>Building enterprise-grade communication infrastructure and AI systems that connect businesses, power operations, and deliver sustainable competitive advantage at global scale.</p>
+        <ul class="div-features">
+          <li>Enterprise ERP & CRM Systems</li>
+          <li>AI Business Intelligence & Analytics</li>
+          <li>Unified Communications Platform</li>
+          <li>Cybersecurity & Threat Detection</li>
+          <li>Cloud & DevOps Services</li>
+        </ul>
+        <a href="#" class="div-link">Explore CyCom <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- METRICS -->
+<section class="metrics-section">
+  <div class="container">
+    <div class="metrics-grid">
+      <div class="metric reveal">
+        <div class="metric-num" data-count="500">0+</div>
+        <div class="metric-label">Enterprise Deployments</div>
+        <div class="metric-sub">↑ 127% YoY</div>
+      </div>
+      <div class="metric reveal">
+        <div class="metric-num" data-count="2">0M+</div>
+        <div class="metric-label">Daily AI Predictions</div>
+        <div class="metric-sub">↑ 340% YoY</div>
+      </div>
+      <div class="metric reveal">
+        <div class="metric-num" data-count="48">0</div>
+        <div class="metric-label">Countries Served</div>
+        <div class="metric-sub">↑ 18 new this year</div>
+      </div>
+      <div class="metric reveal">
+        <div class="metric-num" data-count="99">0.9%</div>
+        <div class="metric-label">Platform Uptime SLA</div>
+        <div class="metric-sub">Industry-leading reliability</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI SECTION -->
+<section class="ai-section" id="ai">
+  <div class="container">
+    <div class="ai-inner">
+      <div class="ai-visual">
+        <div class="ai-ring"></div>
+        <div class="ai-ring"></div>
+        <div class="ai-ring"></div>
+        <div class="ai-ring"></div>
+        <div class="ai-orb"></div>
+        <div class="ai-nodes">
+          <div class="ai-node"></div>
+          <div class="ai-node"></div>
+          <div class="ai-node"></div>
+          <div class="ai-node"></div>
+          <div class="ai-node"></div>
+          <div class="ai-node"></div>
+        </div>
+        <div class="ai-center-badge">
+          <div class="ai-label">AI Core Engine</div>
+          <div class="ai-val">CyBrain™</div>
+        </div>
+      </div>
+      <div class="ai-content reveal">
+        <div class="section-tag">AI Technology</div>
+        <h2 class="section-title">Powered by<br /><span class="hl">CyBrain™</span> <span class="hl2">AI</span><br />Intelligence</h2>
+        <p class="section-desc">
+          Our proprietary AI engine processes billions of data points in real-time,
+          delivering predictions and insights that were never before possible across all three divisions.
+        </p>
+        <div class="ai-features">
+          <div class="ai-feat">
+            <div class="ai-feat-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm.5 14.5h-1V11h1v5.5zm0-7h-1V7h1v2.5z"/></svg>
+            </div>
+            <div>
+              <h4>Real-Time Processing</h4>
+              <p>Sub-millisecond inference engine processes 2M+ events daily with 99.97% accuracy across all platforms.</p>
+            </div>
+          </div>
+          <div class="ai-feat">
+            <div class="ai-feat-icon">
+              <svg viewBox="0 0 24 24"><path d="M15 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/></svg>
+            </div>
+            <div>
+              <h4>Adaptive Learning</h4>
+              <p>Self-improving neural networks that continuously retrain on live data, getting smarter with every interaction.</p>
+            </div>
+          </div>
+          <div class="ai-feat">
+            <div class="ai-feat-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4z"/></svg>
+            </div>
+            <div>
+              <h4>Enterprise-Grade Security</h4>
+              <p>Military-grade encryption with AI threat detection — protecting your data 24/7 with zero-trust architecture.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES GRID -->
+<section class="features-section" id="solutions">
+  <div class="container">
+    <div class="features-header reveal">
+      <div class="section-tag">Why CyberCom</div>
+      <h2 class="section-title">Built for <span class="hl">Dominance</span></h2>
+      <p class="section-desc" style="margin:0 auto">
+        Every feature engineered to give our clients an unfair competitive advantage in their market.
+      </p>
+    </div>
+    <div class="features-grid">
+      <div class="feat-card reveal">
+        <div class="feat-card-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+        <h4>Lightning Fast</h4>
+        <p>All systems operate at sub-10ms latency globally, ensuring your operations never skip a beat.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-card-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+        <h4>Modular Architecture</h4>
+        <p>Deploy only what you need. Our microservices stack scales from startup to enterprise seamlessly.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-card-icon"><svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/></svg></div>
+        <h4>Intelligent Automation</h4>
+        <p>Automate complex workflows with AI that understands context, not just rules. Reduce ops costs by 60%.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-card-icon"><svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg></div>
+        <h4>Unified Dashboard</h4>
+        <p>One command center for CyMed, CyShop, and CyCom — real-time visibility across your entire operation.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-card-icon"><svg viewBox="0 0 24 24"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/></svg></div>
+        <h4>Global Infrastructure</h4>
+        <p>48 data centers across 6 continents with automatic geo-routing and edge caching built-in.</p>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-card-icon"><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg></div>
+        <h4>Predictive Analytics</h4>
+        <p>Don't react to the market — predict it. AI models trained on 10B+ data points see what's coming next.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials" id="company">
+  <div class="container">
+    <div class="testimonials-header reveal">
+      <div class="section-tag">Client Success</div>
+      <h2 class="section-title">Trusted by <span class="hl">Industry Leaders</span></h2>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card reveal">
+        <div class="testi-stars">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <p class="testi-text">"CyMed's AI diagnostics platform reduced our misdiagnosis rate by 78%. It's not just software — it's a co-physician that never sleeps and never misses a detail."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">DR</div>
+          <div>
+            <div class="testi-name">Dr. Rania Al-Hassan</div>
+            <div class="testi-role">Chief Medical Officer, MedCore Group</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-stars">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <p class="testi-text">"CyShop's recommendation engine increased our revenue per visitor by 3.4× in 90 days. The AI understands our customers better than we ever could."</p>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background:linear-gradient(135deg,var(--orange),var(--orange2))">KM</div>
+          <div>
+            <div class="testi-name">Khalid Mansour</div>
+            <div class="testi-role">CEO, RetailEdge International</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal">
+        <div class="testi-stars">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <p class="testi-text">"CyCom's ERP transformed how we operate. Full visibility, AI forecasting, and 99.9% uptime. We wouldn't function at the same scale without this platform."</p>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background:linear-gradient(135deg,var(--cyan),#3a9bb5)">SA</div>
+          <div>
+            <div class="testi-name">Sara Al-Amoudi</div>
+            <div class="testi-role">COO, Nexus Enterprises</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="contact">
+  <div class="container">
+    <div class="cta-box reveal">
+      <h2>Ready to <span class="accent-orange">Revolutionize</span> Your Business?</h2>
+      <p>Join 500+ enterprises already powered by CyberCom Revolution. Get a personalized demo and see CyBrain™ AI in action within 48 hours.</p>
+      <div class="cta-form">
+        <input type="email" placeholder="Enter your work email" />
+        <a href="#" class="btn-primary" style="white-space:nowrap;border-radius:4px">Get Demo</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo">
+          <svg viewBox="0 0 260 58" style="height:38px;width:auto">
+            <path d="M36 8 A22 22 0 1 0 36 50" stroke="#ed6c00" stroke-width="7" fill="none" stroke-linecap="round"/>
+            <ellipse cx="37.5" cy="50" rx="4.5" ry="6" fill="#59c3e1" transform="rotate(-15,37.5,50)"/>
+            <text x="68" y="34" font-family="Lato,sans-serif" font-weight="900" font-size="22" fill="#ffffff" letter-spacing="3">CYBERCOM</text>
+            <line x1="68" y1="41" x2="84" y2="41" stroke="#555" stroke-width="1"/>
+            <text x="86" y="45" font-family="'Source Sans 3',sans-serif" font-weight="400" font-size="9" fill="#888" letter-spacing="4.5">REVOLUTION</text>
+            <line x1="175" y1="41" x2="256" y2="41" stroke="#555" stroke-width="1"/>
+          </svg>
+        </a>
+        <p>Uniting AI-powered healthcare, intelligent commerce, and enterprise technology into one unstoppable digital revolution.</p>
+        <div class="footer-social">
+          <a href="#" class="social-btn" aria-label="LinkedIn">
+            <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z M4 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+          </a>
+          <a href="#" class="social-btn" aria-label="X / Twitter">
+            <svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"/></svg>
+          </a>
+          <a href="#" class="social-btn" aria-label="GitHub">
+            <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h5>Divisions</h5>
+        <ul>
+          <li><a href="#">CyMed Healthcare</a></li>
+          <li><a href="#">CyShop Commerce</a></li>
+          <li><a href="#">CyCom Enterprise</a></li>
+          <li><a href="#">CyBrain™ AI</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#">About Us</a></li>
+          <li><a href="#">Leadership</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Press</a></li>
+          <li><a href="#">Partners</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h5>Resources</h5>
+        <ul>
+          <li><a href="#">Documentation</a></li>
+          <li><a href="#">API Reference</a></li>
+          <li><a href="#">Case Studies</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Support</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-divider"></div>
+    <div class="footer-bottom">
+      <span>© 2026 CyberCom Revolution. All rights reserved.</span>
+      <span>Privacy Policy · Terms of Service · Cookie Settings</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  /* ── PARTICLES ── */
+  (function() {
+    const canvas = document.getElementById('particles-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
+    const COUNT = 70;
+    const particles = [];
+
+    function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    for (let i = 0; i < COUNT; i++) {
+      particles.push({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25,
+        r: Math.random() * 1.8 + .8,
+        orange: Math.random() > .5
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+
+        const color = p.orange ? '237,108,0' : '89,195,225';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${color},.35)`;
+        ctx.fill();
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const q = particles[j];
+          const dx = p.x - q.x, dy = p.y - q.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 110) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+            ctx.strokeStyle = `rgba(237,108,0,${.08 * (1 - dist/110)})`;
+            ctx.lineWidth = .4;
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+
+  /* ── NAVBAR SCROLL ── */
+  const nav = document.getElementById('navbar');
+  window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 60));
+
+  /* ── SCROLL REVEAL ── */
+  const reveals = document.querySelectorAll('.reveal');
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        revealObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: .1 });
+  reveals.forEach(r => revealObs.observe(r));
+
+  /* ── COUNT-UP ── */
+  function countUp(el) {
+    const target = parseInt(el.dataset.count, 10);
+    const origSuffix = el.textContent.replace(/[0-9]/g, '');
+    let current = 0;
+    const step = Math.max(1, Math.ceil(target / 55));
+    const iv = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current + (origSuffix || '+');
+      if (current >= target) clearInterval(iv);
+    }, 22);
+  }
+  const countEls = document.querySelectorAll('[data-count]');
+  const countObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { countUp(e.target); countObs.unobserve(e.target); } });
+  }, { threshold: .5 });
+  countEls.forEach(el => countObs.observe(el));
+
+  /* ── SMOOTH SCROLL ── */
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const id = a.getAttribute('href').slice(1);
+      if (!id) return;
+      const el = document.getElementById(id);
+      if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); }
+    });
+  });
+</script>
+</body>
+</html>

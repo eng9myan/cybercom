@@ -1,0 +1,106 @@
+name: Validate and deploy website to Oracle Cloud
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cybercom-website-production
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://api.cy-com.com' }}
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL || 'https://www.cy-com.com' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint --workspace=@cybercom/web
+      - run: npm run typecheck
+      - run: npm test --workspace=@cybercom/web -- --run
+      - run: npm run build --workspace=@cybercom/web
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    environment: production
+    env:
+      OCI_HOST: ${{ secrets.OCI_HOST }}
+      OCI_SSH_USER: ${{ secrets.OCI_SSH_USER }}
+      OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+      PRODUCTION_ENV_FILE: ${{ secrets.PRODUCTION_ENV_FILE }}
+      NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate deployment secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${OCI_HOST:?Missing OCI_HOST}"
+          : "${OCI_SSH_USER:?Missing OCI_SSH_USER}"
+          : "${OCI_SSH_PRIVATE_KEY:?Missing OCI_SSH_PRIVATE_KEY}"
+          : "${PRODUCTION_ENV_FILE:?Missing PRODUCTION_ENV_FILE}"
+          : "${NEXT_PUBLIC_API_URL:?Missing NEXT_PUBLIC_API_URL}"
+          : "${NEXT_PUBLIC_SITE_URL:?Missing NEXT_PUBLIC_SITE_URL}"
+
+      - name: Prepare release bundle and SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$OCI_SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          ssh-keyscan -H "$OCI_HOST" >> "$HOME/.ssh/known_hosts"
+
+          git archive --format=tar.gz --output="$RUNNER_TEMP/cybercom-${GITHUB_SHA}.tar.gz" "$GITHUB_SHA"
+          printf '%s\n' "$PRODUCTION_ENV_FILE" > "$RUNNER_TEMP/production.env"
+          printf '\nNEXT_PUBLIC_API_URL=%s\nNEXT_PUBLIC_SITE_URL=%s\n' \
+            "$NEXT_PUBLIC_API_URL" "$NEXT_PUBLIC_SITE_URL" >> "$RUNNER_TEMP/production.env"
+          chmod 600 "$RUNNER_TEMP/production.env"
+
+      - name: Transfer release to Oracle VM
+        shell: bash
+        run: |
+          set -euo pipefail
+          scp "$RUNNER_TEMP/cybercom-${GITHUB_SHA}.tar.gz" \
+            "${OCI_SSH_USER}@${OCI_HOST}:/tmp/cybercom-${GITHUB_SHA}.tar.gz"
+          scp "$RUNNER_TEMP/production.env" \
+            "${OCI_SSH_USER}@${OCI_HOST}:/tmp/cybercom-${GITHUB_SHA}.env"
+
+      - name: Deploy release
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh "${OCI_SSH_USER}@${OCI_HOST}" "bash -s -- '${GITHUB_SHA}'" <<'REMOTE'
+          set -Eeuo pipefail
+          release="$1"
+          app_root=/opt/cybercom-website
+          release_dir="$app_root/releases/$release"
+
+          sudo install -d -o "$USER" -g "$USER" "$app_root" "$app_root/releases" "$app_root/shared"
+          install -d "$release_dir"
+          tar -xzf "/tmp/cybercom-${release}.tar.gz" -C "$release_dir"
+          install -m 600 "/tmp/cybercom-${release}.env" "$app_root/shared/.env.production"
+          rm -f "/tmp/cybercom-${release}.tar.gz" "/tmp/cybercom-${release}.env"
+
+          chmod +x "$release_dir/scripts/"*.sh
+          "$release_dir/scripts/deploy-production.sh" "$release"
+          REMOTE
