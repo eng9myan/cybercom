@@ -66,18 +66,6 @@ PLATFORM_APPS = [
 ]
 
 PRODUCT_APPS = [
-    # CyCom ERP Foundation
-    "products.cycom.crm.accounts",
-    "products.cycom.finance.gl",
-    "products.cycom.finance.ap",
-    "products.cycom.finance.ar",
-    "products.cycom.procurement.purchase_orders",
-    "products.cycom.procurement.vendors",
-    "products.cycom.hr",
-    "products.cycom.payroll",
-    "products.cycom.inventory",
-    "products.cycom.assets",
-    "products.cycom.bi",
     "products.cymed.core.patients",
     "products.cymed.core.providers",
     "products.cymed.core.organizations",
@@ -137,7 +125,10 @@ PRODUCT_APPS = [
     "products.cymed.laboratory.pathology",
     "products.cymed.laboratory.histopathology",
     "products.cymed.laboratory.quality",
-    "products.cymed.laboratory.blood_bank_foundation",
+    # NOTE: "products.cymed.laboratory.blood_bank_foundation" removed — no such
+    # module exists on disk (pre-existing dangling reference from source repo,
+    # not introduced by this import). Hospital has a separate "blood_bank" dir
+    # that was never registered as a Django app either — see audit notes.
     "products.cymed.laboratory.analytics",
     "products.cymed.laboratory.reference_lab",
     # CyMed Imaging Edition (Program 3.4)
@@ -162,89 +153,14 @@ PRODUCT_APPS = [
     "products.cymed.pharmacy.analytics",
     "products.cymed.pharmacy.inventory_bridge",
     "products.cymed.pharmacy.procurement_bridge",
-    # CyMed Population Health Edition (Program 3.9)
-    "products.cymed.population_health.registries",
-    "products.cymed.population_health.public_health",
-    "products.cymed.population_health.surveillance",
-    "products.cymed.population_health.quality",
-    "products.cymed.population_health.care_gaps",
-    "products.cymed.population_health.risk_management",
-    "products.cymed.population_health.cohorts",
-    "products.cymed.population_health.epidemiology",
-    "products.cymed.population_health.national_programs",
-    "products.cymed.population_health.analytics",
-    "products.cymed.population_health.reporting",
-    "products.cymed.population_health.digital_health",
-    # CyMed Patient Portal (Program 3.6)
-    "products.cymed.patient_portal.accounts",
-    "products.cymed.patient_portal.directory",
-    "products.cymed.patient_portal.appointments",
-    "products.cymed.patient_portal.telemedicine",
-    "products.cymed.patient_portal.medical_records",
-    "products.cymed.patient_portal.laboratory_results",
-    "products.cymed.patient_portal.imaging_results",
-    "products.cymed.patient_portal.prescriptions",
-    "products.cymed.patient_portal.payments",
-    "products.cymed.patient_portal.insurance",
-    "products.cymed.patient_portal.messaging",
-    "products.cymed.patient_portal.notifications",
-    "products.cymed.patient_portal.family_accounts",
-    "products.cymed.patient_portal.consents",
-    "products.cymed.patient_portal.wallet",
-    "products.cymed.patient_portal.health_journey",
-    # CyMed Provider Portal (Program 3.7)
-    "products.cymed.provider_portal.workspace",
-    "products.cymed.provider_portal.patient_lists",
-    "products.cymed.provider_portal.clinical_tasks",
-    "products.cymed.provider_portal.clinical_messaging",
-    "products.cymed.provider_portal.workforce",
-    "products.cymed.provider_portal.rounding",
-    "products.cymed.provider_portal.orders",
-    "products.cymed.provider_portal.results",
-    "products.cymed.provider_portal.clinical_documentation",
-    "products.cymed.provider_portal.telemedicine",
-    "products.cymed.provider_portal.care_team",
-    "products.cymed.provider_portal.approvals",
-    "products.cymed.provider_portal.analytics",
-    "products.cymed.provider_portal.mobile",
-    # CyMed RCM & Insurance Platform (Program 3.8)
-    "products.cymed.rcm.eligibility",
-    "products.cymed.rcm.insurance",
-    "products.cymed.rcm.preauthorization",
-    "products.cymed.rcm.billing",
-    "products.cymed.rcm.charge_capture",
-    "products.cymed.rcm.claims",
-    "products.cymed.rcm.denials",
-    "products.cymed.rcm.collections",
-    "products.cymed.rcm.contracts",
-    "products.cymed.rcm.pricing",
-    "products.cymed.rcm.revenue_analytics",
-    "products.cymed.rcm.payer_portal",
-    # CyMed Healthcare Workforce Management (Program 3.10)
-    "products.cymed.workforce_management.workforce_profiles",
-    "products.cymed.workforce_management.scheduling",
-    "products.cymed.workforce_management.shift_swaps",
-    "products.cymed.workforce_management.float_pool",
-    "products.cymed.workforce_management.acuity",
-    "products.cymed.workforce_management.oncall",
-    "products.cymed.workforce_management.compliance",
-    "products.cymed.workforce_management.fatigue",
-    "products.cymed.workforce_management.forecasting",
-    "products.cymed.workforce_management.analytics",
-    # CyberCom Sales Demo Platform (Program 3.11)
-    "products.demo",
-    # CyberCom Deployment Platform (Program 3.12)
-    "products.deployment",
-    # CyberCom Implementation Methodology (Program 3.13)
-    "products.implementation",
-    # CyberCom Academy (Program 3.14)
-    "products.academy",
-    # CyberCom Commercial Readiness (Program 3.15)
-    "products.commercial_readiness",
-    # CyberCom Partner Ecosystem (Program 3.16)
-    "products.partner_ecosystem",
-    # Website Public APIs & CMS Backend
-    "products.website",
+    # NOTE: population_health, patient_portal, provider_portal, rcm, and
+    # workforce_management verticals were intentionally excluded from this
+    # monorepo (out of scope per import request) — their app entries and
+    # directories were removed together. cycom/demo/deployment/implementation/
+    # academy/commercial_readiness/partner_ecosystem/website product apps were
+    # also removed: cycom now lives in its own top-level product at /cycom
+    # (Odoo-based, not this Django project), and the rest were CyberCom-
+    # Platform-specific scaffolding not part of the CyMed clinical scope.
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
