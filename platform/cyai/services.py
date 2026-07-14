@@ -65,6 +65,17 @@ class GuardrailEngine:
 class ModelGateway:
     """
     Unified router to invoke LLM completion providers.
+
+    ⚠ SIMULATED, NOT REAL — generate_completion() below does not call
+    Gemini, OpenAI, Anthropic, or Ollama. It returns a hardcoded
+    f"[Provider ModelName] Response to: ..." string regardless of
+    `provider`. No real API keys/credentials for any of those providers
+    exist in this codebase. Guardrail scrubbing, logging (InferenceLog),
+    and latency measurement around the fake call are all real — only the
+    inference itself is fake. Do not treat CyAI features built on this as
+    functioning AI without first replacing this method with a real
+    provider call (see docs/ai/AI_GOVERNANCE.md for what real integration
+    requires before shipping, especially for CyMed clinical use cases).
     """
 
     @classmethod
