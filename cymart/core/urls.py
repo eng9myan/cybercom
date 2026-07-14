@@ -15,4 +15,5 @@ urlpatterns = [
     path("api/v1/notifications/", include("platform.notifications.urls")),
     # ── CyMart API v1 ────────────────────────────────────────────────────────
     path("api/v1/commission/", include("products.cymart.commission.urls")),
+    path("api/v1/catalog/", include("products.cymart.catalog.urls")),
 ]
