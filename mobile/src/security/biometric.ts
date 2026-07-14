@@ -3,7 +3,7 @@
  * Uses react-native-biometrics for Face ID / Fingerprint / Device Credential.
  * ADR-0017 §5.3 — WebAuthn/passkey primary; biometric is the local device layer.
  */
-import ReactNativeBiometrics, { BiometryTypes } from "react-native-biometrics";
+import ReactNativeBiometrics from "react-native-biometrics";
 
 const rnBiometrics = new ReactNativeBiometrics({ allowDeviceCredentials: true });
 

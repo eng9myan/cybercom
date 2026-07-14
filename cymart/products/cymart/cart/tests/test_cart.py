@@ -2,6 +2,7 @@ import uuid
 from decimal import Decimal
 
 import pytest
+from rest_framework.test import APIClient
 
 from products.cymart.cart.models import Cart, CartStatus
 from products.cymart.cart.services import (
@@ -85,3 +86,38 @@ class TestCartService:
         svc.checkout(cart)
         with pytest.raises(CartAlreadyCheckedOutError):
             svc.add_item(cart, cart.store_id, cart.tenant_id, uuid.uuid4(), Decimal("1"), Decimal("5.00"))
+
+
+@pytest.mark.django_db
+class TestActiveCartEndpoint:
+    """The mobile app needs to discover 'my current cart' without already
+    knowing its id — /carts/active/ derives customer_id from the verified
+    JWT (user_session), not a client-supplied param."""
+
+    def _authed_client(self, mint_token, mock_jwks, user_id):
+        client = APIClient()
+        token = mint_token({"sub": str(user_id), "roles": ["customer"], "permissions": []})
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        return client
+
+    def test_active_creates_cart_on_first_call(self, mint_token, mock_jwks):
+        user_id = uuid.uuid4()
+        client = self._authed_client(mint_token, mock_jwks, user_id)
+        resp = client.get("/api/v1/marketplace/carts/active/")
+        assert resp.status_code == 200, resp.content
+        assert resp.json()["customer_id"] == str(user_id)
+        assert resp.json()["status"] == CartStatus.ACTIVE
+
+    def test_active_returns_same_cart_on_second_call(self, mint_token, mock_jwks):
+        user_id = uuid.uuid4()
+        client = self._authed_client(mint_token, mock_jwks, user_id)
+        first = client.get("/api/v1/marketplace/carts/active/").json()
+        second = client.get("/api/v1/marketplace/carts/active/").json()
+        assert first["id"] == second["id"]
+
+    def test_active_cannot_be_spoofed_via_query_param(self, mint_token, mock_jwks):
+        real_user_id = uuid.uuid4()
+        other_user_id = uuid.uuid4()
+        client = self._authed_client(mint_token, mock_jwks, real_user_id)
+        resp = client.get(f"/api/v1/marketplace/carts/active/?customer_id={other_user_id}")
+        assert resp.json()["customer_id"] == str(real_user_id)

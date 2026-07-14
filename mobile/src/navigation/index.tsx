@@ -6,34 +6,50 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "../contexts/auth";
+import LoginScreen from "../screens/LoginScreen";
+import DashboardScreen from "../screens/DashboardScreen";
+import CategoriesScreen from "../screens/CategoriesScreen";
+import CartScreen from "../screens/CartScreen";
+import OrdersScreen from "../screens/OrdersScreen";
 
-export type RootStackParamList = {
+export type AuthStackParamList = {
   Login: undefined;
-  Dashboard: undefined;
-  Settings: undefined;
 };
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+export type AppStackParamList = {
+  Dashboard: undefined;
+  Categories: undefined;
+  Cart: undefined;
+  Orders: undefined;
+};
+
+const AuthStackNav = createNativeStackNavigator<AuthStackParamList>();
+const AppStackNav = createNativeStackNavigator<AppStackParamList>();
 
 function AuthStack() {
-  const LoginScreen = require("../screens/LoginScreen").default as React.ComponentType;
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Login" component={LoginScreen} />
-    </Stack.Navigator>
+    <AuthStackNav.Navigator screenOptions={{ headerShown: false }}>
+      <AuthStackNav.Screen name="Login" component={LoginScreen} />
+    </AuthStackNav.Navigator>
   );
 }
 
 function AppStack() {
-  const DashboardScreen = require("../screens/DashboardScreen").default as React.ComponentType;
   return (
-    <Stack.Navigator>
-      <Stack.Screen
+    <AppStackNav.Navigator>
+      <AppStackNav.Screen
         name="Dashboard"
         component={DashboardScreen}
         options={{ title: "لوحة التحكم — Dashboard" }}
       />
-    </Stack.Navigator>
+      <AppStackNav.Screen
+        name="Categories"
+        component={CategoriesScreen}
+        options={{ title: "CyMart" }}
+      />
+      <AppStackNav.Screen name="Cart" component={CartScreen} options={{ title: "Cart" }} />
+      <AppStackNav.Screen name="Orders" component={OrdersScreen} options={{ title: "My Orders" }} />
+    </AppStackNav.Navigator>
   );
 }
 

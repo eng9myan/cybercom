@@ -18,6 +18,16 @@ class CartViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = Cart.objects.all()
 
+    @action(detail=False, methods=["get"])
+    def active(self, request):
+        """Returns the caller's active cart, creating an empty one if none
+        exists yet. customer_id comes from the verified JWT (user_session),
+        never a client-supplied query param — a client can't fetch or
+        create a cart on another customer's behalf."""
+        customer_id = request.user_session["user_id"]
+        cart = CartService().get_or_create_active_cart(customer_id)
+        return Response(self.get_serializer(cart).data)
+
     @action(detail=True, methods=["post"])
     def add_item(self, request, pk=None):
         cart = self.get_object()

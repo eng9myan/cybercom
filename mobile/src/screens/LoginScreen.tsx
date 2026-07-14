@@ -125,14 +125,22 @@ export default function LoginScreen() {
               </TouchableOpacity>
             )}
 
-            {/* Passkey button — placeholder */}
-            <TouchableOpacity
-              style={[styles.btn, styles.passkeyBtn]}
-              onPress={handlePasskeyLogin}
-              accessibilityLabel="Sign in with Passkey"
-            >
-              <Text style={styles.btnText}>🔑  Sign in with Passkey</Text>
-            </TouchableOpacity>
+            {/* Passkey button — only when the device actually supports it.
+                isPasskeySupported() was already being checked in
+                initAuthOptions but its result (passkeyAvailable) was never
+                read anywhere, so the button showed unconditionally even on
+                devices without passkey support — caught by
+                @typescript-eslint/no-unused-vars once a lint config
+                actually existed to catch it. */}
+            {passkeyAvailable && (
+              <TouchableOpacity
+                style={[styles.btn, styles.passkeyBtn]}
+                onPress={handlePasskeyLogin}
+                accessibilityLabel="Sign in with Passkey"
+              >
+                <Text style={styles.btnText}>🔑  Sign in with Passkey</Text>
+              </TouchableOpacity>
+            )}
 
             {/* OIDC fallback */}
             <TouchableOpacity
