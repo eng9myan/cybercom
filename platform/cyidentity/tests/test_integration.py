@@ -10,7 +10,6 @@ against the in-memory Keycloak fake. Verifies:
 """
 
 import uuid
-from unittest.mock import patch
 
 import pytest
 from rest_framework.test import APIClient
@@ -25,9 +24,7 @@ from platform.cyidentity.models import (
 
 
 @pytest.fixture
-def admin_client():
-    import jwt
-
+def admin_client(mint_token, mock_jwks):
     client = APIClient()
     payload = {
         "sub": "11111111-1111-1111-1111-111111111111",
@@ -37,7 +34,7 @@ def admin_client():
         "roles": ["platform_admin"],
         "permissions": ["read", "write"],
     }
-    token = jwt.encode(payload, "dummy-secret", algorithm="HS256")
+    token = mint_token(payload)
     client.credentials(
         HTTP_AUTHORIZATION=f"Bearer {token}",
         HTTP_X_TENANT_ID="00000000-0000-0000-0000-000000000000",
@@ -45,15 +42,9 @@ def admin_client():
     return client
 
 
-@pytest.fixture
-def patch_keycloak_fake():
-    with patch.object(__import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True):
-        yield
-
-
 @pytest.mark.django_db
 class TestRealmIntegration:
-    def test_provision_then_activate_then_decommission(self, admin_client, patch_keycloak_fake):
+    def test_provision_then_activate_then_decommission(self, admin_client):
         resp = admin_client.post(
             "/api/v1/identity/realms/provision/",
             {
@@ -95,7 +86,7 @@ class TestClientIntegration:
             admin_api_url="http://x/admin",
         )
 
-    def test_register_and_rotate(self, admin_client, patch_keycloak_fake):
+    def test_register_and_rotate(self, admin_client):
         realm = self._realm()
         resp = admin_client.post(
             "/api/v1/identity/clients/register/",
@@ -137,7 +128,7 @@ class TestUserAndRoleIntegration:
             admin_api_url="http://x/admin",
         )
 
-    def test_provision_user_then_assign_role(self, admin_client, patch_keycloak_fake):
+    def test_provision_user_then_assign_role(self, admin_client):
         from platform.cyidentity.models import Role
 
         realm = self._realm()
