@@ -3,9 +3,9 @@ Tests for CyMed Commercial — Subscription Platform.
 """
 
 import uuid
-from datetime import date
 
 import pytest
+from django.utils import timezone
 
 from products.cymed.commercial.subscriptions.models import (
     SubscriptionContract,
@@ -83,9 +83,24 @@ class TestSubscriptionService:
         assert subscription.contracted_users == 10
 
     def test_annual_period_end(self, subscription):
-        expected_end = date.today().replace(year=date.today().year + 1)
-        delta = abs((subscription.current_period_end - expected_end).days)
-        assert delta <= 1  # within 1 day
+        # Two separate bugs were masked by this test's original `delta <=
+        # 1 day` tolerance:
+        #   1. SubscriptionService computes period boundaries from
+        #      timezone.now().date() (UTC), not the local system clock —
+        #      date.today() is local-timezone-naive and disagrees with it
+        #      whenever the two clocks straddle midnight differently.
+        #   2. The service's actual formula is
+        #      `today + relativedelta(months=12) - relativedelta(days=1)`
+        #      — a period end is always one day before the next period
+        #      would start (same convention the monthly test already
+        #      matched exactly) — not a bare year-rollover. This test's
+        #      expected_end never subtracted that day.
+        # Matching the real formula exactly, no tolerance needed.
+        from dateutil.relativedelta import relativedelta
+
+        today = timezone.now().date()
+        expected_end = today + relativedelta(years=1) - relativedelta(days=1)
+        assert subscription.current_period_end == expected_end
 
     def test_create_subscription_monthly(self, db, monthly_plan):
         sub = SubscriptionService.create_subscription(
@@ -95,7 +110,8 @@ class TestSubscriptionService:
         )
         from dateutil.relativedelta import relativedelta
 
-        expected = date.today() + relativedelta(months=1) - relativedelta(days=1)
+        today = timezone.now().date()
+        expected = today + relativedelta(months=1) - relativedelta(days=1)
         assert sub.current_period_end == expected
 
     def test_renew_subscription(self, subscription):
