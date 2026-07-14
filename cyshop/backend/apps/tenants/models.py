@@ -72,14 +72,63 @@ class TenantSettings(BaseEntity):
     def __str__(self):
         return f"Settings for {self.tenant.name}"
 
+class MarketplaceStatus(models.TextChoices):
+    NOT_APPLIED = 'not_applied', 'Not Applied'
+    APPLICATION_PENDING = 'application_pending', 'Application Pending'
+    DOCUMENTS_REQUIRED = 'documents_required', 'Documents Required'
+    COMPLIANCE_REVIEW = 'compliance_review', 'Compliance Review'
+    APPROVED = 'approved', 'Approved'
+    ACTIVE = 'active', 'Active'
+    SUSPENDED = 'suspended', 'Suspended'
+    REJECTED = 'rejected', 'Rejected'
+    TERMINATED = 'terminated', 'Terminated'
+
+
+class MerchantVerificationStatus(models.TextChoices):
+    UNVERIFIED = 'unverified', 'Unverified'
+    PENDING = 'pending', 'Pending'
+    VERIFIED = 'verified', 'Verified'
+    REJECTED = 'rejected', 'Rejected'
+
+
 class Company(BaseEntity):
     name = models.CharField(max_length=255)
     legal_name = models.CharField(max_length=255, null=True, blank=True)
     tax_number = models.CharField(max_length=100, null=True, blank=True)
     country_code = models.CharField(max_length=2, default='JO') # JO, SA, AE
 
+    # CyMart marketplace eligibility (CyberCom master spec section 7).
+    # CyShop companies are inherently customer-facing retail/F&B businesses,
+    # so this defaults True here — it matters more for CyCom, where most
+    # companies are not customer-facing and must NOT default to eligible.
+    operates_customer_facing_store = models.BooleanField(default=True)
+    marketplace_eligible = models.BooleanField(default=False)
+    marketplace_agreement_signed = models.BooleanField(default=False)
+    marketplace_agreement_signed_at = models.DateTimeField(null=True, blank=True)
+    marketplace_status = models.CharField(
+        max_length=32,
+        choices=MarketplaceStatus.choices,
+        default=MarketplaceStatus.NOT_APPLIED,
+    )
+    merchant_verification_status = models.CharField(
+        max_length=16,
+        choices=MerchantVerificationStatus.choices,
+        default=MerchantVerificationStatus.UNVERIFIED,
+    )
+
     def __str__(self):
         return self.name
+
+    def sign_marketplace_agreement(self):
+        """Records agreement signature. Does not itself grant marketplace_eligible —
+        that's a separate compliance-review decision (see marketplace_status)."""
+        from django.utils import timezone
+        self.marketplace_agreement_signed = True
+        self.marketplace_agreement_signed_at = timezone.now()
+        if self.marketplace_status == MarketplaceStatus.NOT_APPLIED:
+            self.marketplace_status = MarketplaceStatus.APPLICATION_PENDING
+        self.save()
+
 
 class Branch(BaseEntity):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='branches')
@@ -87,8 +136,42 @@ class Branch(BaseEntity):
     address = models.TextField()
     timezone = models.CharField(max_length=100, default='Asia/Amman')
 
+    # CyMart publication (per-branch — a company may publish only some branches).
+    marketplace_enabled = models.BooleanField(default=False)
+    # Soft references: CyMart's category taxonomy and commission/settlement/
+    # delivery policy models don't exist yet (Phase 3). Real FKs land then.
+    marketplace_category_ids = models.JSONField(default=list, blank=True)
+    commission_policy_id = models.UUIDField(null=True, blank=True)
+    settlement_policy_id = models.UUIDField(null=True, blank=True)
+    delivery_policy_id = models.UUIDField(null=True, blank=True)
+
     def __str__(self):
         return self.name
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.marketplace_enabled:
+            if not self.company.marketplace_agreement_signed:
+                raise ValidationError(
+                    "Branch cannot be published to CyMart: company has not "
+                    "signed the marketplace agreement."
+                )
+            if self.company.marketplace_status != MarketplaceStatus.ACTIVE:
+                raise ValidationError(
+                    f"Branch cannot be published to CyMart: company marketplace_status "
+                    f"is '{self.company.marketplace_status}', not 'active'."
+                )
+            if not self.company.operates_customer_facing_store:
+                raise ValidationError(
+                    "Branch cannot be published to CyMart: company does not "
+                    "operate a customer-facing store."
+                )
+
+    def save(self, *args, **kwargs):
+        # Only the CyMart eligibility rule, not full model validation — avoids
+        # changing existing save() behavior for anything unrelated to it.
+        self.clean()
+        super().save(*args, **kwargs)
 
 class Department(BaseEntity):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='departments')

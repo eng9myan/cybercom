@@ -1,7 +1,9 @@
 from django.test import TestCase, Client
 from django.urls import reverse
-from apps.tenants.models import Tenant, Company, Branch
+from django.core.exceptions import ValidationError
+from apps.tenants.models import Tenant, Company, Branch, MarketplaceStatus
 import json
+import uuid
 
 class TenantTestCase(TestCase):
     def setUp(self):
@@ -44,3 +46,66 @@ class TenantTestCase(TestCase):
         )
         # It fails with 403 Forbidden instead of 400 because tenant check passes but auth is required
         self.assertEqual(response.status_code, 403)
+
+
+class CyMartEligibilityTestCase(TestCase):
+    """
+    CyberCom master spec critical test case 3: "A CyShop merchant without a
+    signed marketplace agreement cannot sell on CyMart."
+    """
+
+    def setUp(self):
+        self.tenant_id = uuid.uuid4()
+
+    def _company(self, **overrides):
+        defaults = dict(tenant_id=self.tenant_id, name="Test Merchant")
+        defaults.update(overrides)
+        return Company.objects.create(**defaults)
+
+    def _branch(self, company, **overrides):
+        defaults = dict(
+            tenant_id=self.tenant_id,
+            company=company,
+            name="Main Branch",
+            address="123 Test St",
+        )
+        defaults.update(overrides)
+        return Branch(**defaults)
+
+    def test_branch_cannot_publish_without_signed_agreement(self):
+        company = self._company()
+        branch = self._branch(company, marketplace_enabled=True)
+        with self.assertRaises(ValidationError):
+            branch.save()
+
+    def test_branch_cannot_publish_when_status_not_active(self):
+        company = self._company()
+        company.sign_marketplace_agreement()  # status -> application_pending, not active
+        branch = self._branch(company, marketplace_enabled=True)
+        with self.assertRaises(ValidationError):
+            branch.save()
+
+    def test_branch_cannot_publish_without_customer_facing_store(self):
+        company = self._company(operates_customer_facing_store=False)
+        company.sign_marketplace_agreement()
+        company.marketplace_status = MarketplaceStatus.ACTIVE
+        company.save()
+        branch = self._branch(company, marketplace_enabled=True)
+        with self.assertRaises(ValidationError):
+            branch.save()
+
+    def test_branch_can_publish_once_fully_eligible(self):
+        company = self._company()
+        company.sign_marketplace_agreement()
+        company.marketplace_status = MarketplaceStatus.ACTIVE
+        company.save()
+        branch = self._branch(company, marketplace_enabled=True)
+        branch.save()  # should not raise
+        self.assertTrue(Branch.objects.get(pk=branch.pk).marketplace_enabled)
+
+    def test_branch_not_marketplace_enabled_can_save_regardless(self):
+        # A non-published branch must never be blocked by eligibility rules.
+        company = self._company()
+        branch = self._branch(company, marketplace_enabled=False)
+        branch.save()
+        self.assertFalse(Branch.objects.get(pk=branch.pk).marketplace_enabled)
