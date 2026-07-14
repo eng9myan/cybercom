@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CyberComDomainEvent",
+  "description": "Base schema for all CyberCom domain events. ADR-0004, ADR-0031.",
+  "type": "object",
+  "required": ["eventId", "eventType", "tenantId", "occurredAt", "version", "payload"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique event identifier (UUIDv4)."
+    },
+    "eventType": {
+      "type": "string",
+      "pattern": "^[a-z]+\\.[a-z_]+\\.[a-z_]+$",
+      "description": "Dot-separated: domain.aggregate.verb. E.g. cymed.patient.admitted"
+    },
+    "tenantId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlationId": {
+      "type": ["string", "null"],
+      "format": "uuid"
+    },
+    "causationId": {
+      "type": ["string", "null"],
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "payload": {
+      "type": "object"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}
