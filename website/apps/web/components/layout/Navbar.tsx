@@ -16,6 +16,7 @@ const PRODUCTS_MEGA_MENU = [
   {
     category: "Healthcare · CyMed",
     items: [
+      { name: "CyMed", slug: "cymed", desc: "Complete healthcare platform" },
       { name: "CyMed Clinic", slug: "cymed-clinic", desc: "Outpatient clinical management" },
       { name: "CyMed Hospital", slug: "cymed-hospital", desc: "Complete hospital operations" },
       { name: "CyMed Laboratory", slug: "cymed-laboratory", desc: "LIS with auto-verification" },
@@ -139,6 +140,8 @@ export function Navbar({ locale }: NavbarProps) {
                                 ? `/${locale}/cyshop`
                                 : item.slug === "cycom"
                                 ? `/${locale}/erp`
+                                : item.slug === "cymed"
+                                ? `/${locale}/cymed`
                                 : `/${locale}/products/${item.slug}`
                             }
                             className="block px-2 py-1.5 rounded-lg text-sm text-cy-gray-200 hover:text-white hover:bg-cy-glass-bg transition-colors duration-150 focus-visible:ring-1 focus-visible:ring-cy-orange"

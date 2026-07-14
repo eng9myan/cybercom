@@ -94,6 +94,8 @@ export function Footer({ locale }: FooterProps) {
                         ? `/${locale}/cyshop`
                         : p.slug === "cycom"
                         ? `/${locale}/erp`
+                        : p.slug === "cymed"
+                        ? `/${locale}/cymed`
                         : `/${locale}/products/${p.slug}`
                     }
                     className="text-sm text-cy-gray-400 hover:text-white transition-colors duration-150"

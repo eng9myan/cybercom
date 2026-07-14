@@ -176,7 +176,7 @@ export function ProductEcosystem({ locale }: ProductEcosystemProps) {
                 className={p.size === "large" ? "lg:col-span-1 lg:row-span-1" : ""}
               >
                 <Link
-                  href={p.slug === "cyshop" ? `/${locale}/cyshop` : p.slug === "cycom" ? `/${locale}/erp` : `/${locale}/products/${p.slug}`}
+                  href={p.slug === "cyshop" ? `/${locale}/cyshop` : p.slug === "cycom" ? `/${locale}/erp` : p.slug === "cymed" ? `/${locale}/cymed` : `/${locale}/products/${p.slug}`}
                   className="bento-card block p-8 h-full group"
                   style={{ borderColor: p.accentBorder }}
                   aria-label={`${p.name} — ${p.category}`}
