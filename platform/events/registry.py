@@ -11,6 +11,7 @@ EVENT_TOPIC_REGISTRY: dict[str, str] = {
     "cymed": "product.cymed.clinical.events",
     "cycom": "product.cycom.erp.events",
     "cyshop": "product.cyshop.retail.events",
+    "cymart": "product.cymart.marketplace.events",
     "cygov": "product.cygov.governance.events",
     "cyconnect": "product.cyconnect.comms.events",
     "cycitizen": "product.cycitizen.citizen.events",
