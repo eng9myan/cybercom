@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cycom>
+    <function model="hr.employee" name="_migrate_legacy_binary_documents"/>
+</cycom>

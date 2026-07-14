@@ -1,0 +1,50 @@
+# --- Node / Next.js (cycom-erp) ---
+node_modules/
+.next/
+out/
+build/
+.pnp
+.pnp.*
+.yarn/cache/
+.yarn/install-state.gz
+*.tsbuildinfo
+next-env.d.ts
+coverage/
+
+# --- Python (cycom-backend.archive) ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# --- Cycom platform: heavy / generated / secret ---
+cycom-platform/engine-source/
+cycom-platform/engine-data/
+cycom-platform/postgres-data/
+cycom-platform/uploads/
+
+# --- Environment / secrets ---
+.env
+.env.local
+.env.*.local
+
+# --- Editor / OS ---
+.DS_Store
+*.swp
+*.swo
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Sibling project that is NOT part of Cycom ---
+cybercom-website/
+
+# --- Old archived FastAPI scratch backend (still tracked above, but ignore its db/uploads) ---
+cycom-backend.archive/cycom_erp.db
+cycom-backend.archive/uploads/
+cycom-backend.archive/venv/
+
+# --- Build outputs / temp ---
+*.log
+.cache/

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cycom>
+    <!-- Set the webclient page title to Cycom ERP -->
+    <template id="cycom_webclient_title" inherit_id="web.webclient_bootstrap" name="Cycom Webclient Title">
+        <xpath expr="//title" position="replace">
+            <title>Cycom ERP</title>
+        </xpath>
+    </template>
+</cycom>

@@ -1,0 +1,291 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/* ─── Cycom ERP Neural Command Center — Design System ─── */
+/* Brand: Orange #E67E22 · Blue #5DADE2 · Dark Background #050a14 */
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --radius-md: var(--radius);
+}
+
+:root {
+  color-scheme: dark;
+  --background: oklch(0.09 0.015 250);
+  --foreground: oklch(0.94 0.008 240);
+  --card: oklch(0.13 0.018 248);
+  --border: oklch(1 0 0 / 0.08);
+  --radius: 0.75rem;
+  
+  /* Brand colors */
+  --cy-orange: #E67E22;
+  --cy-orange-deep: #ed6c00;
+  --cy-orange-glow: rgba(230, 126, 34, 0.25);
+  
+  --cy-blue: #5DADE2;
+  --cy-blue-deep: #2c93d9;
+  --cy-blue-glow: rgba(93, 173, 226, 0.25);
+
+  --accent-cyan: #00F0FF;
+  --accent-orange: #E67E22;
+  --accent-green: #10B981;
+  --accent-red: #EF4444;
+  --accent-purple: #A855F7;
+  --accent-blue: #3B82F6;
+  --accent-yellow: #F59E0B;
+  --accent-pink: #EC4899;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: oklch(1 0 0 / 0.12); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: oklch(1 0 0 / 0.22); }
+
+/* Selection */
+::selection {
+  background: rgba(93, 173, 226, 0.25);
+  color: var(--foreground);
+}
+
+/* Glass UI Elements */
+.glass {
+  background: oklch(1 0 0 / 0.03);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  backdrop-filter: blur(12px) saturate(1.2);
+}
+
+.glass-card {
+  background: oklch(1 0 0 / 0.03);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  border-radius: calc(var(--radius) * 1.5);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 0 oklch(1 0 0 / 0.05) inset, 0 16px 36px -12px oklch(0 0 0 / 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(93, 173, 226, 0.22);
+  box-shadow: 0 1px 0 0 oklch(1 0 0 / 0.08) inset, 0 24px 48px -12px oklch(0 0 0 / 0.5), 0 0 0 1px rgba(93, 173, 226, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Mesh backgrounds */
+.bg-mesh {
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 30%, rgba(93, 173, 226, 0.07) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 80% 60%, rgba(230, 126, 34, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 50% 85%, rgba(0, 240, 255, 0.04) 0%, transparent 70%);
+}
+
+/* Navigation items */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: oklch(0.55 0.02 240);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.nav-item:hover {
+  background: oklch(1 0 0 / 0.05);
+  color: oklch(0.92 0.01 240);
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(230, 126, 34, 0.12), rgba(93, 173, 226, 0.08));
+  color: var(--cy-orange);
+  border-color: rgba(230, 126, 34, 0.25);
+  box-shadow: 0 0 16px -4px rgba(230, 126, 34, 0.2);
+}
+
+/* Badges styling */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+.badge-cyan { background: rgba(0, 240, 255, 0.08); color: #00F0FF; border: 1px solid rgba(0, 240, 255, 0.2); }
+.badge-orange { background: rgba(230, 126, 34, 0.08); color: #E67E22; border: 1px solid rgba(230, 126, 34, 0.2); }
+.badge-green { background: rgba(16, 185, 129, 0.08); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.badge-red { background: rgba(239, 68, 68, 0.08); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.badge-yellow { background: rgba(245, 158, 11, 0.08); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.2); }
+.badge-purple { background: rgba(168, 85, 247, 0.08); color: #A855F7; border: 1px solid rgba(168, 85, 247, 0.2); }
+.badge-blue { background: rgba(59, 130, 246, 0.08); color: #3B82F6; border: 1px solid rgba(59, 130, 246, 0.2); }
+
+/* Glow Utilities */
+.glow-cyan { box-shadow: 0 0 24px -4px rgba(0, 240, 255, 0.3); }
+.glow-orange { box-shadow: 0 0 24px -4px rgba(230, 126, 34, 0.3); }
+.glow-blue { box-shadow: 0 0 24px -4px rgba(93, 173, 226, 0.3); }
+
+/* Pulse Dots */
+.pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  position: relative; display: inline-block; flex-shrink: 0;
+}
+.pulse-dot::after {
+  content: ''; position: absolute; inset: -3px; border-radius: 50%;
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.pulse-dot.cyan    { background: #00F0FF; }
+.pulse-dot.cyan::after { border: 2px solid #00F0FF; }
+.pulse-dot.green   { background: #10B981; }
+.pulse-dot.green::after { border: 2px solid #10B981; }
+.pulse-dot.red     { background: #EF4444; }
+.pulse-dot.red::after { border: 2px solid #EF4444; }
+.pulse-dot.amber   { background: #F59E0B; }
+.pulse-dot.amber::after { border: 2px solid #F59E0B; }
+
+@keyframes pulse-ring {
+  0%   { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+/* Gradient borders */
+.gradient-border {
+  position: relative;
+  border-radius: calc(var(--radius) * 1.5);
+}
+.gradient-border::before {
+  content: ''; position: absolute; inset: 0;
+  border-radius: inherit; padding: 1px;
+  background: linear-gradient(135deg, rgba(230, 126, 34, 0.4), rgba(93, 173, 226, 0.2), rgba(0, 240, 255, 0.4));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, var(--cy-orange), var(--cy-orange-deep));
+  color: white;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 12px rgba(230, 126, 34, 0.15);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(230, 126, 34, 0.35);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--foreground);
+  font-weight: 500;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Tables */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: oklch(0.55 0.02 240);
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid oklch(1 0 0 / 0.03);
+  font-size: 0.875rem;
+  color: oklch(0.85 0.01 240);
+}
+.data-table tr:hover td {
+  background: oklch(1 0 0 / 0.02);
+}
+
+/* Form controls */
+.input-field {
+  background: oklch(1 0 0 / 0.03);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.input-field:focus {
+  border-color: rgba(93, 173, 226, 0.4);
+  background: rgba(93, 173, 226, 0.02);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  font-size: 0.8rem;
+  color: oklch(0.55 0.02 240);
+  margin-top: 0.2rem;
+}
+
+.font-cursive {
+  font-family: 'Brush Script MT', cursive, sans-serif;
+}
+

@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: cycom_db
+    environment:
+      POSTGRES_DB: cycom_erp
+      POSTGRES_USER: cycom
+      POSTGRES_PASSWORD: cycom_secure_pass_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cycom -d cycom_erp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: cycom_redis
+    ports:
+      - "6379:6379"
+
+  core-kernel:
+    build:
+      context: ./core-kernel
+      dockerfile: Dockerfile
+    container_name: cycom_kernel
+    environment:
+      - DATABASE_URL=postgresql://cycom:cycom_secure_pass_2026@postgres:5432/cycom_erp
+      - ACTIVE_APPS=finance,crm,inventory,payroll
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  compliance-gateway:
+    build:
+      context: ./compliance-gateway
+      dockerfile: Dockerfile
+    container_name: cycom_compliance
+    ports:
+      - "8001:8001"
+    depends_on:
+      - core-kernel
+
+  frontend:
+    build:
+      context: ./cycom-erp
+      dockerfile: Dockerfile
+    container_name: cycom_frontend
+    environment:
+      - CYCOM_BACKEND_URL=http://core-kernel:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - core-kernel
+
+volumes:
+  pgdata:

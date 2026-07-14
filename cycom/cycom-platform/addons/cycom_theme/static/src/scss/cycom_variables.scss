@@ -1,0 +1,53 @@
+/* Cycom Theme — brand colors and typography tweaks
+ * These mirror the Next.js Cycom UI palette so the Cycom backend feels like part of the same product.
+ * The Next.js frontend at ../cycom-erp/ is the primary UI; this just makes the Cycom backend
+ * (admin / config / reporting) match.
+ */
+
+$cycom-orange: #E67E22;
+$cycom-orange-dark: #D35400;
+$cycom-cyan: #00F0FF;
+$cycom-bg: #0a0f1e;
+$cycom-bg-deep: #030712;
+$cycom-card: #0B0F19;
+$cycom-border: rgba(255, 255, 255, 0.08);
+$cycom-text: #ffffff;
+$cycom-text-muted: #94A3B8;
+
+/* Login screen branding — applied via the cycom-login-brand block in login_templates.xml */
+.cycom-login-brand {
+    .cycom-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #{$cycom-orange}, #{$cycom-orange-dark});
+        color: white;
+        font-weight: 900;
+        font-size: 20px;
+        margin: 0 auto 12px;
+        box-shadow: 0 8px 24px rgba(230, 126, 34, 0.25);
+    }
+    .cycom-title {
+        font-size: 24px;
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        margin: 0;
+        color: #{$cycom-text};
+    }
+    .cycom-tagline {
+        font-size: 10px;
+        font-weight: 700;
+        color: #{$cycom-orange};
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin: 4px 0 0;
+    }
+}
+
+/* Soft accent on the backend top bar so it visually ties to Cycom */
+.o_main_navbar {
+    border-bottom: 1px solid #{$cycom-orange};
+}

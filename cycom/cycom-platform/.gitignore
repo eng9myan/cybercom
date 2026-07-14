@@ -1,0 +1,4 @@
+cycom-data/
+postgres-data/
+.env
+cycom-source/

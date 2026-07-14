@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cycom>
+    <data noupdate="0">
+        <!-- Brand the system as Cycom ERP -->
+        <record id="cycom_brand_name" model="ir.config_parameter">
+            <field name="key">cycom.brand_name</field>
+            <field name="value">Cycom ERP</field>
+        </record>
+        <record id="cycom_brand_tagline" model="ir.config_parameter">
+            <field name="key">cycom.brand_tagline</field>
+            <field name="value">Cycom Enterprise Platform</field>
+        </record>
+        <!-- Hide the "Powered by Cycom" footer string from public web pages -->
+        <record id="web_footer_branding" model="ir.config_parameter">
+            <field name="key">database.show_tips</field>
+            <field name="value">False</field>
+        </record>
+    </data>
+</cycom>

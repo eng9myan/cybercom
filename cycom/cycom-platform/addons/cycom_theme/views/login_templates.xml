@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cycom>
+    <!-- Replace the Cycom brand on the login screen with the Cycom mark.
+         Inherits web.login to swap brand text + add a Cycom badge above the form. -->
+    <template id="cycom_login_branding" inherit_id="web.login" name="Cycom Login Branding">
+        <xpath expr="//div[hasclass('o_login_textbox_wrapper')]" position="before">
+            <div class="cycom-login-brand text-center mb-3">
+                <div class="cycom-mark">CY</div>
+                <h1 class="cycom-title">CYCOM ERP</h1>
+                <p class="cycom-tagline">Cycom Enterprise Platform</p>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- Re-title the browser tab on the public/login screens -->
+    <template id="cycom_layout_title" inherit_id="web.layout" name="Cycom Layout Title">
+        <xpath expr="//title" position="replace">
+            <title>Cycom ERP</title>
+        </xpath>
+    </template>
+</cycom>

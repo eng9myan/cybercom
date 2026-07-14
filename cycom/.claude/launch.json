@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Cycom ERP",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000,
+      "cwd": "cycom-erp"
+    },
+    {
+      "name": "CyberCom Website",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3456", "cybercom-website"],
+      "port": 3456
+    }
+  ]
+}

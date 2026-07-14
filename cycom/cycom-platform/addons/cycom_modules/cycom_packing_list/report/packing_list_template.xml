@@ -1,0 +1,5 @@
+<cycom>
+  <template id="packing_list_template">
+    <t t-call="cycom_packing_list.packing_list_body"/>
+  </template>
+</cycom>
