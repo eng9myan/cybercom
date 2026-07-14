@@ -156,6 +156,15 @@ class MarketplaceOrder(models.Model):
     customer_notes = models.TextField(blank=True)
     scheduled_for = models.DateTimeField(null=True, blank=True)
 
+    # Soft reference — set when fulfillment_type == cydrive_delivery, to
+    # the CyDrive DeliveryCompany that will fulfill it. Which network-active
+    # company gets picked is real routing logic not built yet (Phase 6
+    # follow-up); this field just records the decision once made.
+    delivery_company_id = models.UUIDField(null=True, blank=True)
+    delivery_job_id = models.UUIDField(
+        null=True, blank=True, help_text="Set once a CyDrive DeliveryJob is created for this order."
+    )
+
     commission_calculation = models.ForeignKey(
         "cymart_commission.CommissionCalculation",
         on_delete=models.PROTECT,

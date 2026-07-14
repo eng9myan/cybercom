@@ -131,6 +131,12 @@ DATABASES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------------------
+# CYDRIVE — delivery orchestration (Phase 6 integration)
+# ---------------------------------------------------------------------------
+CYDRIVE_BASE_URL = os.environ.get("CYDRIVE_BASE_URL", "http://localhost:8002/api/v1")
+CYDRIVE_REQUEST_TIMEOUT_SECONDS = int(os.environ.get("CYDRIVE_REQUEST_TIMEOUT_SECONDS", "10"))
+
+# ---------------------------------------------------------------------------
 # IDENTITY — same CyIdentity realm cymed uses (shared platform, one IdP)
 # ---------------------------------------------------------------------------
 CYIDENTITY_ISSUER = os.environ.get("CYIDENTITY_ISSUER", "http://localhost:8080/realms/cybercom")

@@ -5,7 +5,9 @@ from django.db import transaction
 
 from products.cymart.commission.services import CommissionEngine, OrderContext, OrderLineItem
 
+from .cydrive_client import CyDriveClient, CyDriveIntegrationError
 from .models import (
+    FulfillmentType,
     MarketplaceOrder,
     MarketplaceOrderLine,
     MarketplaceOrderStatus,
@@ -148,6 +150,45 @@ class OrderService:
             calc = self.commission_engine.calculate(ctx, reference_id=order.id)
             order.commission_calculation = calc
             order.save(update_fields=["commission_calculation"])
+        return order
+
+    def request_delivery(
+        self,
+        order: MarketplaceOrder,
+        delivery_company_id: uuid.UUID,
+        access_token: str,
+        pickup_address: dict,
+        dropoff_address: dict,
+    ) -> MarketplaceOrder:
+        """
+        Transitions the order to delivery_requested and creates the
+        matching CyDrive DeliveryJob in one call. Only valid for
+        fulfillment_type == cydrive_delivery — pickup and merchant-delivery
+        orders never involve CyDrive at all.
+
+        If CyDrive rejects or is unreachable, the order transition is
+        rolled back (transaction.atomic) rather than left in
+        delivery_requested with no actual job behind it — that state would
+        be a lie about what's really happening.
+        """
+        if order.fulfillment_type != FulfillmentType.CYDRIVE_DELIVERY:
+            raise CyDriveIntegrationError(
+                f"Order {order.id} has fulfillment_type '{order.fulfillment_type}', "
+                "not cydrive_delivery — nothing to dispatch to CyDrive."
+            )
+
+        with transaction.atomic():
+            order = self.state_machine.transition(order, MarketplaceOrderStatus.DELIVERY_REQUESTED)
+            job = CyDriveClient().create_delivery_job(
+                access_token=access_token,
+                delivery_company_id=str(delivery_company_id),
+                source_order_id=str(order.id),
+                pickup_address=pickup_address,
+                dropoff_address=dropoff_address,
+            )
+            order.delivery_company_id = delivery_company_id
+            order.delivery_job_id = uuid.UUID(job["id"])
+            order.save(update_fields=["delivery_company_id", "delivery_job_id", "updated_at"])
         return order
 
     def refund_order(self, order: MarketplaceOrder, refund_amount: Decimal) -> MarketplaceOrder:
