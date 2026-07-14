@@ -1,0 +1,90 @@
+name: Deploy to Oracle Cloud
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Trust host
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync repo to server
+        run: |
+          rsync -az --delete \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '__pycache__' \
+            --exclude '.env' \
+            ./ "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+
+      - name: Build + restart stack
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          ssh "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" bash -se <<'EOF'
+            set -euo pipefail
+            cd "$DEPLOY_PATH"
+            if [ ! -f .env ]; then
+              echo "::error::Missing .env on server at $DEPLOY_PATH/.env"
+              exit 1
+            fi
+            docker compose pull || true
+            docker compose build --pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
+
+            # Wait for backend to be healthy
+            echo "Waiting for backend…"
+            for i in $(seq 1 12); do
+              if curl -fsS "http://localhost:8020/healthz/" >/dev/null 2>&1; then
+                echo "Backend healthy"
+                break
+              fi
+              sleep 5
+            done
+
+            # Seed demo tenant + admin credentials
+            docker compose exec -T cyshop-backend python manage.py migrate --run-syncdb
+            docker compose exec -T cyshop-backend python manage.py seed_demo
+            docker compose ps
+          EOF
+
+      - name: Reload nginx
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          ssh "$SSH_USER@$SSH_HOST" "sudo nginx -t && sudo systemctl reload nginx"
+
+      - name: Smoke-test public endpoint
+        run: |
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS "https://${{ secrets.PUBLIC_DOMAIN }}/healthz/" >/dev/null; then
+              echo "Health OK"
+              exit 0
+            fi
+            echo "Waiting for healthz… attempt $i"
+            sleep 10
+          done
+          echo "::error::healthz never responded"
+          exit 1

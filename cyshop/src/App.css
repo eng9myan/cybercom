@@ -1,0 +1,45 @@
+/* Utility tweaks and overrides */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  background-color: var(--bg-app);
+}
+
+.top-header {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.pos-cart {
+  position: sticky;
+  top: calc(var(--header-height) + 24px);
+  max-height: calc(100vh - var(--header-height) - 48px);
+}
+
+.ai-chat-window {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 0 1px var(--ai-glow-border);
+}
+
+/* Fix grid layouts for responsiveness */
+@media (max-width: 768px) {
+  .sidebar {
+    width: var(--sidebar-collapsed-width);
+  }
+  .main-wrapper {
+    margin-left: var(--sidebar-collapsed-width);
+  }
+  .pos-layout {
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+  .pos-cart {
+    width: 100%;
+    position: static;
+    height: auto;
+    max-height: none;
+    margin-top: 24px;
+  }
+}

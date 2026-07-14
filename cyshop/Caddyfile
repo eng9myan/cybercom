@@ -1,0 +1,61 @@
+# Cyshop reverse proxy — single domain, path-based routing.
+# Caddy auto-provisions TLS via Let's Encrypt for the {$PUBLIC_DOMAIN}.
+
+{
+	email {$CADDY_EMAIL}
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+{$PUBLIC_DOMAIN} {
+	encode zstd gzip
+
+	# Security headers
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options    "nosniff"
+		Referrer-Policy           "same-origin"
+		X-Frame-Options           "DENY"
+		Permissions-Policy        "geolocation=(), camera=(), microphone=()"
+	}
+
+	# Django paths — proxy to backend
+	@backend {
+		path /api/* /admin* /graphql* /healthz* /static/*
+	}
+	handle @backend {
+		reverse_proxy cyshop-backend:8000 {
+			header_up Host                {host}
+			header_up X-Real-IP           {remote_host}
+			header_up X-Forwarded-For     {remote_host}
+			header_up X-Forwarded-Proto   {scheme}
+		}
+	}
+
+	# Everything else → Next.js frontend
+	handle {
+		reverse_proxy cyshop-frontend:3000 {
+			header_up Host              {host}
+			header_up X-Real-IP         {remote_host}
+			header_up X-Forwarded-For   {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
+
+# Bare-IP / localhost fallback for staging without DNS
+:80 {
+	@backend path /api/* /admin* /graphql* /healthz* /static/*
+	handle @backend {
+		reverse_proxy cyshop-backend:8000
+	}
+	handle {
+		reverse_proxy cyshop-frontend:3000
+	}
+}
