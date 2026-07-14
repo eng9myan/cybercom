@@ -1,6 +1,5 @@
 import uuid
 
-import jwt
 import pytest
 from rest_framework.test import APIClient
 
@@ -19,7 +18,7 @@ def test_tenant_id():
 
 
 @pytest.fixture
-def auth_client(test_tenant_id):
+def auth_client(test_tenant_id, mint_token, mock_jwks):
     client = APIClient()
     payload = {
         "sub": "11111111-1111-1111-1111-111111111111",
@@ -29,7 +28,7 @@ def auth_client(test_tenant_id):
         "roles": ["platform_admin"],
         "permissions": ["read", "write"],
     }
-    token = jwt.encode(payload, "dummy-secret", algorithm="HS256")
+    token = mint_token(payload)
     client.credentials(
         HTTP_AUTHORIZATION=f"Bearer {token}",
         HTTP_X_TENANT_ID=str(test_tenant_id),

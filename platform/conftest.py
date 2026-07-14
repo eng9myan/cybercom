@@ -5,6 +5,11 @@ Mints real RS256 JWTs and patches the JWKS client that
 shared.auth.auth_middleware.CyIdentityAuthMiddleware uses, so integration
 tests exercise the actual production auth path end-to-end instead of relying
 on a dev-mode bypass in the middleware itself.
+
+Duplicated in cymed/conftest.py: pytest's confcutdir (set by cymed's
+pyproject.toml [tool.pytest.ini_options]) stops upward conftest discovery at
+cymed/, so a single repo-root conftest.py isn't visible to both product test
+suites in one pytest run. Keep the two copies in sync.
 """
 
 import time

@@ -57,15 +57,68 @@ repo_root = str(Path(script_dir).parent)
 if repo_root not in sys.path:
     sys.path.append(repo_root)
 
+import time
 import uuid
+from unittest.mock import patch
 
+import jwt
 import pytest
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from django.test import RequestFactory
 
 
 @pytest.fixture
 def rf():
     return RequestFactory()
+
+
+# ── Auth fixtures: mint real RS256 JWTs and mock the JWKS client that ────────
+# shared.auth.auth_middleware.CyIdentityAuthMiddleware validates against, so
+# tests exercise the actual production auth path. Duplicated in
+# platform/conftest.py — see that file's docstring for why.
+@pytest.fixture(scope="session")
+def _rsa_keypair():
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    public_pem = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    return private_pem, public_pem
+
+
+@pytest.fixture
+def mint_token(_rsa_keypair):
+    """Signs a payload as a real RS256 JWT with the test session's key pair."""
+    private_pem, _ = _rsa_keypair
+
+    def _mint(payload: dict) -> str:
+        claims = {**payload}
+        now = int(time.time())
+        claims.setdefault("iat", now)
+        claims.setdefault("exp", now + 3600)
+        return jwt.encode(claims, private_pem, algorithm="RS256")
+
+    return _mint
+
+
+@pytest.fixture
+def mock_jwks(_rsa_keypair):
+    """Patches the middleware's JWKS client to serve this session's public key."""
+    _, public_pem = _rsa_keypair
+    fake_signing_key = type("FakeSigningKey", (), {"key": public_pem})()
+    fake_client = type(
+        "FakeJWKClient",
+        (),
+        {"get_signing_key_from_jwt": lambda self, token: fake_signing_key},
+    )()
+    with patch("shared.auth.auth_middleware._get_jwks_client", return_value=fake_client):
+        yield
 
 
 @pytest.fixture
