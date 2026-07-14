@@ -75,7 +75,15 @@ PRODUCT_APPS = [
     "products.cymart.orders",
     "products.cymart.cart",
     "products.cymart.settlement",
+    "products.cymart.payments",
 ]
+
+# Swappable payment provider (master spec section 17). No real gateway
+# credentials exist in this environment — defaults to the sandbox. Point
+# this at a real adapter's dotted path (implementing
+# products.cymart.payments.providers.base.PaymentProvider) in a real
+# deployment.
+CYMART_PAYMENT_PROVIDER = os.environ.get("CYMART_PAYMENT_PROVIDER", "")
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
 
