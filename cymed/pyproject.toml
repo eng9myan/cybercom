@@ -1,7 +1,7 @@
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-src = [".", "platform", "products", "shared"]
+src = [".", "../platform", "products"]
 
 [tool.ruff.lint]
 select = [

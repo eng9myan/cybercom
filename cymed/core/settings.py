@@ -125,10 +125,7 @@ PRODUCT_APPS = [
     "products.cymed.laboratory.pathology",
     "products.cymed.laboratory.histopathology",
     "products.cymed.laboratory.quality",
-    # NOTE: "products.cymed.laboratory.blood_bank_foundation" removed — no such
-    # module exists on disk (pre-existing dangling reference from source repo,
-    # not introduced by this import). Hospital has a separate "blood_bank" dir
-    # that was never registered as a Django app either — see audit notes.
+    "products.cymed.laboratory.blood_bank_foundation",
     "products.cymed.laboratory.analytics",
     "products.cymed.laboratory.reference_lab",
     # CyMed Imaging Edition (Program 3.4)

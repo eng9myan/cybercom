@@ -14,7 +14,9 @@ from pathlib import Path
 # Solution: graft the local platform/ directory onto the stdlib platform module.
 
 script_dir = str(Path(__file__).resolve().parent)
-platform_pkg_path = os.path.join(script_dir, "platform")
+# platform/ now lives at the monorepo root (shared across cycom/cyshop/cymed),
+# one level above this backend project, not inside it.
+platform_pkg_path = os.path.join(str(Path(script_dir).parent), "platform")
 
 # Step 1: Remove any already-cached platform from sys.modules (may be local package)
 if "platform" in sys.modules:

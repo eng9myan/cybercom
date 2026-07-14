@@ -22,7 +22,7 @@ elif "" in sys.path:
 # Step 2: Import stdlib platform, then graft local platform/ onto it
 import platform as std_platform
 
-platform_pkg_path = os.path.join(script_dir, "platform")
+platform_pkg_path = os.path.join(str(Path(script_dir).parent), "platform")
 if not hasattr(std_platform, "__path__") or std_platform.__path__ is None:
     std_platform.__path__ = [platform_pkg_path]
 elif platform_pkg_path not in std_platform.__path__:

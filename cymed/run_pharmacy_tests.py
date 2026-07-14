@@ -17,7 +17,7 @@ _plat_spec = importlib.util.spec_from_file_location(
 )
 _stdlib_platform = importlib.util.module_from_spec(_plat_spec)
 _plat_spec.loader.exec_module(_stdlib_platform)
-_stdlib_platform.__path__ = [str(Path(__file__).resolve().parent / "platform")]
+_stdlib_platform.__path__ = [str(Path(__file__).resolve().parent.parent / "platform")]
 sys.modules["platform"] = _stdlib_platform
 
 import pytest
