@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+from products.cymart.orders.models import FulfillmentType
+
 from .models import SettlementLedgerEntry
 
 
@@ -26,27 +28,57 @@ class SettlementService:
             order.subtotal - order.merchant_funded_discount - order.cybercom_funded_discount
         )
         payment_processing_fee = Decimal("0")  # Phase 7 — no real gateway integrated yet
-        delivery_company_amount = Decimal("0")  # Phase 5/6 — no CyDrive yet
 
-        # With no delivery company involved yet, delivery fee and tip stay
-        # with the merchant — once CyDrive exists (Phase 6), this routes to
-        # net_delivery_company_settlement instead based on fulfillment_type.
+        # CyDrive exists now (Phase 5/6) — if this order actually went
+        # through it (fulfillment_type + a real delivery_job_id, not just
+        # the type flag), delivery_fee and tip route to the delivery
+        # company instead of the merchant. Otherwise (pickup, merchant's
+        # own delivery, or cydrive_delivery that never got a job created)
+        # they stay with the merchant, same as before.
+        fulfilled_by_cydrive = (
+            order.fulfillment_type == FulfillmentType.CYDRIVE_DELIVERY
+            and order.delivery_job_id is not None
+        )
+
+        if fulfilled_by_cydrive:
+            # Simplification, documented not hidden: CyDrive is assumed to
+            # keep 100% of delivery_fee + tip for now. A CyMart-side cut of
+            # the delivery fee (the marketplace's delivery commission) is a
+            # real, separate business decision not made yet — not invented
+            # here.
+            delivery_company_amount = order.delivery_fee + order.tip_amount
+            net_delivery_company_settlement = delivery_company_amount
+            merchant_delivery_share = Decimal("0")
+        else:
+            delivery_company_amount = Decimal("0")
+            net_delivery_company_settlement = Decimal("0")
+            merchant_delivery_share = order.delivery_fee + order.tip_amount
+
+        # Tax is a pass-through liability, not merchant or CyberCom revenue
+        # — but someone has to be responsible for remitting it, and no
+        # separate tax-remittance service exists. Default: the merchant is
+        # the collector of record (common pattern), so it's included in
+        # their net settlement rather than silently dropped from the
+        # reconciliation. Revisit if/when jurisdictions where CyberCom
+        # itself remits tax are supported.
         net_merchant_settlement = (
             merchant_merchandise_revenue
             - commission
             - payment_processing_fee
-            + order.delivery_fee
-            + order.tip_amount
-            - delivery_company_amount
+            + merchant_delivery_share
+            + order.tax_amount
         )
         cybercom_net_revenue = commission - payment_processing_fee
 
         breakdown = {
             "order_id": str(order.id),
             "commission_calculation_id": str(order.commission_calculation_id),
-            "note": "delivery_company_amount and payment_processing_fee are "
-            "0 by construction — CyDrive and payment gateway integration "
-            "don't exist yet (Phase 5/6/7).",
+            "fulfilled_by_cydrive": fulfilled_by_cydrive,
+            "delivery_job_id": str(order.delivery_job_id) if order.delivery_job_id else None,
+            "note": "payment_processing_fee is 0 by construction — no real "
+            "gateway integrated yet (Phase 7). delivery_company_amount "
+            "assumes CyDrive keeps 100% of delivery_fee+tip; a CyMart cut "
+            "of the delivery fee isn't decided yet.",
         }
 
         return SettlementLedgerEntry.objects.create(
@@ -63,7 +95,7 @@ class SettlementService:
             payment_processing_fee=payment_processing_fee,
             tip=order.tip_amount,
             net_merchant_settlement=net_merchant_settlement,
-            net_delivery_company_settlement=Decimal("0"),
+            net_delivery_company_settlement=net_delivery_company_settlement,
             cybercom_net_revenue=cybercom_net_revenue,
             breakdown=breakdown,
         )
