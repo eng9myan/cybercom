@@ -74,6 +74,7 @@ PRODUCT_APPS = [
     "products.cymart.catalog",
     "products.cymart.orders",
     "products.cymart.cart",
+    "products.cymart.settlement",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
