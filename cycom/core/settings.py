@@ -75,6 +75,7 @@ PRODUCT_APPS = [
     "products.cycom.cyai_reports",
     "products.cycom.cyai_moduledev",
     "products.cycom.cyai_analytics",
+    "products.cycom.cyai_platform",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS

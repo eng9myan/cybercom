@@ -83,16 +83,26 @@ export function TryFreeSection({ locale, productCode, productName }: TryFreeSect
         <p className="text-xs text-cy-gray-500 mt-2">
           {t("savePasswordNote")}
         </p>
-        {result.cyshop_subdomain && (
-          <a
-            href={process.env.NEXT_PUBLIC_CYSHOP_URL ?? "https://cyshop.cy-com.com"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn-primary mt-6 px-6 py-3 text-sm inline-block"
-          >
-            {t("goToLogin")}
-          </a>
-        )}
+        {(() => {
+          const loginUrl = result.cyshop_subdomain
+            ? (process.env.NEXT_PUBLIC_CYSHOP_URL ?? "https://cyshop.cy-com.com")
+            : productCode === "cycom"
+              ? (process.env.NEXT_PUBLIC_CYCOM_URL ?? "https://erp.cy-com.com")
+              : productCode.startsWith("cymed")
+                ? (process.env.NEXT_PUBLIC_CYMED_URL ?? "https://cymed.cy-com.com")
+                : null;
+          if (!loginUrl) return null;
+          return (
+            <a
+              href={loginUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary mt-6 px-6 py-3 text-sm inline-block"
+            >
+              {t("goToLogin")}
+            </a>
+          );
+        })()}
       </section>
     );
   }

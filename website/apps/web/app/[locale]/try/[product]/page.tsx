@@ -14,6 +14,7 @@ const TRYABLE_PRODUCTS: Record<string, { code: string; name: string }> = {
   "cymed-laboratory": { code: "cymed_laboratory", name: "CyMed Laboratory" },
   "cymed-imaging": { code: "cymed_imaging", name: "CyMed Imaging" },
   cyshop: { code: "cyshop", name: "CyShop" },
+  cycom: { code: "cycom", name: "CyCom ERP" },
 };
 
 interface TryPageProps {

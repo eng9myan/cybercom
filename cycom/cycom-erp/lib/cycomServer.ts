@@ -320,13 +320,24 @@ const MODEL_ADAPTERS: Record<string, ModelAdapter> = {
   },
 };
 
+function resolveTenantId(token: string): string {
+  try {
+    const claims = decodeJwtPayload(token);
+    if (claims.tenant_id) return String(claims.tenant_id);
+  } catch {
+    // fall through to the env var
+  }
+  return CYCOM_TENANT_ID;
+}
+
 async function backendFetch(path: string, token: string, init: RequestInit = {}) {
+  const tenantId = resolveTenantId(token);
   return fetch(`${CYCOM_BACKEND_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
-      ...(CYCOM_TENANT_ID ? { 'X-Tenant-ID': CYCOM_TENANT_ID } : {}),
+      ...(tenantId ? { 'X-Tenant-ID': tenantId } : {}),
       ...(init.headers || {}),
     },
   });

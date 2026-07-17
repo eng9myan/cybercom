@@ -65,12 +65,14 @@ def check_license_expiry_task():
 @shared_task(name="tenant.expire_demo_tenants")
 def expire_demo_tenants_task():
     """
-    Tear down demo trial tenants past their 72h window: terminate the
+    Tear down demo trial tenants past their trial window: terminate the
     tenant and delete the real Keycloak user(s) tied to it. Irreversible.
     is_expired reads ends_at, which DemoProvisioningService sets equal to
     trial_ends_at, so this also naturally skips paying customers (whose
     ends_at is normally unset).
     """
+    from django.db.models import Q
+
     from platform.cyidentity.models import UserProfile
     from platform.cyidentity.services import UserProvisioningService
     from platform.tenant.models import TenantStatus, TenantSubscription
@@ -90,7 +92,17 @@ def expire_demo_tenants_task():
     for sub in expired:
         tenant = sub.tenant
         try:
-            for user in UserProfile.objects.filter(tenant_id=tenant.id).select_related("realm"):
+            # Products provisioned into the shared "cybercom" realm (see
+            # DemoProvisioningService.SHARED_REALM_PRODUCTS) get a UserProfile
+            # whose own tenant_id column is the shared realm's sentinel, not
+            # this tenant's — the real demo tenant_id only lives in the
+            # Keycloak user's `attributes.tenant_id`. Match on both so those
+            # users actually get deprovisioned instead of silently surviving
+            # their expired trial.
+            users = UserProfile.objects.filter(
+                Q(tenant_id=tenant.id) | Q(attributes__tenant_id__contains=[str(tenant.id)])
+            ).select_related("realm")
+            for user in users:
                 identity.deprovision_user(user)
             lifecycle.terminate(tenant, reason="demo_trial_expired", by="system")
             sub.is_active = False

@@ -256,7 +256,13 @@ class ApplicationClient(PlatformModel):
     """
 
     realm = models.ForeignKey(IdentityRealm, on_delete=models.CASCADE, related_name="clients")
-    client_id = models.CharField(max_length=200, unique=True)
+    # client_id is scoped per Keycloak realm (matching Keycloak's own real
+    # semantics), not globally unique — a global constraint here meant only
+    # the first-ever client named "cybercom-backend" in the whole platform
+    # could ever be created; every realm after that hit a silent
+    # IntegrityError the moment anything tried to register the same
+    # client_id in a second realm.
+    client_id = models.CharField(max_length=200)
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     protocol = models.CharField(
@@ -280,6 +286,7 @@ class ApplicationClient(PlatformModel):
 
     class Meta:
         db_table = "platform_application_clients"
+        unique_together = [("realm", "client_id")]
         indexes = [
             models.Index(fields=["realm", "enabled"]),
         ]

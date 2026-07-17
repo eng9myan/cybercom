@@ -236,17 +236,31 @@ class TenantBootstrapService:
 
 
 # ---------------------------------------------------------------------------
-# DemoProvisioningService — self-serve 72-hour trial tenants
+# DemoProvisioningService — self-serve 7-day trial tenants
 # ---------------------------------------------------------------------------
 
-DEMO_TRIAL_HOURS = 72
+DEMO_TRIAL_HOURS = 24 * 7
+
+# Products whose cycom-erp-style frontend can't yet resolve an arbitrary
+# per-tenant realm at login time (single fixed-realm login flow) — for these,
+# reuse the shared "cybercom" realm (bootstrapped by bootstrap_platform_realm)
+# instead of provisioning a brand new per-tenant realm. The demo user still
+# gets its own fresh tenant_id as a Keycloak user *attribute*, which is what
+# actually ends up in the issued JWT's tenant_id claim — that's the only
+# thing Cycom's tenant-scoped querysets trust, so isolation still holds even
+# though the realm itself is shared. Known, accepted trade-off: the
+# UserProfile mirror row's own tenant_id column will reflect the shared
+# realm's sentinel tenant_id, not this demo tenant's — cosmetic only, nothing
+# authorization-relevant reads that column.
+SHARED_REALM_PRODUCTS = {"cycom"}
+SHARED_REALM_NAME = "cybercom"
 
 
 class DemoProvisioningService:
     """
     Public self-serve demo signup: a real, fully isolated Tenant (same
     bootstrap chain as a paying customer) plus a real CyIdentity realm/user,
-    both torn down automatically once the 72-hour trial expires
+    both torn down automatically once the trial expires
     (see expire_demo_tenants_task in platform.tenant.tasks).
     """
 
@@ -261,7 +275,8 @@ class DemoProvisioningService:
         if product_code == "cyshop":
             return self._provision_demo_cyshop(email=email, org_name=org_name, locale=locale)
 
-        from platform.cyidentity.services import RealmService, UserProvisioningService
+        from platform.cyidentity.models import IdentityRealm
+        from platform.cyidentity.services import ClientService, RealmService, UserProvisioningService
 
         suffix = secrets.token_hex(4)
         slug = f"demo-{product_code}-{suffix}".replace("_", "-")[:100]
@@ -292,14 +307,32 @@ class DemoProvisioningService:
         tenant.metadata = {**tenant.metadata, "is_demo": True, "product_code": product_code}
         tenant.save(update_fields=["metadata", "updated_at"])
 
-        realm_name = f"demo-{slug}"
-        realm = RealmService().provision(
-            tenant_id=tenant.id,
-            realm_name=realm_name,
-            realm_type="customer",
-            display_name=display_name,
-            locale=locale,
-        )
+        if product_code in SHARED_REALM_PRODUCTS:
+            realm = IdentityRealm.objects.get(realm_name=SHARED_REALM_NAME)
+        else:
+            realm_name = f"demo-{slug}"
+            realm = RealmService().provision(
+                tenant_id=tenant.id,
+                realm_name=realm_name,
+                realm_type="customer",
+                display_name=display_name,
+                locale=locale,
+            )
+            # RealmService.provision() only creates the realm itself — no
+            # OIDC client. Without one, no demo user in a freshly-provisioned
+            # per-tenant realm has ever been able to actually log in via
+            # password grant (confirmed: every non-shared-realm demo realm
+            # up to now had zero registered clients). Public (no secret) so
+            # any consuming frontend can do direct grant with just
+            # client_id/username/password — no secret to hand to a browser.
+            ClientService().register(
+                realm,
+                client_id="cybercom-backend",
+                name="CyberCom Backend",
+                public_client=True,
+                direct_access_grants_enabled=True,
+                mfa_required=False,
+            )
         TenantRealmMappingService().assign_realm(tenant, realm.id, realm.realm_name)
 
         username = email.split("@")[0] + "-" + suffix

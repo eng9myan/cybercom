@@ -46,7 +46,7 @@ export default function ErpPage() {
   const locale = (params?.locale as string) ?? "en";
   const l = locale;
   const t = useTranslations("erp");
-  const ERP_URL = process.env.NEXT_PUBLIC_CYCOM_URL ?? "https://health.cy-com.com";
+  const ERP_URL = process.env.NEXT_PUBLIC_CYCOM_URL ?? "https://erp.cy-com.com";
   const shouldReduce = useReducedMotion();
 
   const fadeUp = {
@@ -84,11 +84,10 @@ export default function ErpPage() {
               {t("hero.tagline")}
             </motion.p>
             <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0.3} className="flex flex-wrap gap-3">
-              <a href={ERP_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-sm bg-blue-500 hover:bg-blue-400 text-white transition-all duration-200 cursor-pointer">
+              <Link href={`/${l}/try/cycom`} className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-medium text-sm bg-blue-500 hover:bg-blue-400 text-white transition-all duration-200 cursor-pointer">
                 <Play className="w-4 h-4" aria-hidden="true" />
                 {t("hero.launchDashboard")}
-                <ExternalLink className="w-3.5 h-3.5 opacity-70" aria-hidden="true" />
-              </a>
+              </Link>
               <Link href={`/${l}/demo?product=cycom`} className="btn-secondary px-7 py-3.5 text-sm inline-flex items-center gap-2">
                 {t("hero.requestDemo")}
                 <ArrowRight className="w-4 h-4 rtl:rotate-180" aria-hidden="true" />

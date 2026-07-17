@@ -42,4 +42,6 @@ urlpatterns = [
     path("api/v1/cyai-reports/", include("products.cycom.cyai_reports.urls")),
     path("api/v1/cyai-moduledev/", include("products.cycom.cyai_moduledev.urls")),
     path("api/v1/cyai-analytics/", include("products.cycom.cyai_analytics.urls")),
+    # ── CyCom three-agent AI platform: registry/entitlement foundation ──────
+    path("api/v1/cyai-platform/", include("products.cycom.cyai_platform.urls")),
 ]

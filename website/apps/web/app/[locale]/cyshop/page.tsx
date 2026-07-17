@@ -95,11 +95,10 @@ export default function CyShopPage() {
               {t("hero.tagline")}
             </motion.p>
             <motion.div variants={fadeUp} initial="hidden" animate="visible" custom={0.3} className="flex flex-wrap gap-3">
-              <a href={CYSHOP_URL} target="_blank" rel="noreferrer" className="btn-primary px-7 py-3.5 text-sm inline-flex items-center gap-2">
+              <Link href={`/${l}/try/cyshop`} className="btn-primary px-7 py-3.5 text-sm inline-flex items-center gap-2">
                 <Play className="w-4 h-4" aria-hidden="true" />
                 {t("hero.launchDemo")}
-                <ExternalLink className="w-3.5 h-3.5 opacity-70" aria-hidden="true" />
-              </a>
+              </Link>
               <Link href={`/${l}/demo?product=cyshop`} className="btn-secondary px-7 py-3.5 text-sm inline-flex items-center gap-2">
                 {t("hero.requestDemo")}
                 <ArrowRight className="w-4 h-4 rtl:rotate-180" aria-hidden="true" />

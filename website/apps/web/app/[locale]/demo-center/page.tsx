@@ -36,7 +36,7 @@ const DEMO_PRODUCTS: DemoProduct[] = [
   { key: "laboratory", color: "emerald", accentClass: "from-cyan-900/15 to-transparent", pillClass: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20", demoUrl: "https://cymed.cy-com.com/laboratory", productSlug: "cymed-laboratory" },
   { key: "imaging", color: "indigo", accentClass: "from-indigo-900/15 to-transparent", pillClass: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20", demoUrl: "https://cymed.cy-com.com/imaging", productSlug: "cymed-imaging" },
   { key: "cyshop", color: "orange", accentClass: "from-orange-900/20 to-transparent", pillClass: "text-orange-400 bg-orange-500/10 border-orange-500/20", demoUrl: "https://cyshop.cy-com.com", productSlug: "cyshop" },
-  { key: "erp", color: "blue", accentClass: "from-blue-900/20 to-transparent", pillClass: "text-blue-400 bg-blue-500/10 border-blue-500/20", demoUrl: "https://health.cy-com.com", productSlug: "cycom-erp" },
+  { key: "erp", color: "blue", accentClass: "from-blue-900/20 to-transparent", pillClass: "text-blue-400 bg-blue-500/10 border-blue-500/20", demoUrl: "https://erp.cy-com.com", productSlug: "cycom-erp" },
 ];
 
 export default async function DemoCenterPage({ params }: DemoCenterProps) {
