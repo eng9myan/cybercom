@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from products.cycom.pos.models import POSOrder, POSOrderLine, POSSession
+from products.cycom.pos.models import POSOrder, POSOrderLine, POSOrderPayment, POSSession
 
 
 class POSSessionSerializer(serializers.ModelSerializer):
@@ -20,8 +20,17 @@ class POSOrderLineSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "tenant_id", "order", "created_at", "updated_at"]
 
 
+class POSOrderPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = POSOrderPayment
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "order", "journal_entry", "paid_at", "created_at", "updated_at"]
+
+
 class POSOrderSerializer(serializers.ModelSerializer):
     lines = POSOrderLineSerializer(many=True)
+    payments = POSOrderPaymentSerializer(many=True, read_only=True)
+    amount_paid = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
 
     class Meta:
         model = POSOrder

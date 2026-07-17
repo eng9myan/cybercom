@@ -39,6 +39,7 @@ class POSOrder(BaseModel):
         ("approved", "Approved"),
         ("rejected", "Rejected"),
     ]
+    ORDER_TYPE_CHOICES = [("sale", "Sale"), ("layaway", "Layaway / Advance")]
 
     session = models.ForeignKey(POSSession, on_delete=models.PROTECT, related_name="orders")
     order_number = models.CharField(max_length=100)
@@ -47,6 +48,7 @@ class POSOrder(BaseModel):
     )
     currency = models.CharField(max_length=10, default="JOD")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    order_type = models.CharField(max_length=20, choices=ORDER_TYPE_CHOICES, default="sale")
     discount_approval_status = models.CharField(
         max_length=20, choices=DISCOUNT_APPROVAL_CHOICES, default="not_required"
     )
@@ -59,6 +61,13 @@ class POSOrder(BaseModel):
         Account, on_delete=models.PROTECT, related_name="pos_orders_tax", null=True, blank=True
     )
     cogs_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="pos_orders_cogs")
+    # Customer-deposits liability account — required for layaway orders only.
+    # Each advance payment books Dr Cash / Cr this account (no revenue yet,
+    # since goods haven't been released); checkout reverses the accumulated
+    # balance into revenue/tax the same moment stock is issued.
+    advance_liability_account = models.ForeignKey(
+        Account, on_delete=models.PROTECT, related_name="pos_orders_advance_liability", null=True, blank=True
+    )
 
     amount_subtotal = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     amount_tax = models.DecimalField(max_digits=14, decimal_places=2, default=0)
@@ -75,6 +84,34 @@ class POSOrder(BaseModel):
 
     def __str__(self):
         return f"{self.order_number} ({self.status})"
+
+    @property
+    def amount_paid(self):
+        total = Decimal("0")
+        for p in self.payments.all():
+            total += p.amount
+        return total
+
+
+class POSOrderPayment(BaseModel):
+    """A single advance/deposit payment against a layaway order."""
+
+    METHOD_CHOICES = [("cash", "Cash"), ("card", "Card"), ("transfer", "Bank Transfer")]
+
+    order = models.ForeignKey(POSOrder, on_delete=models.CASCADE, related_name="payments")
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    method = models.CharField(max_length=20, choices=METHOD_CHOICES, default="cash")
+    paid_at = models.DateTimeField(auto_now_add=True)
+    journal_entry = models.ForeignKey(
+        JournalEntry, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        db_table = "cycom_pos_order_payments"
+        ordering = ["paid_at"]
+
+    def __str__(self):
+        return f"{self.order.order_number} advance {self.amount}"
 
 
 class POSOrderLine(BaseModel):

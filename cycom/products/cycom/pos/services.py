@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 from products.cycom.accounting.services import post_journal_entry
 from products.cycom.inventory.models import StockMove
 from products.cycom.inventory.services import apply_stock_move
-from products.cycom.pos.models import DISCOUNT_APPROVAL_THRESHOLD_PERCENT
+from products.cycom.pos.models import DISCOUNT_APPROVAL_THRESHOLD_PERCENT, POSOrderPayment
 
 
 def _lines_needing_discount_approval(lines):
@@ -46,6 +46,34 @@ def reject_discount(order, reason=""):
 
 
 @transaction.atomic
+def record_payment(order, amount, method="cash"):
+    if order.order_type != "layaway":
+        raise ValidationError("Advance payments only apply to layaway orders.")
+    if order.status != "draft":
+        raise ValidationError(f"Order is already '{order.status}'.")
+    if amount is None or amount <= 0:
+        raise ValidationError("amount must be positive.")
+    if not order.advance_liability_account_id:
+        raise ValidationError("Order has no advance_liability_account set.")
+
+    today = timezone.localdate()
+    entry = post_journal_entry(
+        tenant_id=order.tenant_id,
+        date=today,
+        reference=order.order_number,
+        lines=[
+            {"account": order.cash_account, "debit": amount, "credit": 0},
+            {"account": order.advance_liability_account, "debit": 0, "credit": amount},
+        ],
+        currency=order.currency,
+        narration=f"POS advance payment {order.order_number}",
+    )
+    return POSOrderPayment.objects.create(
+        tenant_id=order.tenant_id, order=order, amount=amount, method=method, journal_entry=entry
+    )
+
+
+@transaction.atomic
 def checkout_order(order):
     if order.status != "draft":
         raise ValidationError(f"Order is already '{order.status}'.")
@@ -61,11 +89,31 @@ def checkout_order(order):
             "Submit for discount approval first."
         )
 
+    subtotal = sum((line.subtotal for line in lines), Decimal("0"))
+    tax_total = sum((line.tax_amount for line in lines), Decimal("0"))
+    total = subtotal + tax_total
+
+    if tax_total and not order.tax_account_id:
+        raise ValidationError("Order has tax lines but no tax_account set.")
+
+    is_layaway = order.order_type == "layaway"
+    if is_layaway:
+        if not order.advance_liability_account_id:
+            raise ValidationError("Order has no advance_liability_account set.")
+        amount_paid = order.amount_paid
+        if amount_paid < total:
+            raise ValidationError(
+                f"Layaway balance still due: {total - amount_paid} of {total}. "
+                "Record remaining advance payments before checkout."
+            )
+
     today = timezone.localdate()
 
     # Each line issues stock at the session's warehouse — reuses the same
     # weighted-average costing + GL posting as a standalone inventory issue,
     # so POS sales and manual stock issues never diverge in valuation logic.
+    # For layaway, goods are only released now (at final settlement), not
+    # when the earlier advance payments were collected.
     for line in lines:
         move = StockMove.objects.create(
             tenant_id=order.tenant_id,
@@ -80,14 +128,12 @@ def checkout_order(order):
         )
         apply_stock_move(move)
 
-    subtotal = sum((line.subtotal for line in lines), Decimal("0"))
-    tax_total = sum((line.tax_amount for line in lines), Decimal("0"))
-    total = subtotal + tax_total
-
-    if tax_total and not order.tax_account_id:
-        raise ValidationError("Order has tax lines but no tax_account set.")
-
-    gl_lines = [{"account": order.cash_account, "debit": total, "credit": 0}]
+    if is_layaway:
+        # Reverse the accumulated deposit liability into revenue/tax —
+        # the cash side was already booked by each record_payment() call.
+        gl_lines = [{"account": order.advance_liability_account, "debit": total, "credit": 0}]
+    else:
+        gl_lines = [{"account": order.cash_account, "debit": total, "credit": 0}]
     gl_lines.append({"account": order.revenue_account, "debit": 0, "credit": subtotal})
     if tax_total:
         gl_lines.append({"account": order.tax_account, "debit": 0, "credit": tax_total})

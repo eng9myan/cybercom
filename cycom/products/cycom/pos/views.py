@@ -12,6 +12,7 @@ from products.cycom.pos.serializers import POSOrderSerializer, POSSessionSeriali
 from products.cycom.pos.services import (
     approve_discount,
     checkout_order,
+    record_payment,
     reject_discount,
     submit_discount_for_approval,
 )
@@ -82,4 +83,12 @@ class POSOrderViewSet(TenantScopedModelViewSet):
     def reject_discount_action(self, request, pk=None):
         order = self.get_object()
         reject_discount(order, request.data.get("reason", ""))
+        return Response(POSOrderSerializer(order).data)
+
+    @action(detail=True, methods=["post"], url_path="add-payment")
+    def add_payment(self, request, pk=None):
+        order = self.get_object()
+        amount = request.data.get("amount")
+        amount = Decimal(str(amount)) if amount is not None else None
+        record_payment(order, amount, request.data.get("method", "cash"))
         return Response(POSOrderSerializer(order).data)
