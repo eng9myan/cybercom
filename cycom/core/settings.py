@@ -67,6 +67,7 @@ PRODUCT_APPS = [
     "products.cycom.hr",
     "products.cycom.payroll",
     "products.cycom.inventory",
+    "products.cycom.access",
     "products.cycom.pos",
     "products.cycom.crm",
     "products.cycom.procurement",

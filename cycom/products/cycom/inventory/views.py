@@ -26,16 +26,28 @@ from products.cycom.inventory.services import (
     dispatch_internal_order,
     receive_internal_order,
 )
+from products.cycom.access.services import (
+    restrict_to_accessible_products,
+    restrict_to_accessible_warehouses,
+)
 
 
 class WarehouseViewSet(TenantScopedModelViewSet):
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return restrict_to_accessible_warehouses(qs, self.request)
+
 
 class ProductViewSet(TenantScopedModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return restrict_to_accessible_products(qs, self.request)
 
 
 class StockItemViewSet(TenantScopedModelViewSet):

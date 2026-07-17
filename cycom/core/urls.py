@@ -30,6 +30,8 @@ urlpatterns = [
     path("api/v1/payroll/", include("products.cycom.payroll.urls")),
     # ── Cycom inventory API v1 (Step 4) ─────────────────────────────────────
     path("api/v1/inventory/", include("products.cycom.inventory.urls")),
+    # ── Cycom per-user warehouse/product access control (Step 7) ────────────
+    path("api/v1/access/", include("products.cycom.access.urls")),
     # ── Cycom POS API v1 (Step 5 — checkout/sessions/pricing core only) ────
     path("api/v1/pos/", include("products.cycom.pos.urls")),
     # ── Cycom CRM + procurement API v1 (Step 6) ─────────────────────────────
