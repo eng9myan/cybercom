@@ -4,6 +4,7 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import CycomSidebar from './CycomSidebar';
 import CycomTopbar from './CycomTopbar';
+import CyaiChatWidget from '../CyaiChatWidget';
 
 export default function CycomLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -24,6 +25,7 @@ export default function CycomLayoutWrapper({ children }: { children: React.React
           {children}
         </main>
       </div>
+      <CyaiChatWidget />
     </div>
   );
 }

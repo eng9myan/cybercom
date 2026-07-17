@@ -133,6 +133,32 @@ export async function cycomGetSession(req: NextRequest): Promise<NextResponse> {
 }
 
 // ---------------------------------------------------------------------------
+// CyAI Local Memory Agent — real, genuinely new REST endpoint (not part of
+// the legacy Odoo-shaped {model,method,args,kwargs} shim below), so it gets
+// its own thin proxy straight through to the Django backend.
+// ---------------------------------------------------------------------------
+
+export async function cycomAskLocalMemory(req: NextRequest, question: string): Promise<NextResponse> {
+  const sessionId = getSessionId(req);
+  if (!sessionId) {
+    return NextResponse.json({ error: { message: 'Not authenticated' } }, { status: 401 });
+  }
+  try {
+    const upstream = await backendFetch('/api/v1/cyai-memory/plans/ask/', sessionId, {
+      method: 'POST',
+      body: JSON.stringify({ question }),
+    });
+    const payload = await upstream.json();
+    if (!upstream.ok) {
+      return NextResponse.json({ error: { message: payload.detail || 'Ask failed' } }, { status: upstream.status });
+    }
+    return NextResponse.json(payload);
+  } catch (err: any) {
+    return NextResponse.json({ error: { message: err.message || 'Backend connection error' } }, { status: 500 });
+  }
+}
+
+// ---------------------------------------------------------------------------
 // REST proxy — translates the legacy Odoo-shaped {model, method, args, kwargs}
 // calls the UI still makes into real requests against the new Django REST API.
 // Only models with a real backend + a settled field mapping are wired here;
