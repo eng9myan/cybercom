@@ -10,6 +10,9 @@ export type { Industry } from "./industries";
 export { demoApi } from "./demo";
 export type { DemoRequestPayload, DemoRequestResponse } from "./demo";
 
+export { demoProvisionApi, DemoProvisionApiError } from "./demo-provision";
+export type { DemoProvisionPayload, DemoProvisionResponse, DemoProvisionError } from "./demo-provision";
+
 export { contactApi } from "./contact";
 export type { ContactPayload, ContactResponse, NewsletterPayload, NewsletterResponse, Department } from "./contact";
 

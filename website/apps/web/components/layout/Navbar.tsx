@@ -121,7 +121,7 @@ export function Navbar({ locale }: NavbarProps) {
 
             {productsOpen && (
               <div
-                className="absolute top-full mt-1 left-0 w-[900px] p-6 glass-card rounded-2xl grid grid-cols-4 gap-5"
+                className="absolute top-full mt-1 left-0 w-[min(900px,calc(100vw-2rem))] p-6 glass-card rounded-2xl grid grid-cols-2 xl:grid-cols-4 gap-5"
                 onMouseEnter={() => setProductsOpen(true)}
                 onMouseLeave={() => setProductsOpen(false)}
                 role="menu"
@@ -208,7 +208,7 @@ export function Navbar({ locale }: NavbarProps) {
 
         {/* Mobile hamburger */}
         <button
-          className="lg:hidden btn-ghost p-2"
+          className="lg:hidden btn-ghost p-3"
           onClick={() => setMobileOpen((v) => !v)}
           aria-expanded={mobileOpen}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}

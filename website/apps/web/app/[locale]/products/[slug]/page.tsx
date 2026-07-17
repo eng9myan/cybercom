@@ -1,8 +1,7 @@
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
 import { buildMetadata } from "@/lib/metadata";
 import { type Locale } from "@/lib/i18n";
 import { ArrowRight, Check, ExternalLink, Play, BookOpen, ChevronRight, Brain, Layers, Phone } from "lucide-react";
@@ -1811,10 +1810,11 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   setRequestLocale(locale);
   const product = PRODUCT_DATA[slug];
   if (!product) return {};
+  const t = await getTranslations("productDetailPage.products");
 
   return buildMetadata({
-    title: `${product.name} — ${product.tagline}`,
-    description: product.description,
+    title: `${product.name} — ${t(`${slug}.tagline`)}`,
+    description: t(`${slug}.description`),
     path: `/products/${slug}`,
     locale,
   });
@@ -1886,15 +1886,51 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const colors = (COLOR_MAP[product.color] ?? COLOR_MAP.emerald) as { badge: string; btn: string; icon: string; gradient: string };
   const l = locale as Locale;
-  const workflows = WORKFLOW_DATA[slug] ?? [];
+  const t = await getTranslations("productDetailPage.chrome");
+  const tp = await getTranslations("productDetailPage.products");
+  const tw = await getTranslations("productDetailPage.workflowData");
+  const workflowSteps = tw.raw(slug) as { title: string; desc: string }[] | undefined;
+  const workflows = (workflowSteps ?? []).map((w, i) => ({ step: String(i + 1).padStart(2, "0"), title: w.title, desc: w.desc }));
   const launchUrl = LAUNCH_URLS[slug] ?? `https://www.cy-com.com/${locale}/demo?product=${slug}`;
   const docsUrl = process.env.NEXT_PUBLIC_DOCS_URL ?? "https://docs.cy-com.com";
+  const tName = product.name;
+  const tTagline = tp(`${slug}.tagline`);
+  const tDescription = tp(`${slug}.description`);
+  const tFeatures = tp.raw(`${slug}.features`) as string[];
+  const tHasEditions = tp.has(`${slug}.editions`);
+  const tEditions = tHasEditions ? (tp.raw(`${slug}.editions`) as { name: string; desc: string; features: string[] }[]) : [];
+  const tHasSubProducts = tp.has(`${slug}.subProducts`);
+  const tSubProducts = tHasSubProducts ? (tp.raw(`${slug}.subProducts`) as Record<string, string>) : {};
+  const tHasAiFeatures = tp.has(`${slug}.aiFeatures`);
+  const tAiFeatures = tHasAiFeatures ? (tp.raw(`${slug}.aiFeatures`) as { title: string; desc: string }[]) : [];
+  const tHasErpModules = tp.has(`${slug}.erpModules`);
+  const tErpModules = tHasErpModules ? (tp.raw(`${slug}.erpModules`) as { module: string; desc: string }[]) : [];
 
-  // Merge comprehensive module data from lib file (overrides inline data)
+  // Merge comprehensive module data from lib file (overrides inline data) with translated content
   const richData = PRODUCT_MODULES_DATA[slug];
-  const modules = richData?.modules ?? product.modules;
-  const roleWorkflows = richData?.roleWorkflows ?? product.roleWorkflows;
-  const permissionRoles = richData?.permissionRoles ?? product.permissionRoles;
+  const MODULES_GROUP: Record<string, string> = {
+    "cymed-hospital": "hospital",
+    "cymed-clinic": "clinic",
+    "cymed-pharmacy": "pharmacy",
+    "cymed-laboratory": "laboratory",
+    "cymed-imaging": "imaging",
+    "cyshop": "cyshop",
+    "cycom-erp": "erp",
+    "cycom": "erp",
+  };
+  const modulesGroup = MODULES_GROUP[slug];
+  let modules = richData?.modules;
+  let roleWorkflows = richData?.roleWorkflows;
+  let permissionRoles = richData?.permissionRoles;
+  if (modulesGroup && richData) {
+    const tm = await getTranslations(`productDetailPage.modulesData.${modulesGroup}`);
+    const tModules = tm.raw("modules") as { name: string; desc: string; roles: string[]; workflow: string }[];
+    const tRoleWorkflows = tm.raw("roleWorkflows") as { role: string; description: string; steps: { action: string; detail: string }[] }[];
+    const tPermissions = tm.raw("permissions") as { role: string; description: string }[];
+    modules = richData.modules.map((m, i) => ({ ...m, ...tModules[i] }));
+    roleWorkflows = richData.roleWorkflows.map((rw, i) => ({ ...rw, ...tRoleWorkflows[i] }));
+    permissionRoles = richData.permissionRoles.map((p, i) => ({ ...p, ...tPermissions[i] }));
+  }
 
   return (
     <div className="min-h-dvh pt-16">
@@ -1902,11 +1938,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <div className={`relative py-24 overflow-hidden bg-gradient-to-br ${colors.gradient}`}>
         <div className="section-container relative z-10">
           <nav className="flex items-center gap-2 text-xs text-cy-gray-400 mb-8" aria-label="Breadcrumb">
-            <Link href={`/${l}`} className="hover:text-white transition-colors">Home</Link>
-            <ChevronRight className="w-3 h-3" aria-hidden="true" />
-            <Link href={`/${l}/products`} className="hover:text-white transition-colors">Products</Link>
-            <ChevronRight className="w-3 h-3" aria-hidden="true" />
-            <span className="text-white">{product.name}</span>
+            <Link href={`/${l}`} className="hover:text-white transition-colors">{t("home")}</Link>
+            <ChevronRight className="w-3 h-3 rtl:rotate-180" aria-hidden="true" />
+            <Link href={`/${l}/products`} className="hover:text-white transition-colors">{t("products")}</Link>
+            <ChevronRight className="w-3 h-3 rtl:rotate-180" aria-hidden="true" />
+            <span className="text-white">{tName}</span>
           </nav>
 
           <div className="max-w-3xl">
@@ -1914,10 +1950,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
               {product.categoryLabel}
             </span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-heading font-semibold text-white mb-4 leading-tight">
-              {product.name}
+              {tName}
             </h1>
-            <p className="text-xl text-cy-gray-400 mb-6">{product.tagline}</p>
-            <p className="text-base text-cy-gray-400 leading-relaxed mb-8 max-w-2xl">{product.description}</p>
+            <p className="text-xl text-cy-gray-400 mb-6">{tTagline}</p>
+            <p className="text-base text-cy-gray-400 leading-relaxed mb-8 max-w-2xl">{tDescription}</p>
 
             <div className="flex flex-wrap gap-2 mb-8" aria-label="Compliance standards">
               {product.compliance.map((c) => (
@@ -1933,7 +1969,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 href={`/${l}/demo?product=${slug}`}
                 className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${colors.btn}`}
               >
-                Request a Demo
+                {t("requestDemo")}
                 <ArrowRight className="w-4 h-4 rtl:rotate-180" aria-hidden="true" />
               </Link>
               <a
@@ -1943,7 +1979,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 className="inline-flex items-center gap-2 btn-secondary px-6 py-3 text-sm"
               >
                 <Play className="w-4 h-4" aria-hidden="true" />
-                Launch Product
+                {t("launchProduct")}
                 <ExternalLink className="w-3.5 h-3.5 opacity-60" aria-hidden="true" />
               </a>
               <a
@@ -1953,7 +1989,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 className="inline-flex items-center gap-2 btn-ghost px-5 py-3 text-sm"
               >
                 <BookOpen className="w-4 h-4" aria-hidden="true" />
-                Documentation
+                {t("documentation")}
                 <ExternalLink className="w-3.5 h-3.5 opacity-60" aria-hidden="true" />
               </a>
               <Link
@@ -1961,7 +1997,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 className="inline-flex items-center gap-2 btn-ghost px-5 py-3 text-sm"
               >
                 <Phone className="w-4 h-4" aria-hidden="true" />
-                Contact Sales
+                {t("contactSales")}
               </Link>
             </div>
           </div>
@@ -1973,10 +2009,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <section className="py-20 bg-cy-dark/30" aria-labelledby="subproducts-heading">
           <div className="section-container">
             <h2 id="subproducts-heading" className="text-2xl font-heading font-semibold text-white mb-4">
-              CyMed Product Suite
+              {t("suiteHeading")}
             </h2>
             <p className="text-cy-gray-400 mb-8">
-              Nine integrated clinical products covering every care setting — all FHIR-native, all on one platform.
+              {t("suiteDesc")}
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {product.subProducts.map((sp) => (
@@ -1988,9 +2024,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   <div className="text-sm font-heading font-semibold text-white group-hover:text-gradient-orange mb-1 transition-colors">
                     {sp.name}
                   </div>
-                  <div className="text-xs text-cy-gray-400 leading-relaxed mb-3">{sp.desc}</div>
+                  <div className="text-xs text-cy-gray-400 leading-relaxed mb-3">{tSubProducts[sp.slug] ?? sp.desc}</div>
                   <span className="text-xs text-emerald-400 flex items-center gap-1">
-                    Learn more
+                    {t("learnMore")}
                     <ArrowRight className="w-3 h-3 rtl:rotate-180" aria-hidden="true" />
                   </span>
                 </Link>
@@ -2004,10 +2040,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <section className="py-20" aria-labelledby="features-heading">
         <div className="section-container">
           <h2 id="features-heading" className="text-2xl font-heading font-semibold text-white mb-8">
-            Key Features
+            {t("keyFeatures")}
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {product.features.map((feature) => (
+            {tFeatures.map((feature) => (
               <div key={feature} className="flex items-start gap-3 glass-card p-4 rounded-xl">
                 <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${colors.icon} border`}>
                   <Check className="w-3 h-3 text-white" aria-hidden="true" />
@@ -2028,8 +2064,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 <Layers className={`w-5 h-5 ${colors.badge.split(" ")[0]}`} aria-hidden="true" />
               </div>
               <div>
-                <h2 id="modules-heading" className="text-2xl font-heading font-semibold text-white">All Modules</h2>
-                <p className="text-sm text-cy-gray-400">Complete module directory — clinical, ERP, and AI. Filter by category or user role below.</p>
+                <h2 id="modules-heading" className="text-2xl font-heading font-semibold text-white">{t("allModules")}</h2>
+                <p className="text-sm text-cy-gray-400">{t("modulesDesc")}</p>
               </div>
             </div>
             <ModuleExplorer modules={modules} />
@@ -2042,12 +2078,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <section className="py-20" aria-labelledby="roles-heading">
           <div className="section-container">
             <div className="mb-8">
-              <p className="text-sm font-medium text-cy-orange mb-2 uppercase tracking-wider">By User Role</p>
+              <p className="text-sm font-medium text-cy-orange mb-2 uppercase tracking-wider">{t("byUserRole")}</p>
               <h2 id="roles-heading" className="text-2xl font-heading font-semibold text-white mb-2">
-                How Each Role Uses {product.name}
+                {t("howEachRoleUses", { name: tName })}
               </h2>
               <p className="text-sm text-cy-gray-400">
-                Select a user role to see their exact step-by-step workflow inside the platform.
+                {t("selectRoleDesc")}
               </p>
             </div>
             <RoleWorkflowExplorer roleWorkflows={roleWorkflows} />
@@ -2060,12 +2096,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <section className="py-20 bg-cy-dark/30" aria-labelledby="permissions-heading">
           <div className="section-container">
             <div className="mb-8">
-              <p className="text-sm font-medium text-cy-orange mb-2 uppercase tracking-wider">Access Control</p>
+              <p className="text-sm font-medium text-cy-orange mb-2 uppercase tracking-wider">{t("accessControl")}</p>
               <h2 id="permissions-heading" className="text-2xl font-heading font-semibold text-white mb-2">
-                User Permissions & Role-Based Access
+                {t("userPermissions")}
               </h2>
               <p className="text-sm text-cy-gray-400 max-w-2xl">
-                When you purchase {product.name}, your System Admin can assign each user a role that controls exactly which modules and actions they can see and perform — similar to Odoo. Click a role below to explore its module access.
+                {t("permissionsDesc", { name: tName })}
               </p>
             </div>
             <PermissionsMatrix roles={permissionRoles} />
@@ -2074,7 +2110,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       )}
 
       {/* AI Features */}
-      {product.aiFeatures && product.aiFeatures.length > 0 && (
+      {tAiFeatures.length > 0 && (
         <section className="py-20 bg-cy-dark/30" aria-labelledby="ai-heading">
           <div className="section-container">
             <div className="flex items-center gap-3 mb-8">
@@ -2082,12 +2118,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 <Brain className={`w-5 h-5 ${colors.badge.split(" ")[0]}`} aria-hidden="true" />
               </div>
               <div>
-                <h2 id="ai-heading" className="text-2xl font-heading font-semibold text-white">AI-Powered Intelligence</h2>
-                <p className="text-sm text-cy-gray-400">Advisory-only — every AI output reviewed and confirmed by a qualified human</p>
+                <h2 id="ai-heading" className="text-2xl font-heading font-semibold text-white">{t("aiHeading")}</h2>
+                <p className="text-sm text-cy-gray-400">{t("aiDesc")}</p>
               </div>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {product.aiFeatures.map((ai) => (
+              {tAiFeatures.map((ai) => (
                 <div key={ai.title} className="glass-card p-5 rounded-xl">
                   <div className={`text-sm font-heading font-semibold mb-2 ${colors.badge.split(" ")[0]}`}>{ai.title}</div>
                   <p className="text-xs text-cy-gray-400 leading-relaxed">{ai.desc}</p>
@@ -2103,10 +2139,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <section className="py-20 bg-cy-dark/30" aria-labelledby="workflows-heading">
           <div className="section-container">
             <h2 id="workflows-heading" className="text-2xl font-heading font-semibold text-white mb-4">
-              How It Works
+              {t("howItWorks")}
             </h2>
             <p className="text-cy-gray-400 mb-10">
-              End-to-end workflow in {product.name}.
+              {t("endToEndWorkflow", { name: tName })}
             </p>
             <div className="relative">
               <div className="hidden lg:block absolute top-8 left-8 right-8 h-px bg-gradient-to-r from-transparent via-cy-glass-border to-transparent" aria-hidden="true" />
@@ -2132,10 +2168,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
               <h2 id="preview-heading" className="text-2xl font-heading font-semibold text-white mb-2">
-                Platform Preview
+                {t("platformPreview")}
               </h2>
               <p className="text-cy-gray-400 text-sm">
-                Live interface — interact directly or open in a new tab.
+                {t("previewDesc")}
               </p>
             </div>
             <a
@@ -2145,7 +2181,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               className="btn-secondary text-sm py-2 px-4 flex-shrink-0 inline-flex items-center gap-2"
             >
               <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-              Open Full Screen
+              {t("openFullScreen")}
             </a>
           </div>
 
@@ -2166,7 +2202,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 </div>
               </div>
               <div className={`text-xs px-2.5 py-1 rounded-lg font-medium flex-shrink-0 ${colors.badge}`}>
-                Live
+                {t("live")}
               </div>
             </div>
 
@@ -2190,13 +2226,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
 
           <p className="text-xs text-cy-gray-500 mt-3 text-center">
-            Live demo environment · Read-only mode · Data is illustrative
+            {t("previewFootnote")}
           </p>
         </div>
       </section>
 
       {/* Integrated ERP — shown only for products WITHOUT the full modules explorer */}
-      {product.erpModules && product.erpModules.length > 0 && !modules && (
+      {tErpModules.length > 0 && !modules && (
         <section className="py-20 bg-cy-dark/30" aria-labelledby="erp-heading">
           <div className="section-container">
             <div className="flex items-center gap-3 mb-8">
@@ -2204,12 +2240,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 <Layers className="w-5 h-5 text-blue-400" aria-hidden="true" />
               </div>
               <div>
-                <h2 id="erp-heading" className="text-2xl font-heading font-semibold text-white">Integrated ERP Backbone</h2>
-                <p className="text-sm text-cy-gray-400">Every {product.name} deployment connects natively to CyCom ERP — no middleware, no data silos</p>
+                <h2 id="erp-heading" className="text-2xl font-heading font-semibold text-white">{t("erpBackboneHeading")}</h2>
+                <p className="text-sm text-cy-gray-400">{t("erpBackboneDesc", { name: tName })}</p>
               </div>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {product.erpModules.map((m) => (
+              {tErpModules.map((m) => (
                 <div key={m.module} className="glass-card p-5 rounded-xl border border-blue-500/10">
                   <div className="flex items-center gap-2 mb-2">
                     <Check className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" aria-hidden="true" />
@@ -2220,9 +2256,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
               ))}
             </div>
             <p className="text-xs text-cy-gray-500 mt-6">
-              Powered by{" "}
+              {t("poweredBy")}{" "}
               <Link href={`/${l}/erp`} className="text-blue-400 hover:text-blue-300 transition-colors">CyCom ERP</Link>
-              {" "}— unified finance, HR, procurement, and operations across the CyberCom ecosystem.
+              {" "}— {t("poweredBySuffix")}
             </p>
           </div>
         </section>
@@ -2232,11 +2268,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <section className="py-20 bg-cy-dark/30" aria-labelledby="editions-heading">
         <div className="section-container">
           <h2 id="editions-heading" className="text-2xl font-heading font-semibold text-white mb-8">
-            Editions
+            {t("editions")}
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
-            {product.editions.map((edition, i) => (
-              <div key={edition.name} className={`glass-card p-6 rounded-2xl border ${i === product.editions.length - 1 ? `border-${product.color}-500/30` : "border-cy-glass-border"}`}>
+            {tEditions.map((edition, i) => (
+              <div key={edition.name} className={`glass-card p-6 rounded-2xl border ${i === tEditions.length - 1 ? `border-${product.color}-500/30` : "border-cy-glass-border"}`}>
                 <h3 className="font-heading font-semibold text-white mb-1">{edition.name}</h3>
                 <p className="text-sm text-cy-gray-400 mb-4">{edition.desc}</p>
                 <ul className="space-y-2">
@@ -2251,7 +2287,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   href={`/${l}/demo?product=${slug}&edition=${encodeURIComponent(edition.name)}`}
                   className="mt-6 btn-secondary w-full justify-center text-sm"
                 >
-                  Get Started
+                  {t("getStarted")}
                 </Link>
               </div>
             ))}
@@ -2263,13 +2299,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <section className="py-20" aria-labelledby="deployment-heading">
         <div className="section-container">
           <h2 id="deployment-heading" className="text-2xl font-heading font-semibold text-white mb-6">
-            Deployment Models
+            {t("deploymentModels")}
           </h2>
           <div className="flex flex-wrap gap-3">
             {product.deployment.map((d) => (
               <div key={d} className="flex items-center gap-2 glass-card px-5 py-3 rounded-xl">
                 <div className="w-2 h-2 rounded-full bg-cy-orange" aria-hidden="true" />
-                <span className="text-sm font-medium text-white">{d}</span>
+                <span className="text-sm font-medium text-white">{t(`deploymentLabels.${d}`)}</span>
               </div>
             ))}
           </div>
@@ -2278,10 +2314,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <div className="grid sm:grid-cols-2 gap-6 items-center">
               <div>
                 <h3 className="text-lg font-heading font-semibold text-white mb-1">
-                  Ready to see {product.name} in action?
+                  {t("readyToSeeInAction", { name: tName })}
                 </h3>
                 <p className="text-sm text-cy-gray-400">
-                  Schedule a personalized demo or launch the product to explore it live.
+                  {t("scheduleDemoDesc")}
                 </p>
               </div>
               <div className="flex flex-wrap gap-3 sm:justify-end">
@@ -2289,7 +2325,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   href={`/${l}/demo?product=${slug}`}
                   className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 cursor-pointer ${colors.btn}`}
                 >
-                  Request Demo
+                  {t("requestDemo")}
                   <ArrowRight className="w-4 h-4 rtl:rotate-180" aria-hidden="true" />
                 </Link>
                 <a
@@ -2299,7 +2335,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   className="inline-flex items-center gap-2 btn-secondary px-5 py-2.5 text-sm"
                 >
                   <Play className="w-4 h-4" aria-hidden="true" />
-                  Launch Product
+                  {t("launchProduct")}
                   <ExternalLink className="w-3.5 h-3.5 opacity-60" aria-hidden="true" />
                 </a>
                 <a
@@ -2309,14 +2345,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   className="inline-flex items-center gap-2 btn-ghost px-5 py-2.5 text-sm"
                 >
                   <BookOpen className="w-4 h-4" aria-hidden="true" />
-                  Docs
+                  {t("docs")}
                 </a>
                 <Link
                   href={`/${l}/contact?interest=enterprise-sales&product=${slug}`}
                   className="inline-flex items-center gap-2 btn-ghost px-5 py-2.5 text-sm"
                 >
                   <Phone className="w-4 h-4" aria-hidden="true" />
-                  Contact Sales
+                  {t("contactSales")}
                 </Link>
               </div>
             </div>

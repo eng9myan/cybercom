@@ -1,6 +1,6 @@
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 
 from platform.cyai.models import GuardrailPolicy, InferenceLog, ModelConfig, PromptTemplate
@@ -15,10 +15,24 @@ from platform.cyai.serializers import (
 from platform.cyai.services import ModelGateway, RAGService
 
 
+class IsAuthenticatedViaClaims(BasePermission):
+    """
+    DEFAULT_AUTHENTICATION_CLASSES is [] repo-wide (every product using the
+    shared CyIdentityAuthMiddleware), so DRF's IsAuthenticated (which reads
+    request.user) never passes — request.auth_claims is what's actually set.
+    This same bug exists elsewhere in platform/ (e.g. platform/api/permissions.py's
+    ReadOnlyOrApiAdmin) but fixing it repo-wide is out of scope here; this
+    fixes only the cyai viewsets being wired into cycom right now.
+    """
+
+    def has_permission(self, request, view) -> bool:
+        return getattr(request, "auth_claims", None) is not None
+
+
 class ModelConfigViewSet(viewsets.ModelViewSet):
     queryset = ModelConfig.objects.all().order_by("name")
     serializer_class = ModelConfigSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedViaClaims]
 
     @action(detail=True, methods=["post"], url_path="generate")
     def generate_text(self, request, pk=None):
@@ -38,7 +52,7 @@ class ModelConfigViewSet(viewsets.ModelViewSet):
 class PromptTemplateViewSet(viewsets.ModelViewSet):
     queryset = PromptTemplate.objects.all().order_by("name")
     serializer_class = PromptTemplateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedViaClaims]
 
     @action(detail=True, methods=["post"], url_path="rag")
     def run_rag(self, request, pk=None):
@@ -66,10 +80,10 @@ class PromptTemplateViewSet(viewsets.ModelViewSet):
 class GuardrailPolicyViewSet(viewsets.ModelViewSet):
     queryset = GuardrailPolicy.objects.all().order_by("name")
     serializer_class = GuardrailPolicySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedViaClaims]
 
 
 class InferenceLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = InferenceLog.objects.all().order_by("-created_at")
     serializer_class = InferenceLogSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedViaClaims]

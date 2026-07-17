@@ -31,8 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const db = process.env.NEXT_PUBLIC_CYCOM_DB || 'cycom';
-    const u = await cycomLogin(db, email, password);
+    const u = await cycomLogin(email, password);
     setUser(u);
   };
 

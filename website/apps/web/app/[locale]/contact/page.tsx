@@ -7,19 +7,12 @@ import { contactApi, type ContactPayload, type Department } from "@cybercom/api"
 import { Check, AlertCircle, Loader2, Mail, Phone, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const DEPARTMENTS: { value: Department; label: string }[] = [
-  { value: "sales", label: "Sales Inquiry" },
-  { value: "support", label: "Technical Support" },
-  { value: "partnerships", label: "Partnerships" },
-  { value: "press", label: "Press & Media" },
-  { value: "careers", label: "Careers" },
-  { value: "general", label: "General" },
-];
+const DEPARTMENT_KEYS: Department[] = ["sales", "support", "partnerships", "press", "careers", "general"];
 
-const OFFICE_LOCATIONS = [
-  { city: "Riyadh", country: "Saudi Arabia", address: "King Abdullah Financial District", phone: "+962 79 644 4994" },
-  { city: "Dubai", country: "UAE", address: "Dubai International Financial Centre", phone: "+962 79 644 4994" },
-  { city: "Amman", country: "Jordan", address: "Abdali Boulevard", phone: "+962 79 644 4994" },
+const OFFICE_KEYS = [
+  { key: "riyadh", phone: "+962 79 644 4994" },
+  { key: "dubai", phone: "+962 79 644 4994" },
+  { key: "amman", phone: "+962 79 644 4994" },
 ];
 
 type FormState = {
@@ -55,11 +48,11 @@ export default function ContactPage() {
 
   function validate(): boolean {
     const errs: Partial<Record<keyof FormState, string>> = {};
-    if (!form.full_name.trim()) errs.full_name = "Name is required";
-    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) errs.email = "Valid email is required";
-    if (!form.subject.trim()) errs.subject = "Subject is required";
-    if (!form.message.trim() || form.message.length < 10) errs.message = "Message must be at least 10 characters";
-    if (!form.gdpr_consent) errs.gdpr_consent = "Please agree to the privacy policy";
+    if (!form.full_name.trim()) errs.full_name = t("form.errors.name");
+    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) errs.email = t("form.errors.email");
+    if (!form.subject.trim()) errs.subject = t("form.errors.subject");
+    if (!form.message.trim() || form.message.length < 10) errs.message = t("form.errors.message");
+    if (!form.gdpr_consent) errs.gdpr_consent = t("form.errors.consent");
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -85,7 +78,7 @@ export default function ContactPage() {
           <div className="glow-orb w-[500px] h-[500px] -top-24 right-0 bg-cy-cyan/6" />
         </div>
         <div className="section-container relative z-10 text-center">
-          <p className="text-sm font-medium text-cy-orange mb-3 uppercase tracking-wider">Contact Us</p>
+          <p className="text-sm font-medium text-cy-orange mb-3 uppercase tracking-wider">{t("badge")}</p>
           <h1 className="text-5xl font-heading font-semibold text-white mb-4">{t("title")}</h1>
           <p className="text-xl text-cy-gray-400 max-w-xl mx-auto">{t("subtitle")}</p>
         </div>
@@ -104,9 +97,9 @@ export default function ContactPage() {
                 <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-5">
                   <Check className="w-7 h-7 text-emerald-400" aria-hidden="true" />
                 </div>
-                <h2 className="text-xl font-heading font-semibold text-white mb-2">Message Received</h2>
-                <p className="text-cy-gray-400 mb-3">We&apos;ll get back to you within 24 hours.</p>
-                <p className="text-sm text-cy-gray-400">Ticket: <span className="font-mono text-cy-orange">{ticketNumber}</span></p>
+                <h2 className="text-xl font-heading font-semibold text-white mb-2">{t("success.heading")}</h2>
+                <p className="text-cy-gray-400 mb-3">{t("success.desc")}</p>
+                <p className="text-sm text-cy-gray-400">{t("success.ticket")} <span className="font-mono text-cy-orange">{ticketNumber}</span></p>
               </div>
             ) : (
               <form
@@ -115,19 +108,19 @@ export default function ContactPage() {
                 aria-label="Contact form"
                 className="glass-card p-8 rounded-2xl space-y-5"
               >
-                <h2 className="text-lg font-heading font-semibold text-white mb-1">Send us a message</h2>
+                <h2 className="text-lg font-heading font-semibold text-white mb-1">{t("form.sendMessage")}</h2>
 
                 {status === "error" && (
                   <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/5 flex items-start gap-3" role="alert">
                     <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
-                    <p className="text-sm text-destructive">Something went wrong. Please try again.</p>
+                    <p className="text-sm text-destructive">{t("form.genericError")}</p>
                   </div>
                 )}
 
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="c-name" className="form-label">
-                      Name <span aria-hidden="true" className="text-destructive">*</span>
+                      {t("form.name")} <span aria-hidden="true" className="text-destructive">*</span>
                     </label>
                     <input
                       id="c-name"
@@ -143,7 +136,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <label htmlFor="c-email" className="form-label">
-                      Email <span aria-hidden="true" className="text-destructive">*</span>
+                      {t("form.email")} <span aria-hidden="true" className="text-destructive">*</span>
                     </label>
                     <input
                       id="c-email"
@@ -160,7 +153,7 @@ export default function ContactPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="c-company" className="form-label">Company</label>
+                  <label htmlFor="c-company" className="form-label">{t("form.company")}</label>
                   <input
                     id="c-company"
                     type="text"
@@ -172,22 +165,22 @@ export default function ContactPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="c-dept" className="form-label">Department</label>
+                  <label htmlFor="c-dept" className="form-label">{t("form.department")}</label>
                   <select
                     id="c-dept"
                     value={form.department}
                     onChange={(e) => setField("department", e.target.value as Department)}
                     className="form-input"
                   >
-                    {DEPARTMENTS.map((d) => (
-                      <option key={d.value} value={d.value}>{d.label}</option>
+                    {DEPARTMENT_KEYS.map((d) => (
+                      <option key={d} value={d}>{t(`departments.${d}`)}</option>
                     ))}
                   </select>
                 </div>
 
                 <div>
                   <label htmlFor="c-subject" className="form-label">
-                    Subject <span aria-hidden="true" className="text-destructive">*</span>
+                    {t("form.subject")} <span aria-hidden="true" className="text-destructive">*</span>
                   </label>
                   <input
                     id="c-subject"
@@ -203,7 +196,7 @@ export default function ContactPage() {
 
                 <div>
                   <label htmlFor="c-message" className="form-label">
-                    Message <span aria-hidden="true" className="text-destructive">*</span>
+                    {t("form.message")} <span aria-hidden="true" className="text-destructive">*</span>
                   </label>
                   <textarea
                     id="c-message"
@@ -213,7 +206,7 @@ export default function ContactPage() {
                     className={cn("form-input resize-none", errors.message && "border-destructive/50")}
                     aria-required="true"
                     aria-invalid={!!errors.message}
-                    placeholder="Tell us how we can help..."
+                    placeholder={t("form.messagePlaceholder")}
                   />
                   {errors.message && <p className="form-error" role="alert"><AlertCircle className="w-3 h-3" aria-hidden="true" />{errors.message}</p>}
                 </div>
@@ -228,7 +221,7 @@ export default function ContactPage() {
                     aria-invalid={!!errors.gdpr_consent}
                   />
                   <span className="text-xs text-cy-gray-400">
-                    I agree to the Privacy Policy and consent to CyberCom contacting me.
+                    {t("form.consent")}
                   </span>
                 </label>
                 {errors.gdpr_consent && <p className="form-error -mt-3" role="alert"><AlertCircle className="w-3 h-3" aria-hidden="true" />{errors.gdpr_consent}</p>}
@@ -239,8 +232,8 @@ export default function ContactPage() {
                   className="btn-primary w-full justify-center py-3.5 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {status === "loading" ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />Sending...</>
-                  ) : "Send Message"}
+                    <><Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />{t("form.sending")}</>
+                  ) : t("form.send")}
                 </button>
               </form>
             )}
@@ -255,14 +248,14 @@ export default function ContactPage() {
           >
             {/* Quick contact cards */}
             <div className="glass-card p-6 rounded-2xl">
-              <h3 className="font-heading font-semibold text-white mb-4">Quick Contact</h3>
+              <h3 className="font-heading font-semibold text-white mb-4">{t("quickContact.heading")}</h3>
               <div className="space-y-3">
                 <a href="mailto:sales@cy-com.com" className="flex items-center gap-3 text-sm text-cy-gray-400 hover:text-white transition-colors group">
                   <div className="w-9 h-9 rounded-lg bg-cy-orange/10 flex items-center justify-center flex-shrink-0 group-hover:bg-cy-orange/20 transition-colors">
                     <Mail className="w-4 h-4 text-cy-orange" aria-hidden="true" />
                   </div>
                   <div>
-                    <div className="font-medium text-white">Sales</div>
+                    <div className="font-medium text-white">{t("quickContact.sales")}</div>
                     <div>sales@cy-com.com</div>
                   </div>
                 </a>
@@ -271,7 +264,7 @@ export default function ContactPage() {
                     <Mail className="w-4 h-4 text-cy-cyan" aria-hidden="true" />
                   </div>
                   <div>
-                    <div className="font-medium text-white">Support</div>
+                    <div className="font-medium text-white">{t("quickContact.support")}</div>
                     <div>support@cy-com.com</div>
                   </div>
                 </a>
@@ -280,7 +273,7 @@ export default function ContactPage() {
                     <Mail className="w-4 h-4 text-violet-400" aria-hidden="true" />
                   </div>
                   <div>
-                    <div className="font-medium text-white">Partnerships</div>
+                    <div className="font-medium text-white">{t("quickContact.partnerships")}</div>
                     <div>partners@cy-com.com</div>
                   </div>
                 </a>
@@ -289,16 +282,16 @@ export default function ContactPage() {
 
             {/* Office locations */}
             <div className="glass-card p-6 rounded-2xl">
-              <h3 className="font-heading font-semibold text-white mb-4">Our Offices</h3>
+              <h3 className="font-heading font-semibold text-white mb-4">{t("offices.heading")}</h3>
               <div className="space-y-4">
-                {OFFICE_LOCATIONS.map((office) => (
-                  <div key={office.city} className="flex items-start gap-3">
+                {OFFICE_KEYS.map((office) => (
+                  <div key={office.key} className="flex items-start gap-3">
                     <div className="w-9 h-9 rounded-lg bg-cy-glass-bg flex items-center justify-center flex-shrink-0">
                       <MapPin className="w-4 h-4 text-cy-orange" aria-hidden="true" />
                     </div>
                     <div className="text-sm">
-                      <div className="font-medium text-white">{office.city}, {office.country}</div>
-                      <div className="text-cy-gray-400">{office.address}</div>
+                      <div className="font-medium text-white">{t(`offices.${office.key}.city`)}, {t(`offices.${office.key}.country`)}</div>
+                      <div className="text-cy-gray-400">{t(`offices.${office.key}.address`)}</div>
                       <div className="text-cy-gray-400">{office.phone}</div>
                     </div>
                   </div>

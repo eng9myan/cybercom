@@ -32,6 +32,9 @@ class CyIdentityAuthMiddleware:
         if request.path.startswith('/api/v1/public/'):
             return self.get_response(request)
 
+        if request.path.startswith('/admin') or request.path.startswith('/static/') or request.path.startswith('/media/'):
+            return self.get_response(request)
+
         auth_header = request.headers.get('Authorization', None)
         if not auth_header or not auth_header.startswith('Bearer '):
             return JsonResponse({"detail": "Authentication credentials were not provided."}, status=401)
@@ -43,7 +46,14 @@ class CyIdentityAuthMiddleware:
                 token,
                 signing_key.key,
                 algorithms=['RS256'],
-                options={"require": ["exp", "iat", "sub"]},
+                # PyJWT rejects any token carrying an `aud` claim unless
+                # `audience=` is supplied or aud verification is explicitly
+                # turned off — every real Keycloak token has `aud`, so this
+                # gate rejected 100% of real tokens with InvalidAudienceError
+                # until now. This service layer is meant to accept tokens
+                # from multiple CyIdentity clients (no single expected
+                # audience), so disable aud checking rather than pin one.
+                options={"require": ["exp", "iat", "sub"], "verify_aud": False},
             )
             request.auth_claims = payload
             request.user_session = {

@@ -35,10 +35,11 @@ class TenantMiddleware:
 
         # Exclude administrative views, login, and registration checks from strict tenant checks
         if not request.tenant_id and not (
-            request.path.startswith('/admin/') or 
+            request.path.startswith('/admin/') or
             request.path.startswith('/api/v1/identity/login/') or
             request.path.startswith('/api/v1/identity/register/') or
-            request.path.startswith('/api/v1/tenants/register/')
+            request.path.startswith('/api/v1/tenants/register/') or
+            request.path.startswith('/healthz/')
         ):
             return JsonResponse({"error": "Missing or invalid X-Tenant-ID header context"}, status=400)
 

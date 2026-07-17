@@ -9,7 +9,12 @@ from rest_framework.routers import DefaultRouter
 from platform.tenant import views
 
 router = DefaultRouter()
-router.register(r"", views.TenantViewSet, basename="tenant")
+# TenantViewSet's empty-prefix detail route (^(?P<pk>[^/.]+)/$) greedily
+# matches any single path segment — registering it before the named
+# sub-resources below would make e.g. GET /tenants/subscriptions/ resolve to
+# TenantViewSet.retrieve(pk="subscriptions") instead of the subscriptions
+# list, 404ing (invalid UUID) instead of ever reaching TenantSubscriptionViewSet.
+# Must stay registered last so Django tries the literal-prefix routes first.
 router.register(r"profiles", views.TenantProfileViewSet, basename="tenant-profile")
 router.register(
     r"configurations", views.TenantConfigurationViewSet, basename="tenant-configuration"
@@ -39,6 +44,7 @@ router.register(
     views.TenantAuditConfigurationViewSet,
     basename="tenant-audit-configuration",
 )
+router.register(r"", views.TenantViewSet, basename="tenant")
 
 urlpatterns = [
     path("healthz/", views.tenant_health, name="tenant-health"),

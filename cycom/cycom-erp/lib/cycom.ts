@@ -17,10 +17,10 @@ export type CycomCall = {
 };
 
 export type SessionUser = {
-  uid: number;
+  uid: string;
   name: string;
   username: string;
-  partner_id: number;
+  partner_id: string;
   company_id: number;
   is_admin: boolean;
 };
@@ -39,8 +39,8 @@ async function postJson(path: string, body: unknown): Promise<unknown> {
   return res.json();
 }
 
-export async function login(db: string, login: string, password: string): Promise<SessionUser> {
-  const data = (await postJson('/api/cycom/auth', { db, login, password })) as { user?: SessionUser; error?: string };
+export async function login(login: string, password: string): Promise<SessionUser> {
+  const data = (await postJson('/api/cycom/auth', { login, password })) as { user?: SessionUser; error?: string };
   if (data.error || !data.user) {
     throw new Error(data.error || 'Login failed');
   }

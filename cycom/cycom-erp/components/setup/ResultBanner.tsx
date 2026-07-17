@@ -10,7 +10,7 @@ type Err = { ok: false; error: string; warnings?: string[] };
 export function ResultBanner({
   result,
   successCta = { href: '/setup', label: 'Continue to next wizard' },
-  recoveryHint = "Confirm cycom-platform is running and you're logged in. You can re-run the wizard once the issue is fixed.",
+  recoveryHint = "Confirm the Cycom backend is running and you're logged in. You can re-run the wizard once the issue is fixed.",
 }: {
   result: Ok | Err;
   successCta?: { href: string; label: string };

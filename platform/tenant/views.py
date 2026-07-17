@@ -3,9 +3,14 @@ CyberCom Multi-Tenant Framework — REST API Views.
 """
 
 from rest_framework import status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
+
+
+class DemoRequestThrottle(AnonRateThrottle):
+    scope = "website_demo_request"
 
 from platform.tenant.models import (
     Tenant,
@@ -33,6 +38,7 @@ from platform.tenant.permissions import (
     ReadOnlyOrPlatformAdmin,
 )
 from platform.tenant.serializers import (
+    DemoProvisionSerializer,
     TenantAuditConfigurationSerializer,
     TenantBootstrapSerializer,
     TenantBrandingSerializer,
@@ -57,6 +63,7 @@ from platform.tenant.serializers import (
     TenantTerminateSerializer,
 )
 from platform.tenant.services import (
+    DemoProvisioningService,
     TenantBootstrapRequest,
     TenantBootstrapService,
     TenantDomainService,
@@ -65,6 +72,9 @@ from platform.tenant.services import (
     TenantRealmMappingService,
     render_prometheus,
 )
+
+# Product codes that are always sales-assisted, never self-serve demo.
+DEMO_EXCLUDED_PRODUCTS = {"cymed_hospital"}
 
 # ---------------------------------------------------------------------------
 # Health + Metrics
@@ -93,6 +103,63 @@ def tenant_health(request):
 @permission_classes([AllowAny])
 def tenant_metrics(request):
     return Response(render_prometheus(), content_type="text/plain; version=0.0.4")
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([DemoRequestThrottle])
+def demo_provision(request):
+    """Public self-serve 72-hour trial signup. Hospital is sales-assisted only."""
+    ser = DemoProvisionSerializer(data=request.data)
+    ser.is_valid(raise_exception=True)
+    d = ser.validated_data
+
+    if d["product_code"] in DEMO_EXCLUDED_PRODUCTS:
+        return Response(
+            {
+                "detail": "This product is sales-assisted only. Please use the contact form.",
+                "contact_required": True,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    tenant, user = DemoProvisioningService().provision_demo(
+        product_code=d["product_code"],
+        email=d["email"],
+        org_name=d.get("org_name", ""),
+        locale=d.get("locale", "en"),
+    )
+    subscription = tenant.subscriptions.first()
+
+    if user is None:
+        # cyshop adapter path — no CyIdentity realm/user, cyshop has its own
+        # separate login. See DemoProvisioningService._provision_demo_cyshop.
+        return Response(
+            {
+                "tenant_slug": tenant.slug,
+                "product_code": d["product_code"],
+                "cyshop_subdomain": getattr(tenant, "demo_subdomain", None),
+                "username": getattr(tenant, "demo_username", None),
+                "password": getattr(tenant, "demo_password", None),
+                "trial_ends_at": subscription.trial_ends_at.isoformat() if subscription else None,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    return Response(
+        {
+            "tenant_slug": tenant.slug,
+            "realm_name": user.realm.realm_name,
+            "username": user.username,
+            # provision_user() now always sets a real Keycloak password (it
+            # never did before — see services.py) — must be returned here since
+            # it's never persisted anywhere; this is the only chance to hand it
+            # to the person who just signed up.
+            "password": getattr(tenant, "demo_password", None),
+            "trial_ends_at": subscription.trial_ends_at.isoformat() if subscription else None,
+        },
+        status=status.HTTP_201_CREATED,
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { buildMetadata } from "@/lib/metadata";
@@ -12,55 +12,31 @@ interface AboutPageProps {
 export async function generateMetadata({ params }: AboutPageProps): Promise<Metadata> {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations("aboutPage");
   return buildMetadata({
-    title: "About",
-    description: "CyberCom Revolution builds the world's most integrated intelligent platforms for healthcare, government, and enterprise — unifying 9 domains in one connected ecosystem.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
     path: "/about",
     locale,
   });
 }
 
 const MISSIONS = [
-  {
-    title: "Healthcare Transformation",
-    desc: "We believe every patient deserves care delivered through intelligent, standards-based systems that eliminate friction and reduce errors.",
-    icon: "🏥",
-  },
-  {
-    title: "Government Modernization",
-    desc: "We build digital government infrastructure that makes public services accessible, efficient, and transparent for every citizen.",
-    icon: "🏛",
-  },
-  {
-    title: "Enterprise Intelligence",
-    desc: "We connect ERP, AI, and analytics to give enterprises the real-time insight they need to operate at the speed of modern business.",
-    icon: "⚡",
-  },
+  { key: "healthcare", icon: "🏥" },
+  { key: "government", icon: "🏛" },
+  { key: "enterprise", icon: "⚡" },
 ];
 
-const VALUES = [
-  { name: "Open Standards First", desc: "FHIR, ICD-11, OAuth 2.1 — we build on open standards, not proprietary lock-in." },
-  { name: "Clinical Safety", desc: "Every healthcare feature is designed with clinical safety, drug interaction prevention, and patient privacy at its core." },
-  { name: "Radical Integration", desc: "9 platforms that actually talk to each other — through real APIs, shared identity, and unified data." },
-  { name: "Global Scale", desc: "Multi-language, multi-currency, multi-regulatory — designed for the Middle East and beyond." },
-];
+const VALUES = ["standards", "safety", "integration", "scale"];
 
-const PRODUCTS_BRIEF = [
-  { name: "CyMed", desc: "Healthcare" },
-  { name: "CyCom", desc: "ERP" },
-  { name: "CyGov", desc: "Government" },
-  { name: "CyAI", desc: "Intelligence" },
-  { name: "CyIdentity", desc: "Identity" },
-  { name: "CyIntegrationHub", desc: "Integration" },
-  { name: "CyData", desc: "Data" },
-  { name: "CyConnect", desc: "Communications" },
-  { name: "CyCitizen", desc: "Citizens" },
-];
+const PRODUCTS_BRIEF = ["cymed", "cycom", "cygov", "cyai", "cyidentity", "cyintegrationhub", "cydata", "cyconnect", "cycitizen"];
+const PRODUCT_NAMES: Record<string, string> = { cymed: "CyMed", cycom: "CyCom", cygov: "CyGov", cyai: "CyAI", cyidentity: "CyIdentity", cyintegrationhub: "CyIntegrationHub", cydata: "CyData", cyconnect: "CyConnect", cycitizen: "CyCitizen" };
 
 export default async function AboutPage({ params }: AboutPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
   const l = locale as Locale;
+  const t = await getTranslations("aboutPage");
 
   return (
     <div className="min-h-dvh pt-16">
@@ -71,14 +47,12 @@ export default async function AboutPage({ params }: AboutPageProps) {
         </div>
         <div className="section-container relative z-10 max-w-4xl">
           <h1 className="text-5xl lg:text-6xl font-heading font-semibold text-white mb-6 leading-tight">
-            We&apos;re building the{" "}
-            <span className="text-gradient">intelligence layer</span>{" "}
-            for healthcare, government, and enterprise.
+            {t("heroLine1")}{" "}
+            <span className="text-gradient">{t("heroHighlight")}</span>{" "}
+            {t("heroLine2")}
           </h1>
           <p className="text-xl text-cy-gray-400 leading-relaxed max-w-3xl">
-            CyberCom Revolution is an enterprise software company engineering a unified ecosystem
-            of 9 platforms — from FHIR-native clinical systems to AI-powered government services —
-            all connected through a shared identity, integration, and data fabric.
+            {t("heroDescription")}
           </p>
         </div>
       </div>
@@ -87,14 +61,14 @@ export default async function AboutPage({ params }: AboutPageProps) {
       <section className="py-20 bg-cy-dark/30" aria-labelledby="mission-heading">
         <div className="section-container">
           <h2 id="mission-heading" className="text-3xl font-heading font-semibold text-white mb-10 text-center">
-            Our Mission
+            {t("mission.heading")}
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
             {MISSIONS.map((m) => (
-              <div key={m.title} className="glass-card p-6 rounded-2xl">
+              <div key={m.key} className="glass-card p-6 rounded-2xl">
                 <div className="text-3xl mb-4" aria-hidden="true" role="img">{m.icon}</div>
-                <h3 className="font-heading font-semibold text-white text-lg mb-2">{m.title}</h3>
-                <p className="text-sm text-cy-gray-400 leading-relaxed">{m.desc}</p>
+                <h3 className="font-heading font-semibold text-white text-lg mb-2">{t(`mission.${m.key}.title`)}</h3>
+                <p className="text-sm text-cy-gray-400 leading-relaxed">{t(`mission.${m.key}.desc`)}</p>
               </div>
             ))}
           </div>
@@ -105,14 +79,14 @@ export default async function AboutPage({ params }: AboutPageProps) {
       <section className="py-20" aria-labelledby="products-heading">
         <div className="section-container">
           <h2 id="products-heading" className="text-3xl font-heading font-semibold text-white mb-4 text-center">
-            The CyberCom Ecosystem
+            {t("products.heading")}
           </h2>
-          <p className="text-center text-cy-gray-400 mb-10">Nine platforms. One unified identity. One integration fabric.</p>
+          <p className="text-center text-cy-gray-400 mb-10">{t("products.subheading")}</p>
           <div className="flex flex-wrap justify-center gap-3">
-            {PRODUCTS_BRIEF.map((p) => (
-              <div key={p.name} className="glass-card px-5 py-3 rounded-xl border border-cy-glass-border">
-                <div className="text-sm font-heading font-semibold text-gradient-orange">{p.name}</div>
-                <div className="text-xs text-cy-gray-400">{p.desc}</div>
+            {PRODUCTS_BRIEF.map((key) => (
+              <div key={key} className="glass-card px-5 py-3 rounded-xl border border-cy-glass-border">
+                <div className="text-sm font-heading font-semibold text-gradient-orange">{PRODUCT_NAMES[key]}</div>
+                <div className="text-xs text-cy-gray-400">{t(`products.${key}`)}</div>
               </div>
             ))}
           </div>
@@ -123,15 +97,15 @@ export default async function AboutPage({ params }: AboutPageProps) {
       <section className="py-20 bg-cy-dark/30" aria-labelledby="values-heading">
         <div className="section-container">
           <h2 id="values-heading" className="text-3xl font-heading font-semibold text-white mb-10 text-center">
-            What We Believe
+            {t("values.heading")}
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {VALUES.map((v) => (
-              <div key={v.name} className="glass-card p-6 rounded-2xl flex gap-4">
+            {VALUES.map((key) => (
+              <div key={key} className="glass-card p-6 rounded-2xl flex gap-4">
                 <div className="w-1 rounded-full bg-gradient-cy flex-shrink-0" aria-hidden="true" />
                 <div>
-                  <h3 className="font-heading font-semibold text-white mb-1">{v.name}</h3>
-                  <p className="text-sm text-cy-gray-400 leading-relaxed">{v.desc}</p>
+                  <h3 className="font-heading font-semibold text-white mb-1">{t(`values.${key}.name`)}</h3>
+                  <p className="text-sm text-cy-gray-400 leading-relaxed">{t(`values.${key}.desc`)}</p>
                 </div>
               </div>
             ))}
@@ -143,18 +117,18 @@ export default async function AboutPage({ params }: AboutPageProps) {
       <section className="py-20" aria-labelledby="about-cta">
         <div className="section-container text-center">
           <h2 id="about-cta" className="text-3xl font-heading font-semibold text-white mb-4">
-            Ready to work with us?
+            {t("cta.heading")}
           </h2>
           <p className="text-cy-gray-400 mb-8">
-            Whether you are a healthcare organization, government agency, or enterprise — let&apos;s talk.
+            {t("cta.subheading")}
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href={`/${l}/demo`} className="btn-primary px-8 py-3">
-              Request a Demo
+              {t("cta.requestDemo")}
               <ArrowRight className="w-4 h-4 rtl:rotate-180" aria-hidden="true" />
             </Link>
             <Link href={`/${l}/contact`} className="btn-secondary px-8 py-3">
-              Contact Us
+              {t("cta.contactUs")}
             </Link>
           </div>
         </div>

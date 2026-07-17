@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 
 export type ModuleCategory =
   | "clinical"
@@ -22,16 +23,16 @@ export interface ProductModule {
   demoRoute?: string;
 }
 
-const CAT_META: Record<ModuleCategory, { label: string; pill: string; dot: string }> = {
-  clinical:   { label: "Clinical",    pill: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",  dot: "bg-emerald-400" },
-  erp:        { label: "ERP",         pill: "text-blue-400 bg-blue-500/10 border-blue-500/20",           dot: "bg-blue-400" },
-  ai:         { label: "AI",          pill: "text-purple-400 bg-purple-500/10 border-purple-500/20",     dot: "bg-purple-400" },
-  operations: { label: "Operations",  pill: "text-amber-400 bg-amber-500/10 border-amber-500/20",        dot: "bg-amber-400" },
-  finance:    { label: "Finance",     pill: "text-sky-400 bg-sky-500/10 border-sky-500/20",              dot: "bg-sky-400" },
-  hr:         { label: "HR",          pill: "text-pink-400 bg-pink-500/10 border-pink-500/20",           dot: "bg-pink-400" },
-  inventory:  { label: "Inventory",   pill: "text-orange-400 bg-orange-500/10 border-orange-500/20",     dot: "bg-orange-400" },
-  reports:    { label: "Reports",     pill: "text-teal-400 bg-teal-500/10 border-teal-500/20",           dot: "bg-teal-400" },
-  admin:      { label: "Admin",       pill: "text-slate-400 bg-slate-500/10 border-slate-500/20",        dot: "bg-slate-400" },
+const CAT_META: Record<ModuleCategory, { pill: string; dot: string }> = {
+  clinical:   { pill: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",  dot: "bg-emerald-400" },
+  erp:        { pill: "text-blue-400 bg-blue-500/10 border-blue-500/20",           dot: "bg-blue-400" },
+  ai:         { pill: "text-purple-400 bg-purple-500/10 border-purple-500/20",     dot: "bg-purple-400" },
+  operations: { pill: "text-amber-400 bg-amber-500/10 border-amber-500/20",        dot: "bg-amber-400" },
+  finance:    { pill: "text-sky-400 bg-sky-500/10 border-sky-500/20",              dot: "bg-sky-400" },
+  hr:         { pill: "text-pink-400 bg-pink-500/10 border-pink-500/20",           dot: "bg-pink-400" },
+  inventory:  { pill: "text-orange-400 bg-orange-500/10 border-orange-500/20",     dot: "bg-orange-400" },
+  reports:    { pill: "text-teal-400 bg-teal-500/10 border-teal-500/20",           dot: "bg-teal-400" },
+  admin:      { pill: "text-slate-400 bg-slate-500/10 border-slate-500/20",        dot: "bg-slate-400" },
 };
 
 type TabKey = "all" | ModuleCategory;
@@ -39,6 +40,7 @@ type TabKey = "all" | ModuleCategory;
 const TAB_ORDER: TabKey[] = ["all", "clinical", "erp", "ai", "operations", "finance", "hr", "inventory", "reports", "admin"];
 
 export function ModuleExplorer({ modules }: { modules: ProductModule[] }) {
+  const t = useTranslations("productDetailPage.moduleExplorer");
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -48,14 +50,14 @@ export function ModuleExplorer({ modules }: { modules: ProductModule[] }) {
   );
 
   const tabs = useMemo(
-    () => TAB_ORDER.filter(t => t === "all" || presentCats.has(t as ModuleCategory)),
+    () => TAB_ORDER.filter(tab => tab === "all" || presentCats.has(tab as ModuleCategory)),
     [presentCats]
   );
 
   const filtered = activeTab === "all" ? modules : modules.filter(m => m.category === activeTab);
 
-  const tabLabel = (t: TabKey) => t === "all" ? "All Modules" : CAT_META[t as ModuleCategory].label;
-  const tabCount = (t: TabKey) => t === "all" ? modules.length : modules.filter(m => m.category === t).length;
+  const tabLabel = (tab: TabKey) => tab === "all" ? t("allModules") : t(`categories.${tab}`);
+  const tabCount = (tab: TabKey) => tab === "all" ? modules.length : modules.filter(m => m.category === tab).length;
 
   return (
     <div>
@@ -99,7 +101,7 @@ export function ModuleExplorer({ modules }: { modules: ProductModule[] }) {
               <div className="flex items-start justify-between gap-2 mb-2">
                 <span className="text-sm font-heading font-semibold text-white leading-snug">{mod.name}</span>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full border flex-shrink-0 font-medium ${s.pill}`}>
-                  {s.label}
+                  {t(`categories.${mod.category}`)}
                 </span>
               </div>
 
@@ -122,19 +124,19 @@ export function ModuleExplorer({ modules }: { modules: ProductModule[] }) {
                 <div className="mt-3 pt-3 border-t border-cy-glass-border space-y-2">
                   {mod.workflow && (
                     <div>
-                      <span className="text-[10px] text-cy-orange uppercase tracking-wider font-medium">Workflow</span>
+                      <span className="text-[10px] text-cy-orange uppercase tracking-wider font-medium">{t("workflow")}</span>
                       <p className="text-xs text-cy-gray-300 mt-0.5">{mod.workflow}</p>
                     </div>
                   )}
                   {mod.permission && (
                     <div>
-                      <span className="text-[10px] text-cy-orange uppercase tracking-wider font-medium">Required Permission</span>
+                      <span className="text-[10px] text-cy-orange uppercase tracking-wider font-medium">{t("requiredPermission")}</span>
                       <p className="text-xs text-cy-gray-300 mt-0.5 capitalize">{mod.permission}</p>
                     </div>
                   )}
                   {mod.demoRoute && (
                     <div>
-                      <span className="text-[10px] text-cy-orange uppercase tracking-wider font-medium">Demo Path</span>
+                      <span className="text-[10px] text-cy-orange uppercase tracking-wider font-medium">{t("demoPath")}</span>
                       <p className="text-xs font-mono text-cy-gray-300 mt-0.5">{mod.demoRoute}</p>
                     </div>
                   )}
@@ -143,7 +145,7 @@ export function ModuleExplorer({ modules }: { modules: ProductModule[] }) {
 
               {/* Expand hint */}
               <div className={`text-[10px] mt-2 transition-colors ${isExpanded ? "text-cy-orange" : "text-cy-gray-500"}`}>
-                {isExpanded ? "▲ Collapse" : "▼ Workflow & permissions"}
+                {isExpanded ? t("collapse") : t("expandHint")}
               </div>
             </button>
           );
@@ -152,9 +154,9 @@ export function ModuleExplorer({ modules }: { modules: ProductModule[] }) {
 
       {/* Total count */}
       <p className="text-xs text-cy-gray-500 mt-4">
-        Showing {filtered.length} of {modules.length} modules.{" "}
+        {t("showingOf", { shown: filtered.length, total: modules.length })}{" "}
         <button onClick={() => setActiveTab("all")} className="text-cy-orange hover:text-cy-orange-light transition-colors">
-          View all
+          {t("viewAll")}
         </button>
       </p>
     </div>

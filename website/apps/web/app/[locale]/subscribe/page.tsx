@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 import {
   Check, ChevronRight, Building2, ShoppingCart, BarChart3,
   FlaskConical, Scan, Pill, Stethoscope, ArrowRight, ArrowLeft,
@@ -187,6 +188,8 @@ function StepBadge({ n, active, done }: { n: number; active: boolean; done: bool
    MAIN COMPONENT
 ───────────────────────────────────────────── */
 export default function SubscribePage() {
+  const t = useTranslations("subscribePage");
+  const locale = useLocale();
   const [step, setStep] = useState(1);
   const [selections, setSelections] = useState<Selection[]>([]);
   const [billing, setBilling] = useState<BillingCycle>("annual");
@@ -241,17 +244,17 @@ export default function SubscribePage() {
     setSubmitting(false);
   }
 
-  const STEPS = ["Choose Products", "Select Editions", "Billing Cycle", "Review & Subscribe"];
+  const STEPS = t.raw("steps") as string[];
 
   /* ── STEP 1: Product picker ── */
   const step1 = (
     <div>
-      <h2 className="text-2xl font-heading font-semibold text-white mb-2">Which products do you need?</h2>
-      <p className="text-cy-gray-400 mb-8">Select one or more. You can add more later from your portal.</p>
+      <h2 className="text-2xl font-heading font-semibold text-white mb-2">{t("step1.heading")}</h2>
+      <p className="text-cy-gray-400 mb-8">{t("step1.subheading")}</p>
 
       {/* Healthcare */}
       <div className="mb-8">
-        <p className="text-xs font-medium text-cy-gray-500 uppercase tracking-wider mb-3">Healthcare — CyMed</p>
+        <p className="text-xs font-medium text-cy-gray-500 uppercase tracking-wider mb-3">{t("step1.healthcareGroup")}</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {PRODUCTS.filter((p) => p.category === "healthcare").map((p) => {
             const Icon = p.icon;
@@ -263,17 +266,17 @@ export default function SubscribePage() {
                 className={`relative text-left p-4 rounded-xl border transition-all duration-200 ${sel ? `${p.border} ${p.bg}` : "border-cy-glass-border bg-cy-dark/40 hover:border-cy-glass-bg-hover"}`}
               >
                 {sel && (
-                  <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                  <span className="absolute top-3 rtl:right-auto rtl:left-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
                   </span>
                 )}
                 <div className={`w-8 h-8 rounded-lg ${p.bg} border ${p.border} flex items-center justify-center mb-3`}>
                   <Icon className={`w-4 h-4 ${p.color}`} />
                 </div>
-                <div className="font-heading font-semibold text-sm text-white mb-0.5">{p.name}</div>
-                <div className="text-xs text-cy-gray-400">{p.tagline}</div>
+                <div className="font-heading font-semibold text-sm text-white mb-0.5">{t(`products.${p.id}.name`)}</div>
+                <div className="text-xs text-cy-gray-400">{t(`products.${p.id}.tagline`)}</div>
                 <div className="mt-3 text-xs text-cy-gray-500">
-                  From <span className={`font-semibold ${p.color}`}>${p.editions[0]!.monthlyPrice?.toLocaleString() ?? "Custom"}/mo</span>
+                  {t("step1.from")} <span className={`font-semibold ${p.color}`}>{p.editions[0]!.monthlyPrice !== null ? `$${p.editions[0]!.monthlyPrice.toLocaleString()}${t("step1.perMo")}` : t("step1.custom")}</span>
                 </div>
               </button>
             );
@@ -283,7 +286,7 @@ export default function SubscribePage() {
 
       {/* Retail */}
       <div className="mb-8">
-        <p className="text-xs font-medium text-cy-gray-500 uppercase tracking-wider mb-3">Retail & Commerce</p>
+        <p className="text-xs font-medium text-cy-gray-500 uppercase tracking-wider mb-3">{t("step1.retailGroup")}</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {PRODUCTS.filter((p) => p.category === "retail").map((p) => {
             const Icon = p.icon;
@@ -295,17 +298,17 @@ export default function SubscribePage() {
                 className={`relative text-left p-4 rounded-xl border transition-all duration-200 ${sel ? `${p.border} ${p.bg}` : "border-cy-glass-border bg-cy-dark/40 hover:border-cy-glass-bg-hover"}`}
               >
                 {sel && (
-                  <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                  <span className="absolute top-3 rtl:right-auto rtl:left-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
                   </span>
                 )}
                 <div className={`w-8 h-8 rounded-lg ${p.bg} border ${p.border} flex items-center justify-center mb-3`}>
                   <Icon className={`w-4 h-4 ${p.color}`} />
                 </div>
-                <div className="font-heading font-semibold text-sm text-white mb-0.5">{p.name}</div>
-                <div className="text-xs text-cy-gray-400">{p.tagline}</div>
+                <div className="font-heading font-semibold text-sm text-white mb-0.5">{t(`products.${p.id}.name`)}</div>
+                <div className="text-xs text-cy-gray-400">{t(`products.${p.id}.tagline`)}</div>
                 <div className="mt-3 text-xs text-cy-gray-500">
-                  From <span className={`font-semibold ${p.color}`}>${p.editions[0]!.monthlyPrice?.toLocaleString() ?? "Custom"}/mo</span>
+                  {t("step1.from")} <span className={`font-semibold ${p.color}`}>{p.editions[0]!.monthlyPrice !== null ? `$${p.editions[0]!.monthlyPrice.toLocaleString()}${t("step1.perMo")}` : t("step1.custom")}</span>
                 </div>
               </button>
             );
@@ -315,7 +318,7 @@ export default function SubscribePage() {
 
       {/* ERP */}
       <div className="mb-8">
-        <p className="text-xs font-medium text-cy-gray-500 uppercase tracking-wider mb-3">Enterprise ERP</p>
+        <p className="text-xs font-medium text-cy-gray-500 uppercase tracking-wider mb-3">{t("step1.erpGroup")}</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {PRODUCTS.filter((p) => p.category === "erp").map((p) => {
             const Icon = p.icon;
@@ -327,17 +330,17 @@ export default function SubscribePage() {
                 className={`relative text-left p-4 rounded-xl border transition-all duration-200 ${sel ? `${p.border} ${p.bg}` : "border-cy-glass-border bg-cy-dark/40 hover:border-cy-glass-bg-hover"}`}
               >
                 {sel && (
-                  <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+                  <span className="absolute top-3 rtl:right-auto rtl:left-3 right-3 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
                   </span>
                 )}
                 <div className={`w-8 h-8 rounded-lg ${p.bg} border ${p.border} flex items-center justify-center mb-3`}>
                   <Icon className={`w-4 h-4 ${p.color}`} />
                 </div>
-                <div className="font-heading font-semibold text-sm text-white mb-0.5">{p.name}</div>
-                <div className="text-xs text-cy-gray-400">{p.tagline}</div>
+                <div className="font-heading font-semibold text-sm text-white mb-0.5">{t(`products.${p.id}.name`)}</div>
+                <div className="text-xs text-cy-gray-400">{t(`products.${p.id}.tagline`)}</div>
                 <div className="mt-3 text-xs text-cy-gray-500">
-                  From <span className={`font-semibold ${p.color}`}>${p.editions[0]!.monthlyPrice?.toLocaleString() ?? "Custom"}/mo</span>
+                  {t("step1.from")} <span className={`font-semibold ${p.color}`}>{p.editions[0]!.monthlyPrice !== null ? `$${p.editions[0]!.monthlyPrice.toLocaleString()}${t("step1.perMo")}` : t("step1.custom")}</span>
                 </div>
               </button>
             );
@@ -349,7 +352,7 @@ export default function SubscribePage() {
         <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
           <span className="text-sm text-emerald-300">
-            {selections.length} product{selections.length > 1 ? "s" : ""} selected — {selections.map((s) => PRODUCTS.find((p) => p.id === s.productId)?.name).join(", ")}
+            {selections.length} {selections.length > 1 ? t("step1.productsSelected") : t("step1.productSelected")} {selections.map((s) => t(`products.${s.productId}.name`)).join(", ")}
           </span>
         </div>
       )}
@@ -359,8 +362,8 @@ export default function SubscribePage() {
   /* ── STEP 2: Edition picker ── */
   const step2 = (
     <div>
-      <h2 className="text-2xl font-heading font-semibold text-white mb-2">Choose your edition</h2>
-      <p className="text-cy-gray-400 mb-8">Pick the tier that fits your scale. Upgrade anytime from your portal.</p>
+      <h2 className="text-2xl font-heading font-semibold text-white mb-2">{t("step2.heading")}</h2>
+      <p className="text-cy-gray-400 mb-8">{t("step2.subheading")}</p>
       <div className="space-y-8">
         {selections.map((sel) => {
           const product = PRODUCTS.find((p) => p.id === sel.productId)!;
@@ -371,7 +374,7 @@ export default function SubscribePage() {
                 <div className={`w-7 h-7 rounded-lg ${product.bg} border ${product.border} flex items-center justify-center`}>
                   <Icon className={`w-4 h-4 ${product.color}`} />
                 </div>
-                <span className="font-heading font-semibold text-white">{product.name}</span>
+                <span className="font-heading font-semibold text-white">{t(`products.${product.id}.name`)}</span>
               </div>
               <div className="grid sm:grid-cols-3 gap-3">
                 {product.editions.map((edition, idx) => {
@@ -379,6 +382,7 @@ export default function SubscribePage() {
                     ? (billing === "annual" ? Math.round(edition.monthlyPrice * (1 - ANNUAL_DISCOUNT)) : edition.monthlyPrice)
                     : null;
                   const chosen = sel.editionIndex === idx;
+                  const highlights = t.raw(`products.${product.id}.editions.${idx}.highlights`) as string[];
                   return (
                     <button
                       key={edition.name}
@@ -386,15 +390,15 @@ export default function SubscribePage() {
                       className={`text-left p-4 rounded-xl border transition-all duration-200 ${chosen ? `${product.border} ${product.bg}` : "border-cy-glass-border bg-cy-dark/40 hover:border-cy-glass-bg-hover"}`}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <span className="font-heading font-semibold text-sm text-white">{edition.name}</span>
+                        <span className="font-heading font-semibold text-sm text-white">{t(`products.${product.id}.editions.${idx}.name`)}</span>
                         {chosen && <Check className={`w-4 h-4 ${product.color} flex-shrink-0`} />}
                       </div>
-                      <div className="text-xs text-cy-gray-400 mb-3">{edition.desc}</div>
+                      <div className="text-xs text-cy-gray-400 mb-3">{t(`products.${product.id}.editions.${idx}.desc`)}</div>
                       <div className={`text-lg font-heading font-bold ${product.color} mb-3`}>
-                        {price !== null ? `$${price.toLocaleString()}/mo` : "Custom"}
+                        {price !== null ? `$${price.toLocaleString()}${t("step1.perMo")}` : t("step1.custom")}
                       </div>
                       <ul className="space-y-1">
-                        {edition.highlights.map((h) => (
+                        {highlights.map((h) => (
                           <li key={h} className="flex items-center gap-1.5 text-xs text-cy-gray-300">
                             <Check className="w-3 h-3 text-emerald-400 flex-shrink-0" />
                             {h}
@@ -415,8 +419,8 @@ export default function SubscribePage() {
   /* ── STEP 3: Billing cycle ── */
   const step3 = (
     <div>
-      <h2 className="text-2xl font-heading font-semibold text-white mb-2">Billing cycle</h2>
-      <p className="text-cy-gray-400 mb-8">Annual billing saves 20% across all products.</p>
+      <h2 className="text-2xl font-heading font-semibold text-white mb-2">{t("step3.heading")}</h2>
+      <p className="text-cy-gray-400 mb-8">{t("step3.subheading")}</p>
       <div className="grid sm:grid-cols-2 gap-4 max-w-xl">
         {(["annual", "monthly"] as BillingCycle[]).map((cycle) => (
           <button
@@ -426,19 +430,17 @@ export default function SubscribePage() {
           >
             <div className="flex items-start justify-between mb-3">
               <div>
-                <div className="font-heading font-semibold text-white capitalize">{cycle}</div>
+                <div className="font-heading font-semibold text-white">{cycle === "annual" ? t("step3.annual") : t("step3.monthly")}</div>
                 {cycle === "annual" && (
                   <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    Save 20%
+                    {t("step3.save20")}
                   </span>
                 )}
               </div>
               {billing === cycle && <Check className="w-5 h-5 text-cy-orange" />}
             </div>
             <div className="text-sm text-cy-gray-400">
-              {cycle === "annual"
-                ? "Billed once per year. Best value for long-term deployments."
-                : "Billed each month. Flexible, cancel anytime."}
+              {cycle === "annual" ? t("step3.annualDesc") : t("step3.monthlyDesc")}
             </div>
           </button>
         ))}
@@ -447,19 +449,19 @@ export default function SubscribePage() {
       {total !== null && (
         <div className="mt-8 p-5 rounded-xl glass-card max-w-xl">
           <div className="flex justify-between text-sm mb-2">
-            <span className="text-cy-gray-400">Monthly equivalent</span>
-            <span className="text-white font-semibold">${total.toLocaleString()}/mo</span>
+            <span className="text-cy-gray-400">{t("step3.monthlyEquivalent")}</span>
+            <span className="text-white font-semibold">${total.toLocaleString()}{t("step1.perMo")}</span>
           </div>
           {billing === "annual" && (
             <>
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-cy-gray-400">Annual total</span>
-                <span className="text-white font-semibold">${(total * 12).toLocaleString()}/yr</span>
+                <span className="text-cy-gray-400">{t("step3.annualTotal")}</span>
+                <span className="text-white font-semibold">${(total * 12).toLocaleString()}/{locale === "ar" ? "سنة" : "yr"}</span>
               </div>
               <div className="flex justify-between text-sm pt-2 border-t border-cy-glass-border">
-                <span className="text-emerald-400">Annual saving vs monthly</span>
+                <span className="text-emerald-400">{t("step3.annualSaving")}</span>
                 <span className="text-emerald-400 font-semibold">
-                  ${Math.round(total / (1 - ANNUAL_DISCOUNT) * 12 - total * 12).toLocaleString()}/yr
+                  ${Math.round(total / (1 - ANNUAL_DISCOUNT) * 12 - total * 12).toLocaleString()}/{locale === "ar" ? "سنة" : "yr"}
                 </span>
               </div>
             </>
@@ -474,12 +476,11 @@ export default function SubscribePage() {
     <div className="grid lg:grid-cols-5 gap-8">
       {/* Summary */}
       <div className="lg:col-span-3">
-        <h2 className="text-2xl font-heading font-semibold text-white mb-6">Review & subscribe</h2>
+        <h2 className="text-2xl font-heading font-semibold text-white mb-6">{t("step4.heading")}</h2>
         <div className="space-y-3 mb-6">
           {selections.map((sel) => {
             const product = PRODUCTS.find((p) => p.id === sel.productId)!;
-            const edition = product.editions[sel.editionIndex]!;
-            const price = calcPrice(edition);
+            const price = calcPrice(product.editions[sel.editionIndex]!);
             const Icon = product.icon;
             return (
               <div key={sel.productId} className="flex items-center gap-4 p-4 glass-card rounded-xl">
@@ -487,13 +488,13 @@ export default function SubscribePage() {
                   <Icon className={`w-5 h-5 ${product.color}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-heading font-semibold text-sm text-white">{product.name}</div>
-                  <div className="text-xs text-cy-gray-400">{edition.name}</div>
+                  <div className="font-heading font-semibold text-sm text-white">{t(`products.${product.id}.name`)}</div>
+                  <div className="text-xs text-cy-gray-400">{t(`products.${product.id}.editions.${sel.editionIndex}.name`)}</div>
                 </div>
                 <div className="text-right flex-shrink-0">
                   {price !== null
-                    ? <div className="font-semibold text-white">${price.toLocaleString()}<span className="text-xs text-cy-gray-400">/mo</span></div>
-                    : <div className="text-cy-orange text-sm font-medium">Custom</div>}
+                    ? <div className="font-semibold text-white">${price.toLocaleString()}<span className="text-xs text-cy-gray-400">{t("step1.perMo")}</span></div>
+                    : <div className="text-cy-orange text-sm font-medium">{t("step1.custom")}</div>}
                 </div>
               </div>
             );
@@ -503,13 +504,13 @@ export default function SubscribePage() {
         {total !== null ? (
           <div className="p-4 glass-card rounded-xl mb-6">
             <div className="flex justify-between text-sm mb-1">
-              <span className="text-cy-gray-400">Subtotal ({billing})</span>
-              <span className="text-white">${total.toLocaleString()}/mo</span>
+              <span className="text-cy-gray-400">{t("step4.subtotal")} ({billing === "annual" ? t("step3.annual") : t("step3.monthly")})</span>
+              <span className="text-white">${total.toLocaleString()}{t("step1.perMo")}</span>
             </div>
             {billing === "annual" && annualTotal !== null && (
               <div className="flex justify-between text-sm pt-2 border-t border-cy-glass-border mt-2">
-                <span className="text-white font-semibold">Annual total</span>
-                <span className="text-white font-bold">${annualTotal.toLocaleString()}/yr</span>
+                <span className="text-white font-semibold">{t("step3.annualTotal")}</span>
+                <span className="text-white font-bold">${annualTotal.toLocaleString()}/{locale === "ar" ? "سنة" : "yr"}</span>
               </div>
             )}
           </div>
@@ -517,14 +518,14 @@ export default function SubscribePage() {
           <div className="p-4 glass-card rounded-xl mb-6 border border-cy-orange/20">
             <div className="flex items-center gap-2 text-sm text-cy-orange">
               <Info className="w-4 h-4" />
-              One or more products requires custom pricing. Our team will contact you with a quote.
+              {t("step4.customPricingNotice")}
             </div>
           </div>
         )}
 
         {/* Intent toggle */}
         <div className="mb-6">
-          <p className="text-sm text-cy-gray-400 mb-3">How would you like to start?</p>
+          <p className="text-sm text-cy-gray-400 mb-3">{t("step4.howToStart")}</p>
           <div className="grid grid-cols-2 gap-3">
             {(["trial", "buy"] as const).map((intent) => (
               <button
@@ -535,11 +536,11 @@ export default function SubscribePage() {
                 <div className="flex items-center gap-2 mb-1">
                   {intent === "trial" ? <Clock className="w-4 h-4 text-emerald-400" /> : <CreditCard className="w-4 h-4 text-cy-orange" />}
                   <span className="font-semibold text-sm text-white">
-                    {intent === "trial" ? `${TRIAL_DAYS}-Day Free Trial` : "Subscribe Now"}
+                    {intent === "trial" ? t("step4.trialTitle", { days: TRIAL_DAYS }) : t("step4.buyTitle")}
                   </span>
                 </div>
                 <p className="text-xs text-cy-gray-400">
-                  {intent === "trial" ? "Full access, no credit card required. Convert anytime." : "Start your subscription immediately with full production access."}
+                  {intent === "trial" ? t("step4.trialDesc") : t("step4.buyDesc")}
                 </p>
               </button>
             ))}
@@ -550,7 +551,7 @@ export default function SubscribePage() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-cy-gray-400 mb-1.5">Full Name *</label>
+              <label className="block text-xs text-cy-gray-400 mb-1.5">{t("step4.fullName")} *</label>
               <input
                 className="w-full glass-card rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-cy-gray-500 outline-none focus:border-cy-orange border border-cy-glass-border transition-colors"
                 placeholder="Mohammad Al-Nsour"
@@ -559,7 +560,7 @@ export default function SubscribePage() {
               />
             </div>
             <div>
-              <label className="block text-xs text-cy-gray-400 mb-1.5">Work Email *</label>
+              <label className="block text-xs text-cy-gray-400 mb-1.5">{t("step4.workEmail")} *</label>
               <input
                 type="email"
                 className="w-full glass-card rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-cy-gray-500 outline-none focus:border-cy-orange border border-cy-glass-border transition-colors"
@@ -571,7 +572,7 @@ export default function SubscribePage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-cy-gray-400 mb-1.5">Company *</label>
+              <label className="block text-xs text-cy-gray-400 mb-1.5">{t("step4.company")} *</label>
               <input
                 className="w-full glass-card rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-cy-gray-500 outline-none focus:border-cy-orange border border-cy-glass-border transition-colors"
                 placeholder="Your Organization"
@@ -580,7 +581,7 @@ export default function SubscribePage() {
               />
             </div>
             <div>
-              <label className="block text-xs text-cy-gray-400 mb-1.5">Phone</label>
+              <label className="block text-xs text-cy-gray-400 mb-1.5">{t("step4.phone")}</label>
               <input
                 className="w-full glass-card rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-cy-gray-500 outline-none focus:border-cy-orange border border-cy-glass-border transition-colors"
                 placeholder="+962 XX XXX XXXX"
@@ -591,27 +592,27 @@ export default function SubscribePage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-cy-gray-400 mb-1.5">Country *</label>
+              <label className="block text-xs text-cy-gray-400 mb-1.5">{t("step4.country")} *</label>
               <select
                 className="w-full glass-card rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-cy-orange border border-cy-glass-border transition-colors bg-cy-dark"
                 value={contact.country}
                 onChange={(e) => setContact((c) => ({ ...c, country: e.target.value }))}
               >
-                <option value="">Select country</option>
+                <option value="">{t("step4.selectCountry")}</option>
                 {["Jordan", "Saudi Arabia", "UAE", "Kuwait", "Qatar", "Bahrain", "Oman", "Egypt", "Iraq", "Lebanon", "Other"].map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-cy-gray-400 mb-1.5">Company Size</label>
+              <label className="block text-xs text-cy-gray-400 mb-1.5">{t("step4.companySize")}</label>
               <select
                 className="w-full glass-card rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-cy-orange border border-cy-glass-border transition-colors bg-cy-dark"
                 value={contact.companySize}
                 onChange={(e) => setContact((c) => ({ ...c, companySize: e.target.value }))}
               >
                 {["1-10", "11-50", "51-200", "201-500", "500+"].map((s) => (
-                  <option key={s} value={s}>{s} employees</option>
+                  <option key={s} value={s}>{s} {t("employees")}</option>
                 ))}
               </select>
             </div>
@@ -624,40 +625,33 @@ export default function SubscribePage() {
           className="mt-6 w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-sm bg-cy-orange hover:bg-cy-orange-light text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting ? (
-            <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{contact.intent === "trial" ? "Activating trial..." : "Processing..."}</>
+            <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{contact.intent === "trial" ? t("step4.activatingTrial") : t("step4.processing")}</>
           ) : (
-            <>{contact.intent === "trial" ? `Start ${TRIAL_DAYS}-Day Free Trial` : "Subscribe & Get Started"}<ArrowRight className="w-4 h-4" /></>
+            <>{contact.intent === "trial" ? t("step4.startTrialCta", { days: TRIAL_DAYS }) : t("step4.subscribeButton")}<ArrowRight className="w-4 h-4 rtl:rotate-180" /></>
           )}
         </button>
 
         <p className="text-xs text-cy-gray-500 mt-3 text-center">
-          By subscribing you agree to our <Link href="/en/legal/terms" className="text-cy-orange hover:text-cy-orange-light">Terms of Service</Link> and <Link href="/en/legal/privacy" className="text-cy-orange hover:text-cy-orange-light">Privacy Policy</Link>.
+          {t("step4.agreeText")} <Link href={`/${locale}/legal/terms`} className="text-cy-orange hover:text-cy-orange-light">{t("step4.termsOfService")}</Link> {t("step4.and")} <Link href={`/${locale}/legal/privacy`} className="text-cy-orange hover:text-cy-orange-light">{t("step4.privacyPolicy")}</Link>.
         </p>
       </div>
 
       {/* Right panel — trust signals */}
       <div className="lg:col-span-2 space-y-4">
         <div className="glass-card p-5 rounded-xl">
-          <h3 className="font-heading font-semibold text-white text-sm mb-4">What you get</h3>
+          <h3 className="font-heading font-semibold text-white text-sm mb-4">{t("step4.whatYouGet")}</h3>
           <ul className="space-y-3">
-            {[
-              { icon: Zap, text: "Instant trial activation" },
-              { icon: Shield, text: "FHIR R4, ISO 27001, SOC 2" },
-              { icon: Users, text: "Dedicated onboarding specialist" },
-              { icon: Globe, text: "Arabic + English interface" },
-              { icon: Clock, text: "99.9% uptime SLA (Enterprise)" },
-              { icon: Phone, text: "24/7 support (Enterprise)" },
-            ].map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-center gap-3 text-sm text-cy-gray-300">
+            {[Zap, Shield, Users, Globe, Clock, Phone].map((Icon, i) => (
+              <li key={i} className="flex items-center gap-3 text-sm text-cy-gray-300">
                 <Icon className="w-4 h-4 text-cy-orange flex-shrink-0" />
-                {text}
+                {(t.raw("step4.benefits") as string[])[i]}
               </li>
             ))}
           </ul>
         </div>
 
         <div className="glass-card p-5 rounded-xl">
-          <h3 className="font-heading font-semibold text-white text-sm mb-4">Try before you buy</h3>
+          <h3 className="font-heading font-semibold text-white text-sm mb-4">{t("step4.tryBeforeBuy")}</h3>
           <div className="space-y-3">
             {selections.map((sel) => {
               const product = PRODUCTS.find((p) => p.id === sel.productId)!;
@@ -670,7 +664,7 @@ export default function SubscribePage() {
                   className={`flex items-center gap-2 text-xs ${product.color} hover:opacity-80 transition-opacity`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
-                  Try {product.name} live demo →
+                  {t("step4.tryLiveDemo")} {t(`products.${product.id}.name`)} {t("step4.liveDemo")} <span className="rtl:rotate-180 inline-block">→</span>
                 </a>
               );
             })}
@@ -682,17 +676,17 @@ export default function SubscribePage() {
             {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />)}
           </div>
           <p className="text-xs text-cy-gray-300 italic mb-3">
-            &ldquo;CyberCom reduced our pharmacy dispensing errors by 94% in the first month. The FHIR integration with our EMR was seamless.&rdquo;
+            &ldquo;{t("step4.testimonialQuote")}&rdquo;
           </p>
-          <div className="text-xs text-cy-gray-500">— Clinical Director, 350-bed hospital, Jordan</div>
+          <div className="text-xs text-cy-gray-500">{t("step4.testimonialAuthor")}</div>
         </div>
 
         <div className="glass-card p-5 rounded-xl border border-cy-orange/20">
-          <div className="text-sm font-semibold text-white mb-1">Need a custom quote?</div>
-          <p className="text-xs text-cy-gray-400 mb-3">Enterprise pricing, volume discounts, and healthcare bundle pricing available.</p>
-          <Link href="/en/contact?interest=enterprise-sales" className="inline-flex items-center gap-1.5 text-xs text-cy-orange hover:text-cy-orange-light transition-colors">
+          <div className="text-sm font-semibold text-white mb-1">{t("step4.needCustomQuote")}</div>
+          <p className="text-xs text-cy-gray-400 mb-3">{t("step4.customQuoteDesc")}</p>
+          <Link href={`/${locale}/contact?interest=enterprise-sales`} className="inline-flex items-center gap-1.5 text-xs text-cy-orange hover:text-cy-orange-light transition-colors">
             <Phone className="w-3.5 h-3.5" />
-            Talk to sales
+            {t("step4.talkToSales")}
           </Link>
         </div>
       </div>
@@ -708,23 +702,23 @@ export default function SubscribePage() {
             <CheckCircle2 className="w-10 h-10 text-emerald-400" />
           </div>
           <h1 className="text-3xl font-heading font-semibold text-white mb-3">
-            {contact.intent === "trial" ? "Trial activated!" : "Subscription confirmed!"}
+            {contact.intent === "trial" ? t("success.trialTitle") : t("success.subscribedTitle")}
           </h1>
           <p className="text-cy-gray-400 mb-2">
-            Check <span className="text-white font-medium">{contact.workEmail}</span> for your access credentials.
+            {t("success.checkEmail")} <span className="text-white font-medium">{contact.workEmail}</span> {t("success.forCredentials")}
           </p>
           <p className="text-cy-gray-400 mb-8">
-            Your onboarding specialist will contact you within 2 hours.
+            {t("success.onboardingContact")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/en/portal" className="btn-primary px-6 py-3">
-              Go to Customer Portal <ArrowRight className="w-4 h-4" />
+            <Link href={`/${locale}/portal`} className="btn-primary px-6 py-3">
+              {t("success.goToPortal")} <ArrowRight className="w-4 h-4 rtl:rotate-180" />
             </Link>
-            <Link href="/en" className="btn-secondary px-6 py-3">Back to Home</Link>
+            <Link href={`/${locale}`} className="btn-secondary px-6 py-3">{t("success.backToHome")}</Link>
           </div>
           <div className="mt-8 flex items-center justify-center gap-2 text-sm text-cy-gray-400">
             <Calendar className="w-4 h-4" />
-            {contact.intent === "trial" ? `${TRIAL_DAYS}-day trial ends automatically — no charge unless you subscribe.` : "Your subscription is now active."}
+            {contact.intent === "trial" ? t("success.trialEndsNote", { days: TRIAL_DAYS }) : t("success.subscriptionActiveNote")}
           </div>
         </div>
       </div>
@@ -758,7 +752,7 @@ export default function SubscribePage() {
                     <StepBadge n={n} active={active} done={done} />
                     <span className={`text-sm font-medium hidden sm:block ${active ? "text-white" : "text-cy-gray-400"}`}>{label}</span>
                   </button>
-                  {i < STEPS.length - 1 && <ChevronRight className="w-4 h-4 text-cy-gray-600 flex-shrink-0" />}
+                  {i < STEPS.length - 1 && <ChevronRight className="w-4 h-4 text-cy-gray-600 flex-shrink-0 rtl:rotate-180" />}
                 </div>
               );
             })}
@@ -778,14 +772,14 @@ export default function SubscribePage() {
               disabled={step === 1}
               className="inline-flex items-center gap-2 btn-ghost px-5 py-2.5 text-sm disabled:opacity-30"
             >
-              <ArrowLeft className="w-4 h-4" /> Back
+              <ArrowLeft className="w-4 h-4 rtl:rotate-180" /> {t("back")}
             </button>
             <button
               onClick={() => setStep((s) => s + 1)}
               disabled={!canProceed[step - 1]}
               className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-sm bg-cy-orange hover:bg-cy-orange-light text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Continue <ArrowRight className="w-4 h-4" />
+              {t("continue")} <ArrowRight className="w-4 h-4 rtl:rotate-180" />
             </button>
           </div>
         )}

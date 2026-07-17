@@ -4,8 +4,11 @@ ADR-0002: tiered multi-tenancy; ADR-0005: CyIdentity realm mapping.
 """
 
 import logging
+import os
+import secrets
 import uuid
 from dataclasses import dataclass, field
+from datetime import timedelta
 
 from django.db import transaction
 from django.db.models import Q
@@ -79,8 +82,8 @@ class TenantEventEmitter:
     def emit(event_type: str, tenant: Tenant, payload: dict) -> None:
         try:
             OutboxEvent.objects.create(
-                aggregate_type="tenant",
-                aggregate_id=str(tenant.id),
+                tenant_id=tenant.id,
+                topic="platform.tenant.events",
                 event_type=event_type,
                 payload={**payload, "tenant_slug": tenant.slug},
             )
@@ -230,6 +233,183 @@ class TenantBootstrapService:
                     "compliance_basis": basis,
                 },
             )
+
+
+# ---------------------------------------------------------------------------
+# DemoProvisioningService — self-serve 72-hour trial tenants
+# ---------------------------------------------------------------------------
+
+DEMO_TRIAL_HOURS = 72
+
+
+class DemoProvisioningService:
+    """
+    Public self-serve demo signup: a real, fully isolated Tenant (same
+    bootstrap chain as a paying customer) plus a real CyIdentity realm/user,
+    both torn down automatically once the 72-hour trial expires
+    (see expire_demo_tenants_task in platform.tenant.tasks).
+    """
+
+    @transaction.atomic
+    def provision_demo(
+        self, *, product_code: str, email: str, org_name: str = "", locale: str = "en"
+    ) -> tuple[Tenant, "UserProfile | None"]:
+        # cyshop has its own completely separate, unfederated auth system (no
+        # CyIdentity/Keycloak trust) — adapter approach: call cyshop's own
+        # registration endpoint service-to-service instead of routing it
+        # through RealmService/UserProvisioningService like every other product.
+        if product_code == "cyshop":
+            return self._provision_demo_cyshop(email=email, org_name=org_name, locale=locale)
+
+        from platform.cyidentity.services import RealmService, UserProvisioningService
+
+        suffix = secrets.token_hex(4)
+        slug = f"demo-{product_code}-{suffix}".replace("_", "-")[:100]
+        display_name = org_name or f"Demo — {product_code}"
+        # Tenant.name is globally unique — display_name is not, so the
+        # suffix only needs to live in the DB-unique field.
+        unique_name = f"{display_name} ({suffix})"
+
+        bootstrap_req = TenantBootstrapRequest(
+            name=unique_name,
+            slug=slug,
+            tenant_type=TenantType.SAAS,
+            tier=TenantTier.SHARED,
+            locale=locale,
+            plan=SubscriptionPlan.STARTER,
+            contact_email=email,
+            display_name=display_name,
+        )
+        tenant = TenantBootstrapService().bootstrap(bootstrap_req, created_by="demo_signup")
+
+        trial_ends_at = timezone.now() + timedelta(hours=DEMO_TRIAL_HOURS)
+        # is_expired reads ends_at, is_trial reads trial_ends_at — set both so
+        # the same expiry timestamp flips both properties together.
+        TenantSubscription.objects.filter(tenant=tenant).update(
+            trial_ends_at=trial_ends_at, ends_at=trial_ends_at
+        )
+
+        tenant.metadata = {**tenant.metadata, "is_demo": True, "product_code": product_code}
+        tenant.save(update_fields=["metadata", "updated_at"])
+
+        realm_name = f"demo-{slug}"
+        realm = RealmService().provision(
+            tenant_id=tenant.id,
+            realm_name=realm_name,
+            realm_type="customer",
+            display_name=display_name,
+            locale=locale,
+        )
+        TenantRealmMappingService().assign_realm(tenant, realm.id, realm.realm_name)
+
+        username = email.split("@")[0] + "-" + suffix
+        user = UserProvisioningService().provision_user(
+            realm,
+            username=username,
+            email=email,
+            enabled=True,
+            email_verified=False,
+            attributes={"tenant_id": [str(tenant.id)], "product_code": [product_code]},
+        )
+        # provision_user() always sets a real password now (previously none was
+        # ever set, so demo logins were unusable) — surface it via the tenant's
+        # transient result so the view can return it to the signup response.
+        tenant.demo_password = getattr(user, "plaintext_password", None)
+
+        TenantLifecycleService().activate(tenant)
+
+        TenantEventEmitter.emit(
+            "tenant.demo_provisioned",
+            tenant,
+            {"product_code": product_code, "trial_ends_at": trial_ends_at.isoformat()},
+        )
+        log.info("Demo tenant %s provisioned for product=%s", tenant.slug, product_code)
+        return tenant, user
+
+    def _provision_demo_cyshop(
+        self, *, email: str, org_name: str = "", locale: str = "en"
+    ) -> tuple[Tenant, None]:
+        """
+        cyshop adapter: calls cyshop's own TenantRegisterView (a single atomic
+        call on cyshop's side that creates its Tenant/Company/Branch/User)
+        instead of going through CyIdentity. Mirrors provision_demo()'s naming
+        pattern locally, tracks the resulting tenant on the platform side too
+        (for cross-product admin visibility), but does NOT set up a Keycloak
+        realm/user — there isn't one for cyshop.
+
+        Known gap, not solved here: cyshop's own Tenant/TenantSettings model
+        has no trial/expiry field at all (confirmed — only a subscription_status
+        choice that includes TRIAL but nothing sets or enforces it, no
+        trial_ends_at). The platform-side TenantSubscription below still gets
+        a real trial_ends_at for admin-panel visibility, but nothing currently
+        acts on it for cyshop the way expire_demo_tenants_task does for
+        Keycloak-backed products — an expired cyshop demo tenant today just
+        keeps working. Deliberately not building a teardown call against
+        cyshop for this: that would mean adding a new admin/deactivation
+        endpoint to cyshop's own codebase, out of scope for the "adapter, not
+        migration" approach this phase committed to.
+        """
+        import re
+
+        import httpx
+
+        suffix = secrets.token_hex(4)
+        display_name = org_name or f"Demo Cyshop {suffix}"
+        subdomain_base = re.sub(r"[^a-z0-9]+", "-", (org_name or "demo-cyshop").lower()).strip("-") or "demo-cyshop"
+        subdomain = f"{subdomain_base}-{suffix}"[:63]
+        username = email.split("@")[0] + "-" + suffix
+        password = secrets.token_urlsafe(16)
+
+        cyshop_base = os.environ.get("CYSHOP_BACKEND_URL", "http://localhost:8020")
+        resp = httpx.post(
+            f"{cyshop_base}/api/v1/tenants/register/",
+            json={
+                "name": display_name,
+                "subdomain": subdomain,
+                "email": email,
+                "username": username,
+                "password": password,
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        cyshop_payload = resp.json()
+
+        trial_ends_at = timezone.now() + timedelta(hours=DEMO_TRIAL_HOURS)
+        bootstrap_req = TenantBootstrapRequest(
+            name=f"{display_name} ({suffix})",
+            slug=f"demo-cyshop-{suffix}",
+            tenant_type=TenantType.SAAS,
+            tier=TenantTier.SHARED,
+            locale=locale,
+            plan=SubscriptionPlan.STARTER,
+            contact_email=email,
+            display_name=display_name,
+        )
+        tenant = TenantBootstrapService().bootstrap(bootstrap_req, created_by="demo_signup")
+        TenantSubscription.objects.filter(tenant=tenant).update(
+            trial_ends_at=trial_ends_at, ends_at=trial_ends_at
+        )
+        tenant.metadata = {
+            **tenant.metadata,
+            "is_demo": True,
+            "product_code": "cyshop",
+            "cyshop_tenant_id": cyshop_payload.get("tenant_id"),
+            "cyshop_subdomain": subdomain,
+        }
+        tenant.save(update_fields=["metadata", "updated_at"])
+        tenant.demo_password = password
+        tenant.demo_username = username
+        tenant.demo_subdomain = subdomain
+
+        TenantLifecycleService().activate(tenant)
+        TenantEventEmitter.emit(
+            "tenant.demo_provisioned",
+            tenant,
+            {"product_code": "cyshop", "trial_ends_at": trial_ends_at.isoformat()},
+        )
+        log.info("Demo cyshop tenant %s provisioned (subdomain=%s)", tenant.slug, subdomain)
+        return tenant, None
 
 
 # ---------------------------------------------------------------------------

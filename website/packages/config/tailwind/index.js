@@ -67,7 +67,7 @@ const config = {
       },
       fontFamily: {
         heading: ["Lexend", "system-ui", "sans-serif"],
-        body: ["Source Sans 3", "system-ui", "sans-serif"],
+        body: ['"Source Sans 3"', "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "Consolas", "monospace"],
       },
       fontSize: {

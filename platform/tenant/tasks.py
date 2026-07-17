@@ -62,6 +62,47 @@ def check_license_expiry_task():
     return count
 
 
+@shared_task(name="tenant.expire_demo_tenants")
+def expire_demo_tenants_task():
+    """
+    Tear down demo trial tenants past their 72h window: terminate the
+    tenant and delete the real Keycloak user(s) tied to it. Irreversible.
+    is_expired reads ends_at, which DemoProvisioningService sets equal to
+    trial_ends_at, so this also naturally skips paying customers (whose
+    ends_at is normally unset).
+    """
+    from platform.cyidentity.models import UserProfile
+    from platform.cyidentity.services import UserProvisioningService
+    from platform.tenant.models import TenantStatus, TenantSubscription
+    from platform.tenant.services import TenantLifecycleService
+
+    now = timezone.now()
+    expired = TenantSubscription.objects.filter(
+        is_active=True,
+        ends_at__lt=now,
+        tenant__status=TenantStatus.ACTIVE,
+        tenant__metadata__is_demo=True,
+    ).select_related("tenant")
+
+    lifecycle = TenantLifecycleService()
+    identity = UserProvisioningService()
+    count = 0
+    for sub in expired:
+        tenant = sub.tenant
+        try:
+            for user in UserProfile.objects.filter(tenant_id=tenant.id).select_related("realm"):
+                identity.deprovision_user(user)
+            lifecycle.terminate(tenant, reason="demo_trial_expired", by="system")
+            sub.is_active = False
+            sub.save(update_fields=["is_active", "updated_at"])
+            count += 1
+        except Exception:
+            log.exception("Failed to expire demo tenant %s", tenant.slug)
+
+    log.info("expire_demo_tenants: terminated %d demo tenants", count)
+    return count
+
+
 @shared_task(name="tenant.sync_realm_mapping")
 def sync_realm_mapping_task(tenant_id: str):
     """Re-sync Keycloak realm info for a tenant (called after realm updates)."""

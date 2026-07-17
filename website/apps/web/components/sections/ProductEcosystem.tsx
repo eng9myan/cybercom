@@ -118,6 +118,17 @@ const PLATFORM_PRODUCTS = [
   },
 ];
 
+const PRODUCT_SLUG_ROUTES: Record<string, string> = {
+  cyshop: "cyshop",
+  cycom: "erp",
+  "cymed-clinic": "cymed",
+};
+
+function productHref(locale: Locale, slug: string): string {
+  const route = PRODUCT_SLUG_ROUTES[slug];
+  return route ? `/${locale}/${route}` : `/${locale}/products/${slug}`;
+}
+
 export function ProductEcosystem({ locale }: ProductEcosystemProps) {
   const shouldReduce = useReducedMotion();
 
@@ -176,7 +187,7 @@ export function ProductEcosystem({ locale }: ProductEcosystemProps) {
                 className={p.size === "large" ? "lg:col-span-1 lg:row-span-1" : ""}
               >
                 <Link
-                  href={p.slug === "cyshop" ? `/${locale}/cyshop` : p.slug === "cycom" ? `/${locale}/erp` : p.slug === "cymed" ? `/${locale}/cymed` : `/${locale}/products/${p.slug}`}
+                  href={productHref(locale, p.slug)}
                   className="bento-card block p-8 h-full group"
                   style={{ borderColor: p.accentBorder }}
                   aria-label={`${p.name} — ${p.category}`}

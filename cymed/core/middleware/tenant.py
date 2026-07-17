@@ -30,11 +30,27 @@ class TenantIsolationMiddleware:
             request.tenant_id = None
             return self.get_response(request)
 
+        # Django admin/static/media aren't tenant-scoped by this middleware
+        if request.path.startswith("/admin") or request.path.startswith("/static/") or request.path.startswith("/media/"):
+            request.tenant_id = None
+            return self.get_response(request)
+
         # Fallback to check token session payload if header is missing
         if not tenant_id and hasattr(request, "user_session"):
             tenant_id = request.user_session.get("tenant_id")
 
         if not tenant_id:
+            # Platform admins operate cross-tenant by design (e.g. listing
+            # every tenant/subscription for the admin panel) — they have no
+            # single tenant_id to supply. Previously there was no bypass at
+            # all here, so even IsPlatformAdmin-gated cross-tenant endpoints
+            # were unreachable with a real token. Skip RLS scoping for them;
+            # the DRF permission classes (IsPlatformAdmin/ReadOnlyOrPlatformAdmin)
+            # already gate which endpoints a platform_admin may call.
+            roles = set(getattr(request, "user_session", {}).get("roles") or [])
+            if "platform_admin" in roles:
+                request.tenant_id = None
+                return self.get_response(request)
             return JsonResponse({"detail": "X-Tenant-ID header or claim is missing."}, status=400)
 
         # Set thread-safe setting inside PostgreSQL connection pool

@@ -1,3 +1,4 @@
+import os
 import re
 import time
 from typing import Any
@@ -66,17 +67,34 @@ class ModelGateway:
     """
     Unified router to invoke LLM completion providers.
 
-    ⚠ SIMULATED, NOT REAL — generate_completion() below does not call
-    Gemini, OpenAI, Anthropic, or Ollama. It returns a hardcoded
-    f"[Provider ModelName] Response to: ..." string regardless of
-    `provider`. No real API keys/credentials for any of those providers
-    exist in this codebase. Guardrail scrubbing, logging (InferenceLog),
-    and latency measurement around the fake call are all real — only the
-    inference itself is fake. Do not treat CyAI features built on this as
-    functioning AI without first replacing this method with a real
-    provider call (see docs/ai/AI_GOVERNANCE.md for what real integration
-    requires before shipping, especially for CyMed clinical use cases).
+    Anthropic is real (see _call_anthropic below) — everything else
+    (gemini/openai/ollama) is still SIMULATED, returning a hardcoded
+    f"[Provider ModelName] Response to: ..." string. Guardrail scrubbing,
+    logging (InferenceLog), and latency measurement are real for every
+    provider; only the inference call itself differs. Extend the other
+    providers the same way (real SDK/REST call reading the key from
+    os.environ via config.api_key_ref) before treating them as functioning.
+    See docs/ai/AI_GOVERNANCE.md for clinical-use requirements (CyMed).
     """
+
+    @staticmethod
+    def _call_anthropic(config: ModelConfig, prompt: str) -> str:
+        import anthropic
+
+        api_key = os.environ.get(config.api_key_ref or "ANTHROPIC_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                f"No Anthropic API key found in env var '{config.api_key_ref or 'ANTHROPIC_API_KEY'}' — "
+                "set it before calling a real Claude model."
+            )
+        client = anthropic.Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model=config.model_name,
+            max_tokens=4096,
+            temperature=float(config.temperature),
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return "".join(block.text for block in response.content if block.type == "text")
 
     @classmethod
     def generate_completion(
@@ -116,18 +134,15 @@ class ModelGateway:
         verdict = "passed"
 
         try:
-            # Simulate external API call
             provider = config.provider.lower()
-            if provider == "gemini":
+            if provider == "anthropic":
+                response_text = cls._call_anthropic(config, scrubbed_prompt)
+            elif provider == "gemini":
                 response_text = (
                     f"[Gemini {config.model_name}] Response to: {scrubbed_prompt[:40]}..."
                 )
             elif provider == "openai":
                 response_text = f"[GPT {config.model_name}] Response to: {scrubbed_prompt[:40]}..."
-            elif provider == "anthropic":
-                response_text = (
-                    f"[Claude {config.model_name}] Response to: {scrubbed_prompt[:40]}..."
-                )
             else:
                 response_text = (
                     f"[Ollama {config.model_name}] Response to: {scrubbed_prompt[:40]}..."

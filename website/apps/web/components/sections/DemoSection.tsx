@@ -88,13 +88,13 @@ export function DemoSection({ locale: _locale, asPageHero = false }: DemoSection
 
   function validate(): boolean {
     const newErrors: Partial<Record<keyof FormState, string>> = {};
-    if (!form.full_name.trim()) newErrors.full_name = "Full name is required";
-    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) newErrors.email = "Valid work email is required";
-    if (!form.job_title.trim()) newErrors.job_title = "Job title is required";
-    if (!form.company.trim()) newErrors.company = "Company name is required";
-    if (!form.country.trim()) newErrors.country = "Country is required";
-    if (form.product_interests.length === 0) newErrors.product_interests = "Select at least one product";
-    if (!form.gdpr_consent) newErrors.gdpr_consent = "You must agree to the privacy policy";
+    if (!form.full_name.trim()) newErrors.full_name = t("form.errors.fullName");
+    if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) newErrors.email = t("form.errors.email");
+    if (!form.job_title.trim()) newErrors.job_title = t("form.errors.jobTitle");
+    if (!form.company.trim()) newErrors.company = t("form.errors.company");
+    if (!form.country.trim()) newErrors.country = t("form.errors.country");
+    if (form.product_interests.length === 0) newErrors.product_interests = t("form.errors.productInterests");
+    if (!form.gdpr_consent) newErrors.gdpr_consent = t("form.errors.gdprConsent");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -132,7 +132,7 @@ export function DemoSection({ locale: _locale, asPageHero = false }: DemoSection
             transition={{ duration: 0.5 }}
             className="text-center mb-12"
           >
-            <p className="text-sm font-medium text-cy-orange mb-3 uppercase tracking-wider">Request Demo</p>
+            <p className="text-sm font-medium text-cy-orange mb-3 uppercase tracking-wider">{t("eyebrow")}</p>
             <Heading id="demo-heading" className="text-4xl lg:text-5xl font-heading font-semibold text-white mb-4">
               {t("title")}
             </Heading>
@@ -171,7 +171,7 @@ export function DemoSection({ locale: _locale, asPageHero = false }: DemoSection
                 <div className="p-4 rounded-xl border border-destructive/30 bg-destructive/5 flex items-start gap-3" role="alert">
                   <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
                   <p className="text-sm text-destructive">
-                    Something went wrong. Please try again or contact us at sales@cy-com.com.
+                    {t("form.genericError")}
                   </p>
                 </div>
               )}
@@ -299,7 +299,7 @@ export function DemoSection({ locale: _locale, asPageHero = false }: DemoSection
                     className="form-input"
                   >
                     {COMPANY_SIZES.map((s) => (
-                      <option key={s} value={s}>{s} employees</option>
+                      <option key={s} value={s}>{s} {t("form.employees")}</option>
                     ))}
                   </select>
                 </div>
@@ -344,7 +344,7 @@ export function DemoSection({ locale: _locale, asPageHero = false }: DemoSection
                         aria-pressed={selected}
                       >
                         {selected && <Check className="inline w-3 h-3 mr-1" aria-hidden="true" />}
-                        {product}
+                        {t(`form.productNames.${product}`)}
                       </button>
                     );
                   })}
@@ -366,7 +366,7 @@ export function DemoSection({ locale: _locale, asPageHero = false }: DemoSection
                   value={form.message}
                   onChange={(e) => setField("message", e.target.value)}
                   className="form-input resize-none"
-                  placeholder="Tell us about your organization and requirements..."
+                  placeholder={t("form.messagePlaceholder")}
                 />
               </div>
 

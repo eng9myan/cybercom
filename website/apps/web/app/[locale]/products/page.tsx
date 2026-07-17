@@ -1,4 +1,4 @@
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { buildMetadata } from "@/lib/metadata";
@@ -12,9 +12,10 @@ interface ProductsPageProps {
 export async function generateMetadata({ params }: ProductsPageProps): Promise<Metadata> {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations("productsPage");
   return buildMetadata({
-    title: "All Products",
-    description: "Explore all 9 CyberCom platforms: CyMed healthcare, CyCom ERP, CyGov government, CyAI, CyIdentity, CyIntegrationHub, CyData, CyConnect, CyCitizen.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
     path: "/products",
     locale,
   });
@@ -22,87 +23,81 @@ export async function generateMetadata({ params }: ProductsPageProps): Promise<M
 
 const PLATFORM_CATEGORIES = [
   {
-    name: "Healthcare",
-    desc: "FHIR-native, ICD-11 ready clinical platforms",
+    key: "healthcare",
     color: "text-emerald-400",
     bgColor: "bg-emerald-500/5",
     borderColor: "border-emerald-500/20",
     products: [
-      { name: "CyMed Clinic", slug: "cymed-clinic", desc: "Outpatient clinical management" },
-      { name: "CyMed Hospital", slug: "cymed-hospital", desc: "Complete hospital operations" },
-      { name: "CyMed Laboratory", slug: "cymed-laboratory", desc: "LIS with auto-verification" },
-      { name: "CyMed Imaging", slug: "cymed-imaging", desc: "RIS/DICOM PACS" },
-      { name: "CyMed Pharmacy", slug: "cymed-pharmacy", desc: "Clinical dispensing" },
-      { name: "CyMed Patient Portal", slug: "cymed-patient-portal", desc: "Patient engagement" },
-      { name: "CyMed Provider Portal", slug: "cymed-provider-portal", desc: "Clinical workforce" },
-      { name: "CyMed Revenue Cycle", slug: "cymed-revenue-cycle", desc: "RCM & billing" },
-      { name: "CyMed Population Health", slug: "cymed-population-health", desc: "Analytics & programs" },
+      { name: "CyMed Clinic", slug: "cymed-clinic" },
+      { name: "CyMed Hospital", slug: "cymed-hospital" },
+      { name: "CyMed Laboratory", slug: "cymed-laboratory" },
+      { name: "CyMed Imaging", slug: "cymed-imaging" },
+      { name: "CyMed Pharmacy", slug: "cymed-pharmacy" },
+      { name: "CyMed Patient Portal", slug: "cymed-patient-portal" },
+      { name: "CyMed Provider Portal", slug: "cymed-provider-portal" },
+      { name: "CyMed Revenue Cycle", slug: "cymed-revenue-cycle" },
+      { name: "CyMed Population Health", slug: "cymed-population-health" },
     ],
   },
   {
-    name: "Retail",
-    desc: "Intelligent retail & commerce platform",
+    key: "retail",
     color: "text-cy-orange",
     bgColor: "bg-cy-orange/5",
     borderColor: "border-cy-orange/20",
     products: [
-      { name: "CyShop", slug: "cyshop", desc: "Complete retail & commerce platform" },
+      { name: "CyShop", slug: "cyshop" },
     ],
   },
   {
-    name: "Enterprise",
-    desc: "ERP, government, and citizen platforms",
+    key: "enterprise",
     color: "text-blue-400",
     bgColor: "bg-blue-500/5",
     borderColor: "border-blue-500/20",
     products: [
-      { name: "CyCom ERP", slug: "cycom", desc: "Unified enterprise ERP" },
-      { name: "CyCom Finance", slug: "cycom-finance", desc: "Financial management & budgeting" },
-      { name: "CyCom Accounting", slug: "cycom-accounting", desc: "AP, AR, & tax compliance" },
-      { name: "CyCom Procurement", slug: "cycom-procurement", desc: "Sourcing & supplier relations" },
-      { name: "CyCom Inventory", slug: "cycom-inventory", desc: "Multi-warehouse stock control" },
-      { name: "CyCom HR", slug: "cycom-hr", desc: "Human resource & talent" },
-      { name: "CyCom Payroll", slug: "cycom-payroll", desc: "Bilingual salary & WPS processing" },
-      { name: "CyCom CRM", slug: "cycom-crm", desc: "Lead pipeline & customer management" },
-      { name: "CyCom Assets", slug: "cycom-assets", desc: "Fixed asset & depreciation registry" },
-      { name: "CyCom Manufacturing", slug: "cycom-manufacturing", desc: "Production & Bill of Materials" },
-      { name: "CyCom Retail", slug: "cycom-retail", desc: "Point of Sale & checkout retail" },
-      { name: "CyCom BI", slug: "cycom-bi", desc: "Drag-and-drop dashboards & BI" },
-      { name: "CyGov", slug: "cygov", desc: "Digital government platform" },
-      { name: "CyCitizen", slug: "cycitizen", desc: "Citizen experience" },
+      { name: "CyCom ERP", slug: "cycom" },
+      { name: "CyCom Finance", slug: "cycom-finance" },
+      { name: "CyCom Accounting", slug: "cycom-accounting" },
+      { name: "CyCom Procurement", slug: "cycom-procurement" },
+      { name: "CyCom Inventory", slug: "cycom-inventory" },
+      { name: "CyCom HR", slug: "cycom-hr" },
+      { name: "CyCom Payroll", slug: "cycom-payroll" },
+      { name: "CyCom CRM", slug: "cycom-crm" },
+      { name: "CyCom Assets", slug: "cycom-assets" },
+      { name: "CyCom Manufacturing", slug: "cycom-manufacturing" },
+      { name: "CyCom Retail", slug: "cycom-retail" },
+      { name: "CyCom BI", slug: "cycom-bi" },
+      { name: "CyGov", slug: "cygov" },
+      { name: "CyCitizen", slug: "cycitizen" },
     ],
   },
   {
-    name: "Intelligence & Data",
-    desc: "AI, analytics, and integration platforms",
+    key: "intelligence",
     color: "text-pink-400",
     bgColor: "bg-pink-500/5",
     borderColor: "border-pink-500/20",
     products: [
-      { name: "CyAI", slug: "cyai", desc: "Artificial intelligence platform" },
-      { name: "CyData", slug: "cydata", desc: "Data lakehouse & analytics" },
+      { name: "CyAI", slug: "cyai" },
+      { name: "CyData", slug: "cydata" },
     ],
   },
   {
-    name: "Infrastructure",
-    desc: "Identity, integration, and communications",
+    key: "infrastructure",
     color: "text-violet-400",
     bgColor: "bg-violet-500/5",
     borderColor: "border-violet-500/20",
     products: [
-      { name: "CyIdentity", slug: "cyidentity", desc: "OAuth 2.1, OIDC, Zero Trust" },
-      { name: "CyIntegrationHub", slug: "cyintegrationhub", desc: "FHIR, HL7, REST, Kafka" },
-      { name: "CyConnect", slug: "cyconnect", desc: "Unified communications" },
+      { name: "CyIdentity", slug: "cyidentity" },
+      { name: "CyIntegrationHub", slug: "cyintegrationhub" },
+      { name: "CyConnect", slug: "cyconnect" },
     ],
   },
   {
-    name: "Developer",
-    desc: "APIs, SDKs, and integration tools",
+    key: "developer",
     color: "text-violet-300",
     bgColor: "bg-violet-400/5",
     borderColor: "border-violet-400/20",
     products: [
-      { name: "CyDeveloper", slug: "cydeveloper", desc: "REST APIs, SDKs, webhooks, sandbox" },
+      { name: "CyDeveloper", slug: "cydeveloper" },
     ],
   },
 ];
@@ -111,6 +106,7 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
   const l = locale as Locale;
+  const t = await getTranslations("productsPage");
 
   return (
     <div className="min-h-dvh pt-16">
@@ -120,12 +116,12 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
           <div className="glow-orb w-[600px] h-[600px] -top-32 left-1/2 -translate-x-1/2 bg-cy-orange/8" />
         </div>
         <div className="section-container relative z-10 text-center">
-          <p className="text-sm font-medium text-cy-orange mb-3 uppercase tracking-wider">Platform Suite</p>
+          <p className="text-sm font-medium text-cy-orange mb-3 uppercase tracking-wider">{t("badge")}</p>
           <h1 className="text-5xl lg:text-6xl font-heading font-semibold text-white mb-4">
-            The CyberCom Ecosystem
+            {t("heading")}
           </h1>
           <p className="text-xl text-cy-gray-400 max-w-2xl mx-auto">
-            Three enterprise platforms — CyMed, CyShop, and CyCom ERP — built on open standards, sharing one identity layer, one audit trail, and one integration hub.
+            {t("subheading")}
           </p>
         </div>
       </div>
@@ -134,14 +130,14 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
       <div className="section-container pb-24">
         <div className="space-y-16">
           {PLATFORM_CATEGORIES.map((category) => (
-            <section key={category.name} aria-labelledby={`cat-${category.name}`}>
+            <section key={category.key} aria-labelledby={`cat-${category.key}`}>
               <div className="flex items-center gap-3 mb-6">
                 <div className={`w-2 h-6 rounded-full ${category.bgColor} border ${category.borderColor}`} aria-hidden="true" />
                 <div>
-                  <h2 id={`cat-${category.name}`} className={`text-xl font-heading font-semibold ${category.color}`}>
-                    {category.name}
+                  <h2 id={`cat-${category.key}`} className={`text-xl font-heading font-semibold ${category.color}`}>
+                    {t(`categories.${category.key}.name`)}
                   </h2>
-                  <p className="text-sm text-cy-gray-400">{category.desc}</p>
+                  <p className="text-sm text-cy-gray-400">{t(`categories.${category.key}.desc`)}</p>
                 </div>
               </div>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -156,7 +152,7 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
                         <div className={`font-medium text-sm mb-0.5 group-hover:${category.color} transition-colors`}>
                           {product.name}
                         </div>
-                        <div className="text-xs text-cy-gray-400">{product.desc}</div>
+                        <div className="text-xs text-cy-gray-400">{t(`products.${product.slug}`)}</div>
                       </div>
                       <ArrowRight
                         className="w-4 h-4 text-cy-gray-600 group-hover:text-white group-hover:translate-x-0.5 transition-all duration-200 flex-shrink-0 rtl:rotate-180"
@@ -173,13 +169,13 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
         {/* Demo CTA */}
         <div className="mt-16 glass-card p-8 rounded-2xl text-center">
           <h2 className="text-2xl font-heading font-semibold text-white mb-3">
-            Not sure which platform fits your needs?
+            {t("ctaHeading")}
           </h2>
           <p className="text-cy-gray-400 mb-6">
-            Our platform specialists will guide you to the right solution for your industry and scale.
+            {t("ctaDesc")}
           </p>
           <Link href={`/${l}/demo`} className="btn-primary px-8 py-3">
-            Schedule a Consultation
+            {t("ctaButton")}
             <ArrowRight className="w-4 h-4 rtl:rotate-180" aria-hidden="true" />
           </Link>
         </div>

@@ -12,7 +12,7 @@ export function ErrorCard({ error, hint }: { error: string; hint?: string }) {
       <p className="text-rose-300 font-semibold mb-1">Couldn't load data</p>
       <p className="text-rose-400/80 text-xs">{error}</p>
       <p className="text-slate-500 text-[10px] mt-2">
-        {hint ?? "Confirm cycom-platform is running (docker compose up) and you're logged in."}
+        {hint ?? "Confirm the Cycom backend is running and you're logged in."}
       </p>
     </div>
   );

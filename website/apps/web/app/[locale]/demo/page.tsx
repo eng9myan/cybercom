@@ -1,4 +1,4 @@
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { buildMetadata } from "@/lib/metadata";
 import { type Locale } from "@/lib/i18n";
@@ -11,9 +11,10 @@ interface DemoPageProps {
 export async function generateMetadata({ params }: DemoPageProps): Promise<Metadata> {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations("demo");
   return buildMetadata({
-    title: "Request a Demo",
-    description: "Schedule a personalized demonstration of CyberCom platforms — CyMed, CyCom, CyGov, CyAI and more. Our specialists will walk you through the platform tailored to your needs.",
+    title: t("metaTitle"),
+    description: t("metaDescription"),
     path: "/demo",
     locale,
   });

@@ -162,7 +162,7 @@ export default function EmployeeDirectory() {
         <div className="glass-card p-6 border border-rose-500/30 bg-rose-500/5 text-sm">
           <p className="text-rose-300 font-semibold mb-1">Couldn't load employees</p>
           <p className="text-rose-400/80 text-xs">{error}</p>
-          <p className="text-slate-500 text-[10px] mt-2">Confirm cycom-platform is running (docker compose up) and you're logged in.</p>
+          <p className="text-slate-500 text-[10px] mt-2">Confirm the Cycom backend is running and you're logged in.</p>
         </div>
       )}
 

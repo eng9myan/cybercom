@@ -165,11 +165,11 @@ class KeycloakAdminClient:
     """
 
     def __init__(self, realm: IdentityRealm | None = None):
-        self.base_url = (
-            realm.admin_api_url.rstrip("/")
-            if realm and realm.admin_api_url
-            else getattr(settings, "CYIDENTITY_ISSUER", "http://localhost:8080").rstrip("/")
-        )
+        # Always the bare Keycloak server root — every method below builds its
+        # own full /admin/realms/{realm}/... path, so using realm.admin_api_url
+        # (which already contains /admin/realms/{realm}) here would double it up.
+        issuer = getattr(settings, "CYIDENTITY_ISSUER", "http://localhost:8080")
+        self.base_url = issuer.split("/realms/")[0].rstrip("/")
         self.realm_name = realm.realm_name if realm else "master"
         self.admin_token: str | None = None
         self.timeout_seconds: int = 10
@@ -269,7 +269,7 @@ class KeycloakAdminClient:
         if not getattr(settings, "KEYCLOAK_ENABLED", True):
             client_id = client_payload.get("clientId") or str(uuid.uuid4())
             self._fake_store["clients"].setdefault(realm_name, {})[client_id] = client_payload
-            return {"clientId": client_id, **client_payload}
+            return {"id": client_id, "clientId": client_id, **client_payload}
         import httpx  # type: ignore
 
         url = f"{self.base_url}/admin/realms/{realm_name}/clients"
@@ -280,7 +280,63 @@ class KeycloakAdminClient:
             raise KeycloakError(
                 f"create_client failed: {resp.status_code}", resp.status_code, resp.text
             )
-        return resp.json() if resp.text else client_payload
+        # Real Keycloak returns 201 with an EMPTY body and the client's internal
+        # UUID only in the Location header — unlike create_user this was never
+        # being captured, so downstream code (ClientService.register) always saw
+        # keycloak_uuid="" and secret rotation silently used the human clientId
+        # instead of the real internal id. Mirror the Location-header pattern
+        # already used correctly by create_user below.
+        location = resp.headers.get("Location", "")
+        kc_id = location.rsplit("/", 1)[-1] if location else ""
+        return {"id": kc_id, **client_payload}
+
+    def find_client_by_client_id(self, realm_name: str, client_id: str) -> dict[str, Any] | None:
+        """Look up a client's internal Keycloak representation (incl. real `id`
+        uuid) by its human clientId. Needed for idempotent bootstrap scripts —
+        create_client() has no built-in "already exists" recovery path."""
+        if not getattr(settings, "KEYCLOAK_ENABLED", True):
+            for uid, payload in self._fake_store["clients"].get(realm_name, {}).items():
+                if payload.get("clientId") == client_id:
+                    return {"id": uid, **payload}
+            return None
+        import httpx  # type: ignore
+
+        url = f"{self.base_url}/admin/realms/{realm_name}/clients"
+        resp = httpx.get(
+            url,
+            params={"clientId": client_id},
+            headers=self._auth_headers(),
+            timeout=self.timeout_seconds,
+        )
+        if resp.status_code >= 400:
+            raise KeycloakError(
+                f"find_client_by_client_id failed: {resp.status_code}", resp.status_code, resp.text
+            )
+        matches = resp.json()
+        return matches[0] if matches else None
+
+    def find_user_by_username(self, realm_name: str, username: str) -> dict[str, Any] | None:
+        """Look up a user's internal Keycloak representation by username."""
+        if not getattr(settings, "KEYCLOAK_ENABLED", True):
+            for uid, payload in self._fake_store["users"].get(realm_name, {}).items():
+                if payload.get("username") == username:
+                    return {"id": uid, **payload}
+            return None
+        import httpx  # type: ignore
+
+        url = f"{self.base_url}/admin/realms/{realm_name}/users"
+        resp = httpx.get(
+            url,
+            params={"username": username, "exact": "true"},
+            headers=self._auth_headers(),
+            timeout=self.timeout_seconds,
+        )
+        if resp.status_code >= 400:
+            raise KeycloakError(
+                f"find_user_by_username failed: {resp.status_code}", resp.status_code, resp.text
+            )
+        matches = resp.json()
+        return matches[0] if matches else None
 
     def get_client_secret(self, realm_name: str, client_uuid: str) -> dict[str, Any]:
         if not getattr(settings, "KEYCLOAK_ENABLED", True):
@@ -330,21 +386,91 @@ class KeycloakAdminClient:
         location = resp.headers.get("Location", "")
         return location.rsplit("/", 1)[-1] if location else str(uuid.uuid4())
 
+    def delete_user(self, realm_name: str, user_id: str) -> None:
+        if not getattr(settings, "KEYCLOAK_ENABLED", True):
+            self._fake_store["users"].get(realm_name, {}).pop(user_id, None)
+            return
+        import httpx  # type: ignore
+
+        url = f"{self.base_url}/admin/realms/{realm_name}/users/{user_id}"
+        resp = httpx.delete(url, headers=self._auth_headers(), timeout=self.timeout_seconds)
+        if resp.status_code == 404:
+            raise KeycloakNotFound(f"User not found: {user_id}", 404)
+        if resp.status_code >= 400:
+            raise KeycloakError(
+                f"delete_user failed: {resp.status_code}", resp.status_code, resp.text
+            )
+
+    def create_realm_role(self, realm_name: str, role_name: str) -> None:
+        """Create a realm role if it doesn't already exist. Idempotent (swallows 409)."""
+        if not getattr(settings, "KEYCLOAK_ENABLED", True):
+            self._fake_store["roles"].setdefault(realm_name, set()).add(role_name)
+            return
+        import httpx  # type: ignore
+
+        url = f"{self.base_url}/admin/realms/{realm_name}/roles"
+        resp = httpx.post(
+            url, json={"name": role_name}, headers=self._auth_headers(), timeout=self.timeout_seconds
+        )
+        if resp.status_code not in (201, 409):
+            raise KeycloakError(
+                f"create_realm_role failed: {resp.status_code}", resp.status_code, resp.text
+            )
+
     def assign_role_to_user(self, realm_name: str, user_id: str, role_name: str) -> None:
         if not getattr(settings, "KEYCLOAK_ENABLED", True):
             return
         import httpx  # type: ignore
 
+        # Keycloak's role-mappings endpoint requires full role representations
+        # (id + name), not just a name — the previous version posted only
+        # {"name": role_name}, which real Keycloak rejects. Fetch the role's
+        # id first, same as any Admin API client library would.
+        role_url = f"{self.base_url}/admin/realms/{realm_name}/roles/{role_name}"
+        role_resp = httpx.get(role_url, headers=self._auth_headers(), timeout=self.timeout_seconds)
+        if role_resp.status_code == 404:
+            raise KeycloakNotFound(f"Realm role not found: {role_name}", 404)
+        if role_resp.status_code >= 400:
+            raise KeycloakError(
+                f"get_realm_role failed: {role_resp.status_code}",
+                role_resp.status_code,
+                role_resp.text,
+            )
+        role_repr = role_resp.json()
+
         url = f"{self.base_url}/admin/realms/{realm_name}/users/{user_id}/role-mappings/realm"
         resp = httpx.post(
             url,
-            json=[{"name": role_name}],
+            json=[{"id": role_repr["id"], "name": role_repr["name"]}],
             headers=self._auth_headers(),
             timeout=self.timeout_seconds,
         )
         if resp.status_code >= 400:
             raise KeycloakError(
                 f"assign_role failed: {resp.status_code}", resp.status_code, resp.text
+            )
+
+    def set_user_password(
+        self, realm_name: str, user_id: str, password: str, temporary: bool = False
+    ) -> None:
+        """Set a user's password. No prior method did this — provision_user()
+        created users with no credentials at all, making password-grant login
+        impossible for any previously-provisioned user (including demo trials)."""
+        if not getattr(settings, "KEYCLOAK_ENABLED", True):
+            self._fake_store["users"].setdefault(realm_name, {})
+            return
+        import httpx  # type: ignore
+
+        url = f"{self.base_url}/admin/realms/{realm_name}/users/{user_id}/reset-password"
+        resp = httpx.put(
+            url,
+            json={"type": "password", "value": password, "temporary": temporary},
+            headers=self._auth_headers(),
+            timeout=self.timeout_seconds,
+        )
+        if resp.status_code >= 400:
+            raise KeycloakError(
+                f"set_user_password failed: {resp.status_code}", resp.status_code, resp.text
             )
 
     # --- Helpers ------------------------------------------------------------
@@ -514,7 +640,7 @@ class RealmService:
             admin_api_url=admin_api,
             is_active=enabled,
             mfa_enforced=bool(mfa_methods),
-            passkey_enabled=(mfa_methods or []) and "webauthn" in mfa_methods,
+            passkey_enabled=bool(mfa_methods) and "webauthn" in mfa_methods,
             home_region=home_region,
             locale=locale,
             metadata={"display_name": display_name or realm_name},
@@ -572,7 +698,14 @@ class ClientService:
         *,
         client_id: str,
         name: str,
-        protocol: str = "oidc",
+        # Keycloak's real protocol identifier is "openid-connect" — "oidc" is
+        # not a registered LoginProtocolFactory id. Direct-access-grant-only
+        # clients (like cybercom-backend) never exercised the browser-redirect
+        # code path that validates this, so the bug stayed hidden until a
+        # public/PKCE client tried a standard authorization_code flow and hit
+        # a 500 (NullPointerException server-side — Keycloak couldn't resolve
+        # a protocol factory for "oidc").
+        protocol: str = "openid-connect",
         public_client: bool = False,
         redirect_uris: Iterable[str] = (),
         web_origins: Iterable[str] = (),
@@ -580,6 +713,7 @@ class ClientService:
         mfa_required: bool = True,
         fapi_profile_enabled: bool = False,
         smart_on_fhir_enabled: bool = False,
+        direct_access_grants_enabled: bool = False,
     ) -> ApplicationClient:
         self.kc.authenticate()
         client_uuid = self.kc.create_client(
@@ -590,7 +724,7 @@ class ClientService:
                 "protocol": protocol,
                 "publicClient": public_client,
                 "standardFlowEnabled": True,
-                "directAccessGrantsEnabled": False,
+                "directAccessGrantsEnabled": direct_access_grants_enabled,
                 "serviceAccountsEnabled": not public_client,
                 "redirectUris": list(redirect_uris),
                 "webOrigins": list(web_origins),
@@ -677,6 +811,7 @@ class UserProvisioningService:
         enabled: bool = True,
         email_verified: bool = False,
         attributes: dict[str, Any] | None = None,
+        password: str | None = None,
     ) -> UserProfile:
         self.kc.authenticate()
         kc_user_id = self.kc.create_user(
@@ -691,6 +826,13 @@ class UserProvisioningService:
                 "attributes": attributes or {},
             },
         )
+        # No prior version of this method set a password at all — every user
+        # ever created here (including live demo-trial signups) had no
+        # credentials in Keycloak, making password-grant login impossible.
+        # Always set one: caller-supplied, or a generated one exposed via the
+        # transient `plaintext_password` attribute below (never persisted).
+        effective_password = password or secrets.token_urlsafe(16)
+        self.kc.set_user_password(realm.realm_name, kc_user_id, effective_password, temporary=False)
         profile, created = UserProfile.objects.update_or_create(
             realm=realm,
             username=username,
@@ -706,7 +848,24 @@ class UserProvisioningService:
                 "attributes": attributes or {},
             },
         )
+        # Transient only — UserProfile has no password column by design
+        # (Keycloak is the credential store). Callers that need to relay the
+        # password to the actual user (e.g. demo signup) read this once,
+        # right after provision_user() returns, and never persist it either.
+        profile.plaintext_password = effective_password
         return profile
+
+    def deprovision_user(self, user: UserProfile) -> None:
+        """Delete the Keycloak identity and the local mirror row. Irreversible."""
+        self.kc.authenticate()
+        try:
+            self.kc.delete_user(user.realm.realm_name, str(user.keycloak_user_id))
+        except KeycloakNotFound:
+            logger.info(
+                "user_already_absent_in_keycloak",
+                extra={"realm": user.realm.realm_name, "user_id": str(user.keycloak_user_id)},
+            )
+        user.delete()
 
     def assign_role(self, user: UserProfile, role: Role, granted_by: str = "") -> RoleAssignment:
         self.kc.assign_role_to_user(user.realm.realm_name, str(user.keycloak_user_id), role.name)

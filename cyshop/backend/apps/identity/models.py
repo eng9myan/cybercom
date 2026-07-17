@@ -50,10 +50,13 @@ class PermissionGroup(BaseEntity):
         return self.name
 
 class Role(BaseEntity):
-    code = models.CharField(max_length=100, unique=True)
+    code = models.CharField(max_length=100)
     name = models.CharField(max_length=255)
     permissions = models.ManyToManyField(Permission, blank=True, related_name='roles')
     permission_groups = models.ManyToManyField(PermissionGroup, blank=True, related_name='roles')
+
+    class Meta:
+        unique_together = ('tenant_id', 'code')
 
     def __str__(self):
         return self.name

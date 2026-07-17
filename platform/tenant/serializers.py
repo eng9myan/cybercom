@@ -235,6 +235,13 @@ class TenantBootstrapSerializer(serializers.Serializer):
     contact_email = serializers.EmailField(required=False, allow_blank=True)
 
 
+class DemoProvisionSerializer(serializers.Serializer):
+    product_code = serializers.CharField(max_length=50)
+    email = serializers.EmailField()
+    org_name = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    locale = serializers.ChoiceField(choices=[("en", "English"), ("ar", "Arabic")], default="en")
+
+
 class TenantSuspendSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=500, required=False, allow_blank=True)
 

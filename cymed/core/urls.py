@@ -16,6 +16,7 @@ urlpatterns = [
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     # ── Platform API v1 ────────────────────────────────────────────────────
+    path("api/v1/public/", include("platform.tenant.urls_public")),
     path("api/v1/tenants/", include("platform.tenant.urls")),
     path("api/v1/identity/", include("platform.cyidentity.urls")),
     path("api/v1/events/", include("platform.events.urls")),

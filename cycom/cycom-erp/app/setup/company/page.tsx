@@ -533,7 +533,7 @@ export default function CompanySetupWizard() {
                 </div>
                 <p className="text-xs text-rose-200">{result.error}</p>
                 <p className="text-[10px] text-slate-500">
-                  Confirm cycom-platform is running and you're logged in. You can re-run the wizard once the issue is fixed.
+                  Confirm the Cycom backend is running and you're logged in. You can re-run the wizard once the issue is fixed.
                 </p>
               </div>
             )}

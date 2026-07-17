@@ -251,6 +251,16 @@ CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = int(os.environ.get("CELERY_TASK_TIME_LIMIT", "300"))
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 100
 
+# Demo-trial teardown is time-sensitive (72h window) so it gets a real beat
+# schedule; other existing tenant/cyidentity expiry tasks are intentionally
+# left unscheduled here — out of scope for this change.
+CELERY_BEAT_SCHEDULE = {
+    "expire-demo-tenants": {
+        "task": "tenant.expire_demo_tenants",
+        "schedule": 900.0,  # every 15 minutes
+    },
+}
+
 # ---------------------------------------------------------------------------
 # KAFKA (ADR-0004)
 # ---------------------------------------------------------------------------

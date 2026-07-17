@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Settings, Bell, LogOut, ChevronRight,
-  Shield, Menu, X, BarChart3,
+  Shield, Menu, X, BarChart3, Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { tokenStore } from "@/lib/auth/tokens";
+import { isPlatformAdmin, logout, decodeAccessTokenClaims } from "@/lib/auth/cyidentity";
 
 const NAV = [
   { href: "/en/admin", label: "Revenue", icon: TrendingUp, exact: true },
@@ -16,12 +18,48 @@ const NAV = [
   { href: "/en/admin/products", label: "Products", icon: Package },
 ];
 
+const PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/auth/callback"];
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const params = useParams();
+  const router = useRouter();
+  const locale = (params.locale as string) ?? "en";
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  const isPublicPath = PUBLIC_ADMIN_PATHS.some((p) => pathname.includes(p));
+
+  useEffect(() => {
+    if (isPublicPath) {
+      setAuthChecked(true);
+      return;
+    }
+    if (!tokenStore.isAuthenticated() || !isPlatformAdmin()) {
+      router.replace(`/${locale}/admin/login`);
+      return;
+    }
+    setAuthChecked(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   function isActive(item: (typeof NAV)[0]) {
     return item.exact ? pathname === item.href : pathname.startsWith(item.href);
+  }
+
+  const claims = authChecked && !isPublicPath ? decodeAccessTokenClaims() : null;
+  const adminLabel = claims?.email || claims?.preferred_username || "Admin";
+
+  if (isPublicPath) {
+    return <>{children}</>;
+  }
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-cy-darker">
+        <Loader2 className="w-6 h-6 text-cy-orange animate-spin" />
+      </div>
+    );
   }
 
   const Sidebar = (
@@ -54,16 +92,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </nav>
 
       <div className="px-3 py-3 border-t border-cy-glass-border space-y-1">
-        <div className="px-3 py-2 text-xs text-cy-gray-500">Logged in as: Admin</div>
-        <Link href="/en/portal" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-cy-gray-300 hover:bg-cy-glass-border/50 hover:text-white transition-all">
+        <div className="px-3 py-2 text-xs text-cy-gray-500 truncate">Logged in as: {adminLabel}</div>
+        <Link href={`/${locale}/portal`} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-cy-gray-300 hover:bg-cy-glass-border/50 hover:text-white transition-all">
           <LayoutDashboard className="w-4 h-4" />
           Customer Portal
         </Link>
-        <Link href="/en" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-cy-gray-300 hover:bg-cy-glass-border/50 hover:text-white transition-all">
+        <Link href={`/${locale}`} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-cy-gray-300 hover:bg-cy-glass-border/50 hover:text-white transition-all">
           <BarChart3 className="w-4 h-4" />
           Website
         </Link>
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-cy-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all w-full">
+        <button onClick={() => logout(locale)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-cy-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all w-full">
           <LogOut className="w-4 h-4" />
           Sign out
         </button>
