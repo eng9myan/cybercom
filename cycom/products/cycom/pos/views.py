@@ -6,9 +6,15 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from core.viewsets import TenantScopedModelViewSet
+from platform.tenant.permissions import IsPlatformAdmin
 from products.cycom.pos.models import POSOrder, POSSession
 from products.cycom.pos.serializers import POSOrderSerializer, POSSessionSerializer
-from products.cycom.pos.services import checkout_order
+from products.cycom.pos.services import (
+    approve_discount,
+    checkout_order,
+    reject_discount,
+    submit_discount_for_approval,
+)
 
 
 class POSSessionViewSet(TenantScopedModelViewSet):
@@ -52,4 +58,28 @@ class POSOrderViewSet(TenantScopedModelViewSet):
     def checkout(self, request, pk=None):
         order = self.get_object()
         checkout_order(order)
+        return Response(POSOrderSerializer(order).data)
+
+    @action(detail=True, methods=["post"], url_path="submit-discount")
+    def submit_discount(self, request, pk=None):
+        order = self.get_object()
+        submit_discount_for_approval(order)
+        return Response(POSOrderSerializer(order).data)
+
+    @action(
+        detail=True, methods=["post"], url_path="approve-discount", permission_classes=[IsPlatformAdmin]
+    )
+    def approve_discount_action(self, request, pk=None):
+        order = self.get_object()
+        claims = getattr(request, "auth_claims", {}) or {}
+        approved_by = request.data.get("approved_by", "") or claims.get("email", "")
+        approve_discount(order, approved_by)
+        return Response(POSOrderSerializer(order).data)
+
+    @action(
+        detail=True, methods=["post"], url_path="reject-discount", permission_classes=[IsPlatformAdmin]
+    )
+    def reject_discount_action(self, request, pk=None):
+        order = self.get_object()
+        reject_discount(order, request.data.get("reason", ""))
         return Response(POSOrderSerializer(order).data)

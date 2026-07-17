@@ -27,8 +27,18 @@ class POSSession(BaseModel):
         return f"Session @ {self.warehouse} ({self.status})"
 
 
+# Any line discount above this triggers the discount-exception approval gate.
+DISCOUNT_APPROVAL_THRESHOLD_PERCENT = Decimal("10")
+
+
 class POSOrder(BaseModel):
     STATUS_CHOICES = [("draft", "Draft"), ("paid", "Paid"), ("void", "Void")]
+    DISCOUNT_APPROVAL_CHOICES = [
+        ("not_required", "Not Required"),
+        ("pending", "Pending Approval"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
 
     session = models.ForeignKey(POSSession, on_delete=models.PROTECT, related_name="orders")
     order_number = models.CharField(max_length=100)
@@ -37,6 +47,11 @@ class POSOrder(BaseModel):
     )
     currency = models.CharField(max_length=10, default="JOD")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    discount_approval_status = models.CharField(
+        max_length=20, choices=DISCOUNT_APPROVAL_CHOICES, default="not_required"
+    )
+    discount_approved_by = models.CharField(max_length=255, blank=True)
+    discount_rejection_reason = models.TextField(blank=True)
 
     cash_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="pos_orders_cash")
     revenue_account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="pos_orders_revenue")
@@ -67,6 +82,7 @@ class POSOrderLine(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="pos_order_lines")
     quantity = models.DecimalField(max_digits=12, decimal_places=4, default=1)
     unit_price = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     tax_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
 
     class Meta:
@@ -75,7 +91,10 @@ class POSOrderLine(BaseModel):
 
     @property
     def subtotal(self):
-        return self.quantity * self.unit_price
+        gross = self.quantity * self.unit_price
+        if self.discount_percent:
+            gross = gross * (Decimal("100") - self.discount_percent) / Decimal("100")
+        return gross.quantize(Decimal("0.01"))
 
     @property
     def tax_amount(self):

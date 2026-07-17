@@ -7,6 +7,42 @@ from rest_framework.exceptions import ValidationError
 from products.cycom.accounting.services import post_journal_entry
 from products.cycom.inventory.models import StockMove
 from products.cycom.inventory.services import apply_stock_move
+from products.cycom.pos.models import DISCOUNT_APPROVAL_THRESHOLD_PERCENT
+
+
+def _lines_needing_discount_approval(lines):
+    return [line for line in lines if line.discount_percent > DISCOUNT_APPROVAL_THRESHOLD_PERCENT]
+
+
+def submit_discount_for_approval(order):
+    if order.status != "draft":
+        raise ValidationError(f"Order is already '{order.status}'.")
+    if not _lines_needing_discount_approval(order.lines.all()):
+        raise ValidationError(
+            f"No line exceeds the {DISCOUNT_APPROVAL_THRESHOLD_PERCENT}% discount threshold — approval not required."
+        )
+    order.discount_approval_status = "pending"
+    order.discount_rejection_reason = ""
+    order.save(update_fields=["discount_approval_status", "discount_rejection_reason"])
+    return order
+
+
+def approve_discount(order, approved_by):
+    if order.discount_approval_status != "pending":
+        raise ValidationError(f"Discount is not pending approval (status: '{order.discount_approval_status}').")
+    order.discount_approval_status = "approved"
+    order.discount_approved_by = approved_by
+    order.save(update_fields=["discount_approval_status", "discount_approved_by"])
+    return order
+
+
+def reject_discount(order, reason=""):
+    if order.discount_approval_status != "pending":
+        raise ValidationError(f"Discount is not pending approval (status: '{order.discount_approval_status}').")
+    order.discount_approval_status = "rejected"
+    order.discount_rejection_reason = reason
+    order.save(update_fields=["discount_approval_status", "discount_rejection_reason"])
+    return order
 
 
 @transaction.atomic
@@ -17,6 +53,13 @@ def checkout_order(order):
     lines = list(order.lines.all())
     if not lines:
         raise ValidationError("Order has no lines.")
+
+    if _lines_needing_discount_approval(lines) and order.discount_approval_status != "approved":
+        raise ValidationError(
+            "Order has a line discount exceeding "
+            f"{DISCOUNT_APPROVAL_THRESHOLD_PERCENT}% that is not approved. "
+            "Submit for discount approval first."
+        )
 
     today = timezone.localdate()
 
