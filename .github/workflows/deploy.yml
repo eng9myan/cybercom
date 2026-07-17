@@ -16,6 +16,9 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: website
     env:
       NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://api.cy-com.com' }}
       NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL || 'https://www.cy-com.com' }}
@@ -26,6 +29,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: website/package-lock.json
 
       - run: npm ci
       - run: npm run lint --workspace=@cybercom/web
@@ -70,7 +74,12 @@ jobs:
           chmod 600 "$HOME/.ssh/id_ed25519"
           ssh-keyscan -H "$OCI_HOST" >> "$HOME/.ssh/known_hosts"
 
-          git archive --format=tar.gz --output="$RUNNER_TEMP/cybercom-${GITHUB_SHA}.tar.gz" "$GITHUB_SHA"
+          # This repo is a monorepo — website/ is what actually gets deployed
+          # (its own Dockerfile/docker-compose.production.yml/scripts/ expect
+          # to sit at the archive's top level, not nested under a website/
+          # prefix). "$GITHUB_SHA:website" archives that subtree with paths
+          # relative to it, matching what deploy-production.sh expects.
+          git archive --format=tar.gz --output="$RUNNER_TEMP/cybercom-${GITHUB_SHA}.tar.gz" "$GITHUB_SHA:website"
           printf '%s\n' "$PRODUCTION_ENV_FILE" > "$RUNNER_TEMP/production.env"
           printf '\nNEXT_PUBLIC_API_URL=%s\nNEXT_PUBLIC_SITE_URL=%s\n' \
             "$NEXT_PUBLIC_API_URL" "$NEXT_PUBLIC_SITE_URL" >> "$RUNNER_TEMP/production.env"

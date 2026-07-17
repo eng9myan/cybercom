@@ -21,11 +21,30 @@ const translations: Record<string, string> = {
   "form.phone": "Phone",
   "form.productInterests": "Product Interests",
   "form.message": "Message",
+  "form.messagePlaceholder": "Tell us about your organization and requirements...",
   "form.gdprConsent": "I agree to the privacy policy",
   "form.submitting": "Submitting",
   "form.submit": "Request Demo",
   "form.success": "Request received",
   "form.reference": "Reference number",
+  "form.genericError": "Something went wrong. Please try again or contact us at sales@cy-com.com.",
+  "form.employees": "employees",
+  "form.errors.fullName": "Full name is required",
+  "form.errors.email": "Valid work email is required",
+  "form.errors.jobTitle": "Job title is required",
+  "form.errors.company": "Company name is required",
+  "form.errors.country": "Country is required",
+  "form.errors.productInterests": "Select at least one product",
+  "form.errors.gdprConsent": "You must agree to the privacy policy",
+  ...Object.fromEntries(
+    [
+      "CyMed Clinic", "CyMed Hospital", "CyMed Laboratory", "CyMed Imaging",
+      "CyMed Pharmacy", "CyMed Patient Portal", "CyMed Provider Portal",
+      "CyMed Revenue Cycle", "CyMed Population Health", "CyShop", "CyCom ERP",
+      "CyGov", "CyAI", "CyIdentity", "CyIntegrationHub", "CyData", "CyConnect",
+      "CyCitizen",
+    ].map((name) => [`form.productNames.${name}`, name]),
+  ),
 };
 
 vi.mock("next-intl", () => ({

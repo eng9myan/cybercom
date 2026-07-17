@@ -144,9 +144,16 @@ export async function logout(locale: string): Promise<void> {
   }
 }
 
+interface AccessTokenClaims {
+  email?: string;
+  preferred_username?: string;
+  realm_access?: { roles?: string[] };
+  [key: string]: unknown;
+}
+
 /** Unverified decode for UI display/role-gating — every real API call is
  * still verified server-side by Django's JWKS check regardless of this. */
-export function decodeAccessTokenClaims(): Record<string, any> | null {
+export function decodeAccessTokenClaims(): AccessTokenClaims | null {
   const token = tokenStore.getAccessToken();
   if (!token) return null;
   try {

@@ -2781,6 +2781,13 @@
         { "title": "Monitor & Alert", "desc": "All message flows monitored in real-time dashboard. Failures trigger alerts via CyConnect. SLA compliance tracked." },
         { "title": "Audit Trail", "desc": "Every message transaction logged with content, timing, and status. Replays enabled for failed messages." }
       ],
+      "cydeveloper": [
+        { "title": "Register Application", "desc": "App registered in the CyDeveloper console. OAuth 2.1/OIDC client credentials issued. Redirect URIs and scopes configured." },
+        { "title": "Explore API & Sandbox", "desc": "OpenAPI 3.1 specs and FHIR R4/R5 endpoints browsed in the interactive sandbox. Calls tested against synthetic data before production." },
+        { "title": "Integrate SDK & Webhooks", "desc": "Typed Python, TypeScript, or Java SDK installed. Webhooks subscribed with HMAC-SHA256 signing for real-time event delivery." },
+        { "title": "Monitor Usage", "desc": "API calls, rate limits, and quota consumption tracked in the developer console's live request log dashboard." },
+        { "title": "Promote to Production", "desc": "Move from the free-tier sandbox to a paid plan with a dedicated staging tenant and SLA-backed production access." }
+      ],
       "cyai": [
         { "title": "Connect Data Sources", "desc": "CyData and clinical data sources connected. Training datasets prepared with governance and privacy controls applied." },
         { "title": "Configure AI Models", "desc": "Clinical or enterprise AI models selected or custom models uploaded. Explainability (XAI) requirements configured." },

@@ -31,14 +31,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const isPublicPath = PUBLIC_ADMIN_PATHS.some((p) => pathname.includes(p));
 
   useEffect(() => {
-    if (isPublicPath) {
-      setAuthChecked(true);
-      return;
-    }
+    // No auth check needed for public paths — the isPublicPath branch below
+    // (line ~53) already returns before authChecked is ever read, on every
+    // render, regardless of its value.
+    if (isPublicPath) return;
     if (!tokenStore.isAuthenticated() || !isPlatformAdmin()) {
       router.replace(`/${locale}/admin/login`);
       return;
     }
+    // tokenStore reads browser storage, so this check must run client-side
+    // post-mount (not during render) to avoid a hydration mismatch — the
+    // idiomatic alternative (useSyncExternalStore) is a larger refactor of
+    // this auth guard than is warranted to silence one lint rule.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAuthChecked(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
