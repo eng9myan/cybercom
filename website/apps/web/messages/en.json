@@ -520,7 +520,7 @@
       "titleLine2": "Across Every Care Setting",
       "description": "FHIR-native, ICD-11 coded clinical platform for hospitals, clinics, laboratories, imaging centers, and pharmacies — one data model, one identity, one audit trail.",
       "tagline": "Part of the CyberCom ecosystem. Shares CyIdentity, CyAudit, and CyIntegrationHub with CyShop and CyCom ERP.",
-      "tryFree": "Try It Free — 72 Hours",
+      "tryFree": "Try It Free — 7 Days",
       "requestDemo": "Request a Demo"
     },
     "verticals": {
@@ -1358,7 +1358,7 @@
     "metaTitlePrefix": "Try",
     "metaTitleSuffix": "Free",
     "metaTitleDefault": "Try It Free",
-    "metaDescription": "Start a real, fully working 72-hour trial account — no credit card required.",
+    "metaDescription": "Start a real, fully working 7-day trial account — no credit card required.",
     "salesAssistedHeading": "is sales-assisted",
     "contactSales": "Contact Sales",
     "successHeading": "Your trial is ready",
@@ -1371,12 +1371,12 @@
     "checkEmailPrefix": "Signed up with (",
     "checkEmailSuffix": ") — use the credentials above to sign in.",
     "heroHeadingPrefix": "Try",
-    "heroHeadingSuffix": "free for 72 hours",
-    "heroDesc": "A real, fully working account — no credit card. It's automatically deleted after 72 hours.",
+    "heroHeadingSuffix": "free for 7 days",
+    "heroDesc": "A real, fully working account — no credit card. It's automatically deleted after 7 days.",
     "orgName": "Organization name",
     "workEmail": "Work email",
     "genericError": "Something went wrong. Please try again.",
-    "startTrial": "Start My 72-Hour Trial"
+    "startTrial": "Start My 7-Day Trial"
   },
   "productDetailPage": {
     "chrome": {
