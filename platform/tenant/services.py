@@ -336,10 +336,19 @@ class DemoProvisioningService:
         TenantRealmMappingService().assign_realm(tenant, realm.id, realm.realm_name)
 
         username = email.split("@")[0] + "-" + suffix
+        # Keycloak's realm User Profile marks firstName/lastName as required
+        # attributes. Leaving them blank doesn't block user creation, but
+        # Keycloak dynamically evaluates VERIFY_PROFILE as needed the moment
+        # the user tries to log in — and direct/password grant has no
+        # browser to resolve that interactively, so every demo user ever
+        # created without these has failed login with a generic
+        # "Account is not fully set up" (resolve_required_actions).
         user = UserProvisioningService().provision_user(
             realm,
             username=username,
             email=email,
+            first_name=(org_name.split(" ")[0] if org_name else "Demo"),
+            last_name="Trial Account",
             enabled=True,
             email_verified=False,
             attributes={"tenant_id": [str(tenant.id)], "product_code": [product_code]},

@@ -249,6 +249,36 @@ class KeycloakAdminClient:
                 f"update_realm failed: {resp.status_code}", resp.status_code, resp.text
             )
 
+    def allow_unmanaged_user_attributes(self, realm_name: str) -> None:
+        """
+        Keycloak's realm User Profile schema (enabled by default) only
+        declares email/firstName/lastName — any other attribute passed to
+        create_user() (tenant_id, product_code, role, ...) is silently
+        stripped on save unless the realm explicitly allows "unmanaged"
+        attributes. Without this, UserProvisioningService.provision_user()'s
+        `attributes=` argument has always been a no-op for anything not in
+        that fixed schema.
+        """
+        if not getattr(settings, "KEYCLOAK_ENABLED", True):
+            return
+        import httpx  # type: ignore
+
+        url = f"{self.base_url}/admin/realms/{realm_name}/users/profile"
+        resp = httpx.get(url, headers=self._auth_headers(), timeout=self.timeout_seconds)
+        if resp.status_code >= 400:
+            raise KeycloakError(
+                f"get_user_profile failed: {resp.status_code}", resp.status_code, resp.text
+            )
+        profile = resp.json()
+        profile["unmanagedAttributePolicy"] = "ENABLED"
+        resp2 = httpx.put(
+            url, json=profile, headers=self._auth_headers(), timeout=self.timeout_seconds
+        )
+        if resp2.status_code >= 400:
+            raise KeycloakError(
+                f"update_user_profile failed: {resp2.status_code}", resp2.status_code, resp2.text
+            )
+
     def delete_realm(self, realm_name: str) -> None:
         if not getattr(settings, "KEYCLOAK_ENABLED", True):
             self._fake_store["realms"].pop(realm_name, None)
@@ -289,6 +319,22 @@ class KeycloakAdminClient:
         location = resp.headers.get("Location", "")
         kc_id = location.rsplit("/", 1)[-1] if location else ""
         return {"id": kc_id, **client_payload}
+
+    def create_protocol_mapper(
+        self, realm_name: str, client_uuid: str, mapper_payload: dict[str, Any]
+    ) -> None:
+        if not getattr(settings, "KEYCLOAK_ENABLED", True):
+            return
+        import httpx  # type: ignore
+
+        url = f"{self.base_url}/admin/realms/{realm_name}/clients/{client_uuid}/protocol-mappers/models"
+        resp = httpx.post(
+            url, json=mapper_payload, headers=self._auth_headers(), timeout=self.timeout_seconds
+        )
+        if resp.status_code >= 400:
+            raise KeycloakError(
+                f"create_protocol_mapper failed: {resp.status_code}", resp.status_code, resp.text
+            )
 
     def find_client_by_client_id(self, realm_name: str, client_id: str) -> dict[str, Any] | None:
         """Look up a client's internal Keycloak representation (incl. real `id`
@@ -629,6 +675,7 @@ class RealmService:
                 "attributes": {"home_region": home_region, "locale": locale},
             }
         )
+        self.kc.allow_unmanaged_user_attributes(realm_name)
 
         realm = IdentityRealm.objects.create(
             tenant_id=tenant_id,
@@ -753,6 +800,38 @@ class ClientService:
             },
         )
         metrics.client_created_total += 1
+
+        # Every client registered through here needs tenant_id exposed as a
+        # real JWT claim — without this mapper, Keycloak user *attributes*
+        # (set by UserProvisioningService.provision_user, e.g. tenant_id) are
+        # stored but never surface in the issued token, so nothing
+        # downstream (TenantIsolationMiddleware, every tenant-scoped
+        # queryset) can actually see which tenant the caller belongs to.
+        # This was previously only ever added by hand, once, for the shared
+        # "cybercom" realm's client — never part of the reusable service, so
+        # every other client this method has ever created (including every
+        # demo-provisioned per-tenant realm) has been missing it silently.
+        kc_client_uuid = client_uuid.get("id", "") if isinstance(client_uuid, dict) else ""
+        if kc_client_uuid:
+            self.kc.create_protocol_mapper(
+                realm.realm_name,
+                kc_client_uuid,
+                {
+                    "name": "tenant-id-mapper",
+                    "protocol": "openid-connect",
+                    "protocolMapper": "oidc-usermodel-attribute-mapper",
+                    "consentRequired": False,
+                    "config": {
+                        "user.attribute": "tenant_id",
+                        "claim.name": "tenant_id",
+                        "jsonType.label": "String",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "userinfo.token.claim": "true",
+                        "introspection.token.claim": "true",
+                    },
+                },
+            )
         return client
 
     def rotate_secret(
