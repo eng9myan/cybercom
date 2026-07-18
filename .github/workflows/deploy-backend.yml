@@ -6,6 +6,7 @@ on:
     paths:
       - "cymed/**"
       - "platform/**"
+      - "infrastructure/**"
       - ".github/workflows/deploy-backend.yml"
   workflow_dispatch:
 
@@ -69,6 +70,12 @@ jobs:
           -q --no-cov
           -k "not test_register_and_rotate and not test_provision_user_then_assign_role and not test_provision_then_activate_then_decommission"
 
+      # Build-only check (no push) — catches Dockerfile/dependency errors
+      # before the deploy job ever reaches the real server, matching the
+      # same "verify locally/in-CI before touching production" discipline
+      # used throughout this pipeline.
+      - run: docker build -f infrastructure/Dockerfile.cymed -t cymed-ci-build:${{ github.sha }} .
+
   deploy:
     needs: validate
     runs-on: ubuntu-latest
@@ -106,10 +113,16 @@ jobs:
           # platform/ package onto stdlib's platform module) resolves
           # repo_root as its OWN PARENT DIRECTORY — so platform/ must land
           # as a sibling of cymed/, not merged into it or flattened out.
-          # This bundle preserves that exact two-directory layout.
-          mkdir -p "$RUNNER_TEMP/bundle/cymed" "$RUNNER_TEMP/bundle/platform"
+          # infrastructure/ carries Dockerfile.cymed + docker-compose.api.yml;
+          # docker-compose.api.yml lands at the bundle ROOT (not nested under
+          # infrastructure/) since Compose resolves build.context relative to
+          # the compose file's own directory — it needs to sit next to
+          # cymed/ and platform/ for "context: ." to mean the bundle root.
+          mkdir -p "$RUNNER_TEMP/bundle/cymed" "$RUNNER_TEMP/bundle/platform" "$RUNNER_TEMP/bundle/infrastructure"
           git archive "$GITHUB_SHA:cymed" | tar -x -C "$RUNNER_TEMP/bundle/cymed"
           git archive "$GITHUB_SHA:platform" | tar -x -C "$RUNNER_TEMP/bundle/platform"
+          git archive "$GITHUB_SHA:infrastructure" | tar -x -C "$RUNNER_TEMP/bundle/infrastructure"
+          mv "$RUNNER_TEMP/bundle/infrastructure/docker-compose.api.yml" "$RUNNER_TEMP/bundle/docker-compose.api.yml"
           tar -czf "$RUNNER_TEMP/cybercom-api-${GITHUB_SHA}.tar.gz" -C "$RUNNER_TEMP/bundle" .
 
           printf '%s\n' "$BACKEND_PRODUCTION_ENV_FILE" > "$RUNNER_TEMP/production.env"
