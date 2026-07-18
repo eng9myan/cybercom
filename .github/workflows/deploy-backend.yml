@@ -20,42 +20,22 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: cybercom_dev
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: redis:7
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     env:
       DJANGO_DEBUG: "True"
       DJANGO_SECRET_KEY: ci-only-not-a-real-secret
-      # pytest-django reads this from cymed/pyproject.toml normally, but a
-      # documented ordering bug (django.setup() firing before conftest.py's
-      # sys.path/platform-shadow patching) means it isn't reliably picked
-      # up that way in practice — set it explicitly, same workaround used
-      # for every local pytest run all session.
-      DJANGO_SETTINGS_MODULE: core.settings
-      DB_HOST: 127.0.0.1
-      DB_NAME: cybercom_dev
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      # core.settings_test overrides Postgres/Redis with SQLite/LocMemCache
+      # and Keycloak with an in-memory fake — no external services needed
+      # for CI at all. Also fixes a real gap: core.settings (production)
+      # against a real Keycloak requires Postgres AND Redis AND Keycloak
+      # service containers just to run unit tests that don't need any of
+      # them talking to real infrastructure.
+      #
+      # pytest-django reads DJANGO_SETTINGS_MODULE from cymed/pyproject.toml
+      # normally, but a documented ordering bug (django.setup() firing
+      # before conftest.py's sys.path/platform-shadow patching) means it
+      # isn't reliably picked up that way in practice — set it explicitly,
+      # same workaround used for every local pytest run all session.
+      DJANGO_SETTINGS_MODULE: core.settings_test
       PYTHONPATH: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v4
