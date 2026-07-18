@@ -37,6 +37,12 @@ jobs:
     env:
       DJANGO_DEBUG: "True"
       DJANGO_SECRET_KEY: ci-only-not-a-real-secret
+      # pytest-django reads this from cymed/pyproject.toml normally, but a
+      # documented ordering bug (django.setup() firing before conftest.py's
+      # sys.path/platform-shadow patching) means it isn't reliably picked
+      # up that way in practice — set it explicitly, same workaround used
+      # for every local pytest run all session.
+      DJANGO_SETTINGS_MODULE: core.settings
       DB_HOST: 127.0.0.1
       DB_NAME: cybercom_dev
       DB_USER: postgres
