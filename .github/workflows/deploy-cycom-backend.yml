@@ -1,0 +1,134 @@
+name: Validate and deploy Cycom ERP API to Oracle Cloud
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "cycom/**"
+      - "platform/**"
+      - "shared/**"
+      - "infrastructure/Dockerfile.cycom"
+      - "infrastructure/docker-compose.cycom-api.yml"
+      - ".github/workflows/deploy-cycom-backend.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cycom-api-production
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DJANGO_DEBUG: "True"
+      DJANGO_SECRET_KEY: ci-only-not-a-real-secret
+      # settings_test overrides Postgres/Redis with SQLite/LocMemCache -
+      # no external services needed. Deliberately does NOT touch
+      # authentication (unlike cymed's settings_test) - cycom's real
+      # tests mint actual RS256 JWTs and mock only the JWKS client
+      # (conftest.py's mint_token/mock_jwks), exercising the real
+      # CyIdentityAuthMiddleware path end-to-end.
+      DJANGO_SETTINGS_MODULE: core.settings_test
+      PYTHONPATH: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: cycom/requirements.txt
+
+      - run: pip install -r cycom/requirements.txt
+      - run: python cycom/manage.py check
+      - run: python cycom/manage.py migrate --noinput
+      - run: cd cycom && python -m pytest products/cycom -q --no-cov
+
+      # Build-only check (no push) — catches Dockerfile/dependency
+      # errors before the deploy job ever reaches the real server, same
+      # discipline as cymed's pipeline.
+      - run: docker build -f infrastructure/Dockerfile.cycom -t cycom-ci-build:${{ github.sha }} .
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: production
+    env:
+      OCI_HOST: ${{ secrets.OCI_HOST }}
+      OCI_SSH_USER: ${{ secrets.OCI_SSH_USER }}
+      OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+      CYCOM_PRODUCTION_ENV_FILE: ${{ secrets.CYCOM_PRODUCTION_ENV_FILE }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate deployment secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${OCI_HOST:?Missing OCI_HOST}"
+          : "${OCI_SSH_USER:?Missing OCI_SSH_USER}"
+          : "${OCI_SSH_PRIVATE_KEY:?Missing OCI_SSH_PRIVATE_KEY}"
+          : "${CYCOM_PRODUCTION_ENV_FILE:?Missing CYCOM_PRODUCTION_ENV_FILE}"
+
+      - name: Prepare release bundle and SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$OCI_SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          ssh-keyscan -H "$OCI_HOST" >> "$HOME/.ssh/known_hosts"
+
+          # Same sibling-directory layout as cymed's bundle: cycom/
+          # manage.py's namespace-bridging trick resolves repo_root as
+          # its own parent directory, so platform/ and shared/ must
+          # land as siblings of cycom/, not nested inside it.
+          # docker-compose.cycom-api.yml lands at the bundle ROOT (not
+          # nested under infrastructure/) since Compose resolves
+          # build.context relative to the compose file's own directory.
+          mkdir -p "$RUNNER_TEMP/bundle/cycom" "$RUNNER_TEMP/bundle/platform" "$RUNNER_TEMP/bundle/shared" "$RUNNER_TEMP/bundle/infrastructure"
+          git archive "$GITHUB_SHA:cycom" | tar -x -C "$RUNNER_TEMP/bundle/cycom"
+          git archive "$GITHUB_SHA:platform" | tar -x -C "$RUNNER_TEMP/bundle/platform"
+          git archive "$GITHUB_SHA:shared" | tar -x -C "$RUNNER_TEMP/bundle/shared"
+          git archive "$GITHUB_SHA:infrastructure" | tar -x -C "$RUNNER_TEMP/bundle/infrastructure"
+          mv "$RUNNER_TEMP/bundle/infrastructure/docker-compose.cycom-api.yml" "$RUNNER_TEMP/bundle/docker-compose.cycom-api.yml"
+          tar -czf "$RUNNER_TEMP/cycom-api-${GITHUB_SHA}.tar.gz" -C "$RUNNER_TEMP/bundle" .
+
+          printf '%s\n' "$CYCOM_PRODUCTION_ENV_FILE" > "$RUNNER_TEMP/production.env"
+          chmod 600 "$RUNNER_TEMP/production.env"
+
+      - name: Transfer release to Oracle VM
+        shell: bash
+        run: |
+          set -euo pipefail
+          scp "$RUNNER_TEMP/cycom-api-${GITHUB_SHA}.tar.gz" \
+            "${OCI_SSH_USER}@${OCI_HOST}:/tmp/cycom-api-${GITHUB_SHA}.tar.gz"
+          scp "$RUNNER_TEMP/production.env" \
+            "${OCI_SSH_USER}@${OCI_HOST}:/tmp/cycom-api-${GITHUB_SHA}.env"
+
+      - name: Deploy release
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "${OCI_SSH_USER}@${OCI_HOST}" "bash -s -- '${GITHUB_SHA}'" <<'REMOTE'
+          set -Eeuo pipefail
+          release="$1"
+          app_root=/opt/cycom-api
+          release_dir="$app_root/releases/$release"
+
+          sudo install -d -o "$USER" -g "$USER" "$app_root" "$app_root/releases" "$app_root/shared"
+          install -d "$release_dir"
+          tar -xzf "/tmp/cycom-api-${release}.tar.gz" -C "$release_dir"
+          install -m 600 "/tmp/cycom-api-${release}.env" "$app_root/shared/.env.production"
+          rm -f "/tmp/cycom-api-${release}.tar.gz" "/tmp/cycom-api-${release}.env"
+
+          chmod +x "$release_dir/cycom/scripts/"*.sh
+          "$release_dir/cycom/scripts/deploy-production.sh" "$release"
+          REMOTE
