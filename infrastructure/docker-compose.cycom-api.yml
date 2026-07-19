@@ -16,12 +16,24 @@
 # on cymed's cybercom-api-net network), matching the platform's actual
 # shared-realm design (one realm for all products, not one per product).
 #
+# Services named cycom-postgres/cycom-redis, NOT postgres/redis: backend
+# and celery-worker are attached to BOTH cycom-api-net AND the external
+# cymed-shared-net (for Keycloak reachability) - but cymed's OWN compose
+# file has services literally named "postgres"/"redis" on that same
+# external network. Docker's embedded DNS resolves bare hostnames per
+# attached network, so a multi-homed container asking for "postgres"
+# risks resolving to CYMED's Postgres instead of this stack's own -
+# confirmed the hard way on the first live deploy (real password-auth
+# failure caused by connecting to the wrong server entirely, not a
+# credentials bug). Unique service names sidestep the ambiguity
+# entirely rather than relying on network alias precedence.
+#
 # Usage: docker compose --env-file .env.production -f docker-compose.cycom-api.yml up -d
 
 name: cycom-api
 
 services:
-  postgres:
+  cycom-postgres:
     image: postgres:16-alpine
     container_name: cycom-api-postgres
     restart: always
@@ -39,7 +51,7 @@ services:
     networks:
       - cycom-api-net
 
-  redis:
+  cycom-redis:
     image: redis:7-alpine
     container_name: cycom-api-redis
     restart: always
@@ -65,9 +77,9 @@ services:
       - "8012:8000"
     env_file: .env.production
     depends_on:
-      postgres:
+      cycom-postgres:
         condition: service_healthy
-      redis:
+      cycom-redis:
         condition: service_healthy
     networks:
       - cycom-api-net
@@ -85,9 +97,9 @@ services:
     command: ["celery", "-A", "core", "worker", "--loglevel=info", "--concurrency=4", "--max-tasks-per-child=200"]
     env_file: .env.production
     depends_on:
-      postgres:
+      cycom-postgres:
         condition: service_healthy
-      redis:
+      cycom-redis:
         condition: service_healthy
     networks:
       - cycom-api-net

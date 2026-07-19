@@ -50,11 +50,11 @@ echo "==> Building image for release $release"
 $compose build
 
 echo "==> Starting database and cache"
-$compose up -d postgres redis
+$compose up -d cycom-postgres cycom-redis
 echo "    Waiting for postgres to be ready..."
 pg_ready=0
 for attempt in $(seq 1 60); do
-  if $compose exec -T postgres sh -c 'pg_isready -U "$POSTGRES_USER"' >/dev/null 2>&1; then
+  if $compose exec -T cycom-postgres sh -c 'pg_isready -U "$POSTGRES_USER"' >/dev/null 2>&1; then
     echo "    postgres ready after ${attempt} attempt(s)"
     pg_ready=1
     break
@@ -65,7 +65,7 @@ done
 if [[ "$pg_ready" != 1 ]]; then
   echo "postgres never became ready" >&2
   echo "---- postgres logs ----" >&2
-  $compose logs --tail=100 postgres >&2 || true
+  $compose logs --tail=100 cycom-postgres >&2 || true
   exit 5
 fi
 
