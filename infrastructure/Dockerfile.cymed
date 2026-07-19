@@ -23,6 +23,7 @@ RUN pip install --no-cache-dir -r cymed/requirements.txt
 
 COPY cymed/ ./cymed/
 COPY platform/ ./platform/
+COPY shared/ ./shared/
 
 RUN useradd --create-home --shell /bin/bash app \
     && mkdir -p /app/cymed/staticfiles \

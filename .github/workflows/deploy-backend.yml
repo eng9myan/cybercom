@@ -6,6 +6,7 @@ on:
     paths:
       - "cymed/**"
       - "platform/**"
+      - "shared/**"
       - "infrastructure/**"
       - ".github/workflows/deploy-backend.yml"
   workflow_dispatch:
@@ -118,9 +119,10 @@ jobs:
           # infrastructure/) since Compose resolves build.context relative to
           # the compose file's own directory — it needs to sit next to
           # cymed/ and platform/ for "context: ." to mean the bundle root.
-          mkdir -p "$RUNNER_TEMP/bundle/cymed" "$RUNNER_TEMP/bundle/platform" "$RUNNER_TEMP/bundle/infrastructure"
+          mkdir -p "$RUNNER_TEMP/bundle/cymed" "$RUNNER_TEMP/bundle/platform" "$RUNNER_TEMP/bundle/shared" "$RUNNER_TEMP/bundle/infrastructure"
           git archive "$GITHUB_SHA:cymed" | tar -x -C "$RUNNER_TEMP/bundle/cymed"
           git archive "$GITHUB_SHA:platform" | tar -x -C "$RUNNER_TEMP/bundle/platform"
+          git archive "$GITHUB_SHA:shared" | tar -x -C "$RUNNER_TEMP/bundle/shared"
           git archive "$GITHUB_SHA:infrastructure" | tar -x -C "$RUNNER_TEMP/bundle/infrastructure"
           mv "$RUNNER_TEMP/bundle/infrastructure/docker-compose.api.yml" "$RUNNER_TEMP/bundle/docker-compose.api.yml"
           tar -czf "$RUNNER_TEMP/cybercom-api-${GITHUB_SHA}.tar.gz" -C "$RUNNER_TEMP/bundle" .
