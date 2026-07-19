@@ -7,7 +7,15 @@ on:
       - "cymed/**"
       - "platform/**"
       - "shared/**"
-      - "infrastructure/**"
+      # Scoped to cymed's own infra files specifically, NOT the whole
+      # infrastructure/ directory - that was too broad and caused real
+      # damage: every push touching cycom's infra files (Dockerfile.cycom,
+      # docker-compose.cycom-api.yml) auto-triggered a full cymed
+      # redeploy too, silently re-pulling BACKEND_PRODUCTION_ENV_FILE
+      # and overwriting manual ALLOWED_HOSTS fixes applied directly on
+      # the server - happened 3 times in a row before this was caught.
+      - "infrastructure/Dockerfile.cymed"
+      - "infrastructure/docker-compose.api.yml"
       - ".github/workflows/deploy-backend.yml"
   workflow_dispatch:
 
