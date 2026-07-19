@@ -41,6 +41,38 @@ services:
     networks:
       - cybercom-api-net
 
+  # ── Identity (Keycloak) ────────────────────────────────────────────────────
+  # No Keycloak existed anywhere on this VM before this deploy — it was
+  # only ever set up in local/dev. Internal-only for now (no host port
+  # exposed): cymed's own admin-API calls (creating demo tenant realms/
+  # users) only need reachability from inside cybercom-api-net. Public
+  # exposure for real browser PKCE login flows (admin panel, etc.) is a
+  # separate, later step — this is dev-mode Keycloak, not yet hardened
+  # for that.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: cybercom-api-keycloak
+    restart: always
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    volumes:
+      - cybercom_api_keycloak:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && echo -e 'GET /health/ready HTTP/1.1\\r\\nhost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q 'UP' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      - cybercom-api-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
   backend:
     build:
       context: .
@@ -56,6 +88,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     networks:
       - cybercom-api-net
     logging:
@@ -97,4 +131,6 @@ volumes:
   cybercom_api_pgdata:
     driver: local
   cybercom_api_redisdata:
+    driver: local
+  cybercom_api_keycloak:
     driver: local

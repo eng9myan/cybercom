@@ -41,8 +41,8 @@ cd "$app_root/current"
 echo "==> Building image for release $release"
 $compose build
 
-echo "==> Starting database and cache"
-$compose up -d postgres redis
+echo "==> Starting database, cache, and identity provider"
+$compose up -d postgres redis keycloak
 echo "    Waiting for postgres to be ready..."
 until $compose exec -T postgres sh -c 'pg_isready -U "$POSTGRES_USER"' >/dev/null 2>&1; do
   sleep 2
@@ -58,10 +58,12 @@ echo "==> Starting all services"
 $compose up -d
 
 echo "==> Waiting for health check on port $port"
+healthy=0
 for attempt in {1..30}; do
   if curl --fail --silent --show-error "http://127.0.0.1:${port}/health" >/dev/null; then
     echo "Release $release is healthy and active on port $port"
-    exit 0
+    healthy=1
+    break
   fi
   if [[ "$attempt" == 30 ]]; then
     echo "Health check failed for release $release" >&2
@@ -71,3 +73,18 @@ for attempt in {1..30}; do
   fi
   sleep 2
 done
+
+# Idempotent — safe to run on every deploy. Creates the shared "cybercom"
+# realm/client/admin-user on first run, no-ops (just rotates the admin
+# password) on later runs. Output goes to a file on the server, NOT
+# workflow stdout — it prints a real client secret + admin password in
+# cleartext, and workflow logs are not the place for that. Read it via
+# SSH: cat /opt/cybercom-api/shared/keycloak-bootstrap-output.txt
+if [[ "$healthy" == 1 ]]; then
+  echo "==> Bootstrapping shared Keycloak realm (output not shown here — see $app_root/shared/keycloak-bootstrap-output.txt on the server)"
+  admin_email="${PLATFORM_ADMIN_EMAIL:-admin@cy-com.com}"
+  $compose run --rm backend python manage.py bootstrap_platform_realm --admin-email "$admin_email" \
+    > "$app_root/shared/keycloak-bootstrap-output.txt" 2>&1 || {
+      echo "Keycloak bootstrap step failed — check $app_root/shared/keycloak-bootstrap-output.txt on the server" >&2
+    }
+fi
