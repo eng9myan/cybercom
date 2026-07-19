@@ -3,7 +3,13 @@ import sys
 from pathlib import Path
 
 # Namespace bridging to prevent local 'platform' folder from shadowing standard library 'platform'
-script_dir = str(Path(__file__).resolve().parent.parent)
+# wsgi.py lives at cymed/core/wsgi.py - one directory deeper than manage.py
+# (cymed/manage.py) - needs a 3rd .parent to reach the same repo root
+# manage.py computes with 2. Off by one here broke gunicorn boot in
+# production (worked everywhere else only because manage.py or
+# conftest.py always primed sys.path first in the same process before
+# this module was ever imported standalone).
+script_dir = str(Path(__file__).resolve().parent.parent.parent)
 sys_path_removed = False
 if script_dir in sys.path:
     sys.path.remove(script_dir)
