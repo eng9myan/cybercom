@@ -44,4 +44,18 @@ urlpatterns = [
     path("api/v1/cyai-analytics/", include("products.cycom.cyai_analytics.urls")),
     # ── CyCom three-agent AI platform: registry/entitlement foundation ──────
     path("api/v1/cyai-platform/", include("products.cycom.cyai_platform.urls")),
+    # ── Documents ─────────────────────────────────────────────────────────
+    path("api/v1/documents/", include("products.cycom.documents.urls")),
+    path("api/v1/expenses/", include("products.cycom.expenses.urls")),
+    path("api/v1/calendar/", include("products.cycom.scheduler.urls")),
+    path("api/v1/notes/", include("products.cycom.notes.urls")),
+    path("api/v1/todo/", include("products.cycom.todo.urls")),
+    path("api/v1/knowledge/", include("products.cycom.knowledge.urls")),
+    path("api/v1/manufacturing/", include("products.cycom.manufacturing.urls")),
+    path("api/v1/maintenance/", include("products.cycom.maintenance.urls")),
+    path("api/v1/quality/", include("products.cycom.quality.urls")),
+    path("api/v1/field-service/", include("products.cycom.field_service.urls")),
+    path("api/v1/subscriptions/", include("products.cycom.subscriptions.urls")),
+    path("api/v1/equity/", include("products.cycom.equity.urls")),
+    path("api/v1/esg/", include("products.cycom.esg.urls")),
 ]

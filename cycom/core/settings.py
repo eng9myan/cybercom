@@ -76,6 +76,19 @@ PRODUCT_APPS = [
     "products.cycom.cyai_moduledev",
     "products.cycom.cyai_analytics",
     "products.cycom.cyai_platform",
+    "products.cycom.documents",
+    "products.cycom.expenses",
+    "products.cycom.scheduler",
+    "products.cycom.notes",
+    "products.cycom.todo",
+    "products.cycom.knowledge",
+    "products.cycom.manufacturing",
+    "products.cycom.maintenance",
+    "products.cycom.quality",
+    "products.cycom.field_service",
+    "products.cycom.subscriptions",
+    "products.cycom.equity",
+    "products.cycom.esg",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
