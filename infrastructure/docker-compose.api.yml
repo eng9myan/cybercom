@@ -60,7 +60,13 @@ services:
     volumes:
       - cybercom_api_keycloak:/opt/keycloak/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:9000/health/ready || exit 1"]
+      # No curl/wget in this image (UBI-minimal), and the management
+      # port (9000) isn't listening in this default start-dev config -
+      # /health/ready lives on the main port (8080) instead, confirmed
+      # by direct port probing on the live server. Plain TCP-connect
+      # check via bash's /dev/tcp - good enough since nothing actually
+      # depends on this health condition (backend uses service_started).
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080' || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 10
