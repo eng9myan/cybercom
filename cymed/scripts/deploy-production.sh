@@ -38,6 +38,16 @@ fi
 ln -sfn "$release_dir" "$app_root/current"
 cd "$app_root/current"
 
+# docker-compose.api.yml's backend/celery-worker services each have their
+# own "env_file: .env.production" directive (needed so the containers get
+# those vars at runtime) - that's resolved relative to THIS directory by
+# Compose, completely separately from the --env-file flag below (which
+# only controls ${VAR} substitution inside the compose YAML itself, not
+# each service's env_file:). Without this symlink, Compose fails to load
+# the project at all - even commands that only touch postgres/redis - the
+# whole file is parsed up front.
+ln -sfn "$shared_env" "$app_root/current/.env.production"
+
 echo "==> Building image for release $release"
 $compose build
 
