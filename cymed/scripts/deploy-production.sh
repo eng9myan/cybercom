@@ -44,9 +44,22 @@ $compose build
 echo "==> Starting database, cache, and identity provider"
 $compose up -d postgres redis keycloak
 echo "    Waiting for postgres to be ready..."
-until $compose exec -T postgres sh -c 'pg_isready -U "$POSTGRES_USER"' >/dev/null 2>&1; do
+pg_ready=0
+for attempt in $(seq 1 60); do
+  if $compose exec -T postgres sh -c 'pg_isready -U "$POSTGRES_USER"' >/dev/null 2>&1; then
+    echo "    postgres ready after ${attempt} attempt(s)"
+    pg_ready=1
+    break
+  fi
+  echo "    ...still waiting (attempt ${attempt}/60)"
   sleep 2
 done
+if [[ "$pg_ready" != 1 ]]; then
+  echo "postgres never became ready" >&2
+  echo "---- postgres logs ----" >&2
+  $compose logs --tail=100 postgres >&2 || true
+  exit 5
+fi
 
 echo "==> Running database migrations"
 $compose run --rm backend python manage.py migrate --noinput

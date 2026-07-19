@@ -141,7 +141,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ssh "${OCI_SSH_USER}@${OCI_HOST}" "bash -s -- '${GITHUB_SHA}'" <<'REMOTE'
+          ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "${OCI_SSH_USER}@${OCI_HOST}" "bash -s -- '${GITHUB_SHA}'" <<'REMOTE'
           set -Eeuo pipefail
           release="$1"
           app_root=/opt/cybercom-api
