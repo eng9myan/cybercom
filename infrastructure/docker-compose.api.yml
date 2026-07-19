@@ -57,6 +57,12 @@ services:
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    ports:
+      # Loopback-only (not internet-reachable) - needed by host-level
+      # processes outside Docker entirely, e.g. cycom-erp's Next.js
+      # frontend (runs via pm2 directly on the host, not in a
+      # container) for its own real Keycloak password-grant login.
+      - "127.0.0.1:8090:8080"
     volumes:
       - cybercom_api_keycloak:/opt/keycloak/data
     healthcheck:
