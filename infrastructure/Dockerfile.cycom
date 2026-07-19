@@ -1,0 +1,45 @@
+# CyberCom Cycom ERP API — production image.
+# Build context must be the repo root, not cycom/, so platform/ and
+# shared/ can be copied in as siblings of cycom/ - cycom/manage.py's
+# namespace-bridging trick resolves repo_root as its own parent
+# directory, same pattern as cymed's Dockerfile.
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        postgresql-client \
+        gcc \
+        libpq-dev \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY cycom/requirements.txt ./cycom/requirements.txt
+RUN pip install --no-cache-dir -r cycom/requirements.txt
+
+COPY cycom/ ./cycom/
+COPY platform/ ./platform/
+COPY shared/ ./shared/
+
+RUN useradd --create-home --shell /bin/bash app \
+    && mkdir -p /app/cycom/staticfiles \
+    && chown -R app:app /app
+USER app
+
+WORKDIR /app/cycom
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -fsS http://localhost:8000/health || exit 1
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--timeout", "30", "--graceful-timeout", "30", \
+     "--max-requests", "1000", "--max-requests-jitter", "100", \
+     "--access-logfile", "-", "--error-logfile", "-", "--log-level", "info", \
+     "core.asgi:application"]

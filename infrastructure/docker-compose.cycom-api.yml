@@ -1,0 +1,112 @@
+# Cycom ERP API — standalone production stack.
+# Own network/volumes/port (8012, not 8011 or 8010/8020 already in use)
+# so this can be verified live without touching cymed's or the old
+# FastAPI stub's running stacks. Cutting real traffic over (nginx
+# repoint, port swap) is a separate, explicitly-approved step.
+#
+# Explicit `name:` below matters: without it, Compose infers the
+# project name from the compose file's parent directory, which under
+# the release-symlink deploy pattern is literally "current" for EVERY
+# product deployed this way (cymed's stack already uses that pattern)
+# - two different products' containers/networks/volumes would collide
+# under the same "current_..." prefix without an explicit name here.
+#
+# Keycloak is NOT duplicated here - reuses the same shared "cybercom"
+# realm already running as part of cymed's stack (cybercom-api-keycloak,
+# on cymed's cybercom-api-net network), matching the platform's actual
+# shared-realm design (one realm for all products, not one per product).
+#
+# Usage: docker compose --env-file .env.production -f docker-compose.cycom-api.yml up -d
+
+name: cycom-api
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cycom-api-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - cycom_api_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cycom-api-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: cycom-api-redis
+    restart: always
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - cycom_api_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cycom-api-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: infrastructure/Dockerfile.cycom
+    image: cycom-api-backend:prod
+    container_name: cycom-api-backend
+    restart: always
+    ports:
+      - "8012:8000"
+    env_file: .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - cycom-api-net
+      - cymed-shared-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  celery-worker:
+    image: cycom-api-backend:prod
+    container_name: cycom-api-celery
+    restart: always
+    command: ["celery", "-A", "core", "worker", "--loglevel=info", "--concurrency=4", "--max-tasks-per-child=200"]
+    env_file: .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - cycom-api-net
+      - cymed-shared-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+networks:
+  cycom-api-net:
+    driver: bridge
+  cymed-shared-net:
+    name: current_cybercom-api-net
+    external: true
+
+volumes:
+  cycom_api_pgdata:
+    driver: local
+  cycom_api_redisdata:
+    driver: local

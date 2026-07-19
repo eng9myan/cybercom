@@ -11,7 +11,10 @@ class DocumentViewSet(TenantScopedModelViewSet):
         qs = super().get_queryset()
         tag = self.request.query_params.get("tag")
         if tag:
-            qs = qs.filter(tags__contains=[tag])
+            # __contains (Postgres @> containment) isn't supported on
+            # SQLite (used in CI/tests) — icontains does a portable text
+            # match against the serialized JSON on both backends.
+            qs = qs.filter(tags__icontains=tag)
         linked_model = self.request.query_params.get("linked_model")
         linked_id = self.request.query_params.get("linked_id")
         if linked_model:

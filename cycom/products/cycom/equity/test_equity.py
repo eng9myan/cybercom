@@ -67,9 +67,12 @@ def test_waterfall_seniority_and_participation(platform_admin_client, tenant_id)
     assert resp.status_code == 200, resp.content
     assert resp.data["status"] == "computed"
 
+    # resp.data holds native Python objects (pre-JSON-serialization) -
+    # "shareholder" is an actual UUID instance here, not a string.
     totals = {}
     for alloc in resp.data["allocations"]:
-        totals[alloc["shareholder"]] = totals.get(alloc["shareholder"], Decimal("0")) + Decimal(alloc["amount"])
+        key = str(alloc["shareholder"])
+        totals[key] = totals.get(key, Decimal("0")) + Decimal(alloc["amount"])
 
     assert totals[str(bob.id)] == Decimal("1000.00")  # 500 * 2.00 * 1x preference, non-participating
     assert totals[str(carol.id)] == Decimal("1500.00")  # 1000 preference + 500 pro-rata participation

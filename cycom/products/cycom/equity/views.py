@@ -33,7 +33,12 @@ class DividendDistributionViewSet(TenantScopedModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="compute")
     def compute(self, request, pk=None):
-        dist = compute_waterfall(self.get_object())
+        # get_object() prefetches `allocations` on the queryset — that
+        # cache is populated (empty) BEFORE compute_waterfall() bulk-
+        # creates the real rows, so serializing the same instance
+        # afterwards would return a stale empty list. Re-fetch fresh.
+        compute_waterfall(self.get_object())
+        dist = self.get_queryset().get(pk=pk)
         return Response(DividendDistributionSerializer(dist).data)
 
     @action(detail=True, methods=["post"], url_path="mark-paid")
