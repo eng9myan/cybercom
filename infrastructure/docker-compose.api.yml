@@ -104,6 +104,7 @@ services:
         condition: service_started
     networks:
       - cybercom-api-net
+      - cyshop-net
     logging:
       driver: "json-file"
       options:
@@ -138,6 +139,17 @@ services:
 networks:
   cybercom-api-net:
     driver: bridge
+  # Real bug found live: cymed's DemoProvisioningService calls cyshop's
+  # own registration API directly (service-to-service, the "adapter"
+  # pattern for cyshop's separate unfederated auth) via CYSHOP_BACKEND_URL,
+  # which defaulted to http://localhost:8020 - worked when cymed ran
+  # host-level, broke silently once cymed moved into this isolated
+  # container (container's own localhost != host's). Joining cyshop's
+  # actual network instead of trying to reach it through a host-bound
+  # port.
+  cyshop-net:
+    name: cyshop_default
+    external: true
 
 volumes:
   cybercom_api_pgdata:
