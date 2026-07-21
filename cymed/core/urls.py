@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/v1/public/", include("platform.tenant.urls_public")),
     path("api/v1/tenants/", include("platform.tenant.urls")),
     path("api/v1/identity/", include("platform.cyidentity.urls")),
+    path("api/v1/wallet/", include("platform.wallet.urls")),
     path("api/v1/events/", include("platform.events.urls")),
     path("api/v1/integration/", include("platform.cyintegrationhub.urls")),
     path("api/v1/data/", include("platform.cydata.urls")),
@@ -40,6 +41,7 @@ urlpatterns = [
     path("api/v1/scheduling/", include("products.cymed.core.scheduling.urls")),
     path("api/v1/consents/", include("products.cymed.core.consents.urls")),
     path("api/v1/registries/", include("products.cymed.core.registries.urls")),
+    path("api/v1/commerce/", include("products.cymed.core.commerce.urls")),
     # ── CyMed Commercial Foundation API v1 (Program 3.C0) ─────────────────
     path("api/v1/commercial/", include("products.cymed.commercial.urls")),
     # ── CyMed Clinic Edition API v1 (Program 3.1) ─────────────────────────

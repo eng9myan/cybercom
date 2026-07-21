@@ -44,6 +44,21 @@ class TenantIsolationMiddleware:
             request.tenant_id = None
             return self.get_response(request)
 
+        # CyID ecosystem, Phase 7 — the wallet belongs to a PersonIdentity,
+        # not a tenant (same reasoning as the persons/ bypass above). A
+        # person's own CyID token legitimately carries no tenant_id claim.
+        if request.path.startswith("/api/v1/wallet/"):
+            request.tenant_id = None
+            return self.get_response(request)
+
+        # CyID ecosystem, Phase 8 — cross-network checkout is person-scoped
+        # like the wallet it debits, not tenant-scoped (it can touch a
+        # cymed order in one tenant AND a cyshop order in a different one
+        # in the same call).
+        if request.path.startswith("/api/v1/commerce/checkout/"):
+            request.tenant_id = None
+            return self.get_response(request)
+
         # Fallback to check token session payload if header is missing
         if not tenant_id and hasattr(request, "user_session"):
             tenant_id = request.user_session.get("tenant_id")

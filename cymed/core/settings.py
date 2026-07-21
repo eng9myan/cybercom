@@ -56,6 +56,7 @@ PLATFORM_APPS = [
     "platform.tenant",
     "platform.audit",
     "platform.cyidentity",
+    "platform.wallet",
     "platform.api",
     "platform.events",
     "platform.notifications",
@@ -312,6 +313,14 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.JSONParser",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # django_filters was installed (THIRD_PARTY_APPS) but never actually
+    # wired as a filter backend — every ?field=value query param used
+    # against any viewset was silently ignored (returned the full
+    # unfiltered queryset). Same real bug already found+fixed in Cycom
+    # this session; fixing it here too since Phase 9's mobile e-Rx screen
+    # is the first caller that actually needs ?order_type= to work.
+    # Individual viewsets still need filterset_fields to opt in.
+    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.environ.get("API_PAGE_SIZE", "25")),
     "EXCEPTION_HANDLER": "platform.api.exceptions.cybercom_exception_handler",
