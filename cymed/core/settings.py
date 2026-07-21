@@ -275,9 +275,14 @@ KAFKA_SCHEMA_REGISTRY_URL = os.environ.get("KAFKA_SCHEMA_REGISTRY_URL", "http://
 # ---------------------------------------------------------------------------
 # TERMINOLOGY API CONFIGURATION
 # ---------------------------------------------------------------------------
-# ICD-11 (WHO) — Bearer token from https://icdaccessmanagement.who.int/
-# Leave empty to use fallback hardcoded codes (safe at launch).
-ICD11_API_TOKEN = os.environ.get("ICD11_API_TOKEN", "")
+# ICD-11 (WHO) — OAuth2 client_credentials, not a static bearer token.
+# Register a client at https://icdaccessmanagement.who.int/ to get these.
+# Leave empty to use fallback hardcoded codes (safe at launch) — real
+# WHO access tokens are short-lived (~1h) and are exchanged/refreshed
+# automatically by platform/terminology/providers/icd11.py from these
+# two values, never stored as a static token.
+ICD11_CLIENT_ID = os.environ.get("ICD11_CLIENT_ID", "")
+ICD11_CLIENT_SECRET = os.environ.get("ICD11_CLIENT_SECRET", "")
 
 # FHIR Terminology Server — used by FHIRTerminologyProvider for $lookup / $expand.
 # Public tx.fhir.org is the default; set to an internal server in production.

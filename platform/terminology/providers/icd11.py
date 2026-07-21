@@ -18,6 +18,21 @@ _search_cache: dict[str, tuple[list[dict[str, Any]], float]] = {}
 
 ICD11_SEARCH_URL = "https://id.who.int/icd/entity/search"
 
+# WHO's real ICD-API auth: OAuth2 client_credentials against their identity
+# server — NOT a single long-lived static token. A Client ID + Secret
+# (from https://icdaccessmanagement.who.int/) are exchanged for a
+# short-lived access token (WHO's real default is ~3600s) that must be
+# refreshed, not reused indefinitely. This module caches the exchanged
+# token and re-fetches it once it's within a safety margin of expiring —
+# the previous version of this file assumed ICD11_API_TOKEN was a static
+# bearer token set once in settings, which would have silently started
+# failing every request an hour after whoever set it deployed it.
+ICD11_TOKEN_URL = "https://icdaccessmanagement.who.int/connect/token"
+ICD11_OAUTH_SCOPE = "icdapi_access"
+_TOKEN_REFRESH_MARGIN_SECONDS = 60  # refresh slightly before real expiry, not exactly at it
+
+_token_cache: dict[str, Any] = {"access_token": None, "expires_at": 0.0}
+
 
 def _cache_get(key: str) -> list[dict[str, Any]] | None:
     entry = _search_cache.get(key)
@@ -37,14 +52,82 @@ def _get_timeout() -> int:
     return getattr(settings, "TERMINOLOGY_REQUESTS_TIMEOUT", 10)
 
 
+def reset_token_cache() -> None:
+    """Test-only: clear the cached OAuth2 token between test runs."""
+    _token_cache["access_token"] = None
+    _token_cache["expires_at"] = 0.0
+
+
+def reset_search_cache() -> None:
+    """Test-only: clear the module-level search-result cache — like
+    reset_token_cache(), this is process-lifetime state that would
+    otherwise silently leak a cached result from one test into another
+    (confirmed the hard way: two tests both searching "diabetes" saw the
+    second one skip the mocked HTTP call entirely, served from this
+    cache instead)."""
+    _search_cache.clear()
+
+
+def _get_access_token() -> str | None:
+    """Returns a valid WHO ICD-API access token, fetching/refreshing via
+    OAuth2 client_credentials as needed. Returns None if ICD11_CLIENT_ID/
+    ICD11_CLIENT_SECRET aren't configured or the token endpoint fails —
+    callers fall back to the hardcoded seed data in that case, same as
+    before."""
+    client_id = getattr(settings, "ICD11_CLIENT_ID", "")
+    client_secret = getattr(settings, "ICD11_CLIENT_SECRET", "")
+    if not client_id or not client_secret:
+        return None
+
+    cached_token = _token_cache["access_token"]
+    if cached_token and time.monotonic() < _token_cache["expires_at"]:
+        return cached_token
+
+    try:
+        with httpx.Client(timeout=_get_timeout()) as client:
+            response = client.post(
+                ICD11_TOKEN_URL,
+                data={
+                    "client_id": client_id,
+                    "client_secret": client_secret,
+                    "scope": ICD11_OAUTH_SCOPE,
+                    "grant_type": "client_credentials",
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+        if response.status_code != 200:
+            logger.warning(
+                "ICD-11 OAuth2 token request failed: HTTP %d — falling back to mock data",
+                response.status_code,
+            )
+            return None
+
+        data = response.json()
+        access_token = data.get("access_token")
+        expires_in = data.get("expires_in", 3600)
+        if not access_token:
+            logger.warning("ICD-11 OAuth2 token response had no access_token — falling back to mock data")
+            return None
+
+        _token_cache["access_token"] = access_token
+        _token_cache["expires_at"] = time.monotonic() + max(expires_in - _TOKEN_REFRESH_MARGIN_SECONDS, 0)
+        return access_token
+
+    except Exception as exc:
+        logger.warning("ICD-11 OAuth2 token request errored: %s — falling back to mock data", exc)
+        return None
+
+
 class ICD11Provider(TerminologyProvider):
     """
     Terminology provider for WHO ICD-11 (MMS).
     Supports stem codes, extension codes, post-coordination parsing, and ICD-10 crosswalks.
 
-    Live search uses the WHO ICD-11 REST API (https://id.who.int/icd/entity/search).
-    Requires ICD11_API_TOKEN in settings (obtained from https://icdaccessmanagement.who.int/).
-    Falls back to hardcoded codes when the token is absent or any API call fails.
+    Live search uses the WHO ICD-11 REST API (https://id.who.int/icd/entity/search),
+    authenticated via OAuth2 client_credentials (ICD11_CLIENT_ID/ICD11_CLIENT_SECRET
+    in settings, obtained from https://icdaccessmanagement.who.int/) — the access
+    token is short-lived and refreshed automatically by _get_access_token().
+    Falls back to hardcoded codes when credentials are absent or any API call fails.
     """
 
     # ------------------------------------------------------------------
@@ -73,7 +156,7 @@ class ICD11Provider(TerminologyProvider):
             "display": "Osteoarthritis of knee",
             "definition": "Degenerative joint disease of the knee joint.",
             "parents": ["FA8"],
-            "children": ["FA81.0", "FA81.1"],
+            "children": ["FA80.0", "FA80.1"],
         },
         "CA00": {
             "display": "Acute nasopharyngitis [common cold]",
@@ -131,14 +214,16 @@ class ICD11Provider(TerminologyProvider):
 
     def search(self, query: str, limit: int = 10, **kwargs) -> list[dict[str, Any]]:
         """
-        Search ICD-11 concepts.  Calls the WHO REST API when ICD11_API_TOKEN is set;
-        otherwise falls back to hardcoded codes with a warning.
+        Search ICD-11 concepts. Calls the WHO REST API when a valid OAuth2
+        access token can be obtained; otherwise falls back to hardcoded
+        codes with a warning.
         """
-        token: str = getattr(settings, "ICD11_API_TOKEN", "")
+        access_token = _get_access_token()
 
-        if not token:
+        if not access_token:
             logger.warning(
-                "ICD11_API_TOKEN is not configured — using fallback hardcoded codes for ICD-11 search"
+                "ICD11_CLIENT_ID/ICD11_CLIENT_SECRET not configured (or token exchange failed) — "
+                "using fallback hardcoded codes for ICD-11 search"
             )
             return self._search_mock(query, limit)
 
@@ -149,7 +234,7 @@ class ICD11Provider(TerminologyProvider):
 
         try:
             headers = {
-                "Authorization": f"Bearer {token}",
+                "Authorization": f"Bearer {access_token}",
                 "Accept": "application/json",
                 "Accept-Language": "en",
                 "API-Version": "v2",
