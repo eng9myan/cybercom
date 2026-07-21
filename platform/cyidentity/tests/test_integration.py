@@ -10,6 +10,7 @@ against the in-memory Keycloak fake. Verifies:
 """
 
 import uuid
+from unittest.mock import patch
 
 import pytest
 from rest_framework.test import APIClient
@@ -156,6 +157,118 @@ class TestUserAndRoleIntegration:
         resp = admin_client.post(f"/api/v1/identity/users/{user_id}/unlock/")
         assert resp.status_code == 200
         assert resp.json()["locked_until"] is None
+
+
+@pytest.mark.django_db
+class TestCyIDIntegration:
+    """CyID ecosystem Phase 2: one PersonIdentity, linked into N tenant
+    realms, verified via the real enroll/link-tenant API surface (not the
+    service layer directly) so this exercises permission wiring too."""
+
+    def _tenant_realm(self, name: str):
+        return IdentityRealm.objects.create(
+            tenant_id=uuid.uuid4(),
+            realm_name=name,
+            realm_type=RealmType.CUSTOMER,
+            status=RealmStatus.ACTIVE,
+            issuer_url=f"http://x/realms/{name}",
+            jwks_uri=f"http://x/realms/{name}/jwks",
+            admin_api_url=f"http://x/admin/realms/{name}",
+        )
+
+    def _home_realm(self):
+        # Mirrors what `manage.py bootstrap_cyid_realm` creates in
+        # production — a local DB row is all CyIDService.home_realm()
+        # needs; the fake KC client doesn't require a matching
+        # "realm exists" entry for create_user to work (see create_user).
+        return IdentityRealm.objects.create(
+            tenant_id=uuid.uuid4(),
+            realm_name="cyid",
+            realm_type=RealmType.CITIZEN,
+            status=RealmStatus.ACTIVE,
+            issuer_url="http://x/realms/cyid",
+            jwks_uri="http://x/realms/cyid/jwks",
+            admin_api_url="http://x/admin/realms/cyid",
+        )
+
+    def test_enroll_then_link_into_two_tenants(self, admin_client):
+        # Same defensive pattern as every test in test_cyidentity.py — this
+        # module-level settings_test.py assignment doesn't reliably survive
+        # Django's LazySettings across every test-run ordering (pre-existing,
+        # documented flakiness, not introduced here).
+        with patch.object(
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+        ):
+            self._run_enroll_then_link_into_two_tenants(admin_client)
+
+    def _run_enroll_then_link_into_two_tenants(self, admin_client):
+        self._home_realm()
+        anon = APIClient()  # enroll/link-tenant are AllowAny — no bearer token needed
+
+        # Enroll once — this is the "software token" (password) issuance.
+        resp = anon.post(
+            "/api/v1/identity/persons/enroll/",
+            {"display_name": "Jane Patient", "primary_email": "jane@example.com"},
+            format="json",
+        )
+        assert resp.status_code == 201, resp.content
+        body = resp.json()
+        person_id = body["person"]["id"]
+        password = body["password"]
+        assert password  # a real credential was issued
+
+        clinic_realm = self._tenant_realm("clinic-a")
+        pharmacy_realm = self._tenant_realm("pharmacy-b")
+
+        # Wrong password must not link.
+        resp = anon.post(
+            f"/api/v1/identity/persons/{person_id}/link-tenant/",
+            {"realm_id": str(clinic_realm.id), "scopes": ["clinic:read"], "password": "wrong"},
+            format="json",
+        )
+        assert resp.status_code == 502, resp.content  # KeycloakError surfaced as 502
+
+        # Correct password links into the clinic realm.
+        resp = anon.post(
+            f"/api/v1/identity/persons/{person_id}/link-tenant/",
+            {"realm_id": str(clinic_realm.id), "scopes": ["clinic:read", "clinic:write"], "password": password},
+            format="json",
+        )
+        assert resp.status_code == 201, resp.content
+        clinic_profile = resp.json()
+        assert clinic_profile["person"] == person_id
+
+        # Same person, same password, DIFFERENT tenant realm.
+        resp = anon.post(
+            f"/api/v1/identity/persons/{person_id}/link-tenant/",
+            {"realm_id": str(pharmacy_realm.id), "scopes": ["pharmacy:read"], "password": password},
+            format="json",
+        )
+        assert resp.status_code == 201, resp.content
+        pharmacy_profile = resp.json()
+        assert pharmacy_profile["person"] == person_id
+
+        # Same person_id links two distinct UserProfile rows in two
+        # distinct realms — the actual cross-tenant identity claim.
+        assert clinic_profile["id"] != pharmacy_profile["id"]
+        assert clinic_profile["realm"] == str(clinic_realm.id)
+        assert pharmacy_profile["realm"] == str(pharmacy_realm.id)
+
+        from platform.cyidentity.models import UserProfile as UP
+
+        clinic_row = UP.objects.get(id=clinic_profile["id"])
+        pharmacy_row = UP.objects.get(id=pharmacy_profile["id"])
+        assert clinic_row.attributes["cyid_scopes"] == ["clinic:read", "clinic:write"]
+        assert pharmacy_row.attributes["cyid_scopes"] == ["pharmacy:read"]
+
+        # Re-linking an already-linked tenant is idempotent, not a duplicate.
+        resp = anon.post(
+            f"/api/v1/identity/persons/{person_id}/link-tenant/",
+            {"realm_id": str(clinic_realm.id), "scopes": ["clinic:read"], "password": password},
+            format="json",
+        )
+        assert resp.status_code == 201, resp.content
+        assert resp.json()["id"] == clinic_profile["id"]
 
 
 @pytest.mark.django_db

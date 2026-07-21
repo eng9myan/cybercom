@@ -46,6 +46,7 @@ from platform.cyidentity.models import (
     IdentityRealm,
     LoginAudit,
     Permission,
+    PersonIdentity,
     RealmConfiguration,
     RealmStatus,
     Role,
@@ -152,6 +153,32 @@ def render_prometheus() -> str:
     return "\n".join(lines) + "\n"
 
 
+# Module-level (not per-instance) so separately-constructed
+# KeycloakAdminClient instances in fake mode see each other's state — the
+# same way independently-constructed real clients would all see the one
+# real out-of-process Keycloak server. Needed for anything that
+# provisions with one client instance and verifies with another within
+# the same test (e.g. CyIDService: enroll() and a later
+# link_tenant_profile() call are two separate view-level service/client
+# instantiations, exactly like two separate real HTTP requests would be).
+_FAKE_KEYCLOAK_STORE: dict[str, Any] = {
+    "realms": {},
+    "clients": {},
+    "users": {},
+    "roles": {},
+    "passwords": {},
+}
+
+
+def reset_fake_keycloak_store() -> None:
+    """Test-only: clear the shared in-memory fake-Keycloak state. Call
+    between tests (see `tests/conftest.py`'s autouse fixture) so state
+    doesn't leak across test functions — the module-level store persists
+    for the life of the test process otherwise."""
+    for value in _FAKE_KEYCLOAK_STORE.values():
+        value.clear()
+
+
 # ---------------------------------------------------------------------------
 # KeycloakAdminClient — Admin REST wrapper
 # ---------------------------------------------------------------------------
@@ -173,7 +200,7 @@ class KeycloakAdminClient:
         self.realm_name = realm.realm_name if realm else "master"
         self.admin_token: str | None = None
         self.timeout_seconds: int = 10
-        self._fake_store: dict[str, Any] = {"realms": {}, "clients": {}, "users": {}, "roles": {}}
+        self._fake_store: dict[str, Any] = _FAKE_KEYCLOAK_STORE
 
     # --- Token -------------------------------------------------------------
     def authenticate(self, username: str | None = None, password: str | None = None) -> str:
@@ -504,6 +531,7 @@ class KeycloakAdminClient:
         impossible for any previously-provisioned user (including demo trials)."""
         if not getattr(settings, "KEYCLOAK_ENABLED", True):
             self._fake_store["users"].setdefault(realm_name, {})
+            self._fake_store["passwords"].setdefault(realm_name, {})[user_id] = password
             return
         import httpx  # type: ignore
 
@@ -518,6 +546,34 @@ class KeycloakAdminClient:
             raise KeycloakError(
                 f"set_user_password failed: {resp.status_code}", resp.status_code, resp.text
             )
+
+    def verify_password_grant(
+        self, realm_name: str, client_id: str, username: str, password: str
+    ) -> bool:
+        """Proof-of-possession check: can this username/password actually
+        authenticate? Real mode does a live password-grant against the
+        given (public) client — no secret needed. Fake mode checks the
+        in-memory password set by `set_user_password`, so credential
+        verification is exercised by tests too, not skipped."""
+        if not getattr(settings, "KEYCLOAK_ENABLED", True):
+            user = self.find_user_by_username(realm_name, username)
+            if not user:
+                return False
+            stored = self._fake_store["passwords"].get(realm_name, {}).get(user["id"])
+            return stored is not None and stored == password
+        import httpx  # type: ignore
+
+        resp = httpx.post(
+            f"{self.base_url}/realms/{realm_name}/protocol/openid-connect/token",
+            data={
+                "grant_type": "password",
+                "client_id": client_id,
+                "username": username,
+                "password": password,
+            },
+            timeout=self.timeout_seconds,
+        )
+        return resp.status_code == 200
 
     # --- Helpers ------------------------------------------------------------
     def _auth_headers(self) -> dict[str, str]:
@@ -761,6 +817,7 @@ class ClientService:
         fapi_profile_enabled: bool = False,
         smart_on_fhir_enabled: bool = False,
         direct_access_grants_enabled: bool = False,
+        cyid_claims_enabled: bool = False,
     ) -> ApplicationClient:
         self.kc.authenticate()
         client_uuid = self.kc.create_client(
@@ -832,6 +889,58 @@ class ClientService:
                     },
                 },
             )
+            # Opt-in only (default False) — most existing clients (service
+            # accounts, per-tenant demo clients) have no CyID person to
+            # claim and don't need these. Real clients that DO need them:
+            # the shared "cyid" home-realm client and any tenant realm's
+            # client a CyIDService.link_tenant_profile() call targets.
+            if cyid_claims_enabled:
+                self.kc.create_protocol_mapper(
+                    realm.realm_name,
+                    kc_client_uuid,
+                    {
+                        "name": "cyid-person-id-mapper",
+                        "protocol": "openid-connect",
+                        "protocolMapper": "oidc-usermodel-attribute-mapper",
+                        "consentRequired": False,
+                        "config": {
+                            "user.attribute": "person_id",
+                            "claim.name": "person_id",
+                            "jsonType.label": "String",
+                            "id.token.claim": "true",
+                            "access.token.claim": "true",
+                            "userinfo.token.claim": "true",
+                            "introspection.token.claim": "true",
+                        },
+                    },
+                )
+                # Fine-grained "pharmacy:read" / "lab:write" style scopes,
+                # computed from the Role/Permission/RoleAssignment catalog
+                # (models.py:342-441) at provisioning/link time and written
+                # onto the Keycloak user's `cyid_scopes` attribute — that
+                # catalog exists today but nothing wired it into a JWT claim
+                # before this. Multivalued so it surfaces as a real JSON
+                # array, not a single string.
+                self.kc.create_protocol_mapper(
+                    realm.realm_name,
+                    kc_client_uuid,
+                    {
+                        "name": "cyid-scope-mapper",
+                        "protocol": "openid-connect",
+                        "protocolMapper": "oidc-usermodel-attribute-mapper",
+                        "consentRequired": False,
+                        "config": {
+                            "user.attribute": "cyid_scopes",
+                            "claim.name": "cyid_scopes",
+                            "jsonType.label": "String",
+                            "multivalued": "true",
+                            "id.token.claim": "true",
+                            "access.token.claim": "true",
+                            "userinfo.token.claim": "true",
+                            "introspection.token.claim": "true",
+                        },
+                    },
+                )
         return client
 
     def rotate_secret(
@@ -955,6 +1064,134 @@ class UserProvisioningService:
             kind="permission",
             granted_by=granted_by,
         )
+
+
+# ---------------------------------------------------------------------------
+# CyIDService — cross-tenant identity federation (CyID ecosystem, Phase 2)
+# ---------------------------------------------------------------------------
+class CyIDService:
+    """
+    One PersonIdentity, many tenants. `UserProfile` was always scoped
+    per-realm (`unique_together = [("realm", "username")]`) with no way to
+    say "this user in the clinic realm and that user in the pharmacy realm
+    are the same human" — that's the gap this closes.
+
+    Software-token MVP (real NFC hardware deferred, per plan): a person
+    enrolls once in the shared home realm (`HOME_REALM_NAME`, provisioned
+    by `manage.py bootstrap_cyid_realm`) and gets one password. Visiting a
+    new tenant for the first time provisions a linked `UserProfile` there
+    reusing that same password — proven first via a real password-grant
+    check against the public home-realm client, so linking a tenant
+    profile requires actually knowing the credential, not just naming a
+    person_id. Real Keycloak-to-Keycloak IdP brokering (registering the
+    home realm as an `IdentityProvider` in each tenant realm) is the
+    natural next step once this pragmatic version is verified working
+    end-to-end — it would replace `link_tenant_profile`'s internals
+    without changing `PersonIdentity`'s shape or the JWT claim contract.
+    """
+
+    HOME_REALM_NAME = "cyid"
+    HOME_CLIENT_ID = "cyid-home"
+
+    def __init__(self, kc: KeycloakAdminClient | None = None):
+        self.kc = kc or KeycloakAdminClient()
+        self.provisioning = UserProvisioningService(self.kc)
+
+    def home_realm(self) -> IdentityRealm:
+        try:
+            return IdentityRealm.objects.get(realm_name=self.HOME_REALM_NAME)
+        except IdentityRealm.DoesNotExist as exc:
+            raise KeycloakError(
+                "CyID home realm not bootstrapped — run `manage.py bootstrap_cyid_realm` first.",
+                0,
+            ) from exc
+
+    @staticmethod
+    def _username_for(person: PersonIdentity) -> str:
+        return f"cyid-{person.cyid}"
+
+    def enroll(
+        self,
+        *,
+        display_name: str,
+        primary_email: str,
+        primary_phone: str = "",
+        password: str | None = None,
+    ) -> tuple[PersonIdentity, UserProfile, str]:
+        """Create one PersonIdentity + its home-realm UserProfile.
+
+        Returns (person, home_profile, plaintext_password) — the password
+        is the software token itself for now. Caller relays it to the
+        person once (QR/app enrollment screen); it is never persisted here
+        beyond the transient `UserProfile.plaintext_password` attribute
+        `UserProvisioningService.provision_user` already sets by design.
+        """
+        home_realm = self.home_realm()
+        person = PersonIdentity.objects.create(
+            home_realm=home_realm,
+            display_name=display_name,
+            primary_email=primary_email,
+            primary_phone=primary_phone,
+        )
+        profile = self.provisioning.provision_user(
+            home_realm,
+            username=self._username_for(person),
+            email=primary_email,
+            first_name=display_name,
+            enabled=True,
+            email_verified=False,
+            attributes={"person_id": str(person.id), "cyid_scopes": []},
+            password=password,
+        )
+        profile.person = person
+        profile.save(update_fields=["person", "updated_at"])
+        return person, profile, profile.plaintext_password
+
+    def _verify_home_credential(self, person: PersonIdentity, password: str) -> None:
+        """Real proof-of-possession: a live password-grant against the
+        public home-realm client (verified in fake mode too, against the
+        in-memory password set at enrollment — see
+        `KeycloakAdminClient.verify_password_grant`). No client secret
+        needed (public client), so this is a legitimate identity check,
+        not a rubber stamp on whatever person_id the caller names."""
+        ok = self.kc.verify_password_grant(
+            person.home_realm.realm_name,
+            self.HOME_CLIENT_ID,
+            self._username_for(person),
+            password,
+        )
+        if not ok:
+            raise KeycloakError("Invalid CyID credential", 401)
+
+    def link_tenant_profile(
+        self,
+        person: PersonIdentity,
+        target_realm: IdentityRealm,
+        *,
+        scopes: list[str],
+        password: str,
+    ) -> UserProfile:
+        """First visit to a new tenant realm: verify the credential against
+        the home realm, then provision (or reuse) a linked UserProfile in
+        the target tenant carrying tenant-specific scope claims, e.g.
+        ["pharmacy:read", "pharmacy:dispense"]."""
+        self._verify_home_credential(person, password)
+        existing = UserProfile.objects.filter(realm=target_realm, person=person).first()
+        if existing:
+            return existing
+        profile = self.provisioning.provision_user(
+            target_realm,
+            username=self._username_for(person),
+            email=person.primary_email,
+            first_name=person.display_name,
+            enabled=True,
+            email_verified=True,
+            attributes={"person_id": str(person.id), "cyid_scopes": scopes},
+            password=password,
+        )
+        profile.person = person
+        profile.save(update_fields=["person", "updated_at"])
+        return profile
 
 
 # ---------------------------------------------------------------------------

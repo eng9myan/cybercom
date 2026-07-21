@@ -14,6 +14,7 @@ Routers exposed under `/api/v1/identity/`:
   - /role-assignments/                        — role→permission mapping
   - /groups/                                  — ABAC groups
   - /group-memberships/                       — user→group membership
+  - /persons/                                  — CyID: enroll, link-tenant
   - /users/                                   — user profiles + provisioning
   - /sessions/                                — session list/revoke
   - /login-audits/                            — authN event log
@@ -45,6 +46,7 @@ from platform.cyidentity.models import (
     IdentityRealm,
     LoginAudit,
     Permission,
+    PersonIdentity,
     RealmStatus,
     Role,
     RoleAssignment,
@@ -76,9 +78,12 @@ from platform.cyidentity.serializers import (
     IdentityRealmSerializer,
     LoginAuditSerializer,
     PermissionSerializer,
+    PersonEnrollSerializer,
+    PersonIdentitySerializer,
     RoleAssignmentSerializer,
     RoleSerializer,
     ServicePrincipalSerializer,
+    TenantLinkSerializer,
     TokenValidateRequestSerializer,
     TokenValidateResponseSerializer,
     UserProfileSerializer,
@@ -89,6 +94,7 @@ from platform.cyidentity.serializers import (
 from platform.cyidentity.services import (
     BreakGlassService,
     ClientService,
+    CyIDService,
     KeycloakError,
     RealmService,
     SessionService,
@@ -307,6 +313,68 @@ class GroupMembershipViewSet(viewsets.ModelViewSet):
 # ---------------------------------------------------------------------------
 # Users
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# PersonIdentity (CyID) — cross-tenant identity federation
+# ---------------------------------------------------------------------------
+class PersonIdentityViewSet(viewsets.ModelViewSet):
+    queryset = PersonIdentity.objects.all().order_by("-enrolled_at")
+    serializer_class = PersonIdentitySerializer
+    permission_classes = [ReadOnlyOrPlatformAdmin]
+
+    def get_permissions(self):
+        # Self-service: a person enrolling has no token yet by definition.
+        # link-tenant proves identity itself (real password-grant check in
+        # CyIDService._verify_home_credential), same posture as this
+        # session's other public self-serve endpoints (cyshop's
+        # TenantRegisterView, cymed's demo-provision endpoint).
+        if self.action in {"enroll", "link_tenant"}:
+            return [AllowAny()]
+        return super().get_permissions()
+
+    @action(detail=False, methods=["post"], url_path="enroll")
+    def enroll(self, request):
+        serializer = PersonEnrollSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            person, profile, password = CyIDService().enroll(**serializer.validated_data)
+        except KeycloakError as exc:
+            return Response(
+                {"detail": str(exc), "keycloak_status": exc.status_code},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        return Response(
+            {
+                "person": PersonIdentitySerializer(person).data,
+                "username": profile.username,
+                "password": password,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=True, methods=["post"], url_path="link-tenant")
+    def link_tenant(self, request, pk=None):
+        person = self.get_object()
+        serializer = TenantLinkSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            realm = IdentityRealm.objects.get(pk=serializer.validated_data["realm_id"])
+        except IdentityRealm.DoesNotExist:
+            return Response({"detail": "Realm not found"}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            profile = CyIDService().link_tenant_profile(
+                person,
+                realm,
+                scopes=serializer.validated_data["scopes"],
+                password=serializer.validated_data["password"],
+            )
+        except KeycloakError as exc:
+            return Response(
+                {"detail": str(exc), "keycloak_status": exc.status_code},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        return Response(UserProfileSerializer(profile).data, status=status.HTTP_201_CREATED)
+
+
 class UserProfileViewSet(viewsets.ModelViewSet):
     queryset = UserProfile.objects.all().order_by("username")
     serializer_class = UserProfileSerializer

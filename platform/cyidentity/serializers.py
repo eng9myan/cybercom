@@ -18,6 +18,7 @@ from platform.cyidentity.models import (
     IdentityRealm,
     LoginAudit,
     Permission,
+    PersonIdentity,
     RealmConfiguration,
     RealmType,
     Role,
@@ -324,6 +325,39 @@ class GroupMembershipSerializer(serializers.ModelSerializer):
 
 
 # ---------------------------------------------------------------------------
+# PersonIdentity (CyID)
+# ---------------------------------------------------------------------------
+class PersonIdentitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PersonIdentity
+        fields = [
+            "id",
+            "cyid",
+            "home_realm",
+            "display_name",
+            "primary_email",
+            "primary_phone",
+            "status",
+            "enrolled_at",
+            "metadata",
+        ]
+        read_only_fields = ["id", "cyid", "home_realm", "enrolled_at"]
+
+
+class PersonEnrollSerializer(serializers.Serializer):
+    display_name = serializers.CharField(max_length=300)
+    primary_email = serializers.EmailField()
+    primary_phone = serializers.CharField(max_length=32, required=False, allow_blank=True, default="")
+    password = serializers.CharField(required=False, allow_null=True, default=None)
+
+
+class TenantLinkSerializer(serializers.Serializer):
+    realm_id = serializers.UUIDField()
+    scopes = serializers.ListField(child=serializers.CharField(), required=False, default=list)
+    password = serializers.CharField()
+
+
+# ---------------------------------------------------------------------------
 # User profile / Session / Login audit
 # ---------------------------------------------------------------------------
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -334,6 +368,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "realm",
+            "person",
             "keycloak_user_id",
             "username",
             "email",

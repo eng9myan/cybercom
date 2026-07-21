@@ -8,12 +8,12 @@ Keycloak 24; rows in this module describe the CyberCom-side metadata
 (realm lifecycle, client registry, role/permission catalog, break-glass
 access records, audit hooks).
 
-17 domain models per Program 2.1 spec:
+18 domain models per Program 2.1 spec (+ CyID ecosystem extension):
   IdentityRealm, RealmConfiguration, IdentityProvider,
   ServicePrincipal, ApplicationClient, ClientSecret,
   Role, Permission, RoleAssignment,
   Group, GroupMembership,
-  UserProfile, UserSession, LoginAudit,
+  PersonIdentity, UserProfile, UserSession, LoginAudit,
   DeviceRegistration, WebAuthnCredential,
   BreakGlassAccess
 """
@@ -485,8 +485,60 @@ class GroupMembership(BaseModel):
         return f"Membership({self.user_id} ⊂ {self.group.path})"
 
 
+class PersonIdentityStatus(models.TextChoices):
+    ACTIVE = "active", "Active"
+    SUSPENDED = "suspended", "Suspended"
+
+
 # ---------------------------------------------------------------------------
-# 12. UserProfile — control-plane mirror of Keycloak user
+# 12. PersonIdentity — CyID: one row per human, spanning every tenant
+# ---------------------------------------------------------------------------
+class PersonIdentity(PlatformModel):
+    """
+    CyID unified identity. One row per real human, independent of any single
+    tenant — the thing `UserProfile` (per-realm, per-tenant) never had a way
+    to represent. A patient's clinic visit at Tenant A and pharmacy pickup
+    at Tenant B are two different `UserProfile` rows in two different
+    realms; both point back to the same `PersonIdentity` via
+    `UserProfile.person`, which is what lets both tenants agree on "this is
+    the same person" without merging their data.
+
+    Home identity lives in one shared realm (`CyIDService.HOME_REALM_NAME`,
+    RealmType.CITIZEN, provisioned by `manage.py bootstrap_cyid_realm`).
+    Enrollment (`CyIDService.enroll`) creates exactly one `UserProfile`
+    there. Visiting a new tenant for the first time
+    (`CyIDService.link_tenant_profile`) provisions an additional
+    `UserProfile` in that tenant's own realm, reusing the same enrollment
+    password as a software token — real NFC hardware is a planned later
+    swap-in for how the credential is presented, not a change to this model.
+    """
+
+    cyid = models.UUIDField(default=uuid.uuid4, unique=True, db_index=True)
+    home_realm = models.ForeignKey(
+        IdentityRealm, on_delete=models.PROTECT, related_name="home_persons"
+    )
+    display_name = models.CharField(max_length=300, blank=True)
+    primary_email = models.EmailField()
+    primary_phone = models.CharField(max_length=32, blank=True)
+    status = models.CharField(
+        max_length=20, choices=PersonIdentityStatus.choices, default=PersonIdentityStatus.ACTIVE
+    )
+    enrolled_at = models.DateTimeField(default=timezone.now)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        db_table = "platform_person_identities"
+        indexes = [
+            models.Index(fields=["primary_email"]),
+            models.Index(fields=["status"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"CyID({self.cyid})"
+
+
+# ---------------------------------------------------------------------------
+# 13. UserProfile — control-plane mirror of Keycloak user
 # ---------------------------------------------------------------------------
 class UserProfile(BaseModel):
     """
@@ -497,6 +549,14 @@ class UserProfile(BaseModel):
 
     realm = models.ForeignKey(IdentityRealm, on_delete=models.CASCADE, related_name="users")
     keycloak_user_id = models.UUIDField(unique=True, db_index=True)  # Keycloak `sub`
+    person = models.ForeignKey(
+        PersonIdentity,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="profiles",
+        help_text="CyID this profile belongs to. Null for realm-local users never enrolled in CyID.",
+    )
     username = models.CharField(max_length=200)
     email = models.EmailField()
     email_verified = models.BooleanField(default=False)
@@ -542,7 +602,7 @@ class UserProfile(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# 13. UserSession — session tracking + revocation
+# 14. UserSession — session tracking + revocation
 # ---------------------------------------------------------------------------
 class UserSession(BaseModel):
     """Active/expired/revoked session. Mirrored from Keycloak session list."""
@@ -587,7 +647,7 @@ class UserSession(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# 14. LoginAudit — authN event log
+# 15. LoginAudit — authN event log
 # ---------------------------------------------------------------------------
 class LoginAudit(BaseModel):
     """Per-login audit record. Streams to platform_audit_logs in production."""
@@ -628,7 +688,7 @@ class LoginAudit(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# 15. DeviceRegistration — bound device for MFA / passkey / mobile sessions
+# 16. DeviceRegistration — bound device for MFA / passkey / mobile sessions
 # ---------------------------------------------------------------------------
 class DeviceRegistration(BaseModel):
     """A device the user has registered for MFA or persistent session."""
@@ -661,7 +721,7 @@ class DeviceRegistration(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# 16. WebAuthnCredential — registered passkey / security key
+# 17. WebAuthnCredential — registered passkey / security key
 # ---------------------------------------------------------------------------
 class WebAuthnCredential(BaseModel):
     """
@@ -705,7 +765,7 @@ class WebAuthnCredential(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# 17. BreakGlassAccess — emergency access with audit + auto-expiry
+# 18. BreakGlassAccess — emergency access with audit + auto-expiry
 # ---------------------------------------------------------------------------
 class BreakGlassAccess(BaseModel):
     """
