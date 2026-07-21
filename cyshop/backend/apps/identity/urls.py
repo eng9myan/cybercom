@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
+    CyIDExchangeView,
     UserRegisterView, UserLoginView, UserLogoutView, PasswordResetView,
     MfaToggleView, GoogleOAuthView, MicrosoftOAuthView, UserViewSet,
     RoleViewSet, PermissionViewSet, PermissionGroupViewSet,
@@ -20,6 +21,7 @@ router.register(r'devices', UserDeviceViewSet, basename='device')
 urlpatterns = [
     path('register/', UserRegisterView.as_view(), name='user-register'),
     path('login/', UserLoginView.as_view(), name='user-login'),
+    path('cyid-exchange/', CyIDExchangeView.as_view(), name='cyid-exchange'),
     path('logout/', UserLogoutView.as_view(), name='user-logout'),
     path('password-reset/', PasswordResetView.as_view(), name='password-reset'),
     path('mfa/', MfaToggleView.as_view(), name='mfa-toggle'),

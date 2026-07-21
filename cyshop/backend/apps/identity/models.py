@@ -27,6 +27,15 @@ class User(AbstractUser):
     mfa_secret = models.CharField(max_length=100, null=True, blank=True)
     is_mfa_enabled = models.BooleanField(default=False)
 
+    # CyID ecosystem, Phase 3 — links this cyshop-local user to a
+    # PersonIdentity.id from platform.cyidentity (a different database;
+    # cyshop and cymed/cycom are separate Django projects, so this is a
+    # cross-service UUID reference, never a Django FK). Set by
+    # apps.identity.cyid_bridge.exchange_cyid_token() on first CyID login
+    # for this tenant; null for users who only ever used cyshop's own
+    # local signup.
+    cyid_person_id = models.UUIDField(null=True, blank=True, db_index=True)
+
     def save(self, *args, **kwargs):
         if self.pk:
             self.version += 1

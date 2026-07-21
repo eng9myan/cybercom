@@ -38,6 +38,11 @@ class TenantMiddleware:
             request.path.startswith('/admin/') or
             request.path.startswith('/api/v1/identity/login/') or
             request.path.startswith('/api/v1/identity/register/') or
+            # CyID ecosystem, Phase 3 — tenant_id arrives in the request
+            # body here (which tenant to exchange this CyID token into),
+            # same reason login/register are exempted: no header exists
+            # yet at this point in the flow.
+            request.path.startswith('/api/v1/identity/cyid-exchange/') or
             request.path.startswith('/api/v1/tenants/register/') or
             request.path.startswith('/healthz/')
         ):

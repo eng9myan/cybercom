@@ -26,6 +26,15 @@ CSRF_TRUSTED_ORIGINS = [
     o.strip() for o in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
 ]
 
+# CyID ecosystem, Phase 3 — cyshop's own auth stays local/HS256 (JWTAuthentication,
+# unchanged), but /api/v1/identity/cyid-exchange/ verifies a real CyID
+# (Keycloak RS256) token against this JWKS endpoint before minting a local
+# session, same shared realm every other product's CyIdentity integration uses.
+CYIDENTITY_ISSUER = os.environ.get('CYIDENTITY_ISSUER', 'http://localhost:8080/realms/cybercom')
+CYIDENTITY_JWKS_URI = os.environ.get(
+    'CYIDENTITY_JWKS_URI', f"{CYIDENTITY_ISSUER}/protocol/openid-connect/certs"
+)
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

@@ -6,6 +6,11 @@ from rest_framework import serializers
 from .models import User, Role, Permission, PermissionGroup, RoleAssignment, UserProfile, UserSession, UserDevice
 from apps.tenants.models import Tenant, Branch, Company
 
+class CyIDExchangeSerializer(serializers.Serializer):
+    cyid_token = serializers.CharField()
+    tenant_id = serializers.UUIDField()
+
+
 class UserRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     tenant_id = serializers.UUIDField(required=True)

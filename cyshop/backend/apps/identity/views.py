@@ -3,8 +3,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import logout
+from .cyid_bridge import CyIDTokenError, exchange_cyid_token
 from .models import User, Role, Permission, PermissionGroup, RoleAssignment, UserProfile, UserSession, UserDevice
 from .serializers import (
+    CyIDExchangeSerializer,
     UserRegisterSerializer, UserLoginSerializer, UserSerializer, RoleSerializer,
     PermissionSerializer, PermissionGroupSerializer, RoleAssignmentSerializer,
     UserProfileSerializer, UserSessionSerializer, UserDeviceSerializer
@@ -28,6 +30,26 @@ class UserLoginView(APIView):
         if serializer.is_valid():
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CyIDExchangeView(APIView):
+    """CyID ecosystem, Phase 3 — trade a real CyID (Keycloak) token for a
+    cyshop session. See apps.identity.cyid_bridge.exchange_cyid_token."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = CyIDExchangeSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            result = exchange_cyid_token(
+                serializer.validated_data["cyid_token"],
+                str(serializer.validated_data["tenant_id"]),
+            )
+        except CyIDTokenError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(result, status=status.HTTP_200_OK)
+
 
 class UserLogoutView(APIView):
     permission_classes = [IsAuthenticated]
