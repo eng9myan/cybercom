@@ -89,6 +89,7 @@ PRODUCT_APPS = [
     "products.cycom.subscriptions",
     "products.cycom.equity",
     "products.cycom.esg",
+    "products.cycom.localization",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
@@ -321,3 +322,15 @@ AUTH_PASSWORD_VALIDATORS = [
 # ---------------------------------------------------------------------------
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 APP_VERSION = os.environ.get("APP_VERSION", "0.1.0")
+
+# ---------------------------------------------------------------------------
+# COMPLIANCE GATEWAY — CyID ecosystem, Phase 6 (multi-country billing)
+# ---------------------------------------------------------------------------
+# compliance-gateway/main.py's real EventBus subscription is dead code
+# (imports core-kernel's `bus` module, which was fully decommissioned —
+# see Step 9 of the earlier Cycom rebuild; falls back to EventBus=None,
+# so nothing was ever actually delivered to it that way). It still exposes
+# a real, working direct REST endpoint for exactly this — the standalone
+# invoice-posting call below uses that, not a resurrected event bus.
+COMPLIANCE_GATEWAY_URL = os.environ.get("COMPLIANCE_GATEWAY_URL", "http://localhost:9000")
+COMPLIANCE_GATEWAY_TIMEOUT_SECONDS = int(os.environ.get("COMPLIANCE_GATEWAY_TIMEOUT_SECONDS", "10"))

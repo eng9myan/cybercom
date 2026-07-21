@@ -7,8 +7,10 @@ from rest_framework.exceptions import ValidationError
 from core.viewsets import TenantScopedModelViewSet
 from platform.tenant.permissions import IsPlatformAdmin
 from products.cycom.accounting.services import UnbalancedEntryError, post_journal_entry
+from products.cycom.ar_ap.compliance_client import notify_invoice_finalized
 from products.cycom.ar_ap.models import Invoice, Partner, Payment
 from products.cycom.ar_ap.serializers import InvoiceSerializer, PartnerSerializer, PaymentSerializer
+from products.cycom.localization.services import get_jurisdiction_for_tenant
 
 
 class PartnerViewSet(TenantScopedModelViewSet):
@@ -109,6 +111,16 @@ class InvoiceViewSet(TenantScopedModelViewSet):
         invoice.save(
             update_fields=["amount_subtotal", "amount_tax", "amount_total", "status", "journal_entry"]
         )
+
+        # CyID ecosystem, Phase 6 — real per-country e-invoicing routing,
+        # derived from the tenant's own country_code (platform.tenant),
+        # not a new field on Invoice. Never blocks/rolls back the posting
+        # itself — compliance formatting is downstream of a real GL entry
+        # that already exists at this point.
+        jurisdiction = get_jurisdiction_for_tenant(invoice.tenant_id)
+        if jurisdiction:
+            notify_invoice_finalized(invoice, jurisdiction)
+
         return Response(InvoiceSerializer(invoice).data)
 
 
