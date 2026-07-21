@@ -136,6 +136,30 @@ services:
         max-size: "20m"
         max-file: "3"
 
+  # Real gap found live: core/settings.py's CELERY_BEAT_SCHEDULE (fires
+  # tenant.expire_demo_tenants every 15 min) was always defined but nothing
+  # ever ran `celery beat` in this compose stack — celery-worker alone only
+  # consumes tasks already queued, it never enqueues scheduled ones. Every
+  # demo trial (72h) has been silently immortal in production until this.
+  celery-beat:
+    image: cybercom-api-backend:prod
+    container_name: cybercom-api-beat
+    restart: always
+    command: ["celery", "-A", "core", "beat", "--loglevel=info"]
+    env_file: .env.production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - cybercom-api-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
 networks:
   cybercom-api-net:
     driver: bridge

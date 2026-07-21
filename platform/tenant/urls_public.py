@@ -11,4 +11,5 @@ from platform.tenant import views
 
 urlpatterns = [
     path("demo/provision/", views.demo_provision, name="demo-provision"),
+    path("subscriptions/register/", views.subscription_register, name="subscription-register"),
 ]

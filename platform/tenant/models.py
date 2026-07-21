@@ -328,6 +328,60 @@ class TenantSubscription(PlatformModel):
         return self.ends_at is not None and self.ends_at < timezone.now()
 
 
+class InvoicePaymentMethod(models.TextChoices):
+    BANK_TRANSFER = "bank_transfer", "Bank Transfer"
+    # Provider-agnostic placeholder — no gateway wired yet (standing
+    # decision this session: real Stripe/card integration is separate,
+    # later work). Never actually chargeable through this field alone.
+    CARD_PLACEHOLDER = "card_placeholder", "Card (not yet available)"
+
+
+class InvoiceStatus(models.TextChoices):
+    PENDING = "pending", "Pending Approval"
+    PAID = "paid", "Paid"
+    VOID = "void", "Void"
+
+
+class TenantSubscriptionInvoice(PlatformModel):
+    """
+    Real invoice for a self-serve subscription registration
+    (`SubscriptionRegistrationService.register`), pending finance approval
+    of the bank transfer. Deliberately cross-product (platform-level, not
+    inside any single product's commercial app) — self-serve registration
+    covers Cyshop/Cymed(non-hospital)/Cycom uniformly, mirroring how
+    `TenantSubscription`/`DemoProvisioningService` already work across
+    every product rather than being cymed-specific.
+    """
+
+    subscription = models.ForeignKey(
+        TenantSubscription, on_delete=models.CASCADE, related_name="invoices"
+    )
+    invoice_number = models.CharField(max_length=100, unique=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=3, default="USD")
+    payment_method = models.CharField(
+        max_length=30, choices=InvoicePaymentMethod.choices, default=InvoicePaymentMethod.BANK_TRANSFER
+    )
+    status = models.CharField(max_length=20, choices=InvoiceStatus.choices, default=InvoiceStatus.PENDING)
+    due_date = models.DateField()
+    paid_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.CharField(max_length=255, blank=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "platform_tenant_subscription_invoices"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"Invoice({self.invoice_number}, {self.status})"
+
+    def mark_paid(self, approved_by: str = "") -> None:
+        self.status = InvoiceStatus.PAID
+        self.paid_at = timezone.now()
+        self.approved_by = approved_by
+        self.save(update_fields=["status", "paid_at", "approved_by", "updated_at"])
+
+
 # ---------------------------------------------------------------------------
 # TenantLicense
 # ---------------------------------------------------------------------------

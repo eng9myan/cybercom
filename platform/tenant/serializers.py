@@ -240,6 +240,18 @@ class DemoProvisionSerializer(serializers.Serializer):
     email = serializers.EmailField()
     org_name = serializers.CharField(max_length=200, required=False, allow_blank=True)
     locale = serializers.ChoiceField(choices=[("en", "English"), ("ar", "Arabic")], default="en")
+    # demo.cy-com.com sandbox: same provisioning path, shorter trial window
+    # (3h instead of the default 7 days) — see DemoProvisioningService.provision_demo's
+    # trial_hours param.
+    sandbox = serializers.BooleanField(default=False)
+
+
+class SubscriptionRegisterSerializer(serializers.Serializer):
+    product_code = serializers.CharField(max_length=50)
+    tier = serializers.ChoiceField(choices=["starter", "professional", "enterprise"])
+    email = serializers.EmailField()
+    org_name = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    locale = serializers.ChoiceField(choices=[("en", "English"), ("ar", "Arabic")], default="en")
 
 
 class TenantSuspendSerializer(serializers.Serializer):

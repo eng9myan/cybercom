@@ -35,6 +35,15 @@ class TenantIsolationMiddleware:
             request.tenant_id = None
             return self.get_response(request)
 
+        # CyID (PersonIdentity) is deliberately cross-tenant — a person
+        # isn't scoped to any single tenant, that's the whole point of
+        # enroll/link-tenant. Same bypass rationale as platform_admin below.
+        if request.path.startswith("/api/v1/identity/persons/") and (
+            request.path.endswith("/enroll/") or request.path.endswith("/link-tenant/")
+        ):
+            request.tenant_id = None
+            return self.get_response(request)
+
         # Fallback to check token session payload if header is missing
         if not tenant_id and hasattr(request, "user_session"):
             tenant_id = request.user_session.get("tenant_id")

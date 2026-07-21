@@ -32,6 +32,15 @@ class CyIdentityAuthMiddleware:
         if request.path.startswith('/api/v1/public/'):
             return self.get_response(request)
 
+        # CyID self-service: a person enrolling has no token yet by
+        # definition, and link-tenant proves identity itself via a real
+        # password check (CyIDService._verify_home_credential) rather than
+        # a bearer token — same AllowAny posture as /api/v1/public/*.
+        if request.path.startswith('/api/v1/identity/persons/') and (
+            request.path.endswith('/enroll/') or request.path.endswith('/link-tenant/')
+        ):
+            return self.get_response(request)
+
         if request.path.startswith('/admin') or request.path.startswith('/static/') or request.path.startswith('/media/'):
             return self.get_response(request)
 

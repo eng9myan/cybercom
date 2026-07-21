@@ -17,6 +17,7 @@ from django.utils import timezone
 from platform.events.models import OutboxEvent
 from platform.tenant.models import (
     EnvironmentType,
+    InvoicePaymentMethod,
     SubscriptionPlan,
     Tenant,
     TenantAuditConfiguration,
@@ -35,6 +36,7 @@ from platform.tenant.models import (
     TenantStatus,
     TenantStoragePolicy,
     TenantSubscription,
+    TenantSubscriptionInvoice,
     TenantTier,
     TenantType,
 )
@@ -241,6 +243,11 @@ class TenantBootstrapService:
 
 DEMO_TRIAL_HOURS = 24 * 7
 
+# demo.cy-com.com sandbox trials: same provisioning path as a normal demo
+# signup, deliberately much shorter — passed as provision_demo's trial_hours
+# override, not a separate code path.
+SANDBOX_TRIAL_HOURS = 3
+
 # Products whose cycom-erp-style frontend can't yet resolve an arbitrary
 # per-tenant realm at login time (single fixed-realm login flow) — for these,
 # reuse the shared "cybercom" realm (bootstrapped by bootstrap_platform_realm)
@@ -266,14 +273,27 @@ class DemoProvisioningService:
 
     @transaction.atomic
     def provision_demo(
-        self, *, product_code: str, email: str, org_name: str = "", locale: str = "en"
+        self,
+        *,
+        product_code: str,
+        email: str,
+        org_name: str = "",
+        locale: str = "en",
+        trial_hours: int | None = None,
     ) -> tuple[Tenant, "UserProfile | None"]:
+        """`trial_hours` overrides the default 7-day trial window — used by
+        the demo.cy-com.com sandbox (3h) without duplicating this whole
+        method. `expire_demo_tenants_task` needs no changes: it already
+        reads `TenantSubscription.ends_at` generically, whatever the
+        original window was."""
         # cyshop has its own completely separate, unfederated auth system (no
         # CyIdentity/Keycloak trust) — adapter approach: call cyshop's own
         # registration endpoint service-to-service instead of routing it
         # through RealmService/UserProvisioningService like every other product.
         if product_code == "cyshop":
-            return self._provision_demo_cyshop(email=email, org_name=org_name, locale=locale)
+            return self._provision_demo_cyshop(
+                email=email, org_name=org_name, locale=locale, trial_hours=trial_hours
+            )
 
         from platform.cyidentity.models import IdentityRealm
         from platform.cyidentity.services import ClientService, RealmService, UserProvisioningService
@@ -297,7 +317,7 @@ class DemoProvisioningService:
         )
         tenant = TenantBootstrapService().bootstrap(bootstrap_req, created_by="demo_signup")
 
-        trial_ends_at = timezone.now() + timedelta(hours=DEMO_TRIAL_HOURS)
+        trial_ends_at = timezone.now() + timedelta(hours=trial_hours or DEMO_TRIAL_HOURS)
         # is_expired reads ends_at, is_trial reads trial_ends_at — set both so
         # the same expiry timestamp flips both properties together.
         TenantSubscription.objects.filter(tenant=tenant).update(
@@ -369,7 +389,12 @@ class DemoProvisioningService:
         return tenant, user
 
     def _provision_demo_cyshop(
-        self, *, email: str, org_name: str = "", locale: str = "en"
+        self,
+        *,
+        email: str,
+        org_name: str = "",
+        locale: str = "en",
+        trial_hours: int | None = None,
     ) -> tuple[Tenant, None]:
         """
         cyshop adapter: calls cyshop's own TenantRegisterView (a single atomic
@@ -417,7 +442,7 @@ class DemoProvisioningService:
         resp.raise_for_status()
         cyshop_payload = resp.json()
 
-        trial_ends_at = timezone.now() + timedelta(hours=DEMO_TRIAL_HOURS)
+        trial_ends_at = timezone.now() + timedelta(hours=trial_hours or DEMO_TRIAL_HOURS)
         bootstrap_req = TenantBootstrapRequest(
             name=f"{display_name} ({suffix})",
             slug=f"demo-cyshop-{suffix}",
@@ -452,6 +477,211 @@ class DemoProvisioningService:
         )
         log.info("Demo cyshop tenant %s provisioned (subdomain=%s)", tenant.slug, subdomain)
         return tenant, None
+
+
+# ---------------------------------------------------------------------------
+# SubscriptionRegistrationService — real self-serve paid subscriptions
+# ---------------------------------------------------------------------------
+
+# Unified tier catalog: same three tiers across every self-serve product
+# (Cyshop, Cymed non-hospital lines, Cycom). Reuses SubscriptionPlan's
+# existing starter/professional/enterprise values rather than inventing a
+# parallel "basic/pro/enterprise" enum — "Basic"/"Pro"/"Enterprise" below
+# are just this catalog's display names for those same values.
+SUBSCRIPTION_TIER_CATALOG = {
+    SubscriptionPlan.STARTER: {"display_name": "Basic", "monthly_price_usd": 49},
+    SubscriptionPlan.PROFESSIONAL: {"display_name": "Pro", "monthly_price_usd": 149},
+    SubscriptionPlan.ENTERPRISE: {"display_name": "Enterprise", "monthly_price_usd": 399},
+}
+
+
+class SubscriptionRegistrationService:
+    """
+    Real self-serve subscription signup: a real, permanent Tenant (same
+    bootstrap chain as a demo, but no trial window) plus a real pending
+    invoice for finance to approve — bank-transfer only for now (real,
+    working); card payment is a provider-agnostic placeholder field, not
+    wired to any gateway (standing decision this session).
+
+    Hospital exclusion is enforced by the view (same
+    `DEMO_EXCLUDED_PRODUCTS` set demo_provision already checks), not here —
+    this service assumes the caller already validated product_code.
+    """
+
+    @transaction.atomic
+    def register(
+        self,
+        *,
+        product_code: str,
+        tier: str,
+        email: str,
+        org_name: str = "",
+        locale: str = "en",
+    ) -> tuple[Tenant, TenantSubscription, TenantSubscriptionInvoice]:
+        if product_code == "cyshop":
+            return self._register_cyshop(
+                tier=tier, email=email, org_name=org_name, locale=locale
+            )
+
+        from platform.cyidentity.models import IdentityRealm
+        from platform.cyidentity.services import ClientService, RealmService, UserProvisioningService
+
+        suffix = secrets.token_hex(4)
+        slug = f"sub-{product_code}-{suffix}".replace("_", "-")[:100]
+        display_name = org_name or f"Subscription — {product_code}"
+        unique_name = f"{display_name} ({suffix})"
+
+        bootstrap_req = TenantBootstrapRequest(
+            name=unique_name,
+            slug=slug,
+            tenant_type=TenantType.SAAS,
+            tier=TenantTier.SHARED,
+            locale=locale,
+            plan=tier,
+            contact_email=email,
+            display_name=display_name,
+        )
+        tenant = TenantBootstrapService().bootstrap(bootstrap_req, created_by="subscription_signup")
+        # Pending, not active — this tenant only goes live once finance
+        # confirms the bank transfer (TenantSubscriptionInvoice.mark_paid),
+        # unlike demo trials which activate immediately.
+        tenant.status = TenantStatus.PENDING
+        tenant.metadata = {**tenant.metadata, "is_demo": False, "product_code": product_code}
+        tenant.save(update_fields=["status", "metadata", "updated_at"])
+
+        if product_code in SHARED_REALM_PRODUCTS:
+            realm = IdentityRealm.objects.get(realm_name=SHARED_REALM_NAME)
+        else:
+            realm_name = f"sub-{slug}"
+            realm = RealmService().provision(
+                tenant_id=tenant.id,
+                realm_name=realm_name,
+                realm_type="customer",
+                display_name=display_name,
+                locale=locale,
+            )
+            ClientService().register(
+                realm,
+                client_id="cybercom-backend",
+                name="CyberCom Backend",
+                public_client=True,
+                direct_access_grants_enabled=True,
+                mfa_required=False,
+            )
+        TenantRealmMappingService().assign_realm(tenant, realm.id, realm.realm_name)
+
+        username = email.split("@")[0] + "-" + suffix
+        user = UserProvisioningService().provision_user(
+            realm,
+            username=username,
+            email=email,
+            first_name=(org_name.split(" ")[0] if org_name else "Subscriber"),
+            last_name="Account",
+            enabled=True,
+            email_verified=False,
+            attributes={"tenant_id": [str(tenant.id)], "product_code": [product_code]},
+        )
+        tenant.demo_password = getattr(user, "plaintext_password", None)
+        tenant.demo_username = username
+
+        subscription, invoice = self._create_subscription_and_invoice(tenant, tier)
+
+        TenantEventEmitter.emit(
+            "tenant.subscription_registered",
+            tenant,
+            {"product_code": product_code, "tier": tier},
+        )
+        log.info("Subscription tenant %s registered for product=%s tier=%s", tenant.slug, product_code, tier)
+        return tenant, subscription, invoice
+
+    def _register_cyshop(
+        self, *, tier: str, email: str, org_name: str = "", locale: str = "en"
+    ) -> tuple[Tenant, TenantSubscription, TenantSubscriptionInvoice]:
+        import re
+
+        import httpx
+
+        suffix = secrets.token_hex(4)
+        display_name = org_name or f"Subscription Cyshop {suffix}"
+        subdomain_base = (
+            re.sub(r"[^a-z0-9]+", "-", (org_name or "sub-cyshop").lower()).strip("-") or "sub-cyshop"
+        )
+        subdomain = f"{subdomain_base}-{suffix}"[:63]
+        username = email.split("@")[0] + "-" + suffix
+        password = secrets.token_urlsafe(16)
+
+        cyshop_base = os.environ.get("CYSHOP_BACKEND_URL", "http://localhost:8020")
+        resp = httpx.post(
+            f"{cyshop_base}/api/v1/tenants/register/",
+            json={
+                "name": display_name,
+                "subdomain": subdomain,
+                "email": email,
+                "username": username,
+                "password": password,
+            },
+            timeout=15,
+        )
+        resp.raise_for_status()
+        cyshop_payload = resp.json()
+
+        bootstrap_req = TenantBootstrapRequest(
+            name=f"{display_name} ({suffix})",
+            slug=f"sub-cyshop-{suffix}",
+            tenant_type=TenantType.SAAS,
+            tier=TenantTier.SHARED,
+            locale=locale,
+            plan=tier,
+            contact_email=email,
+            display_name=display_name,
+        )
+        tenant = TenantBootstrapService().bootstrap(bootstrap_req, created_by="subscription_signup")
+        tenant.status = TenantStatus.PENDING
+        tenant.metadata = {
+            **tenant.metadata,
+            "is_demo": False,
+            "product_code": "cyshop",
+            "cyshop_tenant_id": cyshop_payload.get("tenant_id"),
+            "cyshop_subdomain": subdomain,
+        }
+        tenant.save(update_fields=["status", "metadata", "updated_at"])
+        tenant.demo_password = password
+        tenant.demo_username = username
+        tenant.demo_subdomain = subdomain
+
+        subscription, invoice = self._create_subscription_and_invoice(tenant, tier)
+
+        TenantEventEmitter.emit(
+            "tenant.subscription_registered",
+            tenant,
+            {"product_code": "cyshop", "tier": tier},
+        )
+        log.info("Subscription cyshop tenant %s registered (subdomain=%s)", tenant.slug, subdomain)
+        return tenant, subscription, invoice
+
+    @staticmethod
+    def _create_subscription_and_invoice(
+        tenant: Tenant, tier: str
+    ) -> tuple[TenantSubscription, TenantSubscriptionInvoice]:
+        catalog_entry = SUBSCRIPTION_TIER_CATALOG[tier]
+        now = timezone.now()
+        subscription = TenantSubscription.objects.create(
+            tenant=tenant,
+            plan=tier,
+            is_active=False,  # flips true once the invoice is marked paid
+            monthly_price_usd=catalog_entry["monthly_price_usd"],
+            currency="USD",
+            auto_renew=True,
+        )
+        invoice = TenantSubscriptionInvoice.objects.create(
+            subscription=subscription,
+            invoice_number=f"INV-{tenant.slug.upper()}-{secrets.token_hex(3).upper()}",
+            amount=catalog_entry["monthly_price_usd"],
+            currency="USD",
+            payment_method=InvoicePaymentMethod.BANK_TRANSFER,
+            due_date=(now + timedelta(days=14)).date(),
+        )
+        return subscription, invoice
 
 
 # ---------------------------------------------------------------------------

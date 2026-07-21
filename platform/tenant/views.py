@@ -39,6 +39,7 @@ from platform.tenant.permissions import (
 )
 from platform.tenant.serializers import (
     DemoProvisionSerializer,
+    SubscriptionRegisterSerializer,
     TenantAuditConfigurationSerializer,
     TenantBootstrapSerializer,
     TenantBrandingSerializer,
@@ -63,7 +64,9 @@ from platform.tenant.serializers import (
     TenantTerminateSerializer,
 )
 from platform.tenant.services import (
+    SANDBOX_TRIAL_HOURS,
     DemoProvisioningService,
+    SubscriptionRegistrationService,
     TenantBootstrapRequest,
     TenantBootstrapService,
     TenantDomainService,
@@ -128,6 +131,7 @@ def demo_provision(request):
         email=d["email"],
         org_name=d.get("org_name", ""),
         locale=d.get("locale", "en"),
+        trial_hours=SANDBOX_TRIAL_HOURS if d.get("sandbox") else None,
     )
     subscription = tenant.subscriptions.first()
 
@@ -157,6 +161,58 @@ def demo_provision(request):
             # to the person who just signed up.
             "password": getattr(tenant, "demo_password", None),
             "trial_ends_at": subscription.trial_ends_at.isoformat() if subscription else None,
+        },
+        status=status.HTTP_201_CREATED,
+    )
+
+
+class SubscriptionRequestThrottle(AnonRateThrottle):
+    scope = "website_public_write"
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([SubscriptionRequestThrottle])
+def subscription_register(request):
+    """Public self-serve subscription signup: unified Basic/Pro/Enterprise
+    tiers across every product except hospital (sales-assisted only, same
+    exclusion demo_provision enforces). Creates a real, permanent tenant
+    (status=pending) plus a real bank-transfer-pending invoice — no card
+    payment is actually processed by this endpoint."""
+    ser = SubscriptionRegisterSerializer(data=request.data)
+    ser.is_valid(raise_exception=True)
+    d = ser.validated_data
+
+    if d["product_code"] in DEMO_EXCLUDED_PRODUCTS:
+        return Response(
+            {
+                "detail": "This product is sales-assisted only. Please use the contact form.",
+                "contact_required": True,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    tenant, subscription, invoice = SubscriptionRegistrationService().register(
+        product_code=d["product_code"],
+        tier=d["tier"],
+        email=d["email"],
+        org_name=d.get("org_name", ""),
+        locale=d.get("locale", "en"),
+    )
+
+    return Response(
+        {
+            "tenant_slug": tenant.slug,
+            "product_code": d["product_code"],
+            "tier": subscription.plan,
+            "invoice_number": invoice.invoice_number,
+            "amount": str(invoice.amount),
+            "currency": invoice.currency,
+            "payment_method": invoice.payment_method,
+            "due_date": invoice.due_date.isoformat(),
+            "status": "pending_approval",
+            "username": getattr(tenant, "demo_username", None),
+            "password": getattr(tenant, "demo_password", None),
         },
         status=status.HTTP_201_CREATED,
     )
