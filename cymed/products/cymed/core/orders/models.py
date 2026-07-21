@@ -40,6 +40,14 @@ class Order(BaseModel):
     status = models.CharField(max_length=30, choices=OrderStatus.choices, default=OrderStatus.DRAFT)
     ordered_by = models.CharField(max_length=255)
     ordered_at = models.DateTimeField(default=timezone.now)
+    # CyID ecosystem, Phase 5 — `tenant_id` (BaseModel) is the SOURCE
+    # tenant (who wrote the order, e.g. a clinic). This is the FULFILLING
+    # tenant (who executes it, e.g. an external pharmacy or lab) when it
+    # differs — null means "fulfilled within the source tenant," the
+    # original, unchanged behavior. Same raw-UUID-not-FK convention as
+    # Consent.granted_to_tenant_id (see core/consents/models.py) — a
+    # cross-tenant reference, not a same-database FK.
+    fulfilling_tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
 
     class Meta:
         db_table = "cymed_orders"

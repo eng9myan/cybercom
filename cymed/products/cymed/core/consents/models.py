@@ -23,6 +23,15 @@ class Consent(BaseModel):
     policy_rule = models.TextField()
     start_time = models.DateTimeField(default=timezone.now)
     end_time = models.DateTimeField(null=True, blank=True)
+    # CyID ecosystem, Phase 4 — the tenant this consent authorizes to see
+    # the covered data (e.g. a specific external pharmacy tenant), distinct
+    # from `tenant_id` (the owning clinic/hospital tenant that created the
+    # consent). Null means "not shared beyond the owning tenant" — the
+    # original, unchanged behavior. Raw UUID, not a Django FK: every
+    # cross-tenant reference in this codebase is a plain tenant_id column
+    # (RLS-style, see platform.common.models.TenantScopedMixin), never an
+    # FK, since a granted tenant may not even share this database.
+    granted_to_tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
 
     class Meta:
         db_table = "cymed_consents"

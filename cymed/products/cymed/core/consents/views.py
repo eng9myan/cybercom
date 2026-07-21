@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -12,6 +13,9 @@ class ConsentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         tenant_id = getattr(self.request, "tenant_id", None)
-        if tenant_id:
-            return self.queryset.filter(tenant_id=tenant_id)
-        return self.queryset.none()
+        if not tenant_id:
+            return self.queryset.none()
+        # CyID ecosystem, Phase 4 — a tenant sees consents it owns AND
+        # consents explicitly granted to it (granted_to_tenant_id), e.g.
+        # a pharmacy reading a consent a clinic created and shared with it.
+        return self.queryset.filter(Q(tenant_id=tenant_id) | Q(granted_to_tenant_id=tenant_id))

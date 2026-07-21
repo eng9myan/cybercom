@@ -30,6 +30,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "status",
             "ordered_by",
             "ordered_at",
+            "fulfilling_tenant_id",
             "items",
             "results",
             "created_at",
