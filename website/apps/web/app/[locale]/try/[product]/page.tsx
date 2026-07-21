@@ -19,6 +19,7 @@ const TRYABLE_PRODUCTS: Record<string, { code: string; name: string }> = {
 
 interface TryPageProps {
   params: Promise<{ locale: string; product: string }>;
+  searchParams: Promise<{ sandbox?: string }>;
 }
 
 export async function generateMetadata({ params }: TryPageProps): Promise<Metadata> {
@@ -34,12 +35,20 @@ export async function generateMetadata({ params }: TryPageProps): Promise<Metada
   });
 }
 
-export default async function TryProductPage({ params }: TryPageProps) {
+export default async function TryProductPage({ params, searchParams }: TryPageProps) {
   const { locale, product } = await params;
+  const { sandbox } = await searchParams;
   setRequestLocale(locale);
   const entry = TRYABLE_PRODUCTS[product];
   if (!entry) {
     notFound();
   }
-  return <TryFreeSection locale={locale as Locale} productCode={entry.code} productName={entry.name} />;
+  return (
+    <TryFreeSection
+      locale={locale as Locale}
+      productCode={entry.code}
+      productName={entry.name}
+      sandbox={sandbox === "1"}
+    />
+  );
 }

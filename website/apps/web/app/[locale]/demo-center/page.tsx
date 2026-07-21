@@ -1,9 +1,23 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { buildMetadata } from "@/lib/metadata";
 import { type Locale } from "@/lib/i18n";
-import { ArrowRight, ExternalLink, Play, Calendar } from "lucide-react";
+import { ArrowRight, Play, Calendar, Clock } from "lucide-react";
+
+// Products with a real self-serve provisioning flow (matches
+// try/[product]/page.tsx's TRYABLE_PRODUCTS exactly). Hospital has no
+// entry here — sales-assisted only, "Launch Demo" falls back to the
+// guided-demo request link for it instead.
+const TRY_SLUG_MAP: Record<string, string> = {
+  "cymed-clinic": "cymed-clinic",
+  "cymed-pharmacy": "cymed-pharmacy",
+  "cymed-laboratory": "cymed-laboratory",
+  "cymed-imaging": "cymed-imaging",
+  cyshop: "cyshop",
+  erp: "cycom",
+};
 
 interface DemoCenterProps {
   params: Promise<{ locale: string }>;
@@ -44,9 +58,21 @@ export default async function DemoCenterPage({ params }: DemoCenterProps) {
   setRequestLocale(locale);
   const l = locale as Locale;
   const t = await getTranslations("demoCenterPage");
+  // demo.cy-com.com: same page, reused as-is (see apps/web/proxy.ts's
+  // host-based rewrite) — only the sandbox banner and provisioning
+  // window differ, driven by host detection here rather than a
+  // duplicated page.
+  const host = (await headers()).get("host") ?? "";
+  const isSandboxHost = host.startsWith("demo.");
 
   return (
     <div className="min-h-dvh pt-16">
+      {isSandboxHost && (
+        <div className="bg-cy-orange/10 border-b border-cy-orange/20 py-2.5 text-center text-xs text-cy-orange flex items-center justify-center gap-2">
+          <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+          {t("sandboxBanner")}
+        </div>
+      )}
       {/* Hero */}
       <section className="py-24 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
@@ -83,6 +109,8 @@ export default async function DemoCenterPage({ params }: DemoCenterProps) {
               const forWho = t(`products.${product.key}.forWho`);
               const keyModules = t.raw(`products.${product.key}.keyModules`) as string[];
               const erpModules = t.raw(`products.${product.key}.erpModules`) as string[];
+              const trySlug = TRY_SLUG_MAP[product.productSlug];
+              const sandboxQuery = isSandboxHost ? "?sandbox=1" : "";
               return (
                 <div
                   key={product.key}
@@ -124,16 +152,27 @@ export default async function DemoCenterPage({ params }: DemoCenterProps) {
 
                   {/* Actions */}
                   <div className="p-4 border-t border-cy-glass-border flex gap-2">
-                    <a
-                      href={product.demoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex-1 inline-flex items-center justify-center gap-2 bg-cy-orange hover:bg-cy-orange-light text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-all duration-200"
-                    >
-                      <Play className="w-3.5 h-3.5" aria-hidden="true" />
-                      {t("launchDemo")}
-                      <ExternalLink className="w-3 h-3 opacity-60" aria-hidden="true" />
-                    </a>
+                    {trySlug ? (
+                      // Real provisioning flow (try/[product] -> TryFreeSection
+                      // -> DemoProvisioningService) instead of a raw link to a
+                      // production login page nothing has been created for yet.
+                      <Link
+                        href={`/${l}/try/${trySlug}${sandboxQuery}`}
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-cy-orange hover:bg-cy-orange-light text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-all duration-200"
+                      >
+                        <Play className="w-3.5 h-3.5" aria-hidden="true" />
+                        {t("launchDemo")}
+                      </Link>
+                    ) : (
+                      // Hospital: no self-serve provisioning — sales-assisted only.
+                      <Link
+                        href={`/${l}/demo?product=${product.productSlug}`}
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-cy-orange hover:bg-cy-orange-light text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-all duration-200"
+                      >
+                        <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
+                        {t("requestGuided")}
+                      </Link>
+                    )}
                     <Link
                       href={`/${l}/products/${product.productSlug}`}
                       className="inline-flex items-center justify-center gap-2 btn-secondary text-sm px-4 py-2.5 flex-1"

@@ -13,9 +13,13 @@ interface TryFreeSectionProps {
   locale: Locale;
   productCode: string;
   productName: string;
+  // demo.cy-com.com sandbox: same provisioning endpoint, 3h trial instead
+  // of the default 7 days (see platform/tenant/services.py's
+  // SANDBOX_TRIAL_HOURS / provision_demo's trial_hours override).
+  sandbox?: boolean;
 }
 
-export function TryFreeSection({ locale, productCode, productName }: TryFreeSectionProps) {
+export function TryFreeSection({ locale, productCode, productName, sandbox }: TryFreeSectionProps) {
   const t = useTranslations("tryPage");
   const shouldReduce = useReducedMotion();
   const [email, setEmail] = useState("");
@@ -34,6 +38,7 @@ export function TryFreeSection({ locale, productCode, productName }: TryFreeSect
         email,
         org_name: orgName,
         locale: (locale as "en" | "ar") ?? "en",
+        ...(sandbox ? { sandbox: true } : {}),
       });
       setResult(res);
       setStatus("success");

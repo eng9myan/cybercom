@@ -13,6 +13,14 @@ export type { DemoRequestPayload, DemoRequestResponse } from "./demo";
 export { demoProvisionApi, DemoProvisionApiError } from "./demo-provision";
 export type { DemoProvisionPayload, DemoProvisionResponse, DemoProvisionError } from "./demo-provision";
 
+export { subscriptionApi, SubscriptionApiError, SUBSCRIPTION_TIERS } from "./subscriptions";
+export type {
+  SubscriptionTier,
+  SubscriptionRegisterPayload,
+  SubscriptionRegisterResponse,
+  SubscriptionRegisterError,
+} from "./subscriptions";
+
 export { contactApi } from "./contact";
 export type { ContactPayload, ContactResponse, NewsletterPayload, NewsletterResponse, Department } from "./contact";
 

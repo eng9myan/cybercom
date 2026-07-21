@@ -21,11 +21,14 @@ export async function generateMetadata({ params }: PricingPageProps): Promise<Me
   });
 }
 
+// Real prices — mirrors platform/tenant/services.py's SUBSCRIPTION_TIER_CATALOG
+// exactly (backend stays the source of truth for what's actually billed).
+// Government has no self-serve tier — always sales-assisted.
 const TIERS = [
-  { key: "starter", ctaHref: "/demo", highlight: false, color: "default" },
-  { key: "professional", ctaHref: "/contact", highlight: true, color: "orange" },
-  { key: "enterprise", ctaHref: "/contact", highlight: false, color: "default" },
-  { key: "government", ctaHref: "/contact", highlight: false, color: "amber" },
+  { key: "starter", ctaHref: "/subscribe", highlight: false, color: "default", monthlyPriceUsd: 49 },
+  { key: "professional", ctaHref: "/subscribe", highlight: true, color: "orange", monthlyPriceUsd: 149 },
+  { key: "enterprise", ctaHref: "/subscribe", highlight: false, color: "default", monthlyPriceUsd: 399 },
+  { key: "government", ctaHref: "/contact", highlight: false, color: "amber", monthlyPriceUsd: null },
 ];
 
 const MODULE_PRICING_KEYS = ["healthcare", "enterprise", "government", "platform"];
@@ -86,7 +89,13 @@ export default async function PricingPage({ params }: PricingPageProps) {
                   </div>
 
                   <div className="mb-6">
-                    <span className="text-2xl font-heading font-semibold text-white">{t("customPricing")}</span>
+                    {tier.monthlyPriceUsd !== null ? (
+                      <span className="text-2xl font-heading font-semibold text-white">
+                        ${tier.monthlyPriceUsd}<span className="text-sm font-normal text-cy-gray-400">/mo</span>
+                      </span>
+                    ) : (
+                      <span className="text-2xl font-heading font-semibold text-white">{t("customPricing")}</span>
+                    )}
                     <p className="text-xs text-cy-gray-500 mt-1">{t(`tiers.${tier.key}.tagline`)}</p>
                   </div>
 

@@ -7,8 +7,35 @@ import {
   Check, ChevronRight, Building2, ShoppingCart, BarChart3,
   FlaskConical, Scan, Pill, Stethoscope, ArrowRight, ArrowLeft,
   Zap, Shield, Clock, CreditCard, Phone, Globe, Users,
-  Star, Info, CheckCircle2, Calendar,
+  Star, Info, CheckCircle2, Calendar, AlertCircle, Landmark,
 } from "lucide-react";
+import {
+  subscriptionApi,
+  SubscriptionApiError,
+  type SubscriptionTier,
+  type SubscriptionRegisterResponse,
+} from "@cybercom/api";
+
+// Maps this wizard's per-product cart entries (id + editionIndex) onto the
+// real backend's unified product_code + tier. Editions beyond index 1 (or
+// with custom/null pricing) all register as "enterprise" — the backend
+// only has 3 tiers, this wizard's richer per-product edition names are
+// display-only.
+const PRODUCT_CODE_MAP: Record<string, string> = {
+  "cymed-hospital": "cymed_hospital", // always rejected server-side — contact sales only
+  "cymed-clinic": "cymed_clinic",
+  "cymed-pharmacy": "cymed_pharmacy",
+  "cymed-laboratory": "cymed_laboratory",
+  "cymed-imaging": "cymed_imaging",
+  cyshop: "cyshop",
+  "cycom-erp": "cycom",
+};
+
+function tierForEditionIndex(idx: number): SubscriptionTier {
+  if (idx === 0) return "starter";
+  if (idx === 1) return "professional";
+  return "enterprise";
+}
 
 /* ─────────────────────────────────────────────
    PRODUCT CATALOGUE
@@ -199,6 +226,9 @@ export default function SubscribePage() {
   });
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [results, setResults] = useState<SubscriptionRegisterResponse[]>([]);
+  const [contactRequired, setContactRequired] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   /* helpers */
   const isSelected = (id: string) => selections.some((s) => s.productId === id);
@@ -239,9 +269,44 @@ export default function SubscribePage() {
 
   async function handleSubmit() {
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setSubmitted(true);
-    setSubmitting(false);
+    setSubmitError(null);
+
+    // Hospital is a fundamentally different (sales-assisted) motion —
+    // if it's in the cart at all, route the whole request to contact
+    // sales rather than trying to partially provision the rest.
+    if (selections.some((s) => s.productId === "cymed-hospital")) {
+      setContactRequired(true);
+      setSubmitted(true);
+      setSubmitting(false);
+      return;
+    }
+
+    try {
+      const responses: SubscriptionRegisterResponse[] = [];
+      for (const sel of selections) {
+        const productCode = PRODUCT_CODE_MAP[sel.productId];
+        if (!productCode) continue;
+        const res = await subscriptionApi.register({
+          product_code: productCode,
+          tier: tierForEditionIndex(sel.editionIndex),
+          email: contact.workEmail,
+          org_name: contact.company,
+          locale: (locale as "en" | "ar") ?? "en",
+        });
+        responses.push(res);
+      }
+      setResults(responses);
+      setSubmitted(true);
+    } catch (err) {
+      if (err instanceof SubscriptionApiError && err.body.contact_required) {
+        setContactRequired(true);
+        setSubmitted(true);
+      } else {
+        setSubmitError(err instanceof Error ? err.message : t("success.genericError"));
+      }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const STEPS = t.raw("steps") as string[];
@@ -619,6 +684,12 @@ export default function SubscribePage() {
           </div>
         </div>
 
+        {submitError && (
+          <p className="form-error mt-3" role="alert">
+            <AlertCircle className="w-3 h-3" aria-hidden="true" />
+            {submitError}
+          </p>
+        )}
         <button
           onClick={handleSubmit}
           disabled={!contact.fullName || !contact.workEmail || !contact.company || !contact.country || submitting}
@@ -694,31 +765,58 @@ export default function SubscribePage() {
   );
 
   /* ── SUCCESS STATE ── */
-  if (submitted) {
+  if (submitted && contactRequired) {
     return (
       <div className="min-h-dvh pt-16 flex items-center justify-center">
         <div className="text-center max-w-lg px-4">
+          <div className="w-20 h-20 rounded-full bg-cy-orange/20 border border-cy-orange/30 flex items-center justify-center mx-auto mb-6">
+            <Phone className="w-10 h-10 text-cy-orange" />
+          </div>
+          <h1 className="text-3xl font-heading font-semibold text-white mb-3">{t("success.contactRequiredTitle")}</h1>
+          <p className="text-cy-gray-400 mb-8">{t("success.contactRequiredDesc")}</p>
+          <Link href={`/${locale}/contact?interest=hospital-sales`} className="btn-primary px-6 py-3 inline-flex items-center gap-2">
+            {t("step4.talkToSales")} <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (submitted && results.length > 0) {
+    return (
+      <div className="min-h-dvh pt-16 flex items-center justify-center">
+        <div className="text-center max-w-xl px-4 py-12">
           <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-10 h-10 text-emerald-400" />
           </div>
-          <h1 className="text-3xl font-heading font-semibold text-white mb-3">
-            {contact.intent === "trial" ? t("success.trialTitle") : t("success.subscribedTitle")}
-          </h1>
+          <h1 className="text-3xl font-heading font-semibold text-white mb-3">{t("success.subscribedTitle")}</h1>
+          <p className="text-cy-gray-400 mb-8 flex items-center justify-center gap-2">
+            <Landmark className="w-4 h-4 text-cy-orange flex-shrink-0" />
+            {t("success.bankTransferPendingNote")}
+          </p>
+          <div className="space-y-3 mb-8 text-left">
+            {results.map((r) => (
+              <div key={r.invoice_number} className="glass-card rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-heading font-semibold text-sm text-white">{r.product_code}</span>
+                  <span className="text-xs text-cy-gray-400 uppercase tracking-wide">{r.tier}</span>
+                </div>
+                <div className="text-xs text-cy-gray-400 space-y-1">
+                  <div>{t("success.invoice")}: <span className="text-white font-mono">{r.invoice_number}</span></div>
+                  <div>{t("success.amountDue")}: <span className="text-white font-semibold">${r.amount} {r.currency}</span> {t("success.dueBy")} {new Date(r.due_date).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US")}</div>
+                  {r.username && <div>{t("success.workspaceLogin")}: <span className="text-white font-mono">{r.username}</span></div>}
+                </div>
+              </div>
+            ))}
+          </div>
           <p className="text-cy-gray-400 mb-2">
             {t("success.checkEmail")} <span className="text-white font-medium">{contact.workEmail}</span> {t("success.forCredentials")}
           </p>
-          <p className="text-cy-gray-400 mb-8">
-            {t("success.onboardingContact")}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
             <Link href={`/${locale}/portal`} className="btn-primary px-6 py-3">
               {t("success.goToPortal")} <ArrowRight className="w-4 h-4 rtl:rotate-180" />
             </Link>
             <Link href={`/${locale}`} className="btn-secondary px-6 py-3">{t("success.backToHome")}</Link>
-          </div>
-          <div className="mt-8 flex items-center justify-center gap-2 text-sm text-cy-gray-400">
-            <Calendar className="w-4 h-4" />
-            {contact.intent === "trial" ? t("success.trialEndsNote", { days: TRIAL_DAYS }) : t("success.subscriptionActiveNote")}
           </div>
         </div>
       </div>

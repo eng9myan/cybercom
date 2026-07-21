@@ -5,6 +5,9 @@ export interface DemoProvisionPayload {
   email: string;
   org_name?: string;
   locale?: "en" | "ar";
+  // demo.cy-com.com sandbox: shortens the trial to 3h instead of the
+  // default 7 days. See platform/tenant/services.py's SANDBOX_TRIAL_HOURS.
+  sandbox?: boolean;
 }
 
 export interface DemoProvisionResponse {
