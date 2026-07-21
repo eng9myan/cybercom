@@ -41,6 +41,11 @@ export interface RequestOptions {
   accessToken?: string | null;
   idempotencyKey?: string;
   query?: Record<string, string | number | boolean | undefined>;
+  // CyID ecosystem, Phase 9 — cymed's tenant-scoped endpoints (orders,
+  // consents, ...) require X-Tenant-ID; CyID/wallet endpoints don't
+  // (person-scoped, not tenant-scoped) — optional, same pattern as
+  // accessToken, so existing callers are unaffected.
+  tenantId?: string | null;
 }
 
 function buildUrl(baseUrl: string, path: string, query?: RequestOptions["query"]): string {
@@ -62,13 +67,14 @@ export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { method = "GET", body, accessToken, idempotencyKey, query } = options;
+  const { method = "GET", body, accessToken, idempotencyKey, query, tenantId } = options;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
   if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
+  if (tenantId) headers["X-Tenant-ID"] = tenantId;
 
   const response = await fetch(buildUrl(baseUrl, path, query), {
     method,

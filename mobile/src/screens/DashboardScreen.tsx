@@ -10,6 +10,9 @@ const TILES: Array<{ key: keyof AppStackParamList; label: string; labelAr: strin
   { key: "Categories", label: "Shop CyMart", labelAr: "التسوق", icon: "🛍️" },
   { key: "Cart", label: "Cart", labelAr: "السلة", icon: "🛒" },
   { key: "Orders", label: "My Orders", labelAr: "طلباتي", icon: "📦" },
+  { key: "Wallet", label: "CyID Wallet", labelAr: "المحفظة", icon: "💳" },
+  { key: "Healthcare", label: "My Healthcare", labelAr: "صحتي", icon: "🏥" },
+  { key: "ERx", label: "Prescriptions", labelAr: "الوصفات", icon: "💊" },
 ];
 
 export default function DashboardScreen({ navigation }: Props) {

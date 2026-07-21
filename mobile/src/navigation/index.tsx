@@ -11,6 +11,9 @@ import DashboardScreen from "../screens/DashboardScreen";
 import CategoriesScreen from "../screens/CategoriesScreen";
 import CartScreen from "../screens/CartScreen";
 import OrdersScreen from "../screens/OrdersScreen";
+import WalletScreen from "../screens/WalletScreen";
+import HealthcareScreen from "../screens/HealthcareScreen";
+import ERxScreen from "../screens/ERxScreen";
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -21,6 +24,9 @@ export type AppStackParamList = {
   Categories: undefined;
   Cart: undefined;
   Orders: undefined;
+  Wallet: undefined;
+  Healthcare: undefined;
+  ERx: undefined;
 };
 
 const AuthStackNav = createNativeStackNavigator<AuthStackParamList>();
@@ -49,6 +55,13 @@ function AppStack() {
       />
       <AppStackNav.Screen name="Cart" component={CartScreen} options={{ title: "Cart" }} />
       <AppStackNav.Screen name="Orders" component={OrdersScreen} options={{ title: "My Orders" }} />
+      <AppStackNav.Screen name="Wallet" component={WalletScreen} options={{ title: "CyID Wallet" }} />
+      <AppStackNav.Screen
+        name="Healthcare"
+        component={HealthcareScreen}
+        options={{ title: "صحتي — My Healthcare" }}
+      />
+      <AppStackNav.Screen name="ERx" component={ERxScreen} options={{ title: "Prescriptions" }} />
     </AppStackNav.Navigator>
   );
 }
