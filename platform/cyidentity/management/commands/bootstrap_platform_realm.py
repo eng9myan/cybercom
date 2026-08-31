@@ -138,6 +138,62 @@ class Command(BaseCommand):
             client, created_by="bootstrap_command"
         )
 
+        # --- tenant_id in the token (both halves must be true) -------------------
+        # Self-serve / demo signups on this shared realm set tenant_id as a
+        # Keycloak user *attribute* (SubscriptionRegistrationService /
+        # DemoProvisioningService). For that to reach the issued access token:
+        #   (1) the realm must accept unmanaged attributes, or Keycloak's User
+        #       Profile schema silently drops tenant_id on save; and
+        #   (2) the client needs an oidc-usermodel-attribute-mapper exposing
+        #       that attribute as the tenant_id claim in the access token.
+        # RealmService.provision()/ClientService.register() do both for
+        # freshly-created per-tenant realms, but this command's realm/client
+        # are frequently *adopted* from a pre-existing Keycloak install, which
+        # bypasses those paths. Enforce both here, idempotently.
+        kc.allow_unmanaged_user_attributes(REALM_NAME)
+
+        import httpx  # type: ignore
+
+        kc_client_uuid = client.attributes.get("keycloak_uuid") or (
+            (kc.find_client_by_client_id(REALM_NAME, CLIENT_ID) or {}).get("id", "")
+        )
+        if kc_client_uuid:
+            mappers_url = (
+                f"{kc.base_url}/admin/realms/{REALM_NAME}"
+                f"/clients/{kc_client_uuid}/protocol-mappers/models"
+            )
+            existing = httpx.get(
+                mappers_url, headers=kc._auth_headers(), timeout=kc.timeout_seconds
+            )
+            has_tenant_mapper = existing.status_code < 400 and any(
+                m.get("config", {}).get("user.attribute") == "tenant_id"
+                and m.get("config", {}).get("claim.name") == "tenant_id"
+                for m in existing.json()
+            )
+            if not has_tenant_mapper:
+                kc.create_protocol_mapper(
+                    REALM_NAME,
+                    kc_client_uuid,
+                    {
+                        "name": "tenant-id-mapper",
+                        "protocol": "openid-connect",
+                        "protocolMapper": "oidc-usermodel-attribute-mapper",
+                        "consentRequired": False,
+                        "config": {
+                            "user.attribute": "tenant_id",
+                            "claim.name": "tenant_id",
+                            "jsonType.label": "String",
+                            "id.token.claim": "true",
+                            "access.token.claim": "true",
+                            "userinfo.token.claim": "true",
+                            "introspection.token.claim": "true",
+                        },
+                    },
+                )
+                self.stdout.write(self.style.SUCCESS("Added tenant_id protocol mapper to client."))
+            else:
+                self.stdout.write("tenant_id protocol mapper already present — reusing it.")
+
         # --- Platform-admin role -------------------------------------------------
         kc.create_realm_role(REALM_NAME, ADMIN_ROLE)
 

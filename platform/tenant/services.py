@@ -264,6 +264,30 @@ SHARED_REALM_PRODUCTS = {"cycom"}
 SHARED_REALM_NAME = "cybercom"
 
 
+def _ensure_shared_realm_unmanaged_attributes() -> None:
+    """Guarantee the shared realm accepts unmanaged user attributes.
+
+    Per-tenant realms get this for free — RealmService.provision() calls
+    allow_unmanaged_user_attributes() at creation. The shared "cybercom"
+    realm is NOT created through that path (it's bootstrapped once, or
+    adopted from a pre-existing Keycloak realm), so without this the
+    tenant_id attribute set on each self-serve/demo user in
+    provision_user() is silently dropped by Keycloak's User Profile
+    schema, the tenant_id protocol mapper has nothing to emit, and the
+    issued access token carries no tenant_id claim — breaking tenant
+    resolution for every shared-realm (cycom) login.
+
+    Enabling the policy is idempotent, so calling it before provisioning
+    each shared-realm user also self-heals deployments whose shared realm
+    was bootstrapped before this fix landed.
+    """
+    from platform.cyidentity.services import KeycloakAdminClient
+
+    kc = KeycloakAdminClient()
+    kc.authenticate()
+    kc.allow_unmanaged_user_attributes(SHARED_REALM_NAME)
+
+
 class DemoProvisioningService:
     """
     Public self-serve demo signup: a real, fully isolated Tenant (same
@@ -330,6 +354,7 @@ class DemoProvisioningService:
 
         if product_code in SHARED_REALM_PRODUCTS:
             realm = IdentityRealm.objects.get(realm_name=SHARED_REALM_NAME)
+            _ensure_shared_realm_unmanaged_attributes()
         else:
             realm_name = f"demo-{slug}"
             realm = RealmService().provision(
@@ -631,6 +656,7 @@ class SubscriptionRegistrationService:
 
         if product_code in SHARED_REALM_PRODUCTS:
             realm = IdentityRealm.objects.get(realm_name=SHARED_REALM_NAME)
+            _ensure_shared_realm_unmanaged_attributes()
         else:
             realm_name = f"sub-{slug}"
             realm = RealmService().provision(

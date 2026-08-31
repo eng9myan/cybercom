@@ -278,6 +278,7 @@ def pricing_config(request):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([SubscriptionRequestThrottle])
 def payment_webhook(request, provider: str):
     """Inbound gateway webhook. Verifies the event, and on a confirmed payment
     activates the subscription through the single activation path. Idempotent —
@@ -344,6 +345,32 @@ def payment_simulate(request):
 
 
 # ---------------------------------------------------------------------------
+# Tenant scoping for the sub-resource viewsets
+# ---------------------------------------------------------------------------
+
+
+class TenantScopedReadMixin:
+    """Scope tenant sub-resources to the caller's own tenant.
+
+    Security: these are ModelViewSets with ReadOnlyOrPlatformAdmin, so without
+    this a normal authenticated user could GET every tenant's rows
+    (subscriptions, profiles, configurations, branding, ...). platform_admin
+    operates cross-tenant (request.tenant_id is None) and still sees all.
+    Defensive: only filters models that actually carry a `tenant` FK, so it is
+    safe to apply broadly (non-tenant-scoped lookups pass through unchanged).
+    """
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        tenant_id = getattr(self.request, "tenant_id", None)
+        if tenant_id is None:
+            return qs
+        if any(getattr(f, "name", None) == "tenant" for f in qs.model._meta.get_fields()):
+            return qs.filter(tenant_id=tenant_id)
+        return qs
+
+
+# ---------------------------------------------------------------------------
 # TenantViewSet — main CRUD + lifecycle actions
 # ---------------------------------------------------------------------------
 
@@ -351,6 +378,15 @@ def payment_simulate(request):
 class TenantViewSet(viewsets.ModelViewSet):
     queryset = Tenant.objects.all().order_by("name")
     permission_classes = [ReadOnlyOrPlatformAdmin]
+
+    def get_queryset(self):
+        # Tenant has no `tenant` FK (it IS the tenant), so scope by its own id:
+        # a non-platform-admin sees only their own tenant, never the full list.
+        qs = super().get_queryset()
+        tenant_id = getattr(self.request, "tenant_id", None)
+        if tenant_id is None:
+            return qs
+        return qs.filter(id=tenant_id)
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -462,55 +498,55 @@ class TenantViewSet(viewsets.ModelViewSet):
 # ---------------------------------------------------------------------------
 
 
-class TenantProfileViewSet(viewsets.ModelViewSet):
+class TenantProfileViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantProfile.objects.all()
     serializer_class = TenantProfileSerializer
     permission_classes = [ReadOnlyOrPlatformAdmin]
 
 
-class TenantConfigurationViewSet(viewsets.ModelViewSet):
+class TenantConfigurationViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantConfiguration.objects.all()
     serializer_class = TenantConfigurationSerializer
     permission_classes = [ReadOnlyOrPlatformAdmin]
 
 
-class TenantBrandingViewSet(viewsets.ModelViewSet):
+class TenantBrandingViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantBranding.objects.all()
     serializer_class = TenantBrandingSerializer
     permission_classes = [ReadOnlyOrPlatformAdmin]
 
 
-class TenantSubscriptionViewSet(viewsets.ModelViewSet):
+class TenantSubscriptionViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantSubscription.objects.all()
     serializer_class = TenantSubscriptionSerializer
     permission_classes = [ReadOnlyOrPlatformAdmin]
 
 
-class TenantLicenseViewSet(viewsets.ModelViewSet):
+class TenantLicenseViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantLicense.objects.all()
     serializer_class = TenantLicenseSerializer
     permission_classes = [IsPlatformAdmin]
 
 
-class TenantEnvironmentViewSet(viewsets.ModelViewSet):
+class TenantEnvironmentViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantEnvironment.objects.all()
     serializer_class = TenantEnvironmentSerializer
     permission_classes = [ReadOnlyOrPlatformAdmin]
 
 
-class TenantRegionViewSet(viewsets.ModelViewSet):
+class TenantRegionViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantRegion.objects.all()
     serializer_class = TenantRegionSerializer
     permission_classes = [ReadOnlyOrPlatformAdmin]
 
 
-class TenantDeploymentProfileViewSet(viewsets.ModelViewSet):
+class TenantDeploymentProfileViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantDeploymentProfile.objects.all()
     serializer_class = TenantDeploymentProfileSerializer
     permission_classes = [IsPlatformAdmin]
 
 
-class TenantFeatureFlagViewSet(viewsets.ModelViewSet):
+class TenantFeatureFlagViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantFeatureFlag.objects.all()
     serializer_class = TenantFeatureFlagSerializer
     permission_classes = [ReadOnlyOrPlatformAdmin]
@@ -534,7 +570,7 @@ class TenantFeatureFlagViewSet(viewsets.ModelViewSet):
         return Response(TenantFeatureFlagSerializer(flag).data)
 
 
-class TenantDomainViewSet(viewsets.ModelViewSet):
+class TenantDomainViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantDomain.objects.all()
     serializer_class = TenantDomainSerializer
     permission_classes = [ReadOnlyOrPlatformAdmin]
@@ -546,31 +582,31 @@ class TenantDomainViewSet(viewsets.ModelViewSet):
         return Response(TenantDomainSerializer(domain_obj).data)
 
 
-class TenantSSOConfigurationViewSet(viewsets.ModelViewSet):
+class TenantSSOConfigurationViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantSSOConfiguration.objects.all()
     serializer_class = TenantSSOConfigurationSerializer
     permission_classes = [IsPlatformAdmin]
 
 
-class TenantStoragePolicyViewSet(viewsets.ModelViewSet):
+class TenantStoragePolicyViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantStoragePolicy.objects.all()
     serializer_class = TenantStoragePolicySerializer
     permission_classes = [ReadOnlyOrPlatformAdmin]
 
 
-class TenantRetentionPolicyViewSet(viewsets.ModelViewSet):
+class TenantRetentionPolicyViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantRetentionPolicy.objects.all()
     serializer_class = TenantRetentionPolicySerializer
     permission_classes = [IsPlatformAdmin]
 
 
-class TenantComplianceProfileViewSet(viewsets.ModelViewSet):
+class TenantComplianceProfileViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantComplianceProfile.objects.all()
     serializer_class = TenantComplianceProfileSerializer
     permission_classes = [ReadOnlyOrPlatformAdmin]
 
 
-class TenantAuditConfigurationViewSet(viewsets.ModelViewSet):
+class TenantAuditConfigurationViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantAuditConfiguration.objects.all()
     serializer_class = TenantAuditConfigurationSerializer
     permission_classes = [IsPlatformAdmin]

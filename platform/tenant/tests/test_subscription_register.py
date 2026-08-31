@@ -69,3 +69,42 @@ class TestSubscriptionRegisterAPI:
                 )
             assert resp.status_code == 201, resp.content
             assert resp.json()["amount"] == price
+
+    def test_shared_realm_registration_enables_unmanaged_attributes(self):
+        """A shared-realm (cycom) signup must flip the shared realm's
+        unmanaged-attribute policy ON *before* provisioning the user —
+        otherwise Keycloak drops the tenant_id user attribute and the
+        issued access token carries no tenant_id claim (the self-serve
+        login bug). See _ensure_shared_realm_unmanaged_attributes()."""
+        from platform.cyidentity.models import IdentityRealm, RealmType
+        from platform.cyidentity.services import KeycloakAdminClient
+        from platform.tenant.services import (
+            SHARED_REALM_NAME,
+            SubscriptionRegistrationService,
+        )
+
+        IdentityRealm.objects.create(
+            tenant_id=__import__("uuid").uuid4(),
+            realm_name=SHARED_REALM_NAME,
+            realm_type=RealmType.WORKFORCE,
+            issuer_url=f"http://kc.test/realms/{SHARED_REALM_NAME}",
+            jwks_uri=f"http://kc.test/realms/{SHARED_REALM_NAME}/protocol/openid-connect/certs",
+            admin_api_url=f"http://kc.test/admin/realms/{SHARED_REALM_NAME}",
+        )
+
+        with patch.object(
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+        ), patch.object(
+            KeycloakAdminClient, "allow_unmanaged_user_attributes"
+        ) as allow_unmanaged:
+            SubscriptionRegistrationService().register(
+                product_code="cycom",
+                tier="starter",
+                email="owner@acme.example.com",
+                org_name="Acme",
+            )
+
+        # The shared realm must have its unmanaged-attribute policy enabled;
+        # code position guarantees this happens before provision_user() pushes
+        # the tenant_id attribute to Keycloak.
+        allow_unmanaged.assert_called_once_with(SHARED_REALM_NAME)
