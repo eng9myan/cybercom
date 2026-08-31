@@ -4,7 +4,7 @@ import uuid
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 
 from platform.tenant.models import (
     InvoiceStatus,
@@ -86,3 +86,39 @@ class FakeProviderTests(TestCase):
         body = ('{"invoice_number": "%s", "status": "paid"}' % inv.invoice_number).encode()
         with self.assertRaises(WebhookVerificationError):
             prov.parse_webhook(body=body, headers={"X-Fake-Signature": "deadbeef"})
+
+
+class StripeWebhookVerificationTests(SimpleTestCase):
+    """Finding-1 regression: the Stripe webhook must verify the HMAC signature
+    (fail-closed), so a forged 'paid' event cannot activate a tenant for free."""
+
+    def _prov(self):
+        from platform.tenant.payments import StripeProvider
+        return StripeProvider()
+
+    @override_settings(STRIPE_SECRET_KEY="sk_test_x", STRIPE_WEBHOOK_SECRET="whsec_test")
+    def test_forged_event_is_rejected(self):
+        body = (b'{"type":"checkout.session.completed","data":{"object":'
+                b'{"payment_status":"paid","client_reference_id":"INV-FORGE"}}}')
+        with self.assertRaises(WebhookVerificationError):
+            self._prov().parse_webhook(body=body, headers={"Stripe-Signature": "t=1,v1=deadbeef"})
+
+    @override_settings(STRIPE_SECRET_KEY="sk_test_x", STRIPE_WEBHOOK_SECRET="")
+    def test_missing_secret_fails_closed(self):
+        body = b'{"type":"checkout.session.completed","data":{"object":{"payment_status":"paid"}}}'
+        with self.assertRaises(WebhookVerificationError):
+            self._prov().parse_webhook(body=body, headers={"Stripe-Signature": "t=1,v1=abc"})
+
+    @override_settings(STRIPE_SECRET_KEY="sk_test_x", STRIPE_WEBHOOK_SECRET="whsec_test")
+    def test_valid_signature_accepted(self):
+        import hashlib
+        import hmac
+        import time
+
+        body = (b'{"type":"checkout.session.completed","data":{"object":'
+                b'{"payment_status":"paid","client_reference_id":"INV-OK","id":"cs_1"}}}')
+        t = str(int(time.time()))
+        sig = hmac.new(b"whsec_test", t.encode() + b"." + body, hashlib.sha256).hexdigest()
+        event = self._prov().parse_webhook(body=body, headers={"Stripe-Signature": f"t={t},v1={sig}"})
+        self.assertTrue(event.paid)
+        self.assertEqual(event.invoice_number, "INV-OK")

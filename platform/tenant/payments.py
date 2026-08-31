@@ -222,11 +222,43 @@ class StripeProvider(PaymentProvider):
             publishable_key=self.publishable_key,
         )
 
+    # Reject webhook events whose signature timestamp is older than this
+    # (replay protection). Matches Stripe's own default tolerance.
+    _SIGNATURE_TOLERANCE_SECONDS = 300
+
+    def _verify_signature(self, body: bytes, sig_header: str) -> None:
+        """Real Stripe webhook verification (HMAC-SHA256 over `{t}.{payload}`),
+        fail-closed. Equivalent to stripe.Webhook.construct_event without the
+        SDK dependency. A missing secret or bad signature is a hard reject —
+        never treat an unverified event as paid."""
+        import hashlib
+        import hmac
+        import time
+
+        if not self.webhook_secret:
+            raise WebhookVerificationError(
+                "STRIPE_WEBHOOK_SECRET is not set — refusing to trust an unverified webhook"
+            )
+        parts = dict(p.split("=", 1) for p in sig_header.split(",") if "=" in p)
+        timestamp, v1 = parts.get("t"), parts.get("v1")
+        if not timestamp or not v1:
+            raise WebhookVerificationError("malformed Stripe-Signature header")
+        try:
+            age = abs(time.time() - int(timestamp))
+        except ValueError as exc:
+            raise WebhookVerificationError("invalid Stripe-Signature timestamp") from exc
+        if age > self._SIGNATURE_TOLERANCE_SECONDS:
+            raise WebhookVerificationError("Stripe-Signature timestamp outside tolerance (replay?)")
+        signed_payload = timestamp.encode() + b"." + (body or b"")
+        expected = hmac.new(self.webhook_secret.encode(), signed_payload, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, v1):
+            raise WebhookVerificationError("Stripe-Signature verification failed")
+
     def parse_webhook(self, *, body: bytes, headers: dict) -> PaymentEvent:
-        # Signature verification (Stripe-Signature) is required in production.
-        # Implemented minimally; harden with the official library when live.
-        if self.webhook_secret and not headers.get("Stripe-Signature"):
-            raise WebhookVerificationError("missing Stripe-Signature")
+        # Fail-closed signature verification is mandatory: a forged "paid" event
+        # would otherwise activate any tenant for free (invoice_number is handed
+        # to the public registrant). See _verify_signature.
+        self._verify_signature(body, headers.get("Stripe-Signature", ""))
         try:
             event = json.loads(body or b"{}")
         except json.JSONDecodeError as exc:
