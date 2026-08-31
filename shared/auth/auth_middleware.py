@@ -32,6 +32,18 @@ class CyIdentityAuthMiddleware:
         if request.path.startswith('/api/v1/public/'):
             return self.get_response(request)
 
+        # Public self-serve subscription signup + payment gateway callbacks.
+        # AllowAny at the view (throttled): a brand-new customer has no token
+        # yet, and a gateway posting a webhook never carries a user token.
+        # Without this, the production auth middleware 401s them before the
+        # view — the dev-auth shim masked this on the no-Docker path.
+        if request.path in (
+            '/api/v1/tenants/register/', '/api/v1/tenants/demo/',
+            '/api/v1/tenants/pricing/', '/api/v1/tenants/healthz/',
+            '/api/v1/tenants/metrics',
+        ) or request.path.startswith('/api/v1/tenants/payments/'):
+            return self.get_response(request)
+
         # CyID self-service: a person enrolling has no token yet by
         # definition, and link-tenant proves identity itself via a real
         # password check (CyIDService._verify_home_credential) rather than
@@ -70,7 +82,13 @@ class CyIdentityAuthMiddleware:
                 "email": payload.get("email"),
                 "tenant_id": payload.get("tenant_id"),
                 "roles": payload.get("roles") or payload.get("realm_access", {}).get("roles", []),
-                "permissions": payload.get("permissions", [])
+                "permissions": payload.get("permissions", []),
+                # Campuses this user is bound to, for multi-campus groups where
+                # one tenant runs many sites. Dropping this claim silently
+                # disabled every campus-scoping check downstream: the scoping
+                # helper read a key that was never populated, so it always
+                # resolved to "sees everything" and looked correct in review.
+                "campus_ids": payload.get("campus_ids") or [],
             }
         except ExpiredSignatureError:
             return JsonResponse({"detail": "Token has expired."}, status=401)

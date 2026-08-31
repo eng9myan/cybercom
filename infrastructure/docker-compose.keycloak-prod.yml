@@ -1,0 +1,78 @@
+# Production Keycloak for CyberCom — "Keycloak on a real box" (P0 launch enabler).
+#
+# Unlike docker-compose.cycom-dev.yml / docker-compose.api.yml (which run
+# `start-dev` with an embedded DB — NOT for production), this runs Keycloak in
+# production mode against a dedicated Postgres, imports the shared `cybercom`
+# realm on first boot, and expects TLS to be terminated by a reverse proxy
+# (nginx/Caddy/Traefik) in front of it.
+#
+# Bring-up:  see infrastructure/keycloak/README-prod.md
+# Verify:    only possible against a real host with a domain + TLS — this file
+#            is the deployable artifact; it is not runnable/verifiable in the
+#            no-Docker local path.
+
+name: cybercom-keycloak-prod
+
+services:
+  keycloak-db:
+    image: postgres:16-alpine
+    container_name: cybercom-kc-db
+    restart: always
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: ${KC_DB_USERNAME:?set in .env.keycloak}
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD:?set in .env.keycloak}
+    volumes:
+      - kc_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KC_DB_USERNAME} -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [kc]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: cybercom-keycloak
+    restart: always
+    # Production mode (`start`, not `start-dev`). --import-realm loads the
+    # cybercom realm from the mounted import dir on first boot only.
+    command: ["start", "--import-realm"]
+    environment:
+      # --- Database (persistent, real) ---
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      # --- Hostname / TLS (TLS terminates at the reverse proxy) ---
+      KC_HOSTNAME: ${KC_HOSTNAME:?e.g. auth.cy-com.com}
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ENABLED: "true"          # proxy speaks HTTP to KC over the internal net
+      # --- Bootstrap admin (change immediately after first login) ---
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USERNAME:?set in .env.keycloak}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:?set in .env.keycloak}
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    # Only the reverse proxy should reach this — bind to loopback and let
+    # nginx/Caddy proxy https://${KC_HOSTNAME} -> 127.0.0.1:8080.
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks: [kc]
+
+volumes:
+  kc_pgdata:
+
+networks:
+  kc:
+    driver: bridge

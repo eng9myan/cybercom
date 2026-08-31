@@ -13,6 +13,7 @@ class DemoRequestThrottle(AnonRateThrottle):
     scope = "website_demo_request"
 
 from platform.tenant.models import (
+    InvoiceStatus,
     Tenant,
     TenantAuditConfiguration,
     TenantBranding,
@@ -30,6 +31,7 @@ from platform.tenant.models import (
     TenantStatus,
     TenantStoragePolicy,
     TenantSubscription,
+    TenantSubscriptionInvoice,
 )
 from platform.tenant.permissions import (
     CanProvisionTenant,
@@ -65,6 +67,7 @@ from platform.tenant.serializers import (
 )
 from platform.tenant.services import (
     SANDBOX_TRIAL_HOURS,
+    SUPPORTED_CURRENCIES,
     DemoProvisioningService,
     SubscriptionRegistrationService,
     TenantBootstrapRequest,
@@ -73,7 +76,16 @@ from platform.tenant.services import (
     TenantFeatureFlagService,
     TenantLifecycleService,
     TenantRealmMappingService,
+    activate_paid_subscription,
     render_prometheus,
+    subscription_pricing,
+)
+from platform.tenant.payments import (
+    PaymentError,
+    PaymentProviderNotConfigured,
+    WebhookVerificationError,
+    active_provider_code,
+    get_payment_provider,
 )
 
 # Product codes that are always sales-assisted, never self-serve demo.
@@ -198,7 +210,19 @@ def subscription_register(request):
         email=d["email"],
         org_name=d.get("org_name", ""),
         locale=d.get("locale", "en"),
+        currency=d.get("currency", ""),
+        country=d.get("country", ""),
     )
+
+    # Start a checkout with the active provider. The manual provider returns
+    # bank-transfer instructions (no online charge); an online gateway returns
+    # a redirect URL or client secret. A provider misconfiguration must not lose
+    # the already-created invoice, so fall back to manual instructions.
+    checkout = None
+    try:
+        checkout = get_payment_provider().create_checkout(invoice).as_dict()
+    except PaymentError as exc:
+        checkout = {"provider": invoice.provider, "mode": "manual", "error": str(exc)}
 
     return Response(
         {
@@ -209,12 +233,113 @@ def subscription_register(request):
             "amount": str(invoice.amount),
             "currency": invoice.currency,
             "payment_method": invoice.payment_method,
+            "provider": invoice.provider,
             "due_date": invoice.due_date.isoformat(),
-            "status": "pending_approval",
+            "status": "pending_payment",
+            "checkout": checkout,
             "username": getattr(tenant, "demo_username", None),
             "password": getattr(tenant, "demo_password", None),
         },
         status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def pricing_config(request):
+    """Public pricing + active-provider config for the website pricing page.
+
+    No secrets: returns the tier catalog per supported currency and the
+    provider's publishable key only (never the secret key)."""
+    catalog = subscription_pricing()
+    tiers = [
+        {
+            "code": code,
+            "display_name": entry["display_name"],
+            "prices": entry["prices"],
+        }
+        for code, entry in catalog.items()
+    ]
+    publishable = ""
+    try:
+        publishable = getattr(get_payment_provider(), "publishable_key", "") or ""
+    except PaymentError:
+        publishable = ""
+    return Response(
+        {
+            "currencies": list(SUPPORTED_CURRENCIES),
+            "default_currency": SUPPORTED_CURRENCIES[0],
+            "tiers": tiers,
+            "provider": active_provider_code(),
+            "publishable_key": publishable,
+        }
+    )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def payment_webhook(request, provider: str):
+    """Inbound gateway webhook. Verifies the event, and on a confirmed payment
+    activates the subscription through the single activation path. Idempotent —
+    gateways retry."""
+    try:
+        prov = get_payment_provider(provider)
+    except PaymentError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    raw_body = request.body
+    headers = {k: v for k, v in request.headers.items()}
+    try:
+        event = prov.parse_webhook(body=raw_body, headers=headers)
+    except WebhookVerificationError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not event.paid:
+        return Response({"detail": "event acknowledged (not a paid event)"}, status=status.HTTP_200_OK)
+
+    try:
+        invoice = TenantSubscriptionInvoice.objects.get(invoice_number=event.invoice_number)
+    except TenantSubscriptionInvoice.DoesNotExist:
+        return Response({"detail": "unknown invoice"}, status=status.HTTP_404_NOT_FOUND)
+
+    if event.provider_ref and invoice.provider_ref != event.provider_ref:
+        invoice.provider_ref = event.provider_ref
+        invoice.save(update_fields=["provider_ref", "updated_at"])
+
+    tenant = activate_paid_subscription(invoice, approved_by=f"gateway:{provider}")
+    return Response(
+        {"tenant_slug": tenant.slug, "invoice_number": invoice.invoice_number, "status": "active"},
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["GET", "POST"])
+@permission_classes([AllowAny])
+def payment_simulate(request):
+    """DEBUG-only: complete a fake-provider checkout by posting its own signed
+    webhook back to ourselves. Lets the full online-payment loop be exercised
+    with no external gateway."""
+    from django.conf import settings as _s
+
+    if not _s.DEBUG or active_provider_code() != "fake":
+        return Response({"detail": "not available"}, status=status.HTTP_404_NOT_FOUND)
+    invoice_number = request.GET.get("invoice") or request.data.get("invoice")
+    try:
+        invoice = TenantSubscriptionInvoice.objects.get(invoice_number=invoice_number)
+    except TenantSubscriptionInvoice.DoesNotExist:
+        return Response({"detail": "unknown invoice"}, status=status.HTTP_404_NOT_FOUND)
+    prov = get_payment_provider("fake")
+    event = prov.parse_webhook(
+        body=(
+            '{"invoice_number": "%s", "status": "paid", "ref": "fake-%s"}'
+            % (invoice_number, invoice.pk)
+        ).encode(),
+        headers={"X-Fake-Signature": prov.sign(invoice_number)},
+    )
+    tenant = activate_paid_subscription(invoice, approved_by="gateway:fake")
+    return Response(
+        {"tenant_slug": tenant.slug, "invoice_number": invoice_number, "status": "active", "paid": event.paid},
+        status=status.HTTP_200_OK,
     )
 
 

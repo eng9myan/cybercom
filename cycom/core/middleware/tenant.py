@@ -28,6 +28,17 @@ class TenantIsolationMiddleware:
             request.tenant_id = None
             return self.get_response(request)
 
+        # Public self-serve signup + payment callbacks have no tenant yet —
+        # register CREATES the tenant, and gateway webhooks carry no tenant
+        # header. Scope them tenant-less (they are AllowAny + throttled).
+        if request.path in (
+            "/api/v1/tenants/register/", "/api/v1/tenants/demo/",
+            "/api/v1/tenants/pricing/", "/api/v1/tenants/healthz/",
+            "/api/v1/tenants/metrics",
+        ) or request.path.startswith("/api/v1/tenants/payments/"):
+            request.tenant_id = None
+            return self.get_response(request)
+
         if not tenant_id and hasattr(request, "user_session"):
             tenant_id = request.user_session.get("tenant_id")
 

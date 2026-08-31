@@ -18,3 +18,21 @@ venv/
 coverage.xml
 htmlcov/
 cycom/media/
+
+# Ruflo local secrets and runtime data
+.env.*.local
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/
+
+# Session dev artifacts (never commit — logs may contain printed secrets)
+cycom/dev_backend_*.log
+cycom/cycom-erp/dev_frontend_*.log
+infrastructure/dev-kc8085.override.yml
+infrastructure/.env.keycloak
+
+# Session dev artifacts (never commit — logs may contain printed secrets)
+cycom/dev_backend_*.log
+cycom/cycom-erp/dev_frontend_*.log
+infrastructure/dev-kc8085.override.yml
+infrastructure/.env.keycloak

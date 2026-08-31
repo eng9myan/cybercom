@@ -363,6 +363,12 @@ class TenantSubscriptionInvoice(PlatformModel):
         max_length=30, choices=InvoicePaymentMethod.choices, default=InvoicePaymentMethod.BANK_TRANSFER
     )
     status = models.CharField(max_length=20, choices=InvoiceStatus.choices, default=InvoiceStatus.PENDING)
+    # Which payment provider this invoice is settled through: "manual" (bank
+    # transfer, finance-confirmed) or an online gateway ("stripe"/"paddle"/…).
+    # See platform.tenant.payments.
+    provider = models.CharField(max_length=30, default="manual")
+    # Gateway-side identifier (checkout session / payment id), set on webhook.
+    provider_ref = models.CharField(max_length=255, blank=True)
     due_date = models.DateField()
     paid_at = models.DateTimeField(null=True, blank=True)
     approved_by = models.CharField(max_length=255, blank=True)

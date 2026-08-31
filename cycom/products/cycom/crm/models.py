@@ -32,3 +32,31 @@ class Lead(BaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.stage})"
+
+
+class Activity(BaseModel):
+    """A logged interaction or scheduled follow-up against a Lead — the audit
+    trail a pipeline needs (calls, emails, meetings, tasks, notes)."""
+
+    TYPE_CHOICES = [
+        ("call", "Call"),
+        ("email", "Email"),
+        ("meeting", "Meeting"),
+        ("task", "Task"),
+        ("note", "Note"),
+    ]
+
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="activities")
+    activity_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="note")
+    subject = models.CharField(max_length=255)
+    notes = models.TextField(blank=True)
+    due_date = models.DateTimeField(null=True, blank=True)
+    done = models.BooleanField(default=False)
+    assigned_to = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "cycom_crm_activities"
+        ordering = ["done", "due_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.get_activity_type_display()}: {self.subject}"

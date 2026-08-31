@@ -41,10 +41,35 @@ class POSOrder(BaseModel):
     ]
     ORDER_TYPE_CHOICES = [("sale", "Sale"), ("layaway", "Layaway / Advance")]
 
+    # ── Ported from CyShop: restaurant / kitchen-display (KDS) fields ────────
+    # These drive the KDS terminal (see pos.Device type "KDS"): tickets flow
+    # PENDING -> IN_PROGRESS -> READY -> SERVED on the kitchen screen, keyed off
+    # `kitchen_status`, while `source`/`table_ref`/walk-in customer capture the
+    # front-of-house context an accounting-only POSOrder didn't carry.
+    SOURCE_CHOICES = [
+        ("POS", "POS Terminal"),
+        ("KIOSK", "Self-Service Kiosk"),
+        ("ONLINE", "Online Order"),
+    ]
+    KITCHEN_STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("in_progress", "In Progress"),
+        ("ready", "Ready"),
+        ("served", "Served"),
+    ]
+
     session = models.ForeignKey(POSSession, on_delete=models.PROTECT, related_name="orders")
     order_number = models.CharField(max_length=100)
     customer = models.ForeignKey(
         Partner, on_delete=models.PROTECT, related_name="pos_orders", null=True, blank=True
+    )
+    # Walk-in / front-of-house capture (no Partner record required).
+    customer_name = models.CharField(max_length=255, blank=True)
+    customer_phone = models.CharField(max_length=50, blank=True)
+    table_ref = models.CharField(max_length=50, blank=True)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default="POS")
+    kitchen_status = models.CharField(
+        max_length=20, choices=KITCHEN_STATUS_CHOICES, default="pending", db_index=True
     )
     currency = models.CharField(max_length=10, default="JOD")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
@@ -92,6 +117,17 @@ class POSOrder(BaseModel):
             total += p.amount
         return total
 
+    # Ordered kitchen-ticket flow; advance_kitchen() steps one stage forward.
+    KITCHEN_FLOW = ["pending", "in_progress", "ready", "served"]
+
+    def advance_kitchen(self):
+        """Move the kitchen ticket one stage forward; no-op once served."""
+        idx = self.KITCHEN_FLOW.index(self.kitchen_status)
+        if idx < len(self.KITCHEN_FLOW) - 1:
+            self.kitchen_status = self.KITCHEN_FLOW[idx + 1]
+            self.save(update_fields=["kitchen_status", "updated_at"])
+        return self.kitchen_status
+
 
 class POSOrderPayment(BaseModel):
     """A single advance/deposit payment against a layaway order."""
@@ -136,3 +172,72 @@ class POSOrderLine(BaseModel):
     @property
     def tax_amount(self):
         return (self.subtotal * self.tax_percent / 100).quantize(Decimal("0.01"))
+
+
+# ── Ported from CyShop ──────────────────────────────────────────────────────
+# Device + PosReceipt bring the retail/restaurant terminal layer Cycom lacked.
+# CyShop scoped a Device to Company+Branch; Cycom has no per-tenant Company, so
+# a Device is optionally tied to an inventory Warehouse (its physical location)
+# and otherwise scoped by tenant_id.
+
+
+class Device(BaseModel):
+    """
+    A registered fullscreen terminal at a location (POS terminal, kitchen
+    display, waiter handheld, customer-facing display, warehouse scanner,
+    self-order kiosk). Each device_type maps to a standalone frontend route
+    outside the manager shell.
+    """
+
+    DEVICE_TYPES = [
+        ("POS", "POS Terminal"),
+        ("KDS", "Kitchen Display"),
+        ("WAITER", "Waiter Handheld"),
+        ("CUSTOMER_DISPLAY", "Customer-Facing Display"),
+        ("WAREHOUSE_SCANNER", "Warehouse Scanner"),
+        ("SELF_ORDER", "Self-Order Kiosk"),
+    ]
+    ROUTE_BY_TYPE = {
+        "POS": "/pos-terminal",
+        "KDS": "/kds",
+        "WAITER": "/waiter",
+        "CUSTOMER_DISPLAY": "/customer-display",
+        "WAREHOUSE_SCANNER": "/warehouse-scanner",
+        "SELF_ORDER": "/self-order",
+    }
+
+    warehouse = models.ForeignKey(
+        Warehouse, on_delete=models.CASCADE, related_name="devices", null=True, blank=True
+    )
+    name = models.CharField(max_length=255)
+    code = models.CharField(max_length=50)
+    device_type = models.CharField(max_length=20, choices=DEVICE_TYPES)
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "cycom_pos_devices"
+        ordering = ["warehouse", "device_type", "name"]
+        unique_together = [("tenant_id", "code")]
+
+    @property
+    def route(self):
+        return self.ROUTE_BY_TYPE.get(self.device_type, "/")
+
+    def __str__(self):
+        return f"{self.name} ({self.get_device_type_display()})"
+
+
+class PosReceipt(BaseModel):
+    order = models.OneToOneField(POSOrder, on_delete=models.PROTECT, related_name="receipt")
+    receipt_number = models.CharField(max_length=50, db_index=True)
+    printed_at = models.DateTimeField(null=True, blank=True)
+    emailed_at = models.DateTimeField(null=True, blank=True)
+    qr_data = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "cycom_pos_receipts"
+        unique_together = [("tenant_id", "receipt_number")]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.receipt_number

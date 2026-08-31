@@ -9,6 +9,7 @@ import secrets
 import uuid
 from dataclasses import dataclass, field
 from datetime import timedelta
+from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Q
@@ -488,11 +489,87 @@ class DemoProvisioningService:
 # existing starter/professional/enterprise values rather than inventing a
 # parallel "basic/pro/enterprise" enum — "Basic"/"Pro"/"Enterprise" below
 # are just this catalog's display names for those same values.
-SUBSCRIPTION_TIER_CATALOG = {
-    SubscriptionPlan.STARTER: {"display_name": "Basic", "monthly_price_usd": 49},
-    SubscriptionPlan.PROFESSIONAL: {"display_name": "Pro", "monthly_price_usd": 149},
-    SubscriptionPlan.ENTERPRISE: {"display_name": "Enterprise", "monthly_price_usd": 399},
+#
+# Prices are MENA-first list prices (JOD is the home currency; SAR/AED/USD are
+# rounded, not FX-live). These are launch defaults — real numbers are a
+# business decision the owner sets; override via settings.SUBSCRIPTION_PRICING
+# without touching code.
+# Display order leads with the home market (JOD) but the billing fallback for a
+# request that names neither currency nor country is USD — a neutral
+# international list price. MENA currencies are resolved from `country`
+# (JO->JOD, SA->SAR, AE->AED); the pricing page sends that hint per visitor.
+SUPPORTED_CURRENCIES = ("JOD", "SAR", "AED", "USD")
+DEFAULT_CURRENCY = "USD"
+
+_COUNTRY_CURRENCY = {"JO": "JOD", "SA": "SAR", "AE": "AED", "US": "USD"}
+
+_DEFAULT_PRICING = {
+    SubscriptionPlan.STARTER: {
+        "display_name": "Basic",
+        "prices": {"JOD": 35, "SAR": 189, "AED": 185, "USD": 49},
+    },
+    SubscriptionPlan.PROFESSIONAL: {
+        "display_name": "Pro",
+        "prices": {"JOD": 105, "SAR": 559, "AED": 549, "USD": 149},
+    },
+    SubscriptionPlan.ENTERPRISE: {
+        "display_name": "Enterprise",
+        "prices": {"JOD": 283, "SAR": 1499, "AED": 1469, "USD": 399},
+    },
 }
+
+
+def subscription_pricing() -> dict:
+    """Live pricing catalog. settings.SUBSCRIPTION_PRICING (if set) wins, so the
+    owner can change prices in config with no deploy."""
+    from django.conf import settings as _s
+
+    return getattr(_s, "SUBSCRIPTION_PRICING", None) or _DEFAULT_PRICING
+
+
+def resolve_currency(currency: str = "", country: str = "", locale: str = "") -> str:
+    """Pick the billing currency: explicit currency > country map > default."""
+    if currency and currency.upper() in SUPPORTED_CURRENCIES:
+        return currency.upper()
+    if country and _COUNTRY_CURRENCY.get(country.upper()) in SUPPORTED_CURRENCIES:
+        return _COUNTRY_CURRENCY[country.upper()]
+    return DEFAULT_CURRENCY
+
+
+def tier_price(tier: str, currency: str) -> Decimal:
+    entry = subscription_pricing()[tier]
+    prices = entry["prices"]
+    return Decimal(str(prices.get(currency, prices.get(DEFAULT_CURRENCY))))
+
+
+# Back-compat alias for any caller still importing the old name. Display-name
+# lookups keep working; price is exposed per-currency via tier_price().
+SUBSCRIPTION_TIER_CATALOG = subscription_pricing()
+
+
+def activate_paid_subscription(invoice, *, approved_by: str = "") -> "Tenant":
+    """Single activation path for BOTH manual (finance-confirmed bank transfer)
+    and online (gateway webhook) payments. Idempotent: safe to call twice on
+    the same already-paid invoice (a webhook may retry)."""
+    from platform.tenant.models import InvoiceStatus
+
+    subscription = invoice.subscription
+    tenant = subscription.tenant
+    already_paid = invoice.status == InvoiceStatus.PAID
+    if not already_paid:
+        invoice.mark_paid(approved_by=approved_by)
+    if not subscription.is_active:
+        subscription.is_active = True
+        subscription.save(update_fields=["is_active", "updated_at"])
+    if tenant.status != TenantStatus.ACTIVE:
+        tenant.activate()
+    if not already_paid:
+        TenantEventEmitter.emit(
+            "tenant.subscription_paid",
+            tenant,
+            {"invoice_number": invoice.invoice_number, "approved_by": approved_by},
+        )
+    return tenant
 
 
 class SubscriptionRegistrationService:
@@ -517,10 +594,13 @@ class SubscriptionRegistrationService:
         email: str,
         org_name: str = "",
         locale: str = "en",
+        currency: str = "",
+        country: str = "",
     ) -> tuple[Tenant, TenantSubscription, TenantSubscriptionInvoice]:
+        currency = resolve_currency(currency=currency, country=country, locale=locale)
         if product_code == "cyshop":
             return self._register_cyshop(
-                tier=tier, email=email, org_name=org_name, locale=locale
+                tier=tier, email=email, org_name=org_name, locale=locale, currency=currency
             )
 
         from platform.cyidentity.models import IdentityRealm
@@ -584,18 +664,18 @@ class SubscriptionRegistrationService:
         tenant.demo_password = getattr(user, "plaintext_password", None)
         tenant.demo_username = username
 
-        subscription, invoice = self._create_subscription_and_invoice(tenant, tier)
+        subscription, invoice = self._create_subscription_and_invoice(tenant, tier, currency)
 
         TenantEventEmitter.emit(
             "tenant.subscription_registered",
             tenant,
-            {"product_code": product_code, "tier": tier},
+            {"product_code": product_code, "tier": tier, "currency": currency},
         )
         log.info("Subscription tenant %s registered for product=%s tier=%s", tenant.slug, product_code, tier)
         return tenant, subscription, invoice
 
     def _register_cyshop(
-        self, *, tier: str, email: str, org_name: str = "", locale: str = "en"
+        self, *, tier: str, email: str, org_name: str = "", locale: str = "en", currency: str = DEFAULT_CURRENCY
     ) -> tuple[Tenant, TenantSubscription, TenantSubscriptionInvoice]:
         import re
 
@@ -649,36 +729,50 @@ class SubscriptionRegistrationService:
         tenant.demo_username = username
         tenant.demo_subdomain = subdomain
 
-        subscription, invoice = self._create_subscription_and_invoice(tenant, tier)
+        subscription, invoice = self._create_subscription_and_invoice(tenant, tier, currency)
 
         TenantEventEmitter.emit(
             "tenant.subscription_registered",
             tenant,
-            {"product_code": "cyshop", "tier": tier},
+            {"product_code": "cyshop", "tier": tier, "currency": currency},
         )
         log.info("Subscription cyshop tenant %s registered (subdomain=%s)", tenant.slug, subdomain)
         return tenant, subscription, invoice
 
     @staticmethod
     def _create_subscription_and_invoice(
-        tenant: Tenant, tier: str
+        tenant: Tenant, tier: str, currency: str = DEFAULT_CURRENCY
     ) -> tuple[TenantSubscription, TenantSubscriptionInvoice]:
-        catalog_entry = SUBSCRIPTION_TIER_CATALOG[tier]
+        from platform.tenant.payments import active_provider_code
+
+        price = tier_price(tier, currency)
+        provider = active_provider_code()
+        # BANK_TRANSFER for the manual provider; any online gateway uses the
+        # CARD_PLACEHOLDER method value (the actual gateway is named by
+        # invoice.provider, added this phase).
+        method = (
+            InvoicePaymentMethod.BANK_TRANSFER
+            if provider == "manual"
+            else InvoicePaymentMethod.CARD_PLACEHOLDER
+        )
         now = timezone.now()
         subscription = TenantSubscription.objects.create(
             tenant=tenant,
             plan=tier,
-            is_active=False,  # flips true once the invoice is marked paid
-            monthly_price_usd=catalog_entry["monthly_price_usd"],
-            currency="USD",
+            is_active=False,  # flips true once the invoice is paid (manual or gateway)
+            # NOTE: field is historically named monthly_price_usd but stores the
+            # native-currency amount; `currency` records the actual currency.
+            monthly_price_usd=price,
+            currency=currency,
             auto_renew=True,
         )
         invoice = TenantSubscriptionInvoice.objects.create(
             subscription=subscription,
             invoice_number=f"INV-{tenant.slug.upper()}-{secrets.token_hex(3).upper()}",
-            amount=catalog_entry["monthly_price_usd"],
-            currency="USD",
-            payment_method=InvoicePaymentMethod.BANK_TRANSFER,
+            amount=price,
+            currency=currency,
+            payment_method=method,
+            provider=provider,
             due_date=(now + timedelta(days=14)).date(),
         )
         return subscription, invoice

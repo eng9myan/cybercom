@@ -252,6 +252,11 @@ class SubscriptionRegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     org_name = serializers.CharField(max_length=200, required=False, allow_blank=True)
     locale = serializers.ChoiceField(choices=[("en", "English"), ("ar", "Arabic")], default="en")
+    # Billing currency. Optional: if omitted, the service derives it from
+    # `country` (JO->JOD, SA->SAR, AE->AED, US->USD) then falls back to the
+    # default (JOD). Both are pass-through hints, not stored choices.
+    currency = serializers.CharField(max_length=3, required=False, allow_blank=True)
+    country = serializers.CharField(max_length=2, required=False, allow_blank=True)
 
 
 class TenantSuspendSerializer(serializers.Serializer):

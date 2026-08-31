@@ -49,5 +49,16 @@ router.register(r"", views.TenantViewSet, basename="tenant")
 urlpatterns = [
     path("healthz/", views.tenant_health, name="tenant-health"),
     path("metrics", views.tenant_metrics, name="tenant-metrics"),
+    # Public self-serve signup (AllowAny + throttled). demo/ = 72h trial,
+    # register/ = permanent tenant + bank-transfer invoice. Both reuse the
+    # existing DemoProvisioning / SubscriptionRegistration services.
+    path("demo/", views.demo_provision, name="tenant-demo-provision"),
+    path("register/", views.subscription_register, name="tenant-subscription-register"),
+    # Payment seam (provider-agnostic). pricing/ powers the website pricing
+    # page; payments/webhook/<provider>/ receives gateway confirmations;
+    # payments/simulate/ is a DEBUG-only fake-gateway completion.
+    path("pricing/", views.pricing_config, name="tenant-pricing-config"),
+    path("payments/webhook/<str:provider>/", views.payment_webhook, name="tenant-payment-webhook"),
+    path("payments/simulate/", views.payment_simulate, name="tenant-payment-simulate"),
     path("", include(router.urls)),
 ]

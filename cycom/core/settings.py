@@ -59,6 +59,7 @@ PLATFORM_APPS = [
     "platform.api",
     "platform.events",
     "platform.cyai",
+    "platform.provisioning",
 ]
 
 PRODUCT_APPS = [
@@ -67,6 +68,7 @@ PRODUCT_APPS = [
     "products.cycom.hr",
     "products.cycom.payroll",
     "products.cycom.inventory",
+    "products.cycom.catalog",
     "products.cycom.access",
     "products.cycom.pos",
     "products.cycom.crm",
@@ -90,6 +92,16 @@ PRODUCT_APPS = [
     "products.cycom.equity",
     "products.cycom.esg",
     "products.cycom.localization",
+    "products.cycom.fleet",
+    "products.cycom.sales",
+    "products.cycom.helpdesk",
+    "products.cycom.recruitment",
+    "products.cycom.leave",
+    "products.cycom.project",
+    "products.cycom.marketing",
+    "products.cycom.planning",
+    "products.cycom.plm",
+    "products.cycom.discuss",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
@@ -219,6 +231,13 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.environ.get("API_PAGE_SIZE", "25")),
     "EXCEPTION_HANDLER": "platform.api.exceptions.cybercom_exception_handler",
+    # Rates for the anon-scoped public signup endpoints (platform.tenant views
+    # demo_provision / subscription_register). Without these the AnonRateThrottle
+    # subclasses raise ImproperlyConfigured("No default throttle rate set...").
+    "DEFAULT_THROTTLE_RATES": {
+        "website_demo_request": os.environ.get("THROTTLE_DEMO_REQUEST", "20/hour"),
+        "website_public_write": os.environ.get("THROTTLE_PUBLIC_WRITE", "30/hour"),
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -334,3 +353,29 @@ APP_VERSION = os.environ.get("APP_VERSION", "0.1.0")
 # invoice-posting call below uses that, not a resurrected event bus.
 COMPLIANCE_GATEWAY_URL = os.environ.get("COMPLIANCE_GATEWAY_URL", "http://localhost:9000")
 COMPLIANCE_GATEWAY_TIMEOUT_SECONDS = int(os.environ.get("COMPLIANCE_GATEWAY_TIMEOUT_SECONDS", "10"))
+
+# ---------------------------------------------------------------------------
+# PAYMENTS — provider-agnostic self-serve subscription checkout
+# ---------------------------------------------------------------------------
+# Active provider: "manual" (bank transfer, finance-confirmed — no keys needed),
+# or an online gateway once its account exists ("stripe" is a ready reference
+# integration; "paddle"/"hyperpay" are seams to fill). See platform.tenant.payments.
+PAYMENT_PROVIDER = os.environ.get("CYCOM_PAYMENT_PROVIDER", "manual")
+
+# Shown to customers when the manual (bank-transfer) provider is active.
+BANK_TRANSFER_DETAILS = {
+    "beneficiary": os.environ.get("BANK_BENEFICIARY", "CyberCom"),
+    "bank": os.environ.get("BANK_NAME", ""),
+    "iban": os.environ.get("BANK_IBAN", ""),
+    "swift": os.environ.get("BANK_SWIFT", ""),
+}
+
+# Stripe (only used when CYCOM_PAYMENT_PROVIDER=stripe). Secret key never leaves
+# the backend; only the publishable key is exposed via the pricing endpoint.
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_PUBLISHABLE_KEY = os.environ.get("STRIPE_PUBLISHABLE_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+# Optional owner override of launch list prices without a code change; see
+# platform.tenant.services._DEFAULT_PRICING for the shape.
+SUBSCRIPTION_PRICING = None

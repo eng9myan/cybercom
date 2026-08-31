@@ -108,6 +108,11 @@ class Payslip(BaseModel):
     allowances_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     overtime_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     late_deduction = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    # Statutory deductions (Jordan): employee SS is withheld from net; employer
+    # SS is a company cost tracked for the GL, not deducted from the employee.
+    social_security_employee = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    social_security_employer = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    income_tax = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     gross_pay = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     net_pay = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 

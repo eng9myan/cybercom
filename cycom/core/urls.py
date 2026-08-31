@@ -21,6 +21,10 @@ urlpatterns = [
     path("api/v1/common/", include("platform.common.urls")),
     path("api/v1/audit/", include("platform.audit.urls")),
     path("api/v1/ai/", include("platform.cyai.urls")),
+    # ── Cycom Ready-ERP provisioning (industry templates + wizard) ──────────
+    path("api/v1/provisioning/", include("platform.provisioning.urls")),
+    # ── Multi-tenant registry + public self-serve signup (demo/ + register/) ─
+    path("api/v1/tenants/", include("platform.tenant.urls")),
     # ── Cycom accounting API v1 (Step 1) ────────────────────────────────────
     path("api/v1/accounting/", include("products.cycom.accounting.urls")),
     # ── Cycom AR/AP + invoicing API v1 (Step 2) ─────────────────────────────
@@ -30,6 +34,8 @@ urlpatterns = [
     path("api/v1/payroll/", include("products.cycom.payroll.urls")),
     # ── Cycom inventory API v1 (Step 4) ─────────────────────────────────────
     path("api/v1/inventory/", include("products.cycom.inventory.urls")),
+    # ── Cycom catalog API (ported from CyShop) ──────────────────────────────
+    path("api/v1/catalog/", include("products.cycom.catalog.urls")),
     # ── Cycom per-user warehouse/product access control (Step 7) ────────────
     path("api/v1/access/", include("products.cycom.access.urls")),
     # ── Cycom POS API v1 (Step 5 — checkout/sessions/pricing core only) ────
@@ -58,4 +64,15 @@ urlpatterns = [
     path("api/v1/subscriptions/", include("products.cycom.subscriptions.urls")),
     path("api/v1/equity/", include("products.cycom.equity.urls")),
     path("api/v1/esg/", include("products.cycom.esg.urls")),
+    path("api/v1/fleet/", include("products.cycom.fleet.urls")),
+    path("api/v1/sales/", include("products.cycom.sales.urls")),
+    path("api/v1/helpdesk/", include("products.cycom.helpdesk.urls")),
+    path("api/v1/recruitment/", include("products.cycom.recruitment.urls")),
+    path("api/v1/leave/", include("products.cycom.leave.urls")),
+    # ── Collaboration / project / planning / plm / marketing (Step 8) ───────
+    path("api/v1/project/", include("products.cycom.project.urls")),
+    path("api/v1/marketing/", include("products.cycom.marketing.urls")),
+    path("api/v1/planning/", include("products.cycom.planning.urls")),
+    path("api/v1/plm/", include("products.cycom.plm.urls")),
+    path("api/v1/discuss/", include("products.cycom.discuss.urls")),
 ]
