@@ -1,0 +1,75 @@
+# CyCom DEMO stack — free OCI E2.1.Micro (1 GB). Slim, Docker-based so the host
+# OS (Oracle Linux / Ubuntu) doesn't matter: the images bring Python 3.12 +
+# Node. NO Keycloak/Postgres/Redis — SQLite + dev-auth for a live sales demo.
+#
+# Orchestrated by scripts/deploy_micro.sh (installs Docker, swap, opens ports,
+# builds, seeds the café/retail demo). Run from repo root:
+#   docker compose -f infrastructure/docker-compose.demo-box.yml --env-file infrastructure/.env.demo up -d --build
+
+name: cybercom-demo
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: cybercom-demo-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      DEMO_HASH: ${DEMO_HASH}
+    volumes:
+      - ./Caddyfile.demo:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+    networks: [demo]
+
+  backend:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.cycom
+    image: cycom-backend:demo
+    container_name: cybercom-demo-backend
+    restart: always
+    # 1 worker keeps RAM low on the 0.5 GB box.
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "1", "--worker-class", "uvicorn.workers.UvicornWorker", "--timeout", "60", "core.asgi:application"]
+    environment:
+      DJANGO_SETTINGS_MODULE: core.settings_dev
+      DJANGO_DEBUG: "True"
+      CYCOM_DEV_AUTH: "1"
+    networks: [demo]
+    logging:
+      driver: "json-file"
+      options: {max-size: "20m", max-file: "3"}
+
+  frontend:
+    build:
+      context: ../cycom/cycom-erp
+      dockerfile: Dockerfile
+    image: cycom-frontend:demo
+    container_name: cybercom-demo-frontend
+    restart: always
+    environment:
+      NODE_ENV: production
+      CYCOM_BACKEND_URL: http://backend:8000
+      CYCOM_DEV_AUTH: "1"
+      CYCOM_TENANT_ID: "11111111-1111-1111-1111-111111111111"
+      NEXT_PUBLIC_APP_URL: https://${APP_DOMAIN}
+      PORT: "3000"
+    depends_on:
+      - backend
+    networks: [demo]
+    logging:
+      driver: "json-file"
+      options: {max-size: "20m", max-file: "3"}
+
+networks:
+  demo:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

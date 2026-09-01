@@ -1,0 +1,177 @@
+# CyCom — self-contained single-box production stack.
+#
+# Unlike docker-compose.cycom-api.yml (which assumes a shared host running
+# cymed + an external Keycloak network), this file stands up EVERYTHING on one
+# fresh VM: Caddy (TLS) + Keycloak (+its Postgres) + app Postgres + Redis +
+# Django backend (gunicorn) + Celery + Next.js frontend, all on one network.
+#
+# Bring-up is orchestrated by scripts/deploy_box.sh (generates secrets, waits
+# for TLS, migrates, seeds, bootstraps the realm, then starts the frontend).
+# Run from the repo root:
+#   docker compose -f infrastructure/docker-compose.prod-box.yml --env-file infrastructure/.env <cmd>
+#
+# Interpolation vars come from infrastructure/.env; app service config comes
+# from the per-service env_file (.env.production / .env.frontend).
+
+name: cybercom
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: cybercom-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      cybercom:
+        # Backend/frontend reaching these public hostnames terminate TLS here
+        # instead of hairpinning to the box's own public IP.
+        aliases:
+          - auth.cy-com.com
+          - app.cy-com.com
+    depends_on:
+      - keycloak
+      - frontend
+
+  keycloak-db:
+    image: postgres:16-alpine
+    container_name: cybercom-kc-db
+    restart: always
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: ${KC_DB_USERNAME}
+      POSTGRES_PASSWORD: ${KC_DB_PASSWORD}
+    volumes:
+      - kc_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KC_DB_USERNAME} -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [cybercom]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: cybercom-keycloak
+    restart: always
+    command: ["start", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
+      KC_HOSTNAME: ${AUTH_DOMAIN}
+      KC_PROXY_HEADERS: xforwarded
+      KC_HTTP_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD}
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 90s
+    networks: [cybercom]
+
+  cycom-postgres:
+    image: postgres:16-alpine
+    container_name: cybercom-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - cycom_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [cybercom]
+
+  cycom-redis:
+    image: redis:7-alpine
+    container_name: cybercom-redis
+    restart: always
+    command: ["redis-server", "--maxmemory", "384mb", "--maxmemory-policy", "allkeys-lru", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - cycom_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [cybercom]
+
+  backend:
+    build:
+      context: ..
+      dockerfile: infrastructure/Dockerfile.cycom
+    image: cycom-backend:prod
+    container_name: cybercom-backend
+    restart: always
+    env_file: .env.production
+    depends_on:
+      cycom-postgres:
+        condition: service_healthy
+      cycom-redis:
+        condition: service_healthy
+    networks: [cybercom]
+    logging:
+      driver: "json-file"
+      options: {max-size: "50m", max-file: "5"}
+
+  celery-worker:
+    image: cycom-backend:prod
+    container_name: cybercom-celery
+    restart: always
+    command: ["celery", "-A", "core", "worker", "--loglevel=info", "--concurrency=2", "--max-tasks-per-child=200"]
+    env_file: .env.production
+    depends_on:
+      cycom-postgres:
+        condition: service_healthy
+      cycom-redis:
+        condition: service_healthy
+    networks: [cybercom]
+    logging:
+      driver: "json-file"
+      options: {max-size: "20m", max-file: "3"}
+
+  frontend:
+    build:
+      context: ../cycom/cycom-erp
+      dockerfile: Dockerfile
+    image: cycom-frontend:prod
+    container_name: cybercom-frontend
+    restart: always
+    env_file: .env.frontend
+    depends_on:
+      - backend
+    networks: [cybercom]
+    logging:
+      driver: "json-file"
+      options: {max-size: "20m", max-file: "3"}
+
+networks:
+  cybercom:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  kc_pgdata:
+  cycom_pgdata:
+  cycom_redisdata:

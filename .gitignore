@@ -31,8 +31,10 @@ cycom/cycom-erp/dev_frontend_*.log
 infrastructure/dev-kc8085.override.yml
 infrastructure/.env.keycloak
 
-# Session dev artifacts (never commit — logs may contain printed secrets)
-cycom/dev_backend_*.log
-cycom/cycom-erp/dev_frontend_*.log
-infrastructure/dev-kc8085.override.yml
-infrastructure/.env.keycloak
+# Prod-box deploy secrets (generated on the host by scripts/deploy_box.sh)
+infrastructure/.env
+infrastructure/.env.production
+infrastructure/.env.frontend
+.env.production
+.env.frontend
+infrastructure/.env.demo

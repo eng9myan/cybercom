@@ -1,0 +1,20 @@
+# CyCom production reverse proxy (Caddy) — automatic Let's Encrypt TLS.
+# Requires: DNS A-records app.cy-com.com + auth.cy-com.com -> this box, and
+# ports 80/443 open. Caddy resolves the upstreams via Docker's embedded DNS
+# on the shared `cybercom` network.
+#
+# NOTE: this same Caddy is network-aliased as auth.cy-com.com / app.cy-com.com
+# inside the compose network, so backend containers reaching those hostnames
+# terminate TLS here (no OCI hairpin-NAT to the box's own public IP).
+
+{
+	email admin@cy-com.com
+}
+
+auth.cy-com.com {
+	reverse_proxy keycloak:8080
+}
+
+app.cy-com.com {
+	reverse_proxy frontend:3000
+}

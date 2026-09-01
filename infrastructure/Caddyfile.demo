@@ -1,0 +1,10 @@
+# CyCom DEMO reverse proxy — TLS + basic-auth gate in front of the Next.js
+# frontend. Hostname + the bcrypt password hash come from the container env
+# (APP_DOMAIN / DEMO_HASH), set by scripts/deploy_micro.sh.
+{
+	email admin@cy-com.com
+}
+
+{$APP_DOMAIN} {
+	reverse_proxy frontend:3000
+}

@@ -23,8 +23,36 @@ const KEYCLOAK_CLIENT_SECRET = process.env.KEYCLOAK_CLIENT_SECRET || '';
 const CYCOM_TENANT_ID = process.env.CYCOM_TENANT_ID || '';
 const SESSION_COOKIE = 'cycom_session_id'; // now holds a real Keycloak access token
 
+/** DEV/demo: mint the unsigned dev-identity JWT (tenant_admin on the fixed dev
+ * tenant) the backend's DevAuthMiddleware accepts. Shared by cycomDevLogin and
+ * the no-cookie fallback below. */
+function mintDevToken(role = 'gm', name = ''): string {
+  const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const tenantId = process.env.CYCOM_TENANT_ID || '11111111-1111-1111-1111-111111111111';
+  const displayName = name || DEV_ROLE_NAMES[role] || 'Dev User';
+  const claims = {
+    sub: `dev-${role}`,
+    name: displayName,
+    email: `${role}@cycom.dev`,
+    preferred_username: `${role}@cycom.dev`,
+    tenant_id: tenantId,
+    realm_access: { roles: [role, 'tenant_admin'] },
+    cycom_role: role,
+    iat: now,
+    exp: now + 60 * 60 * 12,
+  };
+  return `${b64({ alg: 'none', typ: 'JWT' })}.${b64(claims)}.dev`;
+}
+
 function getSessionId(req: NextRequest): string | null {
-  return req.cookies.get(SESSION_COOKIE)?.value ?? null;
+  const cookie = req.cookies.get(SESSION_COOKIE)?.value;
+  if (cookie) return cookie;
+  // DEV/demo only: with no session cookie, fall back to the dev identity so
+  // client-side BFF calls (KDS live tickets, etc.) work without first bouncing
+  // through /api/cycom/dev-login. Never active unless CYCOM_DEV_AUTH=1.
+  if (process.env.CYCOM_DEV_AUTH === '1') return mintDevToken();
+  return null;
 }
 
 function applySessionCookie(res: NextResponse, token: string): void {
@@ -96,6 +124,33 @@ export async function cycomAuthenticate(login: string, password: string): Promis
   }
 }
 
+/**
+ * DEV-ONLY login. Mints an UNSIGNED, well-formed JWT carrying the dev
+ * identity (tenant_admin on the fixed dev tenant) and sets it as the session
+ * cookie. The backend's DevAuthMiddleware reads these claims without verifying
+ * the signature, so no Keycloak is needed. Gated behind CYCOM_DEV_AUTH so it
+ * cannot be hit in a normal deployment.
+ */
+export function cycomDevLogin(role = 'gm', name = ''): NextResponse {
+  if (process.env.CYCOM_DEV_AUTH !== '1') {
+    return NextResponse.json({ error: 'Dev login disabled' }, { status: 403 });
+  }
+  const token = mintDevToken(role, name);
+  const res = NextResponse.redirect(
+    new URL('/', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:7000'),
+  );
+  applySessionCookie(res, token);
+  return res;
+}
+
+const DEV_ROLE_NAMES: Record<string, string> = {
+  gm: 'General Manager',
+  accounting_officer: 'Accounting Officer',
+  hr_officer: 'HR Officer',
+  supply_chain_officer: 'Supply Chain Officer',
+  ops_manager: 'Operations Manager',
+};
+
 export async function cycomLogout(req: NextRequest): Promise<NextResponse> {
   const res = NextResponse.json({ ok: true });
   res.cookies.delete(SESSION_COOKIE);
@@ -123,6 +178,10 @@ export async function cycomGetSession(req: NextRequest): Promise<NextResponse> {
         partner_id: claims.sub,
         company_id: 1,
         is_admin: roles.includes('platform_admin') || roles.includes('tenant_admin'),
+        roles,
+        role: (claims.cycom_role as string)
+          || roles.find((r) => r !== 'tenant_admin' && r !== 'platform_admin')
+          || 'gm',
       },
     });
   } catch {
@@ -159,6 +218,39 @@ export async function cycomAskLocalMemory(req: NextRequest, question: string): P
 }
 
 // ---------------------------------------------------------------------------
+// Generic authenticated passthrough to a real /api/v1/* backend route. Used by
+// genuinely REST-shaped features (e.g. Ready-ERP provisioning) that don't need
+// the legacy Odoo {model,method,args,kwargs} shim below. Forwards method,
+// query string, and JSON body; injects the Keycloak bearer + tenant header.
+// ---------------------------------------------------------------------------
+
+export async function cycomBackendProxy(
+  req: NextRequest,
+  targetPath: string,
+): Promise<NextResponse> {
+  const sessionId = getSessionId(req);
+  if (!sessionId) {
+    return NextResponse.json({ error: { message: 'Not authenticated' } }, { status: 401 });
+  }
+  const method = req.method.toUpperCase();
+  const init: RequestInit = { method };
+  if (method !== 'GET' && method !== 'DELETE') {
+    const text = await req.text();
+    if (text) init.body = text;
+  }
+  try {
+    const upstream = await backendFetch(targetPath, sessionId, init);
+    const payload = await upstream.json().catch(() => ({}));
+    return NextResponse.json(payload, { status: upstream.status });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: { message: err.message || 'Backend connection error' } },
+      { status: 500 },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // REST proxy — translates the legacy Odoo-shaped {model, method, args, kwargs}
 // calls the UI still makes into real requests against the new Django REST API.
 // Only models with a real backend + a settled field mapping are wired here;
@@ -173,6 +265,9 @@ type ModelAdapter = {
   // Custom RPC-style methods (e.g. 'approve', 'reject') beyond the standard
   // search_read/create/write/unlink/read set — mapped to a POST action route.
   customActions?: Record<string, (args: unknown[]) => { path: string; body?: unknown }>;
+  // Optional: translate the legacy search_read domain into a DRF query string
+  // (django-filter). Without it, domains are ignored and the full list returns.
+  listQuery?: (domain: Array<[string, string, unknown]>) => string;
 };
 
 const STAGE_UI_TO_BACKEND: Record<string, string> = {
@@ -191,7 +286,289 @@ const STAGE_BACKEND_TO_UI: Record<string, string> = {
   lost: 'Lost',
 };
 
+// Legacy pages send junk placeholder fields (tenant_id: 1, company_id: 1)
+// from the retired backend era — never forward them.
+const stripLegacyJunk = (f: Record<string, unknown>) => {
+  const { tenant_id, company_id, ...rest } = f;
+  return rest;
+};
+
+const vehicleFilterQuery = (domain: Array<[string, string, unknown]>) => {
+  const byVehicle = domain.find((d) => Array.isArray(d) && d[0] === 'vehicle_id');
+  return byVehicle ? `?vehicle=${byVehicle[2]}` : '';
+};
+
 const MODEL_ADAPTERS: Record<string, ModelAdapter> = {
+  'fleet.vehicle': {
+    basePath: '/api/v1/fleet/vehicles/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      const direct = ['name', 'license_plate', 'make', 'model', 'status', 'insurance_expiry', 'license_expiry'];
+      for (const key of direct) if (key in src) out[key] = src[key];
+      // UI writes both `odometer_km` and legacy `odometer` — only the real field survives.
+      if ('odometer_km' in src) out.odometer_km = src.odometer_km;
+      else if ('odometer' in src) out.odometer_km = src.odometer;
+      if ('state' in src) out.status = src.state;
+      if ('driver_id' in src) out.driver_name = Array.isArray(src.driver_id) ? src.driver_id[1] : src.driver_id;
+      if ('driver' in src) out.driver_name = src.driver;
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      name: r.name || `${r.make || ''} ${r.model || ''}`.trim(),
+      license_plate: r.license_plate,
+      make: r.make || undefined,
+      model: (r.model as string) || undefined,
+      driver_id: r.driver_name ? [1, r.driver_name as string] : false,
+      odometer_km: Number(r.odometer_km || 0),
+      odometer: Number(r.odometer_km || 0),
+      state: r.status,
+      insurance_expiry: r.insurance_expiry || undefined,
+      license_expiry: r.license_expiry || undefined,
+    }),
+  },
+  'cy.fleet.maintenance': {
+    basePath: '/api/v1/fleet/maintenance-logs/',
+    listQuery: vehicleFilterQuery,
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('vehicle_id' in src) out.vehicle = src.vehicle_id;
+      const direct = ['maintenance_date', 'maintenance_type', 'cost', 'odometer_km', 'next_service_km'];
+      for (const key of direct) if (key in src && src[key] !== null) out[key] = src[key];
+      if ('service_provider' in src) out.service_provider = src.service_provider || '';
+      if ('notes' in src) out.notes = src.notes || '';
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      vehicle_id: r.vehicle,
+      maintenance_date: r.maintenance_date,
+      maintenance_type: r.maintenance_type,
+      cost: Number(r.cost || 0),
+      service_provider: r.service_provider || false,
+      odometer_km: Number(r.odometer_km || 0),
+      next_service_km: r.next_service_km != null ? Number(r.next_service_km) : false,
+      notes: r.notes || false,
+    }),
+  },
+  'cy.fleet.fuel': {
+    basePath: '/api/v1/fleet/fuel-logs/',
+    listQuery: vehicleFilterQuery,
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('vehicle_id' in src) out.vehicle = src.vehicle_id;
+      const direct = ['log_date', 'liters', 'price_per_liter', 'total_cost', 'odometer_km'];
+      for (const key of direct) if (key in src && src[key] !== null) out[key] = src[key];
+      if ('fuel_station' in src) out.fuel_station = src.fuel_station || '';
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      vehicle_id: r.vehicle,
+      log_date: r.log_date,
+      liters: Number(r.liters || 0),
+      price_per_liter: Number(r.price_per_liter || 0),
+      total_cost: Number(r.total_cost || 0),
+      fuel_station: r.fuel_station || false,
+      odometer_km: Number(r.odometer_km || 0),
+    }),
+  },
+  'purchase.order': {
+    basePath: '/api/v1/procurement/orders/',
+    toBackend: () => ({}),
+    fromBackend: (r) => ({
+      id: r.id,
+      name: `PO-${String(r.id).slice(0, 6)}`,
+      partner_id: r.vendor ? [r.vendor, (r.vendor_name as string) || 'Vendor'] : false,
+      date_order: r.created_at ? String(r.created_at).split('T')[0] : false,
+      amount_total: Number(r.amount_total || 0),
+      state: r.status,
+      currency_id: [1, (r.currency as string) || 'JOD'],
+    }),
+  },
+  'sale.order': {
+    basePath: '/api/v1/sales/orders/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.number = src.name;
+      if ('partner_id' in src) out.customer_name = Array.isArray(src.partner_id) ? src.partner_id[1] : src.partner_id;
+      if ('date_order' in src) out.order_date = src.date_order;
+      if ('amount_total' in src) out.amount_total = src.amount_total;
+      if ('state' in src) out.status = src.state;
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      name: r.number,
+      partner_id: r.customer_name ? [1, r.customer_name as string] : false,
+      date_order: r.order_date,
+      amount_total: Number(r.amount_total || 0),
+      state: r.status,
+      currency_id: [1, (r.currency as string) || 'JOD'],
+    }),
+    customActions: {
+      confirm: (args) => ({ path: `/api/v1/sales/orders/${args[0]}/confirm/` }),
+    },
+  },
+  'helpdesk.ticket': {
+    basePath: '/api/v1/helpdesk/tickets/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.subject = src.name;
+      if ('partner_id' in src) out.customer_name = Array.isArray(src.partner_id) ? src.partner_id[1] : src.partner_id;
+      if ('user_id' in src) out.assignee = Array.isArray(src.user_id) ? src.user_id[1] : src.user_id;
+      if ('team_id' in src) out.team = Array.isArray(src.team_id) ? src.team_id[1] : src.team_id;
+      if ('priority' in src) out.priority = src.priority;
+      if ('stage_id' in src) out.stage = Array.isArray(src.stage_id) ? src.stage_id[1] : src.stage_id;
+      if (!('number' in out)) out.number = (src as any).name ? undefined : undefined;
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      name: r.subject,
+      partner_id: r.customer_name ? [1, r.customer_name as string] : false,
+      user_id: r.assignee ? [1, r.assignee as string] : false,
+      team_id: r.team ? [1, r.team as string] : false,
+      priority: r.priority,
+      stage_id: [1, r.stage as string],
+    }),
+  },
+  'hr.applicant': {
+    basePath: '/api/v1/recruitment/applicants/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('partner_name' in src) out.name = src.partner_name;
+      if ('email_from' in src) out.email = src.email_from || '';
+      if ('job_id' in src) out.job_title = Array.isArray(src.job_id) ? src.job_id[1] : src.job_id;
+      if ('priority' in src) out.priority = String(src.priority);
+      if ('stage_id' in src) out.stage = Array.isArray(src.stage_id) ? src.stage_id[1] : src.stage_id;
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      partner_name: r.name,
+      name: r.job_title,
+      email_from: r.email || false,
+      job_id: r.job_title ? [1, r.job_title as string] : false,
+      priority: r.priority,
+      kanban_state: 'normal',
+      stage_id: [1, r.stage as string],
+      create_date: r.created_at,
+    }),
+  },
+  'hr.attendance': {
+    basePath: '/api/v1/payroll/attendance/',
+    toBackend: (f) => stripLegacyJunk(f),
+    fromBackend: (r) => ({
+      id: r.id,
+      employee_id: r.employee ? [1, String(r.employee)] : false,
+      check_in: r.check_in,
+      check_out: r.check_out,
+      worked_hours: r.check_in && r.check_out ? undefined : 0,
+    }),
+  },
+  'hr.payslip': {
+    basePath: '/api/v1/payroll/payslips/',
+    toBackend: (f) => stripLegacyJunk(f),
+    fromBackend: (r) => ({
+      id: r.id,
+      employee_id: r.employee ? [1, String(r.employee)] : false,
+      date_from: r.date_from || false,
+      date_to: r.date_to || false,
+      net_wage: Number(r.net_pay || 0),
+      state: r.status,
+      // Additive keys the ESS portal reads (harmless to the payroll page):
+      gross: Number(r.gross_pay || 0),
+      net: Number(r.net_pay || 0),
+      period: r.period || '',
+    }),
+  },
+
+  // Employee self-service portal reads leave requests via this alias.
+  'hr.leave': {
+    basePath: '/api/v1/leave/requests/',
+    toBackend: (f) => stripLegacyJunk(f),
+    fromBackend: (r) => ({
+      id: r.id,
+      leave_type: r.leave_type_code || r.leave_type_name || '',
+      start_date: r.start_date || false,
+      end_date: r.end_date || false,
+      days: Number(r.days || 0),
+      status: r.status,
+      name: r.reason || '',
+    }),
+  },
+
+  'pos.session': {
+    basePath: '/api/v1/pos/sessions/',
+    toBackend: () => ({}),
+    fromBackend: (r) => ({
+      id: r.id,
+      name: `SES-${String(r.id).slice(0, 6)}`,
+      user_id: r.cashier ? [1, r.cashier as string] : false,
+      config_id: false,
+      start_at: r.opened_at,
+      stop_at: r.closed_at || false,
+      state: r.status === 'closed' ? 'closed' : 'opened',
+      cash_register_balance_end_real: Number(r.closing_cash ?? r.opening_cash ?? 0),
+    }),
+  },
+  'quality.check': {
+    basePath: '/api/v1/quality/checkpoints/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.name = src.name;
+      if ('quality_state' in src) out.result = src.quality_state;
+      if ('notes' in src) out.notes = src.notes || '';
+      if ('description' in src) out.description = src.description || '';
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      name: r.name,
+      product_id: r.linked_model ? [1, r.linked_model as string] : false,
+      picking_id: false,
+      quality_state: r.result,
+      create_date: r.created_at,
+    }),
+  },
+  'hr.expense': {
+    basePath: '/api/v1/expenses/expenses/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.description = src.name;
+      if ('description' in src) out.description = src.description;
+      if ('employee_id' in src) out.employee_name = Array.isArray(src.employee_id) ? src.employee_id[1] : src.employee_id;
+      if ('total_amount' in src) out.amount = src.total_amount;
+      if ('date' in src) out.expense_date = src.date;
+      if ('state' in src) out.status = src.state;
+      out.category = (src as any).category || 'General';
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      name: r.description || `EXP-${String(r.id).slice(0, 6)}`,
+      employee_id: r.employee_name ? [1, r.employee_name as string] : false,
+      product_id: r.category ? [1, r.category as string] : false,
+      total_amount: Number(r.amount || 0),
+      date: r.expense_date,
+      description: r.description || false,
+      state: r.status,
+      currency_id: [1, (r.currency as string) || 'JOD'],
+    }),
+    customActions: {
+      approve: (args) => ({ path: `/api/v1/expenses/expenses/${args[0]}/approve/` }),
+      reject: (args) => ({ path: `/api/v1/expenses/expenses/${args[0]}/reject/`, body: { reason: args[1] } }),
+    },
+  },
   'crm.lead': {
     basePath: '/api/v1/crm/leads/',
     toBackend: (f) => {
@@ -317,6 +694,166 @@ const MODEL_ADAPTERS: Record<string, ModelAdapter> = {
       reject: (args) => ({ path: `/api/v1/ar-ap/partners/${args[0]}/reject/`, body: { reason: args[1] } }),
       submit_for_review: (args) => ({ path: `/api/v1/ar-ap/partners/${args[0]}/submit/` }),
     },
+  },
+
+  // ── Collaboration / project / planning / plm / marketing (Step 8) ────────
+  // Backend stores Odoo-naive-ish ISO; the legacy pages expect
+  // "YYYY-MM-DD HH:MM:SS" (space, no tz) so their `.replace(' ','T')+'Z'`
+  // parsing works. `toNaiveDt` strips the timezone/fractional part.
+  'project.task': {
+    basePath: '/api/v1/project/tasks/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.name = src.name;
+      if ('allocated_hours' in src) out.allocated_hours = src.allocated_hours;
+      if ('planned_hours' in src && !('allocated_hours' in src)) out.allocated_hours = src.planned_hours;
+      if ('effective_hours' in src) out.effective_hours = src.effective_hours;
+      return out;
+    },
+    fromBackend: (r) => {
+      const STAGE_LABEL: Record<string, string> = {
+        backlog: 'Backlog', in_progress: 'In Progress', review: 'Review', done: 'Done',
+      };
+      return {
+        id: r.id,
+        name: r.name,
+        project_id: r.project ? [r.project, r.project_name || 'Project'] : false,
+        allocated_hours: Number(r.allocated_hours || 0),
+        planned_hours: Number(r.allocated_hours || 0),
+        effective_hours: Number(r.effective_hours || 0),
+        stage_id: [1, STAGE_LABEL[r.stage as string] || 'Backlog'],
+      };
+    },
+  },
+
+  'mass.mailing': {
+    basePath: '/api/v1/marketing/campaigns/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.name = src.name;
+      if ('state' in src) out.state = src.state;
+      if ('mailing_model_id' in src && Array.isArray(src.mailing_model_id)) out.target = src.mailing_model_id[1];
+      if ('target' in src) out.target = src.target;
+      if ('campaign_type' in src) out.campaign_type = src.campaign_type;
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      name: r.name,
+      mailing_model_id: r.target ? [1, r.target] : false,
+      state: r.state,
+      sent: Number(r.sent || 0),
+      failed: Number(r.failed || 0),
+      scheduled_date: r.scheduled_date
+        ? String(r.scheduled_date).replace('T', ' ').replace('Z', '').split('.')[0]
+        : false,
+    }),
+  },
+
+  'planning.slot': {
+    basePath: '/api/v1/planning/slots/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('resource_id' in src && Array.isArray(src.resource_id)) out.resource_name = src.resource_id[1];
+      if ('resource_name' in src) out.resource_name = src.resource_name;
+      if ('role_id' in src && Array.isArray(src.role_id)) out.role = src.role_id[1];
+      if ('role' in src) out.role = src.role;
+      if ('start_datetime' in src) out.start_datetime = src.start_datetime;
+      if ('end_datetime' in src) out.end_datetime = src.end_datetime;
+      if ('department' in src) out.department = src.department;
+      return out;
+    },
+    fromBackend: (r) => {
+      const naive = (v: unknown) =>
+        v ? String(v).replace('T', ' ').replace('Z', '').split('.')[0] : false;
+      return {
+        id: r.id,
+        resource_id: r.resource_name ? [1, r.resource_name] : false,
+        role_id: r.role ? [1, r.role] : false,
+        start_datetime: naive(r.start_datetime),
+        end_datetime: naive(r.end_datetime),
+        state: r.state,
+      };
+    },
+  },
+
+  'mrp.eco': {
+    basePath: '/api/v1/plm/ecos/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.name = src.name;
+      if ('title' in src) out.title = src.title;
+      if ('reason' in src) out.reason = src.reason;
+      if ('product_tmpl_id' in src && Array.isArray(src.product_tmpl_id)) out.product_name = src.product_tmpl_id[1];
+      if ('product_name' in src) out.product_name = src.product_name;
+      return out;
+    },
+    fromBackend: (r) => {
+      const STAGE_LABEL: Record<string, string> = {
+        draft: 'Draft', review: 'Under Review', approved: 'Approved', done: 'Done',
+      };
+      return {
+        id: r.id,
+        name: r.name,
+        product_tmpl_id: r.product_name ? [1, r.product_name] : false,
+        stage_id: [1, STAGE_LABEL[r.stage as string] || 'Draft'],
+        user_id: r.owner ? [1, r.owner] : false,
+        create_date: r.created_at
+          ? String(r.created_at).replace('T', ' ').replace('Z', '').split('.')[0]
+          : false,
+      };
+    },
+  },
+
+  'mail.message': {
+    basePath: '/api/v1/discuss/messages/',
+    listQuery: (domain) => {
+      const byChannel = domain.find((d) => Array.isArray(d) && d[0] === 'channel_id');
+      return byChannel ? `?channel=${byChannel[2]}` : '';
+    },
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('channel_id' in src) out.channel = src.channel_id;
+      if ('channel' in src) out.channel = src.channel;
+      if ('author' in src) out.author = src.author;
+      if ('body' in src) out.body = src.body;
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      channel_id: r.channel ? [r.channel, ''] : false,
+      author: r.author || '',
+      body: r.body || '',
+      create_date: r.created_at
+        ? String(r.created_at).replace('T', ' ').replace('Z', '').split('.')[0]
+        : false,
+    }),
+  },
+
+  'mail.channel': {
+    basePath: '/api/v1/discuss/channels/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.name = src.name;
+      if ('channel_type' in src) out.channel_type = src.channel_type;
+      if ('topic' in src) out.topic = src.topic;
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      name: r.name,
+      channel_type: r.channel_type || 'channel',
+      member_count: Number(r.member_count || 0),
+      last_interest_dt: r.last_interest_dt
+        ? String(r.last_interest_dt).replace('T', ' ').replace('Z', '').split('.')[0]
+        : false,
+    }),
   },
 };
 
@@ -559,6 +1096,54 @@ export async function cycomCallKw(
     return NextResponse.json({ result: [] });
   }
 
+  // Models with no backend module yet — answer empty (page renders its empty
+  // state) instead of a 501 error card. Tracked for future backend work:
+  //   hr.attendance.overtime  — overtime approval engine
+  //   zk.machine              — biometric device registry (import already exists
+  //                             at /api/v1/payroll/attendance/import/)
+  if (
+    body.model === 'hr.attendance.overtime' ||
+    body.model === 'zk.machine'
+  ) {
+    if (body.method === 'search_read' || body.method === 'read') {
+      return NextResponse.json({ result: [] });
+    }
+    return NextResponse.json({ result: false });
+  }
+
+  // Legacy setup wizards persist choices via ir.config_parameter — backed by
+  // the real tenant KV store at /api/v1/provisioning/config-parameters/.
+  if (body.model === 'ir.config_parameter') {
+    try {
+      if (body.method === 'set_param') {
+        const [key, value] = (body.args || []) as [string, unknown];
+        const upstream = await backendFetch('/api/v1/provisioning/config-parameters/set/', sessionId, {
+          method: 'POST',
+          body: JSON.stringify({ key, value }),
+        });
+        if (!upstream.ok) {
+          const payload = await upstream.json().catch(() => ({}));
+          return jsonError(payload.detail || 'set_param failed', upstream.status);
+        }
+        return NextResponse.json({ result: true });
+      }
+      if (body.method === 'get_param') {
+        const [key] = (body.args || []) as [string];
+        const upstream = await backendFetch(
+          `/api/v1/provisioning/config-parameters/get/?key=${encodeURIComponent(key)}`,
+          sessionId,
+          { method: 'GET' },
+        );
+        const payload = await upstream.json().catch(() => ({}));
+        if (!upstream.ok) return jsonError(payload.detail || 'get_param failed', upstream.status);
+        return NextResponse.json({ result: payload.value ?? false });
+      }
+      return jsonError(`Method '${body.method}' not supported for ir.config_parameter.`, 501);
+    } catch (err: any) {
+      return jsonError(err.message || 'Backend connection error', 500);
+    }
+  }
+
   // Branch replenishment (internal orders) — real multi-line, multi-stage
   // workflow (submit -> allocate -> dispatch -> receive). Doesn't fit the
   // generic ModelAdapter shape: the legacy UI creates the order header
@@ -572,6 +1157,24 @@ export async function cycomCallKw(
 
   if (body.model === 'inventory.product') {
     return handleInventoryProductSearch(sessionId, body);
+  }
+
+  // Employee bulk import — real endpoint returns a rich payload (imported
+  // count + per-row errors), so pass the whole thing through as `result`
+  // rather than the generic customAction's boolean.
+  if (body.model === 'hr.employee' && (body.method === 'bulk_import' || body.method === 'validate_import')) {
+    try {
+      const rows = (body.args?.[0] as unknown[]) || [];
+      const upstream = await backendFetch('/api/v1/hr/employees/bulk-import/', sessionId, {
+        method: 'POST',
+        body: JSON.stringify({ rows, dry_run: body.method === 'validate_import' }),
+      });
+      const payload = await upstream.json().catch(() => ({}));
+      if (!upstream.ok) return jsonError(payload.detail || 'Import failed', upstream.status);
+      return NextResponse.json({ result: payload });
+    } catch (err: any) {
+      return jsonError(err.message || 'Backend connection error', 500);
+    }
   }
 
   const adapter = MODEL_ADAPTERS[body.model];
@@ -588,7 +1191,9 @@ export async function cycomCallKw(
 
   try {
     if (body.method === 'search_read') {
-      const upstream = await backendFetch(adapter.basePath, sessionId, { method: 'GET' });
+      const domain = (body.args?.[0] as Array<[string, string, unknown]>) || [];
+      const query = adapter.listQuery ? adapter.listQuery(domain) : '';
+      const upstream = await backendFetch(`${adapter.basePath}${query}`, sessionId, { method: 'GET' });
       const payload = await upstream.json();
       if (!upstream.ok) {
         return NextResponse.json({ error: { message: payload.detail || 'Fetch failed' } }, { status: upstream.status });
