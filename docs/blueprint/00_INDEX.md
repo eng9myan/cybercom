@@ -1,7 +1,9 @@
 # CyberCom Unified ERP Ecosystem — Blueprint Package
 
 > **Objective:** merge CyShop + CyCom + CyMed into a single multi-tenant, API-first,
-> flavor-templated ERP ecosystem — Gulf-first, zero-trust, cloud-native.
+> flavor-templated ERP ecosystem that can become the operational system of record for
+> **any** business — shop, enterprise, factory, hospital, or public body — Gulf-first,
+> zero-trust, cloud-native, with a partner/developer ecosystem and the CyMart marketplace.
 > **Author:** engineering (blueprint pass). **Date:** 2026-09-04. **Status:** draft for founder/architecture-council review.
 > Grounded in a direct source audit of `D:\Cybercom launch\cybercom` on 2026-09-04, not aspiration.
 
@@ -22,10 +24,18 @@
 | `H_nfr_checklist.md` | H | Non-functional requirements with testable thresholds | SRE, QA, architects |
 | `J_constraints_gates.md` | J | Locked assumptions + go/no-go decision gates | founder, architecture council |
 | `K_90day_sprint.md` | K | Week-by-week 90-day quick-start | delivery leads |
-| `L_partner_ecosystem_plan.md` | L (extra) | Payments/delivery/gov/health partner integrations, order + commercials | founder, integrations |
-| `M_risk_register.md` | M (extra) | Living risk register, scored, owned | everyone |
+| `L_partner_ecosystem_plan.md` | L | Payments/delivery/gov/health partner integrations, order + commercials | founder, integrations |
+| `M_risk_register.md` | M | Living risk register, scored, owned | everyone |
+| `N_universal_flavor_model.md` | N | How CyberCom runs **any** business — the 4 extensibility mechanisms, canonical primitives, Flavor Studio, the ~50-flavor catalogue, the ~25 `[core+]` primitives, and where the scope line is | architects, product, investors |
+| `P_simulation_testing_golive.md` | P (§L in the request) | Synthetic-world simulation per flavor, the test pyramid + gates, security testing, data-integrity invariants, the per-tenant go-live checklist | QA, SRE, security, delivery |
+| `Q_investor_gtm.md` | Q (§M in the request) | Investor deck spine, revenue lines, market-sizing framework, the 5-stage GTM engine, vertical differentiator matrix, financial-model skeleton | founder, investors |
 
-Read order for a first pass: **A → B → C → E → G → K**. Deep dives: D, F, H, J, L, M.
+Read order for a first pass: **A → B → N → C → E → G → K**. Deep dives: D, F, H, J, L, M, P, Q.
+
+> **Universality note (per the expanded objective):** the goal is one platform that is the
+> go-to system for any store, company, factory, or public body — see `N`. CyberCom reaches
+> that not by pre-building every industry but by a broad core + flavor packs + Flavor Studio
+> + an extension-app sandbox. GA is still 2 flavors (Retail, Health); the rest phase in per `G`.
 
 ## Phase 0 scaffolding shipped alongside this package
 
