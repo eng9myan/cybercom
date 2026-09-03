@@ -29,7 +29,9 @@ class AuditLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuditLog
         fields = "__all__"
-        read_only_fields = fields
+        # audit rows are immutable — mark every concrete field read-only.
+        # `read_only_fields` must be a list/tuple, so "__all__" can't be reused.
+        read_only_fields = [f.name for f in AuditLog._meta.fields]
 
 
 class AuditCategorySerializer(serializers.ModelSerializer):
@@ -42,7 +44,7 @@ class AuditEventSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuditEvent
         fields = "__all__"
-        read_only_fields = fields
+        read_only_fields = [f.name for f in AuditEvent._meta.fields]
 
 
 class AuditChainSerializer(serializers.ModelSerializer):
