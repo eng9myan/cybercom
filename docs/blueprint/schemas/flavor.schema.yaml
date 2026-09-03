@@ -1,0 +1,135 @@
+# CyberCom Flavor Definition — JSON Schema (YAML form)
+# A flavor is config + a thin pack (ADR-0003). This schema is enforced in CI by the
+# flavor-engine validator and by the "thin flavor" checklist gate (blueprint F.1).
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://cybercom.dev/schemas/flavor.schema.yaml"
+title: VerticalFlavor
+type: object
+additionalProperties: false
+required: [flavor, version, modules, tax_presets, regulatory]
+properties:
+
+  flavor:
+    type: string
+    pattern: "^[A-Z][A-Za-z0-9]+Flavour$"
+    description: PascalCase, ends 'Flavour'. e.g. RetailFlavour, HealthFlavour.
+
+  version:
+    type: string
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    description: Semver. Flavor ships independently of core, behind a feature flag.
+
+  extends:
+    type: array
+    items: { type: string, pattern: "^[A-Z][A-Za-z0-9]+Flavour$" }
+    description: Flavors compose. e.g. AutoPartsFlavour extends RetailFlavour.
+
+  description: { type: string, maxLength: 280 }
+
+  modules:
+    type: array
+    minItems: 1
+    uniqueItems: true
+    items:
+      enum: [catalog, pricing, orders, pos, kds, inventory, procurement,
+             finance, crm, hr, payroll, scheduling, analytics, marketplace,
+             patient, encounter, pharmacy, laboratory, imaging, rcm, claims]
+    description: Which CORE services this flavor turns on. No module = no new code.
+
+  catalog_profile:
+    enum: [retail, hospitality, auto_parts, jewelry, grocery, pharmacy, service, fuel, government]
+    description: Enables a registered set of typed attributes on Product/Variant/SKU.
+                 Adding a profile requires CDAC review (ADR-0007), not a flavor PR.
+
+  entity_attribute_profiles:
+    type: object
+    description: Per-entity attribute schema refs (registered profiles only).
+    additionalProperties:
+      type: string
+      description: Registered profile id, e.g. "order/service_ticket@1".
+
+  layout_templates:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [name, slots]
+      properties:
+        name: { type: string }
+        route: { type: string }
+        slots:
+          type: object
+          description: slot -> design-system component id. NO custom component ids allowed.
+          additionalProperties: { type: string }
+    description: Screen composition from design-system slots only (ADR-0003).
+
+  workflows:
+    type: array
+    items:
+      type: object
+      additionalProperties: false
+      required: [name, trigger, steps]
+      properties:
+        name: { type: string }
+        trigger: { type: string, description: "domain event or user action" }
+        steps:
+          type: array
+          items: { type: string, description: "core primitive or registered action" }
+    description: Composed from core primitives. No inline code.
+
+  tax_presets:
+    type: object
+    additionalProperties: false
+    required: [countries]
+    properties:
+      countries:
+        type: array
+        minItems: 1
+        items:
+          type: object
+          additionalProperties: false
+          required: [country, profile]
+          properties:
+            country: { enum: [SA, AE, JO, QA, KW, BH, OM] }
+            profile: { type: string, description: "registered TaxRule preset id" }
+
+  regulatory:
+    type: array
+    uniqueItems: true
+    items:
+      enum: [zatca_phase2, jo_jofotara, ae_peppol, nphies, wps_sa, wps_ae,
+             gosi, gratuity, gpssa, pdpl_health, aml_kyc, controlled_substances]
+    description: Required regulatory packs. Provisioning REFUSES to activate the flavor
+                 in a country whose required pack is not 'ready'.
+
+  kpi_dashboard:
+    type: string
+    description: Registered KPI-pack id (saved queries + dashboard layout).
+
+  integrations:
+    type: array
+    items:
+      enum: [psp, supplier_catalog_feed, delivery_aggregator, cydrive_dispatch,
+             whatsapp, sms, email, maps, nphies, nafath, uae_pass, wps_bank,
+             accounting_export, bi_connector, lab_network, insurer]
+    description: Connector types this flavor needs (configured per tenant via cyintegrationhub).
+
+  seed_data:
+    type: string
+    description: Registered demo-dataset id for sales/onboarding demos.
+
+  feature_flag:
+    type: string
+    description: OpenFeature flag key gating this flavor. Required for non-GA flavors.
+
+  governance:
+    type: object
+    additionalProperties: false
+    properties:
+      thin_flavor_checklist:
+        enum: [pass, exception]
+      exception_ref:
+        type: string
+        description: CDAC decision ref if 'exception'. Time-boxed.
+      reviewed_by: { type: string }
+      review_date: { type: string, format: date }

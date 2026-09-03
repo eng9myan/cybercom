@@ -1,0 +1,68 @@
+# Example flavor definition — RetailFlavour (F&B + general retail). Wave 1.
+# Validates against ../flavor.schema.yaml. See blueprint E.1.
+flavor: RetailFlavour
+version: 0.1.0
+description: >
+  Hardware-agnostic POS + live KDS + multi-branch inventory + basic GL for F&B and
+  general retail. Gulf-first: ZATCA Phase 2, Arabic POS + receipts.
+
+modules: [catalog, pricing, orders, pos, kds, inventory, finance, crm]
+
+catalog_profile: retail
+
+layout_templates:
+  - name: pos_register
+    route: /pos
+    slots:
+      header: ds/pos-session-bar
+      product_area: ds/catalog-grid
+      cart: ds/order-cart
+      tender: ds/multi-tender-panel
+      footer: ds/offline-indicator
+  - name: kds_board
+    route: /kds
+    slots:
+      lanes: ds/kds-station-lanes
+      ticket: ds/kds-ticket-card
+  - name: daily_close
+    route: /pos/close
+    slots:
+      summary: ds/z-report
+      cash: ds/cash-count
+  - name: branch_overview
+    route: /dashboard
+    slots:
+      map: ds/branch-map
+      tiles: ds/kpi-tile-row
+      chart: ds/sales-trend
+
+workflows:
+  - name: ring_sale
+    trigger: user.pos.checkout
+    steps: [order.create, inventory.reserve, payment.capture, finance.post_journal,
+            finance.issue_invoice, finance.clear_einvoice, kds.route_if_fnb, receipt.render]
+  - name: return_exchange
+    trigger: user.pos.return
+    steps: [order.lookup, order.create_return, inventory.restock, payment.refund,
+            finance.post_journal, finance.credit_note]
+
+tax_presets:
+  countries:
+    - { country: SA, profile: retail_standard_vat_15 }
+    - { country: AE, profile: retail_standard_vat_5 }
+    - { country: JO, profile: retail_gst }
+
+regulatory: [zatca_phase2, jo_jofotara, gosi]   # SA + JO e-invoicing; gosi if payroll added later
+
+kpi_dashboard: retail_pack           # net sales, margin %, basket size, sales/labour hr, KDS prep time
+
+integrations: [psp, cydrive_dispatch, delivery_aggregator, whatsapp, sms, email]
+
+seed_data: cafe_demo                  # seeded catalog + POS + KDS + quotations
+
+feature_flag: flavor.retail
+
+governance:
+  thin_flavor_checklist: pass
+  reviewed_by: CDAC
+  review_date: 2026-09-04

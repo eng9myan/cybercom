@@ -1,0 +1,628 @@
+<title>CyberCom Unification Blueprint</title>
+<style>
+  :root{
+    --paper:#f5f3ee; --surface:#fffefb; --surface-2:#efece4;
+    --ink:#191d22; --ink-soft:#33383f; --muted:#5c6169; --line:#dcd7cd;
+    --accent:#1f7a6b; --accent-soft:#e4efec; --accent-line:#bcd8d2;
+    --gold:#8f6d2f; --gold-soft:#f0e8d6;
+    --risk:#a8402f; --risk-soft:#f2e0dc;
+    --shadow:0 1px 2px rgba(25,29,34,.05), 0 8px 24px rgba(25,29,34,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#111419; --surface:#191d24; --surface-2:#20252d;
+      --ink:#e9e7e1; --ink-soft:#c3c1ba; --muted:#969ca4; --line:#2b303a;
+      --accent:#4bb5a1; --accent-soft:#15302b; --accent-line:#295049;
+      --gold:#c39a54; --gold-soft:#2c2417;
+      --risk:#e0705c; --risk-soft:#33201c;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#111419; --surface:#191d24; --surface-2:#20252d;
+    --ink:#e9e7e1; --ink-soft:#c3c1ba; --muted:#969ca4; --line:#2b303a;
+    --accent:#4bb5a1; --accent-soft:#15302b; --accent-line:#295049;
+    --gold:#c39a54; --gold-soft:#2c2417;
+    --risk:#e0705c; --risk-soft:#33201c;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Source Serif 4", Georgia, "Times New Roman", serif;
+    font-size:17px; line-height:1.62; font-weight:400;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px; margin:0 auto; padding:0 clamp(20px,5vw,64px)}
+
+  h1,h2,h3,.eyebrow,th,.tag,.chip,.metric b,.phase-k,.rail a,nav{
+    font-family:"Bricolage Grotesque","Helvetica Neue",Arial,sans-serif;
+  }
+  code,kbd,.mono,.ent,.api,td .mono{
+    font-family:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    font-size:.86em;
+  }
+
+  .eyebrow{
+    font-size:.72rem; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); font-weight:600; margin:0 0 .6rem;
+  }
+  h1{
+    font-size:clamp(2.3rem,5.4vw,3.5rem); line-height:1.04; font-weight:700;
+    letter-spacing:-.02em; text-wrap:balance; margin:.1rem 0 .4rem;
+  }
+  h2{
+    font-size:clamp(1.4rem,2.6vw,1.75rem); font-weight:700; letter-spacing:-.01em;
+    text-wrap:balance; margin:0 0 .3rem;
+  }
+  h3{font-size:1.06rem; font-weight:600; letter-spacing:0; margin:1.4rem 0 .4rem}
+  p{margin:.55rem 0; max-width:68ch}
+  a{color:var(--accent); text-underline-offset:2px}
+  strong{font-weight:600; color:var(--ink)}
+
+  /* ---- header ---- */
+  header.hero{
+    border-bottom:1px solid var(--line);
+    padding:clamp(48px,8vw,96px) 0 clamp(32px,5vw,52px);
+  }
+  .hero .lede{
+    font-size:clamp(1.05rem,1.7vw,1.28rem); color:var(--ink-soft);
+    max-width:60ch; margin:1rem 0 0;
+  }
+  .hero .lede .flavor{color:var(--accent); font-style:italic}
+  .metastrip{
+    display:flex; flex-wrap:wrap; gap:8px 10px; margin-top:1.8rem;
+  }
+  .tag{
+    font-size:.72rem; letter-spacing:.03em; padding:.34em .7em; border-radius:2px;
+    background:var(--surface-2); color:var(--muted); border:1px solid var(--line);
+  }
+  .tag.on{background:var(--accent-soft); color:var(--accent); border-color:var(--accent-line)}
+
+  /* ---- section rail nav ---- */
+  nav.rail{
+    position:sticky; top:0; z-index:5; background:var(--paper);
+    border-bottom:1px solid var(--line);
+    display:flex; gap:2px; overflow-x:auto; scrollbar-width:none;
+    padding:8px clamp(20px,5vw,64px);
+  }
+  nav.rail::-webkit-scrollbar{display:none}
+  nav.rail a{
+    flex:0 0 auto; font-size:.74rem; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--muted); text-decoration:none; padding:.4em .7em; border-radius:3px;
+    white-space:nowrap;
+  }
+  nav.rail a:hover{color:var(--ink); background:var(--surface-2)}
+
+  section{
+    padding:clamp(40px,6vw,68px) 0;
+    border-bottom:1px solid var(--line);
+  }
+  .sec-head{display:flex; align-items:baseline; gap:.9rem; margin-bottom:1.6rem}
+  .sec-head .mark{
+    font-family:"IBM Plex Mono",monospace; font-size:.78rem; font-weight:500;
+    color:var(--accent); border:1px solid var(--accent-line);
+    border-radius:3px; padding:.2em .5em; flex:0 0 auto; letter-spacing:.02em;
+  }
+
+  /* ---- tables ---- */
+  .tbl-scroll{overflow-x:auto; margin:1.1rem 0; border:1px solid var(--line); border-radius:6px}
+  table{border-collapse:collapse; width:100%; font-size:.92rem; background:var(--surface)}
+  th,td{text-align:left; padding:.62rem .8rem; border-bottom:1px solid var(--line); vertical-align:top}
+  th{
+    font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; font-weight:600;
+    color:var(--muted); background:var(--surface-2); position:sticky; top:0;
+  }
+  tr:last-child td{border-bottom:0}
+  td .mono, .ent{color:var(--ink-soft)}
+  .num{font-variant-numeric:tabular-nums; text-align:right}
+
+  /* ---- callouts ---- */
+  .callout{
+    border-left:3px solid var(--gold); background:var(--gold-soft);
+    padding:.9rem 1.1rem; border-radius:0 6px 6px 0; margin:1.2rem 0;
+    font-size:.95rem;
+  }
+  .callout.risk{border-color:var(--risk); background:var(--risk-soft)}
+  .callout.accent{border-color:var(--accent); background:var(--accent-soft)}
+  .callout b{display:block; margin-bottom:.2rem; font-family:"Bricolage Grotesque",sans-serif; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase}
+
+  /* ---- metric grid ---- */
+  .metrics{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:1px; background:var(--line); border:1px solid var(--line); border-radius:6px;
+    overflow:hidden; margin:1.3rem 0;
+  }
+  .metric{background:var(--surface); padding:1rem 1.1rem}
+  .metric b{
+    display:block; font-size:1.6rem; font-weight:700; letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums; color:var(--ink);
+  }
+  .metric span{font-size:.78rem; color:var(--muted); display:block; margin-top:.15rem}
+
+  /* ---- the stack diagram ---- */
+  .stack{margin:1.6rem 0; display:flex; flex-direction:column; gap:6px}
+  .layer{
+    border:1px solid var(--line); border-radius:7px; padding:.85rem 1rem;
+    background:var(--surface);
+  }
+  .layer.core{background:var(--accent-soft); border-color:var(--accent-line)}
+  .layer h4{
+    margin:0 0 .55rem; font-family:"Bricolage Grotesque",sans-serif;
+    font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); font-weight:600;
+  }
+  .layer.core h4{color:var(--accent)}
+  .chips{display:flex; flex-wrap:wrap; gap:6px}
+  .chip{
+    font-family:"IBM Plex Mono",monospace; font-size:.74rem;
+    padding:.3em .6em; border-radius:3px; background:var(--surface-2);
+    color:var(--ink-soft); border:1px solid var(--line);
+  }
+  .layer.core .chip{background:var(--surface); border-color:var(--accent-line)}
+  .chip.w2{opacity:.62}
+  .flow-note{font-size:.76rem; color:var(--muted); text-align:center; padding:.15rem}
+
+  /* ---- flavor cards ---- */
+  .cards{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:14px; margin:1.4rem 0;
+  }
+  .card{
+    border:1px solid var(--line); border-radius:8px; background:var(--surface);
+    padding:1.1rem 1.15rem; box-shadow:var(--shadow); display:flex; flex-direction:column;
+  }
+  .card .wave{
+    font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--accent); margin-bottom:.35rem;
+  }
+  .card h3{margin:0 0 .5rem; font-size:1.02rem}
+  .card ul{margin:.3rem 0 0; padding-left:1.05rem; font-size:.88rem; color:var(--ink-soft)}
+  .card li{margin:.28rem 0}
+  .card .kpi{
+    margin-top:.85rem; padding-top:.7rem; border-top:1px solid var(--line);
+    font-size:.8rem; color:var(--muted);
+  }
+
+  /* ---- phases ---- */
+  .phases{display:flex; flex-direction:column; gap:2px; margin:1.4rem 0}
+  .phase{
+    display:grid; grid-template-columns:minmax(72px,auto) 1fr; gap:1rem;
+    padding:.8rem 0; border-bottom:1px solid var(--line);
+  }
+  .phase:last-child{border-bottom:0}
+  .phase-k{
+    font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--accent);
+    font-weight:500;
+  }
+  .phase-k small{display:block; color:var(--muted); font-size:.72rem; margin-top:.15rem}
+  .phase h4{margin:0 0 .2rem; font-family:"Bricolage Grotesque",sans-serif; font-size:.98rem; font-weight:600}
+  .phase p{margin:0; font-size:.88rem; color:var(--ink-soft)}
+  .phase .gate{
+    display:inline-block; margin-top:.35rem; font-size:.74rem; color:var(--gold);
+    font-family:"IBM Plex Mono",monospace;
+  }
+
+  /* ---- decisions ---- */
+  ol.decisions{counter-reset:d; list-style:none; padding:0; margin:1.2rem 0}
+  ol.decisions li{
+    counter-increment:d; position:relative; padding:.7rem 0 .7rem 2.4rem;
+    border-bottom:1px solid var(--line); font-size:.95rem;
+  }
+  ol.decisions li:last-child{border-bottom:0}
+  ol.decisions li::before{
+    content:"O" counter(d); position:absolute; left:0; top:.7rem;
+    font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--accent);
+    border:1px solid var(--accent-line); border-radius:3px; padding:.1em .4em;
+  }
+  ol.decisions .opts{color:var(--muted); font-size:.85rem}
+
+  footer{padding:clamp(36px,6vw,60px) 0 clamp(48px,8vw,80px); color:var(--muted); font-size:.85rem}
+  footer code{color:var(--ink-soft)}
+  footer .files{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:6px 20px;
+    margin-top:1rem;
+  }
+  footer .files div{padding:.25rem 0; border-bottom:1px solid var(--line)}
+
+  .two-col{columns:2 260px; column-gap:2.4rem; margin:1rem 0}
+  .two-col p{margin:0 0 .8rem}
+
+  @media (max-width:640px){
+    body{font-size:16px}
+    .phase{grid-template-columns:1fr; gap:.2rem}
+    .two-col{columns:1}
+  }
+  @media (prefers-reduced-motion:no-preference){
+    html{scroll-behavior:smooth}
+  }
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:2px}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">CyberCom · Platform Strategy · 2026-09-04</p>
+    <h1>Three products into one platform</h1>
+    <p class="lede">
+      CyShop, CyCom and CyMed collapse into a single multi-tenant ERP core. Every industry —
+      retail, healthcare, auto parts, jewellery, groceries, fuel, government — ships as a
+      <span class="flavor">flavor</span>: configuration and a thin pack, never a fork.
+      Gulf-first, zero-trust, data-resident in region.
+    </p>
+    <div class="metastrip">
+      <span class="tag on">Django · DRF · Next.js 16</span>
+      <span class="tag on">PostgreSQL · Kafka · K8s</span>
+      <span class="tag on">AWS Gulf regions</span>
+      <span class="tag">ZATCA Phase 2</span>
+      <span class="tag">PDPL residency</span>
+      <span class="tag">PCI SAQ-A</span>
+      <span class="tag">12–18 month rollout</span>
+    </div>
+  </div>
+</header>
+
+<nav class="rail" aria-label="Sections">
+  <a href="#state">State of play</a>
+  <a href="#strategy">Strategy</a>
+  <a href="#market">Market gap</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#data">Data &amp; migration</a>
+  <a href="#flavors">Flavor MVPs</a>
+  <a href="#governance">Governance</a>
+  <a href="#rollout">Rollout</a>
+  <a href="#risks">Risks</a>
+  <a href="#decisions">Your decisions</a>
+</nav>
+
+<main class="wrap">
+
+  <section id="state">
+    <div class="sec-head"><span class="mark">00</span><h2>State of play — audited 2026-09-04</h2></div>
+    <p>
+      A direct source audit of the monorepo. The codebase is real and substantial, but it is
+      <strong>split across three working copies</strong> and the products overlap heavily.
+    </p>
+    <div class="metrics">
+      <div class="metric"><b>7</b><span>products in the tree (1 untracked: CyEd)</span></div>
+      <div class="metric"><b>~130k</b><span>Python LOC excl. migrations</span></div>
+      <div class="metric"><b>3</b><span>divergent checkouts to reconcile</span></div>
+      <div class="metric"><b>0</b><span>test files in CyShop (the merge target)</span></div>
+      <div class="metric"><b>~70%</b><span>CyCom commerce-core MVP, tested</span></div>
+      <div class="metric"><b>June 2026</b><span>ZATCA Phase 2 deadline — already passed</span></div>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Product</th><th>Role</th><th class="num">Apps</th><th class="num">~Py LOC</th><th class="num">Test files</th><th>Maturity</th></tr></thead>
+        <tbody>
+          <tr><td><strong>CyCom</strong></td><td>ERP flagship — becomes the canonical core</td><td class="num">39</td><td class="num">15k</td><td class="num">22</td><td>Commerce core (catalog, POS + live KDS, sales, inventory, GL with real journal posting, AI-propose onboarding) built, tested, several flows live-verified.</td></tr>
+          <tr><td><strong>CyMed</strong></td><td>Healthcare vertical — re-homes shared concerns</td><td class="num">16</td><td class="num">68k</td><td class="num">69</td><td>Structurally rich (FHIR R4, RCM, labs, pharmacy, imaging, CDS). Sits correctly on shared <span class="mono">platform/</span>. Runtime unverified this cycle.</td></tr>
+          <tr><td><strong>CyShop</strong></td><td>Standalone commerce — <strong>migrates in, then archived</strong></td><td class="num">12</td><td class="num">7k</td><td class="num">0</td><td>~90% duplicate of CyCom. Own JWT auth, own tenants. Unique value already ported.</td></tr>
+          <tr><td>CyMart</td><td>Marketplace layer</td><td class="num">6</td><td class="num">3.8k</td><td class="num">13</td><td>Order lifecycle + commission + settlement + payment abstraction. On <span class="mono">platform/</span>.</td></tr>
+          <tr><td>CyDrive · CyVault</td><td>Delivery · object storage</td><td class="num">2</td><td class="num">2k</td><td class="num">4</td><td>Foundations. CyVault has a prod deploy pipeline + DICOM archive.</td></tr>
+          <tr><td><span class="mono">platform/</span></td><td>Shared core — the spine</td><td class="num">15</td><td class="num">28k</td><td class="num">31</td><td>cyidentity (realms, MFA, WebAuthn), tenant (subscriptions, licensing), provisioning (templates + AI-propose), events (outbox), audit, notifications, observability.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout risk">
+      <b>Blocker before anything else</b>
+      The real recent work lives in a second checkout (<code>D:\cybercom</code>, branch
+      <code>feat/oci-demo-deploy</code>, 4 commits ahead, ~135 uncommitted files) — the commits
+      <code>PROJECT_STATE.md</code> cites do not exist in the monorepo checkout (~195 uncommitted).
+      A third repo is a near-empty scaffold. Week 1 = pick one canonical checkout, merge the
+      deltas, push, archive the rest.
+    </div>
+  </section>
+
+  <section id="strategy">
+    <div class="sec-head"><span class="mark">A</span><h2>Strategy — build the core once, express every industry as a flavor</h2></div>
+    <div class="two-col">
+      <p><strong>Why consolidate.</strong> CyShop is ~90% duplicate of CyCom and does not sit on the shared core — pure maintenance cost. CyMed already proves the model: 16 healthcare apps on the same <span class="mono">platform/</span> without duplicating identity, tenancy, or provisioning. Retail should be a flavor the same way healthcare is.</p>
+      <p><strong>Why it's the moat.</strong> The differentiator is cross-domain, not any single module. A clinic that runs its retail pharmacy, its branded shop, its procurement, its payroll and its patient billing on <em>one</em> tenant, <em>one</em> ledger, <em>one</em> identity is something Odoo, Foodics and the SAP/Oracle mid-market cannot do without heavy integration work.</p>
+      <p><strong>Why once.</strong> ZATCA Phase 2, PDPL residency, GOSI/gratuity payroll, WPS, Arabic/RTL — each built once in the core and inherited by every flavor. Three products means three times the compliance surface and audit cost.</p>
+      <p><strong>What we're not doing.</strong> Not a big-bang rewrite — CyCom's core is the foundation. Not microservices-first — a modular monolith with five deliberate carve-outs. Not chasing Odoo on breadth — winning the Gulf multi-domain operator no incumbent serves well.</p>
+    </div>
+    <div class="callout accent">
+      <b>The one line</b>
+      Build the core and the compliance once, express every industry as a flavor, win the Gulf
+      multi-domain operator, and never let the three-product split come back.
+    </div>
+  </section>
+
+  <section id="market">
+    <div class="sec-head"><span class="mark">B</span><h2>Market gap</h2></div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Competitor</th><th>Top complaints (2026 reviews)</th><th>Where CyberCom must win</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Odoo</strong></td><td>Support redirects paid clients to docs; per-user pricing punishes headcount; 25% surcharge for falling behind on upgrades; version upgrades break customisations; partner-led despite self-serve pitch.</td><td>Flat per-location / per-terminal / per-provider pricing; managed zero-downtime upgrades; first-class POS + live KDS; native Gulf compliance not community packs.</td></tr>
+          <tr><td><strong>SAP B1 · NetSuite · Sage X3</strong></td><td>$50k–$400k and 3–9 months to go live; heavy consultant dependency; renewal increases; Gulf VAT/e-invoicing via bolt-ons.</td><td>Days-to-value, self-serve or light-touch onboarding, &lt;25% of a 3-year mid-market TCO, localisation in the core.</td></tr>
+          <tr><td><strong>Foodics</strong> (restaurant)</td><td>iPad-only — no Android, Windows, or browser; forces Apple hardware; overpriced subscriptions; poor support; acquired competitor (POSRocket) stalled.</td><td>Hardware-agnostic POS; ZATCA clearance built in; native Talabat / Jahez / HungerStation sync; POS on a real ERP spine.</td></tr>
+          <tr><td><strong>ERPNext · Zoho</strong></td><td>ERPNext needs in-house technical skill + self-hosting; Zoho lock-in, cross-module seams.</td><td>ERPNext economics with a managed no-ops experience; one canonical data model with no seams.</td></tr>
+          <tr><td>Vertical tools <span class="mono">(jewellery, auto, grocery)</span></td><td>On-prem, dated UX; fragile scale/scanner integration; single-branch; weak AML/fitment/expiry data; no e-invoicing.</td><td>Cloud, multi-branch, Arabic; live-rate + purity (jewellery), OE-xref + supersession (auto), FEFO + promotions (grocery) as core data.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Four differentiators to own</h3>
+    <p>
+      <strong>1 · Cross-domain workflows on one tenant</strong> — the structural moat; no incumbent copies it without a re-platform. &nbsp;
+      <strong>2 · Gulf sovereignty + compliance depth</strong> — in-region residency, ZATCA clearance, PDPL, NPHIES, Nafath. &nbsp;
+      <strong>3 · Flavor-template architecture</strong> — new verticals in weeks, not forks. &nbsp;
+      <strong>4 · Onboarding + TCO</strong> — AI-guided setup, transparent per-asset pricing, managed ops.
+    </p>
+  </section>
+
+  <section id="architecture">
+    <div class="sec-head"><span class="mark">C</span><h2>Architecture — modular monolith, five carve-outs, one flavor engine</h2></div>
+    <div class="stack" role="img" aria-label="Layered architecture: flavor packs on top, shared core in the middle, ecosystem partners below.">
+      <div class="layer">
+        <h4>Flavor packs — config + thin module packs</h4>
+        <div class="chips">
+          <span class="chip">RetailFlavour</span><span class="chip">HospitalityFlavour</span><span class="chip">HealthFlavour</span>
+          <span class="chip w2">AutoPartsFlavour</span><span class="chip w2">GroceryHypermarketFlavour</span>
+          <span class="chip w2">JewelryCosmeticsFlavour</span><span class="chip w2">FuelStationFlavour</span><span class="chip w2">GovernmentPortalFlavour</span>
+        </div>
+      </div>
+      <div class="flow-note">↑ layout templates · attribute profiles · tax &amp; regulatory presets · KPI packs — composed by the provisioning engine ↑</div>
+      <div class="layer core">
+        <h4>CyberCom core — shared platform/ + domain services</h4>
+        <div class="chips">
+          <span class="chip">Identity &amp; SSO</span><span class="chip">Tenant / Billing</span><span class="chip">Provisioning / Flavor engine</span>
+          <span class="chip">Catalog &amp; Pricing</span><span class="chip">Orders / POS / KDS</span><span class="chip">Inventory</span>
+          <span class="chip">Finance / GL / Tax / e-invoice</span><span class="chip">CRM</span><span class="chip">HR / Payroll</span>
+          <span class="chip">Scheduling</span><span class="chip">Procurement</span><span class="chip">Analytics</span>
+          <span class="chip">Events / Outbox</span><span class="chip">Audit &amp; Compliance</span><span class="chip">Integration Hub</span><span class="chip">CyAI Assist</span>
+        </div>
+      </div>
+      <div class="flow-note">carved out for scaling or PCI isolation: &nbsp;<span class="chip">Payments &amp; Billing</span> <span class="chip">Search / read-model</span> <span class="chip">Async workers</span> <span class="chip">CyVault files</span> <span class="chip">Identity</span></div>
+      <div class="layer">
+        <h4>Ecosystem — via cyintegrationhub connectors</h4>
+        <div class="chips">
+          <span class="chip">HyperPay · PayTabs · Moyasar · Tap · Stripe</span>
+          <span class="chip">CyDrive · Talabat · Jahez · HungerStation</span>
+          <span class="chip">ZATCA Fatoora · NPHIES · Nafath · WPS</span>
+          <span class="chip">labs · pharmacies · insurers</span>
+          <span class="chip">CyMart marketplace</span>
+        </div>
+      </div>
+    </div>
+    <p>
+      <strong>Deployment:</strong> Kubernetes (EKS) in AWS <span class="mono">me-central-1</span> +
+      <span class="mono">me-south-1</span>; KSA workloads on a sovereign region per PDPL. GitOps
+      (Argo CD), blue/green for the core, canary for risky changes with automated SLO-breach
+      rollback, feature flags decouple deploy from release. DB migrations are strict
+      expand/contract — never a breaking migration in the same deploy as the code that needs it.
+    </p>
+    <p>
+      <strong>Zero-trust:</strong> every call carries a verifiable identity (OIDC / mTLS);
+      tenant isolation is defence-in-depth — queryset scoping <em>and</em> Postgres RLS
+      <em>and</em> per-tenant data-encryption keys <em>and</em> object-store prefix isolation.
+      Field-level encryption for national ID / Iqama / IBAN / PHI.
+    </p>
+  </section>
+
+  <section id="data">
+    <div class="sec-head"><span class="mark">D</span><h2>Data model &amp; the 3 → 1 migration</h2></div>
+    <p>
+      One canonical model. Flavor-specific fields live in registered <span class="mono">attributes</span>
+      profiles or CDAC-reviewed extension tables — never a forked model. ~30 core entities:
+      <span class="ent">Tenant · Organization · Branch · User · Membership · Role · Policy ·
+      Catalog · Product · Variant · SKU · PriceList · Order · Fulfilment · Payment · Invoice ·
+      InventoryLocation · StockItem · StockMove · Customer · Vendor · PurchaseOrder ·
+      LedgerAccount · JournalEntry · TaxRule · Employee · PayrollBatch · Payslip · Appointment ·
+      VerticalFlavor · Integration · ConsentGrant</span>. Health adds
+      <span class="ent">Patient · Encounter · ClinicalOrder · Claim</span> as typed extensions.
+    </p>
+    <h3>Core APIs</h3>
+    <div class="chips" style="margin:.6rem 0 1rem">
+      <span class="chip">POST /onboarding/tenants</span>
+      <span class="chip">POST /catalog/{id}/products</span>
+      <span class="chip">POST /orders · /orders/{id}/checkout</span>
+      <span class="chip">POST /inventory/sync</span>
+      <span class="chip">POST /scheduling/appointments</span>
+      <span class="chip">POST /payroll/batches/{id}/run</span>
+    </div>
+    <p style="font-size:.9rem;color:var(--ink-soft)">
+      REST for commands (OpenAPI 3.1), GraphQL for read/aggregation, signed webhooks + an
+      AsyncAPI event stream for push. URL-major versioning, two majors concurrent, 6-month
+      deprecation window. A self-serve developer portal with sandbox tenants.
+    </p>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Phase</th><th>Migration step</th><th>Method</th><th>Rollback</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">M0</td><td>Freeze &amp; reconcile the 3 checkouts → canonical <code>develop</code>, tag <code>pre-migration</code></td><td>git</td><td>revert to tag</td></tr>
+          <tr><td class="mono">M1</td><td>Schema convergence — additive fields (residency, flavor_set, e-invoice), RLS behind a flag</td><td>expand/contract, no data move</td><td>drop columns, flag off</td></tr>
+          <tr><td class="mono">M2</td><td>CyShop dry-run into a staging canonical tenant + reconciliation suite</td><td>ETL, <code>attributes.legacy_id</code></td><td>discard staging</td></tr>
+          <tr><td class="mono">M3</td><td>CyShop per-tenant cutover — freeze, delta ETL, flip, source read-only 90 days</td><td>&lt;2h window/tenant</td><td>re-open source, revert DNS</td></tr>
+          <tr><td class="mono">M4</td><td>CyMed re-homes shared concerns onto the core; clinical apps unchanged</td><td>per-tenant, feature-flagged</td><td>CyMed keeps its tables until verified</td></tr>
+          <tr><td class="mono">M5</td><td>Archive CyShop repo + DB snapshot; remove its pipelines</td><td>—</td><td>snapshots retained 1 year</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.9rem;color:var(--muted)">
+      Data-quality gates before every cutover: row-count parity, GL trial-balance equality per
+      organisation per period, inventory-valuation equality, order-total checksums, working
+      login for every active user, no PII in ETL logs, finance sign-off.
+    </p>
+  </section>
+
+  <section id="flavors">
+    <div class="sec-head"><span class="mark">E</span><h2>Vertical flavor MVPs</h2></div>
+    <p>Prioritised by speed-to-learning &times; existing code &times; ROI. Each scoped to go live in 6–8 weeks on the canonical core.</p>
+    <div class="cards">
+      <div class="card">
+        <span class="wave">Wave 1 · highest code leverage</span>
+        <h3>RetailFlavour</h3>
+        <p style="font-size:.88rem;margin:0 0 .4rem;color:var(--ink-soft)">F&amp;B + general retail. JO beachhead.</p>
+        <ul>
+          <li>Hardware-agnostic POS (web + Android) + live KDS</li>
+          <li>Multi-branch inventory, AVCO costing, transfers</li>
+          <li>Auto GL posting, Z-report, ZATCA Phase 2 clearance</li>
+          <li>Arabic POS + receipts</li>
+          <li>Add-ons: Talabat/Jahez sync, loyalty, recipe/BOM, storefront</li>
+        </ul>
+        <div class="kpi">Gate: signup → first sale &lt; 1 day · POS p95 &lt; 400 ms · 100% offline capture · 3 JO pilots + 1 reference</div>
+      </div>
+      <div class="card">
+        <span class="wave">Wave 1 · highest ACV</span>
+        <h3>HealthFlavour</h3>
+        <p style="font-size:.88rem;margin:0 0 .4rem;color:var(--ink-soft)">Clinic first, hospital later.</p>
+        <ul>
+          <li>Scheduling, encounters (ICD-11), e-prescription</li>
+          <li>Patient billing → ZATCA invoice; cash + insurance split</li>
+          <li>Pharmacy dispensing as an Order; NPHIES claims</li>
+          <li>Patient portal; PDPL-health field encryption + access audit</li>
+          <li>Add-ons: full hospital, FHIR R4 exchange, DICOM, telehealth</li>
+        </ul>
+        <div class="kpi">Gate: clinician-signed data model · claim first-pass &gt; 90% · zero PHI incidents · 2 clinic pilots 60 days</div>
+      </div>
+      <div class="card">
+        <span class="wave">Wave 2</span>
+        <h3>AutoPartsFlavour</h3>
+        <ul>
+          <li>OE / aftermarket cross-reference + supersession chains</li>
+          <li>Vehicle fitment; lookup by plate / VIN / part number</li>
+          <li>Real-time multi-branch availability; core-charge handling</li>
+          <li>B2B trade pricing, credit accounts, ZATCA B2B invoice</li>
+          <li>Add-ons: supplier catalog ingestion, workshop job cards</li>
+        </ul>
+        <div class="kpi">Gate: handles a real 5k-SKU supplier file · counter lookup → quote &lt; 30 s · 2 distributor pilots</div>
+      </div>
+      <div class="card">
+        <span class="wave">Wave 2</span>
+        <h3>GroceryHypermarketFlavour</h3>
+        <ul>
+          <li>High-volume POS, weighed items (scale + PLU), offline-first</li>
+          <li>10k+ SKUs, batch + expiry, FEFO picking</li>
+          <li>Promotions engine (multibuy, threshold, member price, markdown)</li>
+          <li>Supplier rebates, 3-way PO/GRN/invoice match</li>
+          <li>Add-ons: e-grocery + slot booking, scan-and-go, weighbridge</li>
+        </ul>
+        <div class="kpi">Gate: ≥ 20 items/min sustained with a scale · 5 overlapping promos correct · 2 pilots</div>
+      </div>
+    </div>
+    <div class="callout accent">
+      <b>Cross-domain proof to demo</b>
+      A clinic tenant runs HealthFlavour + RetailFlavour together: an OTC sale at the pharmacy
+      POS posts to the same GL as patient billing, on shared inventory. Hospital procurement —
+      medical supplies, pharmacy, cafeteria, branded merch — flows as one AP ledger.
+    </div>
+  </section>
+
+  <section id="governance">
+    <div class="sec-head"><span class="mark">F</span><h2>Governance &amp; Gulf compliance</h2></div>
+    <p>
+      <strong>Cross-Domain Architecture Council (CDAC)</strong> owns the canonical data model,
+      API contracts, event schemas and flavor standards so the three-product split never
+      returns. Weekly review; RFC + ADR process; <span class="mono">CODEOWNERS</span> on
+      <span class="mono">platform/</span> and core models. Every new flavor passes a
+      <strong>"thin flavor" checklist</strong> as a hard release gate — no new top-level model,
+      no bespoke frontend, tax handled by presets not code branches.
+    </p>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th>Market</th><th>Non-negotiable</th><th>Build</th></tr></thead>
+        <tbody>
+          <tr><td><strong>KSA</strong></td><td>ZATCA Phase 2 real-time clearance (UBL 2.1 XML, cryptographic stamp, QR, hash chain); PDPL in-Kingdom residency for personal data; GOSI + WPS (Mudad); NPHIES for health claims.</td><td>Clearance engine (net-new, P0) · sovereign region · WPS SIF generator · NPHIES connector.</td></tr>
+          <tr><td><strong>UAE</strong></td><td>Federal e-invoicing (Peppol model, phased); 5% VAT + designated zones; WPS via agent banks; gratuity + GPSSA; emirate-level health (DHA / DoH).</td><td>Clearance mode <code>AE_PEPPOL</code> · WPS SIF · emirate connectors.</td></tr>
+          <tr><td><strong>Jordan</strong></td><td>Sales tax + JoFotara e-invoicing rollout; PDPL 2023; Social Security contributions.</td><td>Clearance mode <code>JO_JOFOTARA</code> · payroll profile coded.</td></tr>
+          <tr><td>Cross-cutting</td><td>PCI DSS for cards; ISO 27001 → SOC 2 Type II path; WCAG 2.2 AA; AI governance (human-in-loop for clinical/financial).</td><td>SAQ-A posture (no card data on our servers) · certification programme years 1–2.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="rollout">
+    <div class="sec-head"><span class="mark">G</span><h2>12–18 month rollout</h2></div>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-k">Phase 0<small>Month 0–2</small></div>
+        <div><h4>Foundations</h4><p>Reconcile the 3 checkouts. Stand up CDAC, ratify ADRs. Canonical data-model v1 + API contract toolchain. K8s + GitOps skeleton, secret manager, CI hardening. Keycloak prod. ZATCA sandbox spike. Confirm the 2 payroll rates.</p><span class="gate">gate: one repo, ZATCA sandbox clears an invoice, contracts approved</span></div>
+      </div>
+      <div class="phase">
+        <div class="phase-k">Phase 1<small>Month 1.5–5</small></div>
+        <div><h4>Canonical core + flavor engine</h4><p>Multi-flavor provisioning. Unified Order aggregate. RLS + per-tenant DEK + internal mTLS. Payments service carved, one live PSP. Event broker + read-model. Developer portal v1. CyShop migration M1–M2.</p><span class="gate">gate: onboarding API &lt; 90 s, POS → GL → clearance green, dry-run reconciliation passes</span></div>
+      </div>
+      <div class="phase">
+        <div class="phase-k">Phase 2<small>Month 3–7</small></div>
+        <div><h4>Retail GA + Health pilot</h4><p>RetailFlavour → 3 JO pilots → GA. CyShop M3 cutover + decommission. Self-serve signup → pay → provision. HealthFlavour MVP, NPHIES sandbox, 2 clinic pilots.</p><span class="gate">gate: 3 paying + 1 reference, self-serve loop unattended, CyShop migrated</span></div>
+      </div>
+      <div class="phase">
+        <div class="phase-k">Phase 3<small>Month 6–11</small></div>
+        <div><h4>Health GA + AutoParts / Grocery pilot</h4><p>HealthFlavour GA (clinic tier). AutoParts + Grocery MVPs, 2 pilots each. First multi-domain reference live. CyMed M4 complete. UAE market entry.</p><span class="gate">gate: Health GA ≥ 2 clinics, 1 cross-domain workflow demoable end-to-end</span></div>
+      </div>
+      <div class="phase">
+        <div class="phase-k">Phase 4<small>Month 8–13</small></div>
+        <div><h4>Hosting platform + self-serve scale</h4><p>Odoo.sh-equivalent: one-click tenant provisioning into isolated operated instances, automated upgrades + backups + per-tenant metering. Partner onboarding portal.</p><span class="gate">gate: new tenant signup → running instance with zero manual ops; 20+ tenants, no ops headcount growth</span></div>
+      </div>
+      <div class="phase">
+        <div class="phase-k">Phase 5–7<small>Month 11–18+</small></div>
+        <div><h4>Ecosystem, monetization, expansion</h4><p>CyMart marketplace GA + connector marketplace. Pricing tiers ratified. Wave-3 flavors (jewellery, fuel, government). GCC expansion beyond JO/SA/UAE. Localization-pack SDK: a new country = a pack, no core change.</p><span class="gate">gate: marketplace GMV, positive gross margin per tenant at scale</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="risks">
+    <div class="sec-head"><span class="mark">M</span><h2>Top risks</h2></div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th class="num">Score</th><th>Risk</th><th>Response</th></tr></thead>
+        <tbody>
+          <tr><td class="num">25</td><td><strong>3 divergent checkouts</strong> — merge could lose work or corrupt state.</td><td>Week 1: freeze all, adopt <code>D:\cybercom</code> as canonical, cherry-pick deltas, push, tag, archive. No parallel edits until done.</td></tr>
+          <tr><td class="num">16</td><td><strong>Flavor bloat</strong> — verticals accrete bespoke code, strategy fails silently.</td><td>"Thin flavor" checklist as a hard gate; CDAC review; <code>CODEOWNERS</code> on core; time-boxed exceptions only.</td></tr>
+          <tr><td class="num">16</td><td><strong>CyMed runtime unverified</strong> — ~68k LOC never run this cycle; Health timeline assumes it's real.</td><td>Phase 1: run the suite, triage real vs scaffold, re-scope. No Health dates until verified.</td></tr>
+          <tr><td class="num">16</td><td><strong>Small-team capacity</strong> — blueprint spans ~7 parallel lanes.</td><td>Ruthless sequencing, one flavor at a time; AI-assisted delivery; cut scope not gates.</td></tr>
+          <tr><td class="num">15</td><td><strong>ZATCA Phase 2</strong> — net-new, regulator-certified, deadline passed; blocks every KSA tenant.</td><td>Phase 0 spike + CSID sandbox; fallback = certified Solution Provider partner.</td></tr>
+          <tr><td class="num">15</td><td><strong>Tenant isolation defect</strong> — cross-tenant exposure kills trust (found once, fixed).</td><td>Defence-in-depth; automated cross-tenant access tests fail-closed in CI every build; pentest before each GA.</td></tr>
+          <tr><td class="num">15</td><td><strong>Migration data loss</strong> — cutover corrupts ledgers or drops orders.</td><td>Dry-run first; data-quality gates must pass; short freeze + delta not dual-write; finance sign-off per cutover.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="decisions">
+    <div class="sec-head"><span class="mark">J</span><h2>Decisions only you can make</h2></div>
+    <p>Everything above proceeds on stated assumptions (Django + Next.js, AWS Gulf, local PSPs, flavor architecture). These eight need a call before or during Phase 0:</p>
+    <ol class="decisions">
+      <li><strong>KSA sovereign hosting provider.</strong> <span class="opts">AWS KSA region · Google Cloud Dammam · Oracle Jeddah · local partner DC</span></li>
+      <li><strong>The two payroll rates</strong> — SA GOSI scheme choice; UAE national contribution %. <span class="opts">Blocks compliance claims.</span></li>
+      <li><strong>Event broker.</strong> <span class="opts">self-managed Kafka · AWS MSK · Redpanda Cloud</span></li>
+      <li><strong>Pricing model specifics</strong> — per-location / per-terminal / per-provider rates; module add-ons; marketplace take-rate; hosting tiers.</li>
+      <li><strong>CyEd</strong> — the untracked 7th product. <span class="opts">fold as a flavor · keep separate · archive</span></li>
+      <li><strong>Repo strategy post-merge.</strong> <span class="opts">keep monorepo · split platform/ as a package</span></li>
+      <li><strong>First live payment provider.</strong> <span class="opts">HyperPay · PayTabs · Moyasar</span></li>
+      <li><strong>Health go-to-market country first.</strong> <span class="opts">Jordan (easier) · KSA (NPHIES, bigger) · UAE</span></li>
+    </ol>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  <p>
+    This brief condenses a full blueprint package. Source of truth:
+    <code>docs/blueprint/</code> in the CyberCom monorepo — 13 documents, ~1,500 lines,
+    grounded in a direct source audit.
+  </p>
+  <div class="files">
+    <div><code>00_INDEX.md</code> — catalog + audited baseline</div>
+    <div><code>A</code> — executive synthesis</div>
+    <div><code>B</code> — market &amp; gap analysis</div>
+    <div><code>C</code> — architecture blueprint + diagrams</div>
+    <div><code>D</code> — data model, APIs, migration playbook</div>
+    <div><code>E</code> — 4 vertical flavor MVP blueprints</div>
+    <div><code>F</code> — governance, security, Gulf regulatory map</div>
+    <div><code>G</code> — 12–18 month rollout</div>
+    <div><code>H</code> — NFR checklist (60+ testable thresholds)</div>
+    <div><code>J</code> — constraints &amp; go/no-go gates</div>
+    <div><code>K</code> — 90-day sprint plan</div>
+    <div><code>L</code> — partner &amp; ecosystem integration plan</div>
+    <div><code>M</code> — risk register</div>
+    <div><code>docs/adr/</code> — ADR 0001–0003 written, 0004–0014 staged</div>
+    <div><code>schemas/flavor.schema.yaml</code> — flavor definition schema</div>
+    <div><code>contracts/</code> — contract-first repo layout</div>
+  </div>
+</footer>
