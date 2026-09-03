@@ -54,3 +54,4 @@ infrastructure/keycloak/cycom-dev-realm.json
 
 # Education product — pending scope decision (blueprint J.2 O5)
 /CyEd/
+cycom/.coverage
