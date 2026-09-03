@@ -330,6 +330,22 @@
       Build the core and the compliance once, express every industry as a flavor, win the Gulf
       multi-domain operator, and never let the three-product split come back.
     </div>
+    <h3>How it becomes the go-to system for <em>any</em> business</h3>
+    <p style="font-size:.95rem;color:var(--ink-soft)">
+      Not by hand-building 50 products. Four mechanisms, used in this order:
+      <strong>1 · Configuration</strong> — toggle core modules, set presets (AI-propose at onboarding). &nbsp;
+      <strong>2 · Flavor packs</strong> — versioned config + attribute profiles + layouts + KPI + regulatory packs; product team + certified partners; no deploy. &nbsp;
+      <strong>3 · Flavor Studio</strong> — a visual builder for custom objects, fields, workflows, screens, reports, APIs — tenant-scoped, metadata only, the Odoo-Studio / Salesforce-platform play. &nbsp;
+      <strong>4 · Extension apps</strong> — sandboxed code for genuinely novel logic, installed per tenant.
+      Every vertical decomposes into ~10 canonical primitives (Party · Item · Agreement · Transaction · Location · Resource · Schedule · Document · Ledger · Rule); a factory, a utility, a ministry or a university each reuses 60–80% of the core and adds 3–5 first-class nouns. The finite list of ~25 such <span class="mono">[core+]</span> primitives is the real "build once" work, spread across the rollout. Full treatment: <span class="mono">docs/blueprint/N</span>.
+    </p>
+    <div class="chips" style="margin:.8rem 0 0">
+      <span class="chip">Retail</span><span class="chip">Restaurants · QSR · chains</span><span class="chip">Clinics · hospitals · labs · pharmacy · dental</span>
+      <span class="chip">Marketplace</span><span class="chip">Auto parts &amp; service</span><span class="chip">Jewellery · fashion · electronics</span>
+      <span class="chip">Grocery · hypermarket · fuel forecourt</span><span class="chip">Manufacturing · process · wholesale</span>
+      <span class="chip">Hotels · salons · gyms · travel</span><span class="chip">Education · telecom · utilities</span>
+      <span class="chip">Government · municipal · logistics · construction</span><span class="chip w2">…~50 flavors, config not forks</span>
+    </div>
   </section>
 
   <section id="market">
@@ -434,7 +450,7 @@
       <table>
         <thead><tr><th>Phase</th><th>Migration step</th><th>Method</th><th>Rollback</th></tr></thead>
         <tbody>
-          <tr><td class="mono">M0</td><td>Freeze &amp; reconcile the 3 checkouts → canonical <code>develop</code>, tag <code>pre-migration</code></td><td>git</td><td>revert to tag</td></tr>
+          <tr><td class="mono">M0 ✓</td><td><strong>Done 2026-09-04.</strong> Canonical checkout chosen (<code>D:\cybercom</code>); ~760 files of outstanding buildout committed + this blueprint; <code>develop</code> pushed to origin; other 2 checkouts read-only.</td><td>git</td><td>tag <code>pre-migration-baseline</code></td></tr>
           <tr><td class="mono">M1</td><td>Schema convergence — additive fields (residency, flavor_set, e-invoice), RLS behind a flag</td><td>expand/contract, no data move</td><td>drop columns, flag off</td></tr>
           <tr><td class="mono">M2</td><td>CyShop dry-run into a staging canonical tenant + reconciliation suite</td><td>ETL, <code>attributes.legacy_id</code></td><td>discard staging</td></tr>
           <tr><td class="mono">M3</td><td>CyShop per-tenant cutover — freeze, delta ETL, flip, source read-only 90 days</td><td>&lt;2h window/tenant</td><td>re-open source, revert DNS</td></tr>
@@ -572,7 +588,7 @@
       <table>
         <thead><tr><th class="num">Score</th><th>Risk</th><th>Response</th></tr></thead>
         <tbody>
-          <tr><td class="num">25</td><td><strong>3 divergent checkouts</strong> — merge could lose work or corrupt state.</td><td>Week 1: freeze all, adopt <code>D:\cybercom</code> as canonical, cherry-pick deltas, push, tag, archive. No parallel edits until done.</td></tr>
+          <tr><td class="num">25→0</td><td><strong>3 divergent checkouts</strong> — <s>merge could lose work or corrupt state</s>. <strong>CLOSED 2026-09-04.</strong></td><td>Canonical = <code>D:\cybercom</code>; ~760 outstanding files + blueprint committed and pushed to <code>origin/develop</code>. Other two checkouts read-only. Residual: delete the dead scaffold.</td></tr>
           <tr><td class="num">16</td><td><strong>Flavor bloat</strong> — verticals accrete bespoke code, strategy fails silently.</td><td>"Thin flavor" checklist as a hard gate; CDAC review; <code>CODEOWNERS</code> on core; time-boxed exceptions only.</td></tr>
           <tr><td class="num">16</td><td><strong>CyMed runtime unverified</strong> — ~68k LOC never run this cycle; Health timeline assumes it's real.</td><td>Phase 1: run the suite, triage real vs scaffold, re-scope. No Health dates until verified.</td></tr>
           <tr><td class="num">16</td><td><strong>Small-team capacity</strong> — blueprint spans ~7 parallel lanes.</td><td>Ruthless sequencing, one flavor at a time; AI-assisted delivery; cut scope not gates.</td></tr>
