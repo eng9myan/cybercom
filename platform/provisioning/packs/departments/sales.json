@@ -1,0 +1,14 @@
+{
+  "key": "sales",
+  "name": "Sales & CRM",
+  "description": "CRM pipeline, quotations, orders, pricing, delivery, invoicing.",
+  "version": "1.0",
+  "modules": ["crm", "ar_ap"],
+  "roles": [
+    {"name": "Sales Manager", "description": "Owns pipeline, approves discounts and credit."},
+    {"name": "Salesperson", "description": "Manages leads, quotes, and orders."}
+  ],
+  "kpis": ["Pipeline value", "Win rate", "Revenue by rep", "Days sales outstanding"],
+  "dashboards": ["Sales Overview", "Pipeline"],
+  "reports": ["Sales by Customer", "Quotation Register", "Commission Report", "Customer Statement"]
+}

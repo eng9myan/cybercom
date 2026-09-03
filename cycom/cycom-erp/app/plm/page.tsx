@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCycomList, m2oName, fmtDate, type Many2One } from '@/lib/cycomModels';
-import { 
+import { create } from '@/lib/cycom';
+import {
   Layers, Plus, Trash2, CheckCircle, Calculator, 
   Settings2, Activity, ShieldAlert, AlertTriangle, FileText
 } from 'lucide-react';
@@ -145,22 +146,31 @@ export default function PLMPage() {
     }));
   };
 
-  const handleCreateECO = (e: React.FormEvent) => {
+  const handleCreateECO = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ecoTitle || !ecoReason) return;
 
-    const newEco: EcoOrder = {
-      id: `ECO-${Math.floor(104 + Math.random() * 90)}`,
-      productName: ecoProd,
-      title: ecoTitle,
-      reason: ecoReason,
-      state: 'Draft',
-      dateCreated: new Date().toISOString().split('T')[0]
-    };
-
-    setEcos([newEco, ...ecos]);
-    setEcoTitle('');
-    setEcoReason('');
+    try {
+      const id = await create('mrp.eco', {
+        name: ecoTitle,
+        title: ecoTitle,
+        product_name: ecoProd,
+        reason: ecoReason,
+      });
+      const newEco: EcoOrder = {
+        id: `ECO-${id}`,
+        productName: ecoProd,
+        title: ecoTitle,
+        reason: ecoReason,
+        state: 'Draft',
+        dateCreated: new Date().toISOString().split('T')[0]
+      };
+      setEcos([newEco, ...ecos]);
+      setEcoTitle('');
+      setEcoReason('');
+    } catch {
+      /* keep form for retry */
+    }
   };
 
   const advanceECO = (id: string) => {

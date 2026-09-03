@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCycomList, m2oName, fmtDate, type Many2One } from '@/lib/cycomModels';
+import { create } from '@/lib/cycom';
 import { 
   Mail, Send, Sparkles, BarChart2, MousePointer, Users, Plus, 
   X, Check, AlertCircle, FileText, ChevronRight, MessageSquare 
@@ -73,26 +74,38 @@ export default function MarketingPage() {
   const avgOpenRate = parseFloat((campaigns.filter(c => c.sentCount > 0).reduce((sum, c) => sum + c.openRate, 0) / campaigns.filter(c => c.sentCount > 0).length).toFixed(1));
   const avgClickRate = parseFloat((campaigns.filter(c => c.sentCount > 0).reduce((sum, c) => sum + c.clickRate, 0) / campaigns.filter(c => c.sentCount > 0).length).toFixed(1));
 
-  const handleLaunchCampaign = (status: 'Sent' | 'Scheduled') => {
+  const TYPE_TO_BACKEND: Record<Campaign['type'], string> = {
+    'Email Blast': 'email', 'SMS Alert': 'sms', 'Newsletter': 'newsletter',
+  };
+
+  const handleLaunchCampaign = async (status: 'Sent' | 'Scheduled') => {
     if (!campName.trim()) return;
 
-    const count = status === 'Sent' ? Math.floor(Math.random() * 8000) + 1000 : 0;
-    const newCamp: Campaign = {
-      id: `CMP-00${campaigns.length + 1}`,
-      name: campName,
-      type: campType,
-      target: campTarget,
-      status: status,
-      sentCount: count,
-      openRate: status === 'Sent' ? parseFloat((Math.random() * 20 + 15).toFixed(1)) : 0,
-      clickRate: status === 'Sent' ? parseFloat((Math.random() * 6 + 2).toFixed(1)) : 0,
-      date: status === 'Sent' ? new Date().toISOString().substring(0, 10) : '2026-07-01'
-    };
-
-    setCampaigns(prev => [newCamp, ...prev]);
+    const backendState = status === 'Sent' ? 'done' : 'in_queue';
+    try {
+      const id = await create('mass.mailing', {
+        name: campName,
+        campaign_type: TYPE_TO_BACKEND[campType],
+        target: campTarget,
+        state: backendState,
+      });
+      const newCamp: Campaign = {
+        id: `CMP-${id}`,
+        name: campName,
+        type: campType,
+        target: campTarget,
+        status,
+        sentCount: 0,
+        openRate: 0,
+        clickRate: 0,
+        date: fmtDate(new Date().toISOString()),
+      };
+      setCampaigns(prev => [newCamp, ...prev]);
+    } catch {
+      // leave modal open on failure so the user can retry
+      return;
+    }
     setIsModalOpen(false);
-    
-    // Clear form
     setCampName('');
     setCampType('Email Blast');
     setCampTarget('All retail customers');

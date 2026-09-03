@@ -1,0 +1,78 @@
+# Cycom ERP — LOCAL DEV infra (Postgres + Redis + Keycloak).
+#
+# Unlike docker-compose.cycom-api.yml (production: builds the backend image,
+# joins cymed's external shared network, needs .env.production), this file is
+# self-contained for local development: it only runs the three infra
+# dependencies. Django + Next.js run on the host (Django 6 is already
+# installed), so you edit code and hot-reload without rebuilding images.
+#
+# Keycloak boots with --import-realm and auto-provisions the shared "cybercom"
+# realm from ./keycloak/cycom-dev-realm.json (client + a seed tenant_admin
+# user), so `password` grant login works out of the box.
+#
+# Ports match core/settings.py + lib/cycomServer.ts defaults:
+#   Postgres 5432, Redis 6379, Keycloak 8080.
+#
+# Usage (from repo root D:\cybercom):
+#   docker compose -f infrastructure/docker-compose.cycom-dev.yml up -d
+
+name: cycom-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cycom-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cycom_new
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - cycom_dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: cycom-dev-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - cycom_dev_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: cycom-dev-keycloak
+    restart: unless-stopped
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import:ro
+      - cycom_dev_kcdata:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+volumes:
+  cycom_dev_pgdata:
+  cycom_dev_redisdata:
+  cycom_dev_kcdata:

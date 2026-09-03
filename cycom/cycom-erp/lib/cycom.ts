@@ -23,6 +23,8 @@ export type SessionUser = {
   partner_id: string;
   company_id: number;
   is_admin: boolean;
+  roles: string[];
+  role: string; // primary functional role, drives the role-scoped launcher
 };
 
 async function postJson(path: string, body: unknown): Promise<unknown> {

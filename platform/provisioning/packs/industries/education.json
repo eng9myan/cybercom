@@ -1,0 +1,61 @@
+{
+  "key": "education",
+  "name": "Educational Institution",
+  "version": "1.0",
+  "description": "Schools, universities, training centers — tuition plans, installments, student invoicing, scholarships, transport, assets.",
+  "department_pack_keys": ["finance", "hr", "procurement", "inventory", "maintenance", "documents"],
+  "recommended_ops": ["provides_services", "operates_branches"],
+  "terminology": {"customer": "Student / Guardian", "invoice": "Tuition Invoice", "product": "Fee Item"},
+  "default_config": {
+    "roles": [
+      {"name": "School Director", "description": "Approves budgets, scholarships, and contracts."},
+      {"name": "Registrar", "description": "Owns enrollment records and student accounts."},
+      {"name": "Student Accounts Officer", "description": "Manages tuition invoicing, installments, collections."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "scholarship", "name": "Scholarship / Discount Approval", "tiers": [
+      {"min": 0, "max": 500, "role": "Registrar"},
+      {"min": 500, "max": null, "role": "School Director"}]},
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 500, "role": "Department Manager"},
+      {"min": 500, "max": 5000, "role": "Procurement Manager"},
+      {"min": 5000, "max": null, "role": "School Director"}]},
+    {"document_type": "refund", "name": "Tuition Refund", "tiers": [
+      {"min": 0, "max": null, "role": "Finance Manager"}]}
+  ],
+  "categories": ["Tuition", "Registration", "Transport", "Uniforms", "Books", "Activities", "Cafeteria"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1185", "name": "Tuition Receivable", "account_type": "asset", "parent": "1100"},
+      {"code": "2185", "name": "Unearned Tuition", "account_type": "liability", "parent": "2100"},
+      {"code": "4280", "name": "Tuition Revenue", "account_type": "income", "parent": "4200"},
+      {"code": "4290", "name": "Transport & Activities Revenue", "account_type": "income", "parent": "4200"},
+      {"code": "5380", "name": "Scholarships Granted", "account_type": "expense", "parent": "5000"},
+      {"code": "5390", "name": "Teaching Staff Salaries", "account_type": "expense", "parent": "5200"}
+    ]
+  },
+  "industry_fields": {
+    "student": ["student_number", "grade", "section", "guardian", "transport_route", "scholarship_percent"],
+    "fee_plan": ["academic_year", "grade", "installments", "due_dates"]
+  },
+  "dashboards": ["Enrollment", "Tuition Collection", "Outstanding Installments", "Academic-Year Budget"],
+  "reports": ["Student Statement", "Installment Aging", "Scholarship Register", "Transport Roster", "Fee Plan Summary"],
+  "doc_templates": ["Enrollment Contract", "Tuition Invoice", "Installment Plan", "Guardian Statement"],
+  "import_templates": [
+    {"entity": "students", "columns": ["student_number", "full_name", "grade", "section", "guardian_name", "guardian_phone", "transport_route"]},
+    {"entity": "fee_plans", "columns": ["academic_year", "grade", "fee_item", "amount", "installments"]},
+    {"entity": "employees", "columns": ["employee_number", "full_name", "role_teaching_admin", "subject", "salary"]},
+    {"entity": "opening_balances", "columns": ["account_code", "debit", "credit"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Education ERP recognizes tuition over the academic year (unearned -> earned), manages installment collection per guardian, and budgets per academic year. Scholarships are contra-revenue tracked per student.",
+    "starter_prompts": [
+      "Show tuition collection rate by grade.",
+      "List guardians with overdue installments.",
+      "Show scholarship cost this academic year.",
+      "Compare enrollment vs last year by grade.",
+      "Report transport route occupancy."
+    ]
+  }
+}

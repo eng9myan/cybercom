@@ -1,0 +1,65 @@
+name: cymed_patient_app
+description: CyMed Patient — records, appointments, NFC identity, payments, family access.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Routing + state
+  go_router: ^15.0.0
+  provider: ^6.1.2
+
+  # HTTP
+  dio: ^5.7.0
+  json_annotation: ^4.9.0
+
+  # Storage / offline
+  flutter_secure_storage: ^10.0.0-beta.4
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.5
+
+  # Security
+  local_auth: ^2.3.0
+  flutter_jailbreak_detection: ^1.10.0
+
+  # NFC
+  nfc_manager: ^4.0.2
+
+  # UI
+  google_fonts: ^6.2.1
+  fl_chart: ^1.0.0
+  cached_network_image: ^3.4.1
+  webview_flutter: ^5.0.0
+  intl: ^0.20.0
+  hijri: ^3.0.0
+
+  # Push
+  firebase_core: ^3.7.0
+  firebase_messaging: ^15.1.4
+
+  # QR (offline emergency profile card fallback)
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^6.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.13
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/i18n/
+    - assets/images/

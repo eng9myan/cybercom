@@ -10,6 +10,14 @@ class Employee(BaseModel):
         ("terminated", "Terminated"),
     ]
 
+    MARITAL_CHOICES = [
+        ("single", "Single"),
+        ("married", "Married"),
+        ("cohabitant", "Legal Cohabitant"),
+        ("divorced", "Divorced"),
+        ("widower", "Widower"),
+    ]
+
     employee_number = models.CharField(max_length=50)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -19,6 +27,10 @@ class Employee(BaseModel):
     department = models.CharField(max_length=150, blank=True)
     hire_date = models.DateField()
     status = models.CharField(max_length=20, choices=EMPLOYMENT_STATUS, default="active")
+    # Drives the Jordan income-tax personal exemption (18,000 for a married
+    # employee whose spouse is not employed, otherwise 9,000).
+    marital = models.CharField(max_length=20, choices=MARITAL_CHOICES, default="single")
+    spouse_employed = models.BooleanField(default=False)
 
     class Meta:
         db_table = "cycom_hr_employees"

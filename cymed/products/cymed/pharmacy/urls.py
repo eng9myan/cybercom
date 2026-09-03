@@ -26,4 +26,11 @@ urlpatterns = [
     path("inventory/", include("products.cymed.pharmacy.inventory_bridge.urls")),
     # Procurement Bridge (CyCom ERP)
     path("procurement/", include("products.cymed.pharmacy.procurement_bridge.urls")),
+    # ── Gap-fill (P0-9) ────────────────────────────────────────────
+    path("shop/",         include("products.cymed.pharmacy.ecommerce.urls")),
+    path("delivery/",     include("products.cymed.pharmacy.delivery.urls")),
+    path("pos/",          include("products.cymed.pharmacy.pos_insurance.urls")),
+    path("loyalty/",      include("products.cymed.pharmacy.loyalty.urls")),
+    path("compounding/",  include("products.cymed.pharmacy.compounding.urls")),
+    path("robotics/",     include("products.cymed.pharmacy.robotics.urls")),
 ]

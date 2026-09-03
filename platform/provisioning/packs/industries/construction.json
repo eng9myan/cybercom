@@ -1,0 +1,90 @@
+{
+  "key": "construction",
+  "name": "Construction Company",
+  "version": "1.0",
+  "description": "Contractors and construction firms — project-driven ERP with BoQ, project budgeting, cost centers, subcontractors, progress billing, and retention.",
+  "department_pack_keys": ["finance", "procurement", "hr", "inventory", "projects"],
+  "recommended_ops": ["manages_projects", "provides_services", "buys_products", "operates_branches"],
+  "terminology": {
+    "project": "Project / Site",
+    "sale_order": "Contract",
+    "customer": "Client / Employer",
+    "vendor": "Subcontractor / Supplier",
+    "invoice": "Progress Certificate"
+  },
+  "default_config": {
+    "roles": [
+      {"name": "General Manager", "description": "Approves high-value spend and contracts."},
+      {"name": "Site Engineer", "description": "Raises material requests, records progress."},
+      {"name": "Quantity Surveyor", "description": "Owns BoQ, valuations, variations, retention."},
+      {"name": "Contracts Manager", "description": "Manages client and subcontractor agreements."}
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "purchase_request",
+      "name": "Purchase Request Approval",
+      "tiers": [
+        {"min": 0, "max": 500, "role": "Department Manager"},
+        {"min": 500, "max": 5000, "role": "Procurement Manager"},
+        {"min": 5000, "max": null, "role": "General Manager"}
+      ]
+    },
+    {
+      "document_type": "payment",
+      "name": "Payment Approval",
+      "tiers": [
+        {"min": 0, "max": 10000, "role": "Finance Manager"},
+        {"min": 10000, "max": null, "role": "General Manager"}
+      ]
+    },
+    {
+      "document_type": "variation_order",
+      "name": "Variation Order Approval",
+      "tiers": [
+        {"min": 0, "max": 2000, "role": "Project Manager"},
+        {"min": 2000, "max": null, "role": "Contracts Manager"}
+      ]
+    }
+  ],
+  "categories": ["Civil Works", "MEP", "Finishing", "Subcontract", "Materials", "Equipment Rental"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1160", "name": "Work In Progress (Projects)", "account_type": "asset", "parent": "1100"},
+      {"code": "1170", "name": "Retention Receivable", "account_type": "asset", "parent": "1100"},
+      {"code": "2160", "name": "Retention Payable", "account_type": "liability", "parent": "2100"},
+      {"code": "2170", "name": "Advances from Clients", "account_type": "liability", "parent": "2100"},
+      {"code": "4400", "name": "Progress Billings", "account_type": "income", "parent": "4000"},
+      {"code": "5600", "name": "Subcontractor Costs", "account_type": "expense", "parent": "5000"},
+      {"code": "5700", "name": "Equipment & Plant Costs", "account_type": "expense", "parent": "5000"},
+      {"code": "5800", "name": "Site Overheads", "account_type": "expense", "parent": "5000"}
+    ]
+  },
+  "industry_fields": {
+    "project": ["boq_reference", "contract_value", "retention_percent", "advance_percent", "progress_percent", "planned_end_date"],
+    "purchase_request": ["project", "cost_code"],
+    "customer": ["is_government", "consultant_name"]
+  },
+  "dashboards": ["Project Profitability", "Budget vs Actual", "Cash by Project", "Subcontractor Exposure"],
+  "reports": ["Bill of Quantities", "Progress Certificate", "Retention Schedule", "Variation Register", "Project P&L", "Committed Cost Report"],
+  "doc_templates": ["Contract Agreement", "Progress Certificate", "Variation Order", "Subcontractor Agreement", "Material Request"],
+  "import_templates": [
+    {"entity": "employees", "columns": ["employee_number", "full_name", "arabic_name", "national_id", "department", "job_title", "hire_date", "salary", "bank_iban"]},
+    {"entity": "suppliers", "columns": ["legal_name", "trade_name", "cr_number", "tax_number", "category", "iban", "payment_terms_days"]},
+    {"entity": "customers", "columns": ["name", "is_government", "tax_number", "credit_limit", "payment_terms_days"]},
+    {"entity": "chart_of_accounts", "columns": ["code", "name", "account_type", "parent"]},
+    {"entity": "opening_balances", "columns": ["account_code", "debit", "credit"]},
+    {"entity": "projects", "columns": ["name", "client", "contract_value", "boq_reference", "planned_end_date"]},
+    {"entity": "bill_of_quantities", "columns": ["project", "item_code", "description", "unit", "quantity", "rate"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Construction ERP is project-centric. Costs and revenue are tracked per project (cost center). Progress billing recognizes revenue on certified work; retention (typically 5-10%) is withheld until defects-liability ends. Subcontractor liabilities and variations materially affect project margin.",
+    "starter_prompts": [
+      "Show budget vs actual for each project.",
+      "Which projects are over budget?",
+      "List purchase requests awaiting approval above 5,000 JOD.",
+      "Show retention held per client.",
+      "Report subcontractor cost exposure by project."
+    ]
+  }
+}

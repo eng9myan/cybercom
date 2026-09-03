@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cymed-beat
+  namespace: cymed
+  labels:
+    app.kubernetes.io/name: cymed-beat
+    app.kubernetes.io/component: beat
+    app.kubernetes.io/part-of: cymed-platform
+  annotations:
+    # Beat is a singleton scheduler. Only one instance should own the schedule
+    # at any moment. We enforce this via:
+    #   1. replicas: 1 with maxSurge: 0 (no overlap during rollout), and
+    #   2. a Redis-backed lock (CELERY_BEAT_LOCK) that the scheduler acquires
+    #      before enqueuing — so if replicas ever briefly overlap they still
+    #      won't double-schedule.
+    kubernetes.io/description: "Celery beat — singleton. See deployment.beat.yaml comments."
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cymed-beat
+      app.kubernetes.io/component: beat
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cymed-beat
+        app.kubernetes.io/component: beat
+        app.kubernetes.io/part-of: cymed-platform
+    spec:
+      serviceAccountName: cymed-beat
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: beat
+          image: ghcr.io/cybercom/cymed-beat:latest  # overlay pins to :sha
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: cymed-env
+            - secretRef:
+                name: cymed-secrets
+          env:
+            # Redis-backed leader lock. Even with replicas=1, this protects
+            # against the momentary overlap during pod rescheduling.
+            - name: CELERY_BEAT_LOCK
+              value: "redis://redis:6379/2"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "pgrep -f 'celery.*beat' >/dev/null"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cymed-beat
+  namespace: cymed
+  labels:
+    app.kubernetes.io/name: cymed-beat
+    app.kubernetes.io/part-of: cymed-platform

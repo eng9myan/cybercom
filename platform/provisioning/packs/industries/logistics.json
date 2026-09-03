@@ -1,0 +1,61 @@
+{
+  "key": "logistics",
+  "name": "Logistics & Transportation Company",
+  "version": "1.0",
+  "description": "Fleet, trips, dispatch, drivers, fuel, proof of delivery, freight billing, vehicle maintenance.",
+  "department_pack_keys": ["finance", "sales", "inventory", "hr", "maintenance"],
+  "recommended_ops": ["operates_branches", "provides_services", "field_sales"],
+  "terminology": {"project": "Trip", "sale_order": "Shipment Order", "customer": "Shipper"},
+  "default_config": {
+    "roles": [
+      {"name": "Operations Manager", "description": "Owns dispatch board, approves trips and routes."},
+      {"name": "Dispatcher", "description": "Assigns drivers/vehicles, tracks delivery status."},
+      {"name": "Fleet Supervisor", "description": "Owns vehicles, fuel, and maintenance schedule."},
+      {"name": "Driver", "description": "Executes trips, captures proof of delivery."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 500, "role": "Fleet Supervisor"},
+      {"min": 500, "max": null, "role": "Operations Manager"}]},
+    {"document_type": "trip_expense", "name": "Trip Expense Approval", "tiers": [
+      {"min": 0, "max": 200, "role": "Dispatcher"},
+      {"min": 200, "max": null, "role": "Operations Manager"}]},
+    {"document_type": "payment", "name": "Payment Approval", "tiers": [
+      {"min": 0, "max": 10000, "role": "Finance Manager"},
+      {"min": 10000, "max": null, "role": "Operations Manager"}]}
+  ],
+  "categories": ["FTL", "LTL", "Last Mile", "Cold Chain", "Cross-Border"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "4230", "name": "Freight Revenue", "account_type": "income", "parent": "4200"},
+      {"code": "5310", "name": "Fuel Expense", "account_type": "expense", "parent": "5300"},
+      {"code": "5320", "name": "Vehicle Maintenance", "account_type": "expense", "parent": "5300"},
+      {"code": "5330", "name": "Tolls & Permits", "account_type": "expense", "parent": "5300"},
+      {"code": "5340", "name": "Driver Allowances", "account_type": "expense", "parent": "5300"}
+    ]
+  },
+  "industry_fields": {
+    "vehicle": ["plate_number", "capacity_kg", "fuel_type", "odometer", "insurance_expiry", "license_expiry"],
+    "trip": ["origin", "destination", "driver", "vehicle", "pod_captured", "fuel_liters"]
+  },
+  "dashboards": ["Dispatch Board", "Route Profitability", "Fuel Consumption", "Fleet Availability"],
+  "reports": ["Trip Register", "POD Report", "Fuel Report", "Vehicle Cost per KM", "Freight Billing"],
+  "doc_templates": ["Shipment Order", "Waybill", "Proof of Delivery", "Trip Sheet"],
+  "import_templates": [
+    {"entity": "vehicles", "columns": ["plate_number", "type", "capacity_kg", "fuel_type", "insurance_expiry", "license_expiry"]},
+    {"entity": "drivers", "columns": ["employee_number", "full_name", "license_number", "license_expiry", "phone"]},
+    {"entity": "customers", "columns": ["name", "contract_type", "rate_per_km", "payment_terms_days"]},
+    {"entity": "routes", "columns": ["origin", "destination", "distance_km", "standard_rate"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Logistics profit = route revenue minus fuel, driver, maintenance, tolls per trip. Track cost per km and vehicle utilization. Document expiry (insurance, licenses) and POD completion are compliance-critical.",
+    "starter_prompts": [
+      "Show route profitability this month.",
+      "Which vehicles have insurance expiring within 30 days?",
+      "Compare fuel consumption per vehicle.",
+      "List trips missing proof of delivery.",
+      "Show cost per km trend by vehicle type."
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "key": "pos",
+  "name": "Retail POS",
+  "description": "Branch POS sessions, checkout, discounts, layaway, Z/X reports (CyShop-style retail inside CyCom).",
+  "version": "1.0",
+  "modules": ["pos", "inventory", "access"],
+  "roles": [
+    {"name": "Branch Manager", "description": "Owns branch sessions, approves discounts and refunds."},
+    {"name": "Cashier", "description": "Runs checkout, opens/closes own sessions."}
+  ],
+  "kpis": ["Daily sales", "Average basket", "Discount rate", "Refund rate", "Cash variance"],
+  "dashboards": ["Retail Sales", "Branch Comparison"],
+  "reports": ["Z Report", "X Report", "Sales by Branch", "Cashier Session Log"]
+}

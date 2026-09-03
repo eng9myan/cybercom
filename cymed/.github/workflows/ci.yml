@@ -1,0 +1,179 @@
+name: ci
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: lint (ruff / black / isort)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install lint deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff==0.6.9 black==24.10.0 isort==5.13.2
+      - name: ruff check
+        run: ruff check .
+      - name: black --check
+        run: black --check --diff .
+      - name: isort --check
+        run: isort --check-only --diff .
+
+  typecheck:
+    name: typecheck (mypy, best-effort)
+    runs-on: ubuntu-latest
+    continue-on-error: true    # gradual typing — don't block PRs yet
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install mypy==1.11.2 django-stubs djangorestframework-stubs types-requests
+      - name: mypy
+        run: mypy --ignore-missing-imports products core || true
+
+  test:
+    name: pytest + coverage
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: cymed_test
+          POSTGRES_USER: cymed
+          POSTGRES_PASSWORD: cymed
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DJANGO_SETTINGS_MODULE: core.settings
+      DATABASE_URL: postgresql://cymed:cymed@localhost:5432/cymed_test
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/1
+      SECRET_KEY: ci-test-only-not-a-real-secret
+      PLATFORM_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-django pytest-cov
+      - name: Run pytest with coverage
+        run: |
+          pytest -q \
+            --cov=products --cov=core \
+            --cov-report=xml --cov-report=term
+      - name: Upload coverage to Codecov
+        if: env.CODECOV_TOKEN != ''
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  django-check:
+    name: manage.py check
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_SETTINGS_MODULE: core.settings
+      DATABASE_URL: sqlite:///tmp/check.sqlite3
+      SECRET_KEY: ci-test-only-not-a-real-secret
+      PLATFORM_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Django check --deploy
+        run: |
+          python manage.py check
+          python manage.py check --deploy || true
+
+  ast-check:
+    name: ast.parse on changed .py
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Detect changed Python files
+        id: changed
+        run: |
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          if [ -z "$base_sha" ]; then
+            base_sha=$(git rev-parse HEAD~1)
+          fi
+          git diff --name-only "$base_sha"...HEAD \
+            | grep -E '\.py$' \
+            | grep -v -E '(migrations/|/tests/|conftest\.py$)' \
+            > changed.txt || true
+          echo "count=$(wc -l < changed.txt)" >> "$GITHUB_OUTPUT"
+      - name: ast.parse each changed file
+        if: steps.changed.outputs.count != '0'
+        run: |
+          python - <<'PY'
+          import ast, pathlib, sys
+
+          failures = []
+          for line in pathlib.Path("changed.txt").read_text().splitlines():
+              p = pathlib.Path(line)
+              if not p.is_file():
+                  continue
+              try:
+                  ast.parse(p.read_text(encoding="utf-8"), filename=str(p))
+              except SyntaxError as e:
+                  failures.append(f"{p}:{e.lineno}: {e.msg}")
+
+          if failures:
+              print("SyntaxError in changed files:")
+              for f in failures:
+                  print(f"  {f}")
+              sys.exit(1)
+          print("ast.parse OK for changed files")
+          PY

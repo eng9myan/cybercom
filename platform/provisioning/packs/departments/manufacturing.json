@@ -1,0 +1,15 @@
+{
+  "key": "manufacturing",
+  "name": "Manufacturing",
+  "description": "BoM, production orders, work centers, quality, costing, planning.",
+  "version": "1.0",
+  "modules": ["manufacturing", "quality", "inventory"],
+  "roles": [
+    {"name": "Production Manager", "description": "Owns production plan, releases manufacturing orders."},
+    {"name": "Production Supervisor", "description": "Runs work centers, reports output and scrap."},
+    {"name": "Quality Inspector", "description": "Performs quality checks, blocks failed lots."}
+  ],
+  "kpis": ["Production output", "Scrap rate", "Work-center efficiency", "On-time production", "Unit cost"],
+  "dashboards": ["Production Overview", "Quality", "Work Centers"],
+  "reports": ["Production Register", "Scrap Report", "BoM Cost Rollup", "Quality Log"]
+}

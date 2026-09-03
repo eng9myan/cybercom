@@ -1,0 +1,14 @@
+{
+  "key": "projects",
+  "name": "Projects",
+  "description": "Projects, tasks, budgets, timesheets, costs, milestones, billing.",
+  "version": "1.0",
+  "modules": ["projects", "scheduler", "todo", "expenses"],
+  "roles": [
+    {"name": "Project Manager", "description": "Owns project scope, budget, schedule, billing."},
+    {"name": "Project Member", "description": "Logs timesheets and tasks against a project."}
+  ],
+  "kpis": ["Budget vs actual", "Project margin", "% complete", "Billable utilization"],
+  "dashboards": ["Projects Overview", "Project Profitability"],
+  "reports": ["Budget vs Actual", "Timesheet Report", "Milestone Status", "Project P&L"]
+}

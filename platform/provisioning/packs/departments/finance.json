@@ -1,0 +1,15 @@
+{
+  "key": "finance",
+  "name": "Finance & Accounting",
+  "description": "General ledger, AP/AR, cash, assets, budgeting, tax, reports.",
+  "version": "1.0",
+  "modules": ["accounting", "ar_ap", "expenses"],
+  "roles": [
+    {"name": "Finance Manager", "description": "Owns the ledger, approves payments, closes periods."},
+    {"name": "Accountant", "description": "Books entries, reconciles, prepares statements."},
+    {"name": "Auditor", "description": "Read-only access to ledgers and audit trail."}
+  ],
+  "kpis": ["Cash position", "AR aging", "AP aging", "Gross margin", "Budget vs actual"],
+  "dashboards": ["Finance Overview", "Cash & Banks", "Receivables"],
+  "reports": ["Trial Balance", "Profit & Loss", "Balance Sheet", "Cash Flow", "Aging Report", "Tax Return"]
+}

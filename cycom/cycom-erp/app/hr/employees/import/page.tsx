@@ -88,34 +88,37 @@ export default function EmployeeImport() {
     reader.readAsText(file);
   };
 
-  // Perform validation on mapped columns
-  const handleValidate = () => {
-    const errors: string[] = [];
-    const empNoIdx = mappings['employee_no'];
-    const nameIdx = mappings['name'];
-
-    if (!empNoIdx) errors.push("Missing mapping for Employee Code.");
-    if (!nameIdx) errors.push("Missing mapping for Full Name.");
-
-    if (errors.length > 0) {
-      setValidationErrors(errors);
-      return;
-    }
-
-    // Check data rows
-    const empNoColIdx = parseInt(empNoIdx);
-    const nameColIdx = parseInt(nameIdx);
-    
-    rows.forEach((row, idx) => {
-      if (!row[empNoColIdx]) {
-        errors.push(`Row ${idx + 1}: Missing Employee Code.`);
-      }
-      if (!row[nameColIdx]) {
-        errors.push(`Row ${idx + 1}: Missing Full Name.`);
-      }
+  // Build the mapped row payload once — reused for dry-run and commit.
+  const buildPayload = () =>
+    rows.map((row) => {
+      const item: Record<string, string> = {};
+      SCHEMA_FIELDS.forEach((f) => {
+        const mappedIdx = mappings[f.key];
+        if (mappedIdx) item[f.key] = row[parseInt(mappedIdx)] || '';
+      });
+      return item;
     });
 
-    setValidationErrors(errors);
+  // Server-side dry-run validation (authoritative: catches dup codes, bad
+  // emails, and clashes with employees already in the database).
+  const handleValidate = async () => {
+    const mapErrors: string[] = [];
+    if (!mappings['employee_no']) mapErrors.push('Missing mapping for Employee Code.');
+    if (!mappings['name']) mapErrors.push('Missing mapping for Full Name.');
+    if (mapErrors.length > 0) {
+      setValidationErrors(mapErrors);
+      setStep(3);
+      return;
+    }
+    try {
+      const res = await call<any>({ model: 'hr.employee', method: 'validate_import', args: [buildPayload()] });
+      const rowErrors: string[] = (res?.errors || []).map(
+        (e: any) => `Row ${e.row}${e.employee_no ? ` (${e.employee_no})` : ''}: ${e.errors.join(' ')}`,
+      );
+      setValidationErrors(rowErrors);
+    } catch (err: any) {
+      setValidationErrors([`Validation failed: ${err.message}`]);
+    }
     setStep(3);
   };
 
@@ -124,24 +127,13 @@ export default function EmployeeImport() {
     setImporting(true);
     setProgress(10);
     try {
-      const payloadItems = rows.map(row => {
-        const item: Record<string, string> = {};
-        SCHEMA_FIELDS.forEach(f => {
-          const mappedIdx = mappings[f.key];
-          if (mappedIdx) {
-            item[f.key] = row[parseInt(mappedIdx)] || '';
-          }
-        });
-        return item;
-      });
-
       setProgress(40);
       const res = await call<any>({
         model: 'hr.employee',
         method: 'bulk_import',
-        args: [payloadItems]
+        args: [buildPayload()]
       });
-      
+
       setProgress(90);
       if (res?.success) {
         setImportedCount(res.imported_count);

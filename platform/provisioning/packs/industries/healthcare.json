@@ -1,0 +1,58 @@
+{
+  "key": "healthcare",
+  "name": "Healthcare Administration (ERP side)",
+  "version": "1.0",
+  "description": "The ERP back office for hospitals/clinics: finance, procurement, inventory, HR, payroll, assets, maintenance, contracts. Clinical operations (patients, appointments, pharmacy, lab) belong to CyMed — this pack deliberately excludes them.",
+  "department_pack_keys": ["finance", "procurement", "inventory", "hr", "maintenance", "documents"],
+  "recommended_ops": ["provides_services", "buys_products"],
+  "terminology": {"vendor": "Medical Supplier", "product": "Supply Item"},
+  "default_config": {
+    "roles": [
+      {"name": "Hospital Administrator", "description": "Approves budgets, contracts, and capex."},
+      {"name": "Biomedical Engineer", "description": "Owns medical equipment register and PM schedule."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 1000, "role": "Department Manager"},
+      {"min": 1000, "max": 10000, "role": "Procurement Manager"},
+      {"min": 10000, "max": null, "role": "Hospital Administrator"}]},
+    {"document_type": "capex", "name": "Medical Equipment Capex", "tiers": [
+      {"min": 0, "max": null, "role": "Hospital Administrator"}]},
+    {"document_type": "payment", "name": "Payment Approval", "tiers": [
+      {"min": 0, "max": 10000, "role": "Finance Manager"},
+      {"min": 10000, "max": null, "role": "Hospital Administrator"}]}
+  ],
+  "categories": ["Medical Consumables", "Pharmaceuticals (Stock)", "Medical Equipment", "General Supplies", "Utilities & Facilities"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1145", "name": "Medical Supplies Inventory", "account_type": "asset", "parent": "1140"},
+      {"code": "1215", "name": "Medical Equipment", "account_type": "asset", "parent": "1210"},
+      {"code": "5175", "name": "Medical Consumables Expense", "account_type": "expense", "parent": "5100"},
+      {"code": "5375", "name": "Biomedical Maintenance", "account_type": "expense", "parent": "5300"}
+    ]
+  },
+  "industry_fields": {
+    "product": ["lot_tracked", "expiry_tracked", "storage_conditions"],
+    "asset": ["serial_number", "manufacturer", "calibration_due", "ppm_frequency"]
+  },
+  "dashboards": ["Supply Spend", "Equipment Uptime", "Expiring Stock", "Department Budgets"],
+  "reports": ["Supply Consumption by Department", "Expiry Report", "Equipment PM Compliance", "Budget vs Actual"],
+  "doc_templates": ["Purchase Order", "Goods Receipt", "Equipment Service Record"],
+  "import_templates": [
+    {"entity": "supplies", "columns": ["sku", "name", "category", "uom", "lot_tracked", "expiry_tracked", "reorder_point"]},
+    {"entity": "equipment", "columns": ["asset_code", "name", "department", "serial_number", "purchase_date", "ppm_frequency"]},
+    {"entity": "suppliers", "columns": ["legal_name", "cr_number", "tax_number", "category", "payment_terms_days"]},
+    {"entity": "employees", "columns": ["employee_number", "full_name", "department", "job_title", "salary"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Healthcare admin ERP controls supply chain (lot/expiry-tracked consumables), biomedical asset uptime, and departmental budgets. Clinical data stays in CyMed; integration points are shared identity and accounting feeds.",
+    "starter_prompts": [
+      "Show supply consumption by department this month.",
+      "List stock expiring within 90 days.",
+      "Which equipment has overdue preventive maintenance?",
+      "Show budget vs actual by department.",
+      "Report supplier delivery performance."
+    ]
+  }
+}

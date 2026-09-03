@@ -22,11 +22,16 @@ import platform as std_platform
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 
-platform_pkg_path = os.path.join(repo_root, "platform")
+platform_pkg_paths = [
+    os.path.join(repo_root, "platform"),   # shared platform (D:/cybercom/platform)
+    os.path.join(script_dir, "platform"),  # cymed-local platform (D:/cybercom/cymed/platform)
+]
 if not hasattr(std_platform, "__path__") or std_platform.__path__ is None:
-    std_platform.__path__ = [platform_pkg_path]
-elif platform_pkg_path not in std_platform.__path__:
-    std_platform.__path__.append(platform_pkg_path)
+    std_platform.__path__ = list(platform_pkg_paths)
+else:
+    for _p in platform_pkg_paths:
+        if _p not in std_platform.__path__:
+            std_platform.__path__.append(_p)
 
 if sys_path_removed:
     sys.path.insert(0, script_dir)

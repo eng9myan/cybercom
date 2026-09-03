@@ -123,6 +123,13 @@ class InvoiceViewSet(TenantScopedModelViewSet):
 
         return Response(InvoiceSerializer(invoice).data)
 
+    @action(detail=True, methods=["get"], url_path="three-way-match")
+    def three_way_match(self, request, pk=None):
+        """Match this vendor bill against its linked PO (ordered↔received↔billed)."""
+        from products.cycom.procurement.services import three_way_match as _match
+        invoice = self.get_object()
+        return Response(_match(invoice))
+
 
 class PaymentViewSet(TenantScopedModelViewSet):
     queryset = Payment.objects.all()

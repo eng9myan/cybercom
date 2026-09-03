@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cymed-api
+  namespace: cymed
+  labels:
+    app.kubernetes.io/name: cymed-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: cymed-platform
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cymed-api
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cymed-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/part-of: cymed-platform
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: cymed-api
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 60
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: cymed-api
+      containers:
+        - name: api
+          image: ghcr.io/cybercom/cymed-api:latest  # overlay pins to :sha
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: cymed-env
+            - secretRef:
+                name: cymed-secrets
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          lifecycle:
+            preStop:
+              exec:
+                # Give the ingress a moment to drain before Gunicorn exits.
+                command: ["/bin/sh", "-c", "sleep 15"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: staticfiles
+              mountPath: /app/staticfiles
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: staticfiles
+          emptyDir: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cymed-api
+  namespace: cymed
+  labels:
+    app.kubernetes.io/name: cymed-api
+    app.kubernetes.io/part-of: cymed-platform
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cymed-api
+  namespace: cymed
+  labels:
+    app.kubernetes.io/name: cymed-api
+    app.kubernetes.io/part-of: cymed-platform
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cymed-api
+      app.kubernetes.io/component: api

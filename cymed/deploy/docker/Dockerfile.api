@@ -1,0 +1,84 @@
+# syntax=docker/dockerfile:1.7
+# =============================================================================
+# CyMed API image (Django + Gunicorn)
+# Multi-stage build: builder installs wheels, runtime stays lean.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: builder — compile wheels
+# -----------------------------------------------------------------------------
+FROM python:3.12-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        libpq-dev \
+        gcc \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+COPY requirements.txt ./
+RUN pip wheel --wheel-dir=/wheels -r requirements.txt
+
+# -----------------------------------------------------------------------------
+# Stage 2: runtime
+# -----------------------------------------------------------------------------
+FROM python:3.12-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    DJANGO_SETTINGS_MODULE=core.settings \
+    PORT=8000
+
+# Runtime OS deps: libpq for psycopg, curl for healthcheck.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpq5 \
+        curl \
+        tini \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 1001 cymed \
+    && useradd --system --uid 1001 --gid cymed --create-home --shell /usr/sbin/nologin cymed
+
+WORKDIR /app
+
+# Install pre-built wheels from builder stage.
+COPY --from=builder /wheels /wheels
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt \
+    && rm -rf /wheels
+
+# Copy only source directories the API needs at runtime.
+COPY --chown=cymed:cymed core/ ./core/
+COPY --chown=cymed:cymed products/ ./products/
+COPY --chown=cymed:cymed manage.py ./
+# Shared platform packages sit above the app in the workspace layout.
+COPY --chown=cymed:cymed shared/ ./shared/
+COPY --chown=cymed:cymed platform/ ./platform/
+
+# Static files directory (collectstatic target).
+RUN mkdir -p /app/staticfiles /app/media && chown -R cymed:cymed /app
+
+USER cymed
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# tini is PID 1 so Gunicorn workers reap cleanly.
+ENTRYPOINT ["/usr/bin/tini", "--"]
+CMD ["gunicorn", "core.wsgi:application", \
+     "--workers", "4", \
+     "--threads", "4", \
+     "--timeout", "60", \
+     "--bind", "0.0.0.0:8000", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-"]

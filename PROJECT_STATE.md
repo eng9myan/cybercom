@@ -32,7 +32,18 @@ Brought up the real stack locally: Docker (daemon started), docker-compose.cycom
 - **2 PRODUCTION BUGS FIXED** (dev-auth had masked them): (a) shared/auth/auth_middleware.py CyIdentityAuthMiddleware 401'd public signup/payment paths → added allowlist; (b) cycom/core/middleware/tenant.py TenantIsolationMiddleware 400'd them ("X-Tenant-ID missing") → exempt public paths (tenant_id=None). Protected endpoints still 401 without token (exemptions correctly scoped).
 - Follow-up chip spawned: apply the tenant-middleware fix to cymed/cyvault/cyed (per-product copies).
 
-Remaining: item 3 hosting platform (cloud target), full Arabic i18n, confirm the 2 payroll rates, then upload to servers/domain (GO_LIVE.md).
+### HARDENING PASS (2026-08-31, subagents authorized)
+- Committed the buildout (77f481b, 77 files, no secrets).
+- BUSINESS_PLAN.md written (agent) — honest launch plan, grounded, no fabricated numbers.
+- Security review (agent): middleware changes CONFIRMED SAFE. Fixed:
+  - **CRITICAL** Stripe webhook forgery → real fail-closed HMAC verification + tests (commit 16bdaec).
+  - **Cross-tenant read**: sub-resource viewsets leaked all tenants' rows → TenantScopedReadMixin + TenantViewSet scoping + webhook throttle + tests (commit 69e5204).
+  - Low/Finding-5 (public metrics) left as follow-up.
+- **Self-serve login FIXED** (agent, commit 69e5204): shared-realm signups now enable Keycloak unmanagedAttributePolicy so tokens carry tenant_id → registered users can actually use the app after login (verified live: register → token has tenant_id → GET /catalog/products/ with bearer only → 200).
+- 53 tests green across catalog/pos/sales/accounting/crm/payroll/tenant.
+
+**SYSTEM STATUS: launch-ready (functional + security-hardened + tested) pending deployment.**
+Remaining is USER's: deploy per GO_LIVE.md (host+domain+TLS, Keycloak box, payment keys), confirm the 2 payroll rates. Optional polish: item 3 hosting/provisioning platform (needs cloud target), full Arabic i18n workstream, frontend UIs for the new accounting-reports/CRM-pipeline endpoints, Finding-5 metrics lockdown.
 | 3 — Hosting platform | ⬜ not started | Odoo.sh-equivalent | — |
 | 4 — Business build-out | ⬜ not started | `BUSINESS_PLAN.md` | Sonnet/Fable (prose) |
 

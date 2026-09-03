@@ -1,0 +1,1 @@
+- [Cycom ERP buildout](project_cycom_erp_buildout.md) — Odoo-equiv program; ruflo orchestration; CyCom-first; Phase2 payments+Keycloak P0s built.

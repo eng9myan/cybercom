@@ -64,6 +64,8 @@ PLATFORM_APPS = [
     "platform.cydata",
     "platform.cyai",
     "platform.terminology",
+    "platform.security",
+    "platform.observability",
 ]
 
 PRODUCT_APPS = [
@@ -151,14 +153,61 @@ PRODUCT_APPS = [
     "products.cymed.pharmacy.analytics",
     "products.cymed.pharmacy.inventory_bridge",
     "products.cymed.pharmacy.procurement_bridge",
-    # NOTE: population_health, patient_portal, provider_portal, rcm, and
-    # workforce_management verticals were intentionally excluded from this
-    # monorepo (out of scope per import request) — their app entries and
-    # directories were removed together. cycom/demo/deployment/implementation/
-    # academy/commercial_readiness/partner_ecosystem/website product apps were
-    # also removed: cycom now lives in its own top-level product at /cycom
-    # (Odoo-based, not this Django project), and the rest were CyberCom-
-    # Platform-specific scaffolding not part of the CyMed clinical scope.
+    # CyMed Integrations
+    "products.cymed.integrations.jofawtra",
+    "products.cymed.integrations.zakata",
+    "products.cymed.integrations.nphies",
+    "products.cymed.integrations.hakeem",
+    # CyMed Portals
+    "products.cymed.patient_portal",
+    "products.cymed.provider_portal",
+    # CyMed Payments (P0-2)
+    "products.cymed.payments",
+    # CyMed FHIR R4 (P0-4)
+    "products.cymed.fhir_r4",
+    # CyMed AI CDS (P0-5)
+    "products.cymed.ai_cds",
+    # CyMed RCM (P0-6)
+    "products.cymed.rcm",
+    # CyMed Clinic gap-fill apps (P0-8)
+    "products.cymed.clinic.insurance_verify",
+    "products.cymed.clinic.self_checkin",
+    "products.cymed.clinic.auto_coding",
+    "products.cymed.clinic.referral_loop",
+    "products.cymed.clinic.ecommerce",
+    "products.cymed.clinic.marketing",
+    # ── CyMed Pharmacy gap-fill (P0-9) ─────────────────────────────
+    "products.cymed.pharmacy.ecommerce.apps.EcommerceConfig",
+    "products.cymed.pharmacy.delivery.apps.DeliveryConfig",
+    "products.cymed.pharmacy.pos_insurance.apps.PosInsuranceConfig",
+    "products.cymed.pharmacy.loyalty.apps.LoyaltyConfig",
+    "products.cymed.pharmacy.compounding.apps.CompoundingConfig",
+    "products.cymed.pharmacy.robotics.apps.RoboticsConfig",
+    # ── CyMed Lab gap-fill (P0-10) ─────────────────────────────────
+    "products.cymed.laboratory.patient_results.apps.PatientResultsConfig",
+    "products.cymed.laboratory.home_collection.apps.HomeCollectionConfig",
+    "products.cymed.laboratory.online_booking.apps.OnlineBookingConfig",
+    "products.cymed.laboratory.dtc_catalog.apps.DtcCatalogConfig",
+    "products.cymed.laboratory.courier_tracking.apps.CourierTrackingConfig",
+    # ── CyMed Imaging gap-fill (P0-11) ─────────────────────────────
+    "products.cymed.imaging.patient_booking.apps.PatientBookingConfig",
+    "products.cymed.imaging.patient_results.apps.PatientResultsConfig",
+    "products.cymed.imaging.image_sharing.apps.ImageSharingConfig",
+    "products.cymed.imaging.ai_triage.apps.AiTriageConfig",
+    "products.cymed.imaging.tele_marketplace.apps.TeleMarketplaceConfig",
+    "products.cymed.imaging.prep_instructions.apps.PrepInstructionsConfig",
+    # ── CyMed Ecosystem Glue (P0-12) ───────────────────────────────
+    "products.cymed.ecosystem.referral_routing.apps.ReferralRoutingConfig",
+    "products.cymed.ecosystem.provider_directory.apps.ProviderDirectoryConfig",
+    "products.cymed.ecosystem.rewards.apps.RewardsConfig",
+    "products.cymed.ecosystem.analytics.apps.EcosystemAnalyticsConfig",
+    "products.cymed.ecosystem.shared_capacity.apps.SharedCapacityConfig",
+    "products.cymed.ecosystem.credentialing.apps.CredentialingConfig",
+    # ── CyMed MRFF Program (MRFF-16..19) ───────────────────────────
+    "products.cymed.mrff.ai_diagnostics.apps.AiDiagnosticsConfig",
+    "products.cymed.mrff.offline_kit.apps.OfflineKitConfig",
+    "products.cymed.mrff.ambient_scribe.apps.AmbientScribeConfig",
+    "products.cymed.mrff.population_health.apps.PopulationHealthConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
@@ -167,6 +216,11 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
 # MIDDLEWARE (order matters — tenant before audit)
 # ---------------------------------------------------------------------------
 MIDDLEWARE = [
+    "platform.observability.middleware.RequestIdMiddleware",
+    "platform.observability.middleware.AccessLogMiddleware",
+    "platform.security.middleware.SecurityHeadersMiddleware",
+    "platform.security.middleware.ClientIntegrityMiddleware",
+    "platform.security.middleware.RateLimitMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -252,13 +306,19 @@ CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = int(os.environ.get("CELERY_TASK_TIME_LIMIT", "300"))
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 100
 
-# Demo-trial teardown is time-sensitive (72h window) so it gets a real beat
-# schedule; other existing tenant/cyidentity expiry tasks are intentionally
-# left unscheduled here — out of scope for this change.
-CELERY_BEAT_SCHEDULE = {
+CELERY_ENABLE_UTC = True
+CELERY_TASK_DEFAULT_QUEUE = "default"
+CELERY_TASK_ROUTES = {
+    "payments.*":       {"queue": "payments"},
+    "integrations.*":   {"queue": "integrations"},
+    "notifications.*":  {"queue": "notifications"},
+    "ai_cds.*":         {"queue": "ai_cds"},
+}
+
+CELERY_BEAT_SCHEDULE: dict = {
     "expire-demo-tenants": {
         "task": "tenant.expire_demo_tenants",
-        "schedule": 900.0,  # every 15 minutes
+        "schedule": 900.0,
     },
 }
 
@@ -275,21 +335,25 @@ KAFKA_SCHEMA_REGISTRY_URL = os.environ.get("KAFKA_SCHEMA_REGISTRY_URL", "http://
 # ---------------------------------------------------------------------------
 # TERMINOLOGY API CONFIGURATION
 # ---------------------------------------------------------------------------
-# ICD-11 (WHO) — OAuth2 client_credentials, not a static bearer token.
-# Register a client at https://icdaccessmanagement.who.int/ to get these.
-# Leave empty to use fallback hardcoded codes (safe at launch) — real
-# WHO access tokens are short-lived (~1h) and are exchanged/refreshed
-# automatically by platform/terminology/providers/icd11.py from these
-# two values, never stored as a static token.
 ICD11_CLIENT_ID = os.environ.get("ICD11_CLIENT_ID", "")
 ICD11_CLIENT_SECRET = os.environ.get("ICD11_CLIENT_SECRET", "")
 
-# FHIR Terminology Server — used by FHIRTerminologyProvider for $lookup / $expand.
-# Public tx.fhir.org is the default; set to an internal server in production.
 FHIR_TERMINOLOGY_SERVER = os.environ.get("FHIR_TERMINOLOGY_SERVER", "https://tx.fhir.org/r4")
-
-# Timeout (seconds) applied to all outbound terminology HTTP calls.
 TERMINOLOGY_REQUESTS_TIMEOUT = int(os.environ.get("TERMINOLOGY_REQUESTS_TIMEOUT", "10"))
+
+# ---------------------------------------------------------------------------
+# JOFAWTRA (Jordan E-Invoicing)
+# ---------------------------------------------------------------------------
+JOFAWTRA_API_KEY = os.environ.get("JOFAWTRA_API_KEY", "")
+JOFAWTRA_CLIENT_ID = os.environ.get("JOFAWTRA_CLIENT_ID", "")
+JOFAWTRA_CLIENT_SECRET = os.environ.get("JOFAWTRA_CLIENT_SECRET", "")
+
+# ---------------------------------------------------------------------------
+# ZAKATA / ZATCA (Saudi E-Invoicing)
+# ---------------------------------------------------------------------------
+ZATCA_API_KEY = os.environ.get("ZATCA_API_KEY", "")
+ZATCA_CSID = os.environ.get("ZATCA_CSID", "")
+ZATCA_SECRET = os.environ.get("ZATCA_SECRET", "")
 
 # ---------------------------------------------------------------------------
 # IDENTITY — CyIdentity / Keycloak (ADR-0005)
@@ -318,20 +382,12 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.JSONParser",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    # django_filters was installed (THIRD_PARTY_APPS) but never actually
-    # wired as a filter backend — every ?field=value query param used
-    # against any viewset was silently ignored (returned the full
-    # unfiltered queryset). Same real bug already found+fixed in Cycom
-    # this session; fixing it here too since Phase 9's mobile e-Rx screen
-    # is the first caller that actually needs ?order_type= to work.
-    # Individual viewsets still need filterset_fields to opt in.
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.environ.get("API_PAGE_SIZE", "25")),
     "EXCEPTION_HANDLER": "platform.api.exceptions.cybercom_exception_handler",
     "DEFAULT_THROTTLE_CLASSES": [],
     "DEFAULT_THROTTLE_RATES": {
-        # Website public API throttle buckets (per IP)
         "website_public_read": os.environ.get("THROTTLE_WEBSITE_READ", "600/hour"),
         "website_public_write": os.environ.get("THROTTLE_WEBSITE_WRITE", "20/hour"),
         "website_demo_request": os.environ.get("THROTTLE_DEMO_REQUEST", "5/hour"),
@@ -392,45 +448,17 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # ---------------------------------------------------------------------------
-# LOGGING — structured JSON for OTel collector (ADR-0009)
+# LOGGING — structured JSON via platform.observability (ADR-0009)
 # ---------------------------------------------------------------------------
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "json": {
-            "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
-            "format": "%(asctime)s %(name)s %(levelname)s %(message)s %(trace_id)s %(span_id)s",
-        },
-        "simple": {
-            "format": "[%(asctime)s] %(levelname)s %(name)s: %(message)s",
-        },
-    },
-    "filters": {
-        "require_debug_false": {
-            "()": "django.utils.log.RequireDebugFalse",
-        },
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "stream": sys.stdout,
-            "formatter": "json" if not DEBUG else "simple",
-        },
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": LOG_LEVEL,
-    },
-    "loggers": {
-        "django": {"handlers": ["console"], "level": "WARNING", "propagate": False},
-        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
-        "cybercom": {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False},
-        "cybercom.audit": {"handlers": ["console"], "level": "INFO", "propagate": False},
-    },
-}
+from platform.observability.logging_config import build_logging  # noqa: E402
+
+LOGGING = build_logging(
+    service="cymed",
+    env=os.environ.get("PLATFORM_ENV", os.environ.get("ENVIRONMENT", "dev")),
+    level=LOG_LEVEL,
+)
 
 # ---------------------------------------------------------------------------
 # OPENTELEMETRY (ADR-0009)

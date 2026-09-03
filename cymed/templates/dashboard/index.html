@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Hakeem Command Center{% endblock %}
+{% block content %}
+<header class="app-header">
+    <div class="logo">
+        <div class="logo-icon">&#x2695;</div>
+        Hakeem
+    </div>
+    <nav class="nav-links">
+        <a href="/" class="nav-link active">Dashboard</a>
+        <a href="/patient-portal/" class="nav-link">Patient Portal</a>
+        <a href="/provider-portal/" class="nav-link">Provider Portal</a>
+        <a href="/api/docs/" class="nav-link">API Docs</a>
+    </nav>
+    <div style="display:flex;align-items:center;gap:16px;">
+        <span class="badge badge-success">● System Online</span>
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">A</div>
+    </div>
+</header>
+
+<div class="dashboard-grid">
+    <aside class="sidebar glass-card" style="padding:20px;height:fit-content;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Modules</div>
+        <a href="#" class="sidebar-item active">
+            <span style="font-size:18px;">&#x1F3E5;</span> Hospital
+        </a>
+        <a href="#" class="sidebar-item">
+            <span style="font-size:18px;">&#x1F3E0;</span> Clinic
+        </a>
+        <a href="#" class="sidebar-item">
+            <span style="font-size:18px;">&#x1F48A;</span> Pharmacy
+        </a>
+        <a href="#" class="sidebar-item">
+            <span style="font-size:18px;">&#x1F9EA;</span> Laboratory
+        </a>
+        <a href="#" class="sidebar-item">
+            <span style="font-size:18px;">&#x1F4F7;</span> Imaging
+        </a>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin:24px 0 16px;">Integrations</div>
+        <a href="#" class="sidebar-item">
+            <span style="font-size:18px;">&#x1F310;</span> ICD-11 Terminology
+        </a>
+        <a href="#" class="sidebar-item">
+            <span style="font-size:18px;">&#x1F4B8;</span> JoFawTra (JO)
+        </a>
+        <a href="#" class="sidebar-item">
+            <span style="font-size:18px;">&#x1F4B0;</span> ZATCA (SA)
+        </a>
+    </aside>
+
+    <main>
+        <div style="margin-bottom:24px;">
+            <h1 style="font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;margin-bottom:4px;">Command Center</h1>
+            <p style="color:var(--text-secondary);font-size:14px;">Real-time overview of your healthcare network</p>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-card animate-in">
+                <div class="stat-label">Active Patients</div>
+                <div class="stat-value">12,847</div>
+                <div class="stat-change up">&#x2191; 8.2% vs last month</div>
+            </div>
+            <div class="stat-card animate-in delay-1">
+                <div class="stat-label">Today's Encounters</div>
+                <div class="stat-value">1,423</div>
+                <div class="stat-change up">&#x2191; 12% vs yesterday</div>
+            </div>
+            <div class="stat-card animate-in delay-2">
+                <div class="stat-label">Pending Orders</div>
+                <div class="stat-value">89</div>
+                <div class="stat-change down">&#x2193; 3 need attention</div>
+            </div>
+            <div class="stat-card animate-in delay-3">
+                <div class="stat-label">Providers Online</div>
+                <div class="stat-value">156</div>
+                <div class="stat-change up">&#x2191; 24 on call now</div>
+            </div>
+        </div>
+
+        <div class="glass-card" style="padding:24px;margin-bottom:24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h2 style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;">Live Network Activity</h2>
+                <span class="badge badge-success">● Live</span>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Facility</th>
+                        <th>Event</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>14:42:18</td>
+                        <td>Al-Amal Hospital</td>
+                        <td>Lab result uploaded — MRI Brain</td>
+                        <td><span class="badge badge-success">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td>14:38:05</td>
+                        <td>City Clinic Jeddah</td>
+                        <td>Prescription issued — Amoxicillin</td>
+                        <td><span class="badge badge-success">Sent to Pharmacy</span></td>
+                    </tr>
+                    <tr>
+                        <td>14:35:22</td>
+                        <td>Al-Amal Hospital</td>
+                        <td>Patient admitted — ICU Bed 4A</td>
+                        <td><span class="badge badge-warning">In Progress</span></td>
+                    </tr>
+                    <tr>
+                        <td>14:31:09</td>
+                        <td>Radiology Center Amman</td>
+                        <td>ZATCA invoice cleared #INV-2026-8841</td>
+                        <td><span class="badge badge-success">Cleared</span></td>
+                    </tr>
+                    <tr>
+                        <td>14:28:44</td>
+                        <td>City Clinic Jeddah</td>
+                        <td>Telemedicine session started</td>
+                        <td><span class="badge badge-success">Active</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
+            <div class="glass-card" style="padding:24px;">
+                <h3 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:16px;">ICD-11 Mapping Status</h3>
+                <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+                    <div style="flex:1;height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;">
+                        <div style="width:94%;height:100%;background:var(--gradient-primary);border-radius:4px;"></div>
+                    </div>
+                    <span style="font-size:14px;font-weight:600;">94%</span>
+                </div>
+                <p style="font-size:13px;color:var(--text-secondary);">2,341 conditions mapped to ICD-11. 156 pending review.</p>
+            </div>
+            <div class="glass-card" style="padding:24px;">
+                <h3 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:16px;">Compliance Health</h3>
+                <div style="display:flex;gap:12px;">
+                    <div style="flex:1;text-align:center;padding:12px;background:rgba(0,212,170,0.1);border-radius:var(--radius-md);">
+                        <div style="font-size:24px;font-weight:700;color:#00D4AA;">JO</div>
+                        <div style="font-size:11px;color:var(--text-secondary);">JoFawTra OK</div>
+                    </div>
+                    <div style="flex:1;text-align:center;padding:12px;background:rgba(0,212,170,0.1);border-radius:var(--radius-md);">
+                        <div style="font-size:24px;font-weight:700;color:#00D4AA;">SA</div>
+                        <div style="font-size:11px;color:var(--text-secondary);">ZATCA OK</div>
+                    </div>
+                    <div style="flex:1;text-align:center;padding:12px;background:rgba(0,98,204,0.1);border-radius:var(--radius-md);">
+                        <div style="font-size:24px;font-weight:700;color:#0062CC;">FHIR</div>
+                        <div style="font-size:11px;color:var(--text-secondary);">R4 Ready</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}

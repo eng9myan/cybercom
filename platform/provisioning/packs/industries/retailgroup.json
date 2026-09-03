@@ -1,0 +1,63 @@
+{
+  "key": "retailgroup",
+  "name": "Retail Group (CyCom + CyShop POS)",
+  "version": "1.0",
+  "description": "Multi-branch retail: central CyCom (accounting, procurement, warehouses, HR, consolidation) + branch POS operations (sessions, checkout, loyalty, returns). CyShop works as the commercial module inside CyCom.",
+  "department_pack_keys": ["finance", "procurement", "inventory", "hr", "pos", "sales"],
+  "recommended_ops": ["buys_products", "operates_branches", "retail_pos", "ecommerce"],
+  "terminology": {"sale_order": "POS Order", "customer": "Shopper", "vendor": "Supplier"},
+  "default_config": {
+    "roles": [
+      {"name": "Retail Operations Manager", "description": "Owns branch network, targets, and POS policies."},
+      {"name": "General Manager", "description": "Approves pricing policy and high-value spend."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 2000, "role": "Procurement Manager"},
+      {"min": 2000, "max": null, "role": "General Manager"}]},
+    {"document_type": "pos_discount", "name": "POS Discount Approval", "tiers": [
+      {"min": 0, "max": 50, "role": "Cashier"},
+      {"min": 50, "max": 200, "role": "Branch Manager"},
+      {"min": 200, "max": null, "role": "Retail Operations Manager"}]},
+    {"document_type": "pos_refund", "name": "POS Refund Approval", "tiers": [
+      {"min": 0, "max": 100, "role": "Branch Manager"},
+      {"min": 100, "max": null, "role": "Retail Operations Manager"}]},
+    {"document_type": "branch_transfer", "name": "Branch Replenishment", "tiers": [
+      {"min": 0, "max": null, "role": "Warehouse Manager"}]}
+  ],
+  "categories": ["Grocery", "Fashion", "Electronics", "Pharmacy Retail", "Home & Living", "Sweets & Bakery"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1115", "name": "Cash in POS Drawers", "account_type": "asset", "parent": "1110"},
+      {"code": "1125", "name": "Card Settlements Receivable", "account_type": "asset", "parent": "1120"},
+      {"code": "4130", "name": "Retail POS Revenue", "account_type": "income", "parent": "4100"},
+      {"code": "4140", "name": "E-commerce Revenue", "account_type": "income", "parent": "4100"},
+      {"code": "5160", "name": "Shrinkage & Wastage", "account_type": "expense", "parent": "5100"},
+      {"code": "5170", "name": "Delivery Platform Commissions", "account_type": "expense", "parent": "5100"}
+    ]
+  },
+  "industry_fields": {
+    "product": ["barcode", "retail_price", "branch_whitelist", "loyalty_points"],
+    "branch": ["code", "pricelist", "cash_rounding", "session_user_restriction"]
+  },
+  "dashboards": ["Consolidated Sales", "Branch Comparison", "Cash Variance", "Shrinkage", "Replenishment Status"],
+  "reports": ["Z Report per Branch", "Consolidated Daily Sales", "Branch Transfer Report", "Slow Movers", "Loyalty Liability"],
+  "doc_templates": ["POS Receipt", "Return Voucher", "Branch Transfer Note", "Daily Cash Report"],
+  "import_templates": [
+    {"entity": "products", "columns": ["sku", "barcode", "name", "category", "cost", "retail_price", "vat_rate"]},
+    {"entity": "branches", "columns": ["code", "name", "city", "warehouse", "pricelist"]},
+    {"entity": "employees", "columns": ["employee_number", "full_name", "branch", "role_cashier_manager", "salary"]},
+    {"entity": "opening_inventory", "columns": ["sku", "branch", "quantity", "unit_cost"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Retail group ERP consolidates branch POS into central finance: every session close posts sales, cash, card settlements, and variances. Watch shrinkage, slow movers, branch transfer discipline, and delivery-platform commission erosion.",
+    "starter_prompts": [
+      "Show today's sales by branch.",
+      "Which branches have cash variances this week?",
+      "List slow-moving items over 90 days.",
+      "Compare e-commerce vs POS revenue this month.",
+      "Show pending branch replenishment orders."
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cymed
+  labels:
+    app.kubernetes.io/name: cymed
+    app.kubernetes.io/part-of: cymed-platform
+    app.kubernetes.io/managed-by: kustomize
+    # PodSecurity Admission — enforce the restricted profile in this namespace.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted

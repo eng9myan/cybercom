@@ -1,0 +1,61 @@
+{
+  "key": "nonprofit",
+  "name": "Nonprofit / NGO",
+  "version": "1.0",
+  "description": "Funds, grants, donors, restricted expenses, beneficiaries, procurement controls, grant reporting.",
+  "department_pack_keys": ["finance", "procurement", "hr", "projects", "documents"],
+  "recommended_ops": ["manages_projects", "provides_services"],
+  "terminology": {"customer": "Donor", "project": "Program / Grant", "invoice": "Grant Claim"},
+  "default_config": {
+    "roles": [
+      {"name": "Executive Director", "description": "Approves grants, budgets, and high-value spend."},
+      {"name": "Grants Manager", "description": "Owns grant budgets, compliance, and donor reporting."},
+      {"name": "Program Officer", "description": "Runs programs, records beneficiaries and outputs."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Procurement Approval (donor rules)", "tiers": [
+      {"min": 0, "max": 300, "role": "Program Officer"},
+      {"min": 300, "max": 3000, "role": "Procurement Manager"},
+      {"min": 3000, "max": null, "role": "Executive Director"}]},
+    {"document_type": "grant_budget_revision", "name": "Grant Budget Revision", "tiers": [
+      {"min": 0, "max": null, "role": "Grants Manager"}]},
+    {"document_type": "payment", "name": "Payment Approval", "tiers": [
+      {"min": 0, "max": 5000, "role": "Finance Manager"},
+      {"min": 5000, "max": null, "role": "Executive Director"}]}
+  ],
+  "categories": ["Restricted Funds", "Unrestricted Funds", "In-Kind", "Program Costs", "Support Costs"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1190", "name": "Grants Receivable", "account_type": "asset", "parent": "1100"},
+      {"code": "2195", "name": "Deferred Grant Income (Restricted)", "account_type": "liability", "parent": "2100"},
+      {"code": "4310", "name": "Grant Income", "account_type": "income", "parent": "4300"},
+      {"code": "4320", "name": "Donations", "account_type": "income", "parent": "4300"},
+      {"code": "5185", "name": "Program Direct Costs", "account_type": "expense", "parent": "5000"},
+      {"code": "5195", "name": "Support / Admin Costs", "account_type": "expense", "parent": "5000"}
+    ]
+  },
+  "industry_fields": {
+    "grant": ["donor", "start_date", "end_date", "total_budget", "restricted", "reporting_frequency"],
+    "expense": ["grant", "budget_line", "restricted_flag"]
+  },
+  "dashboards": ["Grant Burn Rate", "Restricted vs Unrestricted", "Program Spend", "Donor Pipeline"],
+  "reports": ["Grant Financial Report", "Budget vs Actual per Grant", "Beneficiary Report", "Donor Statement", "Restricted Funds Reconciliation"],
+  "doc_templates": ["Grant Agreement", "Donor Report", "Procurement Justification", "Beneficiary Register"],
+  "import_templates": [
+    {"entity": "donors", "columns": ["name", "type", "contact_email", "country"]},
+    {"entity": "grants", "columns": ["donor", "name", "start_date", "end_date", "total_budget", "restricted", "reporting_frequency"]},
+    {"entity": "budget_lines", "columns": ["grant", "line_code", "description", "amount"]},
+    {"entity": "employees", "columns": ["employee_number", "full_name", "program", "job_title", "salary", "funded_by_grant"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "NGO ERP enforces donor restrictions: every expense maps to a grant budget line; restricted income defers until spent. Grant burn rate vs timeline and clean audit trails decide future funding.",
+    "starter_prompts": [
+      "Show burn rate per grant vs time elapsed.",
+      "List expenses charged to restricted funds this month.",
+      "Which grant budget lines are over 90% consumed?",
+      "Show support-cost ratio year to date.",
+      "Generate a donor financial summary for grant X."
+    ]
+  }
+}

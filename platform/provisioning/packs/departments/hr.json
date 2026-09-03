@@ -1,0 +1,15 @@
+{
+  "key": "hr",
+  "name": "HR & Payroll",
+  "description": "Employees, contracts, attendance, leave, payroll, appraisals.",
+  "version": "1.0",
+  "modules": ["hr", "payroll", "expenses"],
+  "roles": [
+    {"name": "HR Manager", "description": "Owns employee lifecycle, approves leave and payroll."},
+    {"name": "HR Officer", "description": "Maintains employee records, attendance, documents."},
+    {"name": "Employee", "description": "Self-service: payslips, leave, attendance, expenses."}
+  ],
+  "kpis": ["Headcount", "Attendance rate", "Overtime hours", "Turnover", "Payroll cost"],
+  "dashboards": ["HR Overview", "Attendance", "Payroll Summary"],
+  "reports": ["Payroll Register", "Attendance Sheet", "Leave Balance", "End-of-Service"]
+}

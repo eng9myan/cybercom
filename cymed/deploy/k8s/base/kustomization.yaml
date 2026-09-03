@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: cymed
+
+commonLabels:
+  app.kubernetes.io/part-of: cymed-platform
+  app.kubernetes.io/managed-by: kustomize
+
+resources:
+  - namespace.yaml
+  - configmap.env.yaml
+  # NOTE: secret.env.yaml is a placeholder. Overlays should reference
+  # `sealed-secret.env.yaml` (kubeseal output) instead of this file.
+  - secret.env.yaml
+  - deployment.api.yaml
+  - deployment.worker.yaml
+  - deployment.beat.yaml
+  - service.api.yaml
+  - hpa.api.yaml
+  - ingress.yaml
+  - networkpolicy.yaml
+
+# Overlays pin image tags per environment; keep :latest here for parsimony
+# but never let :latest reach production — the build-and-push workflow pushes
+# both :sha and :latest so overlays can pin to the immutable :sha.
+images:
+  - name: ghcr.io/cybercom/cymed-api
+    newTag: latest
+  - name: ghcr.io/cybercom/cymed-worker
+    newTag: latest
+  - name: ghcr.io/cybercom/cymed-beat
+    newTag: latest

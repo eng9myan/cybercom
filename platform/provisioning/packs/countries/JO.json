@@ -1,0 +1,64 @@
+{
+  "code": "JO",
+  "name": "Jordan",
+  "currency": "JOD",
+  "languages": ["ar", "en"],
+  "default_locale": "ar",
+  "fiscal_year_start_month": 1,
+  "version": "1.0",
+  "tax_config": {
+    "sales_tax_name": "General Sales Tax",
+    "standard_rate": 16.0,
+    "reduced_rates": [4.0, 0.0],
+    "withholding": {"services": 5.0}
+  },
+  "payroll_config": {
+    "social_security": {"employee_rate": 7.5, "employer_rate": 14.25},
+    "income_tax_brackets": [
+      {"up_to": 5000, "rate": 5},
+      {"up_to": 10000, "rate": 10},
+      {"up_to": 15000, "rate": 15},
+      {"up_to": 20000, "rate": 20},
+      {"up_to": null, "rate": 25}
+    ],
+    "currency": "JOD"
+  },
+  "einvoicing": {"system": "jofotara", "authority": "ISTD", "status": "ready"},
+  "public_holidays": [
+    "New Year", "Labour Day", "Independence Day", "Eid al-Fitr",
+    "Eid al-Adha", "Islamic New Year", "Prophet's Birthday", "Christmas"
+  ],
+  "coa_template": [
+    {"code": "1000", "name": "Assets", "account_type": "asset", "parent": null},
+    {"code": "1100", "name": "Current Assets", "account_type": "asset", "parent": "1000"},
+    {"code": "1110", "name": "Cash on Hand", "account_type": "asset", "parent": "1100"},
+    {"code": "1120", "name": "Bank Accounts", "account_type": "asset", "parent": "1100"},
+    {"code": "1130", "name": "Accounts Receivable", "account_type": "asset", "parent": "1100"},
+    {"code": "1140", "name": "Inventory", "account_type": "asset", "parent": "1100"},
+    {"code": "1150", "name": "Sales Tax Receivable (Input GST)", "account_type": "asset", "parent": "1100"},
+    {"code": "1200", "name": "Fixed Assets", "account_type": "asset", "parent": "1000"},
+    {"code": "1210", "name": "Property & Equipment", "account_type": "asset", "parent": "1200"},
+    {"code": "1220", "name": "Accumulated Depreciation", "account_type": "asset", "parent": "1200"},
+    {"code": "2000", "name": "Liabilities", "account_type": "liability", "parent": null},
+    {"code": "2100", "name": "Current Liabilities", "account_type": "liability", "parent": "2000"},
+    {"code": "2110", "name": "Accounts Payable", "account_type": "liability", "parent": "2100"},
+    {"code": "2120", "name": "Sales Tax Payable (Output GST)", "account_type": "liability", "parent": "2100"},
+    {"code": "2130", "name": "Social Security Payable", "account_type": "liability", "parent": "2100"},
+    {"code": "2140", "name": "Income Tax Payable", "account_type": "liability", "parent": "2100"},
+    {"code": "2150", "name": "Accrued Salaries", "account_type": "liability", "parent": "2100"},
+    {"code": "3000", "name": "Equity", "account_type": "equity", "parent": null},
+    {"code": "3100", "name": "Share Capital", "account_type": "equity", "parent": "3000"},
+    {"code": "3200", "name": "Retained Earnings", "account_type": "equity", "parent": "3000"},
+    {"code": "4000", "name": "Income", "account_type": "income", "parent": null},
+    {"code": "4100", "name": "Sales Revenue", "account_type": "income", "parent": "4000"},
+    {"code": "4200", "name": "Service Revenue", "account_type": "income", "parent": "4000"},
+    {"code": "4300", "name": "Other Income", "account_type": "income", "parent": "4000"},
+    {"code": "5000", "name": "Expenses", "account_type": "expense", "parent": null},
+    {"code": "5100", "name": "Cost of Goods Sold", "account_type": "expense", "parent": "5000"},
+    {"code": "5200", "name": "Salaries & Wages", "account_type": "expense", "parent": "5000"},
+    {"code": "5300", "name": "Rent Expense", "account_type": "expense", "parent": "5000"},
+    {"code": "5400", "name": "Utilities", "account_type": "expense", "parent": "5000"},
+    {"code": "5500", "name": "Depreciation Expense", "account_type": "expense", "parent": "5000"},
+    {"code": "5900", "name": "General & Administrative", "account_type": "expense", "parent": "5000"}
+  ]
+}

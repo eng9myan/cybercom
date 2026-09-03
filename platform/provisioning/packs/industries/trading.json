@@ -1,0 +1,61 @@
+{
+  "key": "trading",
+  "name": "Trading & Distribution Company",
+  "version": "1.0",
+  "description": "Wholesale/distribution — CRM to collection: quotations, credit control, inventory reservation, delivery, branch transfers.",
+  "department_pack_keys": ["finance", "sales", "procurement", "inventory", "hr"],
+  "recommended_ops": ["buys_products", "operates_branches", "imports", "field_sales"],
+  "terminology": {"sale_order": "Sales Order", "vendor": "Supplier"},
+  "default_config": {
+    "roles": [
+      {"name": "General Manager", "description": "Approves credit exceptions and high-value spend."},
+      {"name": "Credit Controller", "description": "Owns customer credit limits and collections."},
+      {"name": "Van Sales Rep", "description": "Field sales on routes, direct invoicing."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 1000, "role": "Procurement Manager"},
+      {"min": 1000, "max": null, "role": "General Manager"}]},
+    {"document_type": "credit_exception", "name": "Customer Credit Exception", "tiers": [
+      {"min": 0, "max": 2000, "role": "Credit Controller"},
+      {"min": 2000, "max": null, "role": "General Manager"}]},
+    {"document_type": "payment", "name": "Payment Approval", "tiers": [
+      {"min": 0, "max": 10000, "role": "Finance Manager"},
+      {"min": 10000, "max": null, "role": "General Manager"}]}
+  ],
+  "categories": ["FMCG", "Electronics", "Building Materials", "Spare Parts", "General Goods"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1135", "name": "Post-Dated Cheques Receivable", "account_type": "asset", "parent": "1100"},
+      {"code": "4110", "name": "Wholesale Revenue", "account_type": "income", "parent": "4100"},
+      {"code": "4120", "name": "Van Sales Revenue", "account_type": "income", "parent": "4100"},
+      {"code": "5110", "name": "Freight In", "account_type": "expense", "parent": "5100"},
+      {"code": "5120", "name": "Supplier Rebates (Contra)", "account_type": "expense", "parent": "5100"}
+    ]
+  },
+  "industry_fields": {
+    "customer": ["credit_limit", "payment_terms_days", "route", "sales_rep"],
+    "product": ["wholesale_price", "min_order_qty", "barcode"]
+  },
+  "dashboards": ["Sales by Route", "AR Aging", "Stock Cover", "Branch Transfers"],
+  "reports": ["Customer Statement", "Aging Report", "Route Sales", "Replenishment Report", "Rebate Report"],
+  "doc_templates": ["Quotation", "Sales Order", "Delivery Note", "Customer Statement"],
+  "import_templates": [
+    {"entity": "products", "columns": ["sku", "name", "category", "barcode", "cost", "wholesale_price", "retail_price", "min_order_qty"]},
+    {"entity": "customers", "columns": ["name", "route", "credit_limit", "payment_terms_days", "tax_number"]},
+    {"entity": "suppliers", "columns": ["legal_name", "cr_number", "tax_number", "payment_terms_days", "iban"]},
+    {"entity": "opening_inventory", "columns": ["sku", "warehouse", "quantity", "unit_cost"]},
+    {"entity": "opening_balances", "columns": ["account_code", "debit", "credit"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Distribution ERP revolves around credit-controlled selling and stock availability: quotation -> order -> credit check -> reservation -> delivery -> invoice -> collection. Margins are thin; rebates, route profitability, and aging discipline decide profit.",
+    "starter_prompts": [
+      "Show this month's sales by route.",
+      "Which customers exceed their credit limit?",
+      "List items below reorder point.",
+      "Show AR aging over 90 days.",
+      "Compare branch transfer volumes this quarter."
+    ]
+  }
+}

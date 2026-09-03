@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCycomList, m2oName, type Many2One } from '@/lib/cycomModels';
+import { create, unlink } from '@/lib/cycom';
 import { 
   Clock, Plus, Calendar, AlertTriangle, CheckCircle, 
   Trash2, User, UserPlus, Info, CheckSquare
@@ -90,7 +91,23 @@ export default function PlanningPage() {
     return null;
   };
 
-  const handleCreateSlot = (e: React.FormEvent) => {
+  // day (Mon..Sun) + "HH:MM - HH:MM" → concrete ISO datetimes in the current week.
+  const slotDatetimes = (dayAbbr: string, range: string): { start: string; end: string } => {
+    const order = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const targetDow = order.indexOf(dayAbbr);
+    const base = new Date();
+    base.setDate(base.getDate() + ((targetDow - base.getDay() + 7) % 7));
+    const [from, to] = range.split('-').map((s) => s.trim());
+    const mk = (hm: string) => {
+      const [h, m] = hm.split(':').map((n) => parseInt(n) || 0);
+      const d = new Date(base);
+      d.setHours(h, m, 0, 0);
+      return d.toISOString();
+    };
+    return { start: mk(from || '08:00'), end: mk(to || '16:00') };
+  };
+
+  const handleCreateSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsedHours = parseInt(hours) || 8;
     const newShift = {
@@ -103,23 +120,27 @@ export default function PlanningPage() {
     };
 
     const conflict = checkConflict(newShift);
-    if (conflict) {
-      setWarningMsg(conflict);
-      // We still record it in Cycom warning mode, but flag it
-    } else {
-      setWarningMsg(null);
+    setWarningMsg(conflict);
+
+    const { start, end } = slotDatetimes(day, timeRange);
+    try {
+      const id = await create('planning.slot', {
+        resource_name: empName,
+        role,
+        department: dept.toLowerCase(),
+        start_datetime: start,
+        end_datetime: end,
+      });
+      setShifts([...shifts, { id: `SFT-${id}`, ...newShift }]);
+    } catch {
+      /* keep form populated for retry */
     }
-
-    const slot: ShiftSlot = {
-      id: `SFT-${Math.floor(10 + Math.random() * 90)}`,
-      ...newShift
-    };
-
-    setShifts([...shifts, slot]);
   };
 
-  const handleDeleteShift = (id: string) => {
+  const handleDeleteShift = async (id: string) => {
     setShifts(shifts.filter(s => s.id !== id));
+    const rawId = id.replace('SFT-', '');
+    try { await unlink('planning.slot', [rawId as unknown as number]); } catch { /* swallow */ }
   };
 
   const DAYS: Array<'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun'> = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

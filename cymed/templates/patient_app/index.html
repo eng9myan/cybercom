@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#0062CC">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CyMed">
+  <link rel="manifest" href="/static/patient_app/manifest.json">
+  <link rel="apple-touch-icon" href="/static/patient_app/icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/patient_app/icons/icon-192.png">
+  <title>CyMed Patient</title>
+  <base href="/patient-app/">
+  <style>
+    html, body { margin: 0; padding: 0; background: #0A0E27; color: #fff; height: 100%; font-family: system-ui; }
+    #splash { display: flex; align-items: center; justify-content: center; height: 100%; }
+    .brand { text-align: center; }
+    .brand .dot { width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg, #0062CC, #00D4AA); margin: 0 auto 24px; }
+    .brand h1 { margin: 0; font-size: 32px; letter-spacing: 2px; font-weight: 700; }
+    .brand p { margin: 8px 0 0; color: rgba(255,255,255,0.6); }
+  </style>
+</head>
+<body>
+  <div id="splash">
+    <div class="brand">
+      <div class="dot"></div>
+      <h1>CyMed</h1>
+      <p>Loading your health…</p>
+    </div>
+  </div>
+
+  <script>
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/patient_app/service-worker.js', { scope: '/patient-app/' });
+      });
+    }
+  </script>
+
+  <!-- Flutter Web bootstrap (produced by `flutter build web`) -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

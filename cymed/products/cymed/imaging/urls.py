@@ -11,4 +11,11 @@ urlpatterns = [
     path("teleradiology/", include("products.cymed.imaging.teleradiology.urls")),
     path("quality/", include("products.cymed.imaging.quality.urls")),
     path("analytics/", include("products.cymed.imaging.analytics.urls")),
+    # ── Gap-fill (P0-11) ───────────────────────────────────────────
+    path("booking/",          include("products.cymed.imaging.patient_booking.urls")),
+    path("patient-results/",  include("products.cymed.imaging.patient_results.urls")),
+    path("sharing/",          include("products.cymed.imaging.image_sharing.urls")),
+    path("ai-triage/",        include("products.cymed.imaging.ai_triage.urls")),
+    path("telerad-market/",   include("products.cymed.imaging.tele_marketplace.urls")),
+    path("prep/",             include("products.cymed.imaging.prep_instructions.urls")),
 ]

@@ -1,0 +1,24 @@
+{
+  "name": "CyMed Patient",
+  "short_name": "CyMed",
+  "description": "Your health, one tap away — records, appointments, NFC ID, payments.",
+  "start_url": "/patient-app/",
+  "scope": "/patient-app/",
+  "display": "standalone",
+  "background_color": "#0A0E27",
+  "theme_color": "#0062CC",
+  "orientation": "portrait",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["medical", "health", "productivity"],
+  "icons": [
+    { "src": "/static/patient_app/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/static/patient_app/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "My records", "url": "/patient-app/#/timeline", "icons": [{ "src": "/static/patient_app/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Book appointment", "url": "/patient-app/#/appointments", "icons": [{ "src": "/static/patient_app/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Emergency profile", "url": "/patient-app/#/emergency", "icons": [{ "src": "/static/patient_app/icons/icon-192.png", "sizes": "192x192" }] }
+  ],
+  "prefer_related_applications": false
+}

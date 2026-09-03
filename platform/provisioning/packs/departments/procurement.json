@@ -1,0 +1,14 @@
+{
+  "key": "procurement",
+  "name": "Procurement",
+  "description": "Supplier registration/approval, PR, RFQ, PO, receiving, bills.",
+  "version": "1.0",
+  "modules": ["procurement", "ar_ap"],
+  "roles": [
+    {"name": "Procurement Manager", "description": "Approves suppliers and purchase orders."},
+    {"name": "Buyer", "description": "Raises RFQs and purchase orders, compares bids."}
+  ],
+  "kpis": ["Open POs", "On-time delivery", "Supplier performance", "Spend by category"],
+  "dashboards": ["Procurement Overview", "Supplier Performance"],
+  "reports": ["PO Register", "Pending Receipts", "3-Way Match Exceptions", "Supplier Ledger"]
+}

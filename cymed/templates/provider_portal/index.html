@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Hakeem Provider Portal{% endblock %}
+{% block content %}
+<header class="app-header">
+    <div class="logo">
+        <div class="logo-icon">&#x1F3E5;</div>
+        Hakeem Provider
+    </div>
+    <nav class="nav-links">
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/patient-portal/" class="nav-link">Patient Portal</a>
+        <a href="/provider-portal/" class="nav-link active">Provider Portal</a>
+    </nav>
+    <div style="display:flex;align-items:center;gap:12px;">
+        <span class="badge badge-success">● On Call</span>
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;">KH</div>
+    </div>
+</header>
+
+<div class="dashboard-grid">
+    <aside class="sidebar glass-card" style="padding:20px;height:fit-content;">
+        <div style="text-align:center;margin-bottom:24px;">
+            <div style="width:80px;height:80px;border-radius:50%;background:var(--gradient-primary);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:36px;">&#x1F468;&#x200D;&#x2695;&#xFE0F;</div>
+            <div style="font-weight:700;">Dr. Kareem Hassan</div>
+            <div style="font-size:12px;color:var(--text-muted);">Cardiologist • NPI: 8847219</div>
+        </div>
+        <a href="#overview" class="sidebar-item active" onclick="showTab('overview')">
+            <span style="font-size:18px;">&#x1F4CB;</span> Overview
+        </a>
+        <a href="#patients" class="sidebar-item" onclick="showTab('patients')">
+            <span style="font-size:18px;">&#x1F465;</span> My Patients
+        </a>
+        <a href="#schedule" class="sidebar-item" onclick="showTab('schedule')">
+            <span style="font-size:18px;">&#x1F4C5;</span> Schedule
+        </a>
+        <a href="#orders" class="sidebar-item" onclick="showTab('orders')">
+            <span style="font-size:18px;">&#x1F9EA;</span> Orders & Results
+        </a>
+        <a href="#credentialing" class="sidebar-item" onclick="showTab('credentialing')">
+            <span style="font-size:18px;">&#x1F4DC;</span> Credentialing
+        </a>
+        <a href="#telemedicine" class="sidebar-item" onclick="showTab('telemedicine')">
+            <span style="font-size:18px;">&#x1F4F9;</span> Telemedicine
+        </a>
+    </aside>
+
+    <main id="main-content">
+        <!-- Overview Tab -->
+        <div id="tab-overview" class="tab-pane">
+            <div style="margin-bottom:24px;">
+                <h1 style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;">Provider Command Center</h1>
+                <p style="color:var(--text-secondary);font-size:14px;">Dr. Kareem Hassan — Cardiology Department</p>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-card animate-in">
+                    <div class="stat-label">Today's Appointments</div>
+                    <div class="stat-value">14</div>
+                    <div class="stat-change up">&#x2191; 2 walk-ins</div>
+                </div>
+                <div class="stat-card animate-in delay-1">
+                    <div class="stat-label">Pending Results</div>
+                    <div class="stat-value">6</div>
+                    <div class="stat-change down">1 critical</div>
+                </div>
+                <div class="stat-card animate-in delay-2">
+                    <div class="stat-label">Active Patients</div>
+                    <div class="stat-value">127</div>
+                    <div class="stat-change up">3 new admissions</div>
+                </div>
+                <div class="stat-card animate-in delay-3">
+                    <div class="stat-label">Telemedicine Queue</div>
+                    <div class="stat-value">3</div>
+                    <div class="stat-change up">Next in 12 min</div>
+                </div>
+            </div>
+
+            <div class="glass-card" style="padding:24px;margin-bottom:24px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                    <h2 style="font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;">Priority Patient Alerts</h2>
+                    <button class="btn btn-primary" style="padding:6px 16px;font-size:12px;">View All</button>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                    <div style="display:flex;align-items:center;gap:16px;padding:16px;background:rgba(255,71,87,0.08);border:1px solid rgba(255,71,87,0.2);border-radius:var(--radius-md);">
+                        <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,71,87,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;">&#x26A0;&#xFE0F;</div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700;font-size:14px;">Ahmad Saleh — Lab Critical Value</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">Potassium 6.8 mmol/L (Critical) • MRN: 7712345</div>
+                        </div>
+                        <span class="badge badge-danger">CRITICAL</span>
+                        <button class="btn btn-primary" style="padding:6px 16px;font-size:12px;">Review</button>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:16px;padding:16px;background:rgba(255,165,2,0.08);border:1px solid rgba(255,165,2,0.2);border-radius:var(--radius-md);">
+                        <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,165,2,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;">&#x1F48A;</div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700;font-size:14px;">Lina Khoury — Drug Interaction Alert</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">Warfarin + Aspirin interaction detected</div>
+                        </div>
+                        <span class="badge badge-warning">REVIEW</span>
+                        <button class="btn btn-ghost" style="padding:6px 16px;font-size:12px;">Review</button>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:16px;padding:16px;background:rgba(0,212,170,0.08);border:1px solid rgba(0,212,170,0.2);border-radius:var(--radius-md);">
+                        <div style="width:44px;height:44px;border-radius:50%;background:rgba(0,212,170,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;">&#x1F4E5;</div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700;font-size:14px;">Omar Farouk — Imaging Ready</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">MRI Brain w/ contrast — Results uploaded</div>
+                        </div>
+                        <span class="badge badge-success">READY</span>
+                        <button class="btn btn-primary" style="padding:6px 16px;font-size:12px;">View</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
+                <div class="glass-card" style="padding:24px;">
+                    <h3 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:16px;">Quick Actions</h3>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <button class="btn btn-primary" style="justify-content:flex-start;">&#x2795; New Prescription</button>
+                        <button class="btn btn-ghost" style="justify-content:flex-start;">&#x1F9EA; Order Lab Test</button>
+                        <button class="btn btn-ghost" style="justify-content:flex-start;">&#x1F4F9; Start Telemedicine</button>
+                        <button class="btn btn-ghost" style="justify-content:flex-start;">&#x1F4C4; Write Clinical Note</button>
+                    </div>
+                </div>
+                <div class="glass-card" style="padding:24px;">
+                    <h3 style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:16px;">ICD-11 Coding Assistant</h3>
+                    <div style="display:flex;gap:8px;margin-bottom:16px;">
+                        <input type="text" placeholder="Search diagnosis..." style="flex:1;padding:10px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--glass-border);border-radius:var(--radius-md);color:var(--text-primary);font-family:inherit;">
+                        <button class="btn btn-primary">Search</button>
+                    </div>
+                    <div style="font-size:13px;color:var(--text-secondary);">
+                        Recently used:<br>
+                        <span style="display:inline-block;margin-top:8px;padding:4px 10px;background:rgba(0,98,204,0.15);border-radius:100px;color:#4dabf7;font-size:12px;">I70.2 — Atherosclerosis</span>
+                        <span style="display:inline-block;margin-top:8px;margin-left:6px;padding:4px 10px;background:rgba(0,98,204,0.15);border-radius:100px;color:#4dabf7;font-size:12px;">BA00 — Hypertensive disorders</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Credentialing Tab -->
+        <div id="tab-credentialing" class="tab-pane" style="display:none;">
+            <div style="margin-bottom:24px;">
+                <h1 style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;">Credentialing Status</h1>
+                <p style="color:var(--text-secondary);font-size:14px;">Verify and track your professional credentials</p>
+            </div>
+            <div style="max-width:600px;">
+                <div class="glass-card" style="padding:24px;margin-bottom:16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <h3 style="font-weight:700;">Overall Status</h3>
+                        <span class="badge badge-success">Verified</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,0.02);border-radius:var(--radius-md);">
+                            <span>Medical License</span>
+                            <span style="color:#00D4AA;font-weight:600;">&#x2705; Verified</span>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,0.02);border-radius:var(--radius-md);">
+                            <span>Board Certification</span>
+                            <span style="color:#00D4AA;font-weight:600;">&#x2705; Verified</span>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,0.02);border-radius:var(--radius-md);">
+                            <span>Background Check</span>
+                            <span style="color:#00D4AA;font-weight:600;">&#x2705; Passed</span>
+                        </div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,255,255,0.02);border-radius:var(--radius-md);">
+                            <span>Malpractice Insurance</span>
+                            <span style="color:#00D4AA;font-weight:600;">&#x2705; Verified</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Other tabs placeholder -->
+        <div id="tab-patients" class="tab-pane" style="display:none;">
+            <h1 style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;margin-bottom:24px;">My Patients</h1>
+            <div class="glass-card" style="padding:24px;">
+                <p style="color:var(--text-secondary);">Patient roster with active conditions and care plans.</p>
+            </div>
+        </div>
+        <div id="tab-schedule" class="tab-pane" style="display:none;">
+            <h1 style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;margin-bottom:24px;">Schedule</h1>
+            <div class="glass-card" style="padding:24px;">
+                <p style="color:var(--text-secondary);">Calendar and availability management.</p>
+            </div>
+        </div>
+        <div id="tab-orders" class="tab-pane" style="display:none;">
+            <h1 style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;margin-bottom:24px;">Orders & Results</h1>
+            <div class="glass-card" style="padding:24px;">
+                <p style="color:var(--text-secondary);">Lab, imaging, and pharmacy orders with results.</p>
+            </div>
+        </div>
+        <div id="tab-telemedicine" class="tab-pane" style="display:none;">
+            <h1 style="font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;margin-bottom:24px;">Telemedicine</h1>
+            <div class="glass-card" style="padding:24px;">
+                <p style="color:var(--text-secondary);">Virtual consultations and video calls.</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function showTab(tabId) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.style.display = 'none');
+    document.getElementById('tab-' + tabId).style.display = 'block';
+    document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+    event.target.closest('.sidebar-item').classList.add('active');
+}
+</script>
+{% endblock %}

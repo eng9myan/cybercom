@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from core.views.health import HealthView, LivenessView, ReadinessView
@@ -11,6 +12,12 @@ urlpatterns = [
     path("health", HealthView.as_view(), name="health-check"),
     path("health/liveness", LivenessView.as_view(), name="liveness-check"),
     path("health/readiness", ReadinessView.as_view(), name="readiness-check"),
+    path("", include("platform.observability.urls")),   # exposes /metrics
+    # ── Frontend Portals ───────────────────────────────────────────────────
+    path("", TemplateView.as_view(template_name="dashboard/index.html"), name="home"),
+    path("patient-portal/", TemplateView.as_view(template_name="patient_portal/index.html"), name="patient-portal"),
+    path("patient-app/", TemplateView.as_view(template_name="patient_app/index.html"), name="patient-app"),
+    path("provider-portal/", TemplateView.as_view(template_name="provider_portal/index.html"), name="provider-portal"),
     # ── OpenAPI Schema ─────────────────────────────────────────────────────
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
@@ -54,9 +61,34 @@ urlpatterns = [
     path("api/v1/imaging/", include("products.cymed.imaging.urls")),
     # ── CyMed Pharmacy Edition API v1 (Program 3.5) ───────────────────────
     path("api/v1/pharmacy/", include("products.cymed.pharmacy.urls")),
-    # NOTE: patient_portal, provider_portal, rcm, population_health,
-    # workforce_management, demo, deployment, implementation, academy,
-    # commercial_readiness, partner_ecosystem, and website routes were
-    # removed along with their app directories — out of scope for this
-    # monorepo's CyMed clinical subset (see cymed/README or repo root docs).
+    # ── CyMed Integrations API v1 ──────────────────────────────────────────
+    path("api/v1/integrations/jofawtra/", include("products.cymed.integrations.jofawtra.urls")),
+    path("api/v1/integrations/zakata/", include("products.cymed.integrations.zakata.urls")),
+    path("api/v1/integrations/nphies/", include("products.cymed.integrations.nphies.urls")),
+    path("api/v1/integrations/hakeem/", include("products.cymed.integrations.hakeem.urls")),
+    # ── FHIR R4 REST Server (P0-4) ─────────────────────────────────────────
+    path("fhir/R4/", include("products.cymed.fhir_r4.urls")),
+    # ── AI Clinical Decision Support (P0-5) ────────────────────────────────
+    path("api/v1/ai-cds/", include("products.cymed.ai_cds.urls")),
+    # ── Revenue Cycle Management (P0-6) ────────────────────────────────────
+    path("api/v1/rcm/", include("products.cymed.rcm.urls")),
+    # ── Clinic gap-fill (P0-8) ─────────────────────────────────────────────
+    path("api/v1/clinic/insurance/",  include("products.cymed.clinic.insurance_verify.urls")),
+    path("api/v1/clinic/kiosk/",      include("products.cymed.clinic.self_checkin.urls")),
+    path("api/v1/clinic/coding/",     include("products.cymed.clinic.auto_coding.urls")),
+    path("api/v1/clinic/referrals/",  include("products.cymed.clinic.referral_loop.urls")),
+    path("api/v1/clinic/shop/",       include("products.cymed.clinic.ecommerce.urls")),
+    path("api/v1/clinic/marketing/",  include("products.cymed.clinic.marketing.urls")),
+    # ── CyMed Portals API v1 ───────────────────────────────────────────────
+    path("api/v1/patient-portal/", include("products.cymed.patient_portal.urls")),
+    # Alias per P0-1 spec: mobile app uses /patient-app/
+    path("api/v1/patient-app/",    include("products.cymed.patient_portal.urls")),
+    path("api/v1/provider-portal/", include("products.cymed.provider_portal.urls")),
+    # ── CyMed Ecosystem Glue (P0-12) ───────────────────────────────────────
+    path("api/v1/ecosystem/",        include("products.cymed.ecosystem.urls")),
+    # ── CyMed MRFF Program (MRFF-16..19) ───────────────────────────────────
+    path("api/v1/mrff/",             include("products.cymed.mrff.urls")),
+    # ── Payments (P0-2) ────────────────────────────────────────────────────
+    path("api/v1/payments/",         include("products.cymed.payments.urls")),
+    path("api/v1/patient-app/billing/", include("products.cymed.payments.urls")),
 ]

@@ -88,7 +88,9 @@ class PurchaseOrderViewSet(TenantScopedModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="receive")
     def receive(self, request, pk=None):
+        """Full or partial goods receipt. Optional body: {"receipts": {line_id: qty}}."""
         order = self.get_object()
-        receive_purchase_order(order)
+        receipts = request.data.get("receipts") if isinstance(request.data, dict) else None
+        receive_purchase_order(order, receipts=receipts)
         order.refresh_from_db()
         return Response(PurchaseOrderSerializer(order).data)

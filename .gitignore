@@ -38,3 +38,19 @@ infrastructure/.env.frontend
 .env.production
 .env.frontend
 infrastructure/.env.demo
+
+# ── Claude Code / ruflo local state (regenerable via `ruflo init`) ──
+.claude/
+.claude-flow/
+.swarm/
+.agents/
+
+# Local dev databases / smoke fixtures
+*.db
+dev_smoke.db
+
+# Local dev Keycloak realm — contains a dev seed-user password
+infrastructure/keycloak/cycom-dev-realm.json
+
+# Education product — pending scope decision (blueprint J.2 O5)
+/CyEd/

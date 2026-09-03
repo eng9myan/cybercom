@@ -35,9 +35,9 @@ const MODULE_SIDEBARS: Record<string, ModuleConfig> = {
     items: [
       { label: 'Setup Hub', href: '/setup', icon: LayoutGrid, dot: '#A855F7' },
       { label: 'Company', href: '/setup/company', icon: Building2, dot: '#E67E22' },
-      { label: 'Chart of Accounts', href: '/setup', icon: Calculator, dot: '#5DADE2' },
-      { label: 'Payroll Structure', href: '/setup', icon: DollarSign, dot: '#10B981' },
-      { label: 'Warehouse', href: '/setup', icon: Package, dot: '#F59E0B' }
+      { label: 'Chart of Accounts', href: '/setup/coa', icon: Calculator, dot: '#5DADE2' },
+      { label: 'Payroll Structure', href: '/setup/payroll', icon: DollarSign, dot: '#10B981' },
+      { label: 'Warehouse', href: '/setup/warehouse', icon: Package, dot: '#F59E0B' }
     ]
   },
   sign: {
@@ -227,7 +227,7 @@ export default function CycomSidebar() {
           
           return (
             <Link
-              key={item.href}
+              key={`${item.href}-${item.label}`}
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all border ${
                 active

@@ -1,0 +1,14 @@
+{
+  "key": "maintenance",
+  "name": "Maintenance & Assets",
+  "description": "Asset register, work orders, preventive maintenance, spares, downtime.",
+  "version": "1.0",
+  "modules": ["maintenance", "field_service"],
+  "roles": [
+    {"name": "Maintenance Manager", "description": "Owns asset register and PM schedule, approves work orders."},
+    {"name": "Technician", "description": "Executes work orders, logs parts and downtime."}
+  ],
+  "kpis": ["Open work orders", "PM compliance", "Downtime hours", "Maintenance cost per asset"],
+  "dashboards": ["Maintenance Overview", "Asset Health"],
+  "reports": ["Work Order Register", "PM Schedule", "Downtime Report", "Spare Parts Usage"]
+}

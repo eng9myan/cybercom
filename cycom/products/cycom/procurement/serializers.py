@@ -45,11 +45,17 @@ class PurchaseOrderLineSerializer(serializers.ModelSerializer):
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     lines = PurchaseOrderLineSerializer(many=True)
+    vendor_name = serializers.CharField(source="vendor.name", read_only=True)
+    amount_total = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrder
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "status", "created_at", "updated_at"]
+
+    def get_amount_total(self, obj):
+        from decimal import Decimal
+        return sum((l.quantity * l.unit_cost for l in obj.lines.all()), Decimal("0"))
 
     def create(self, validated_data):
         lines_data = validated_data.pop("lines")

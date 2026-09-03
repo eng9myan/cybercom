@@ -1,0 +1,60 @@
+{
+  "key": "realestate",
+  "name": "Real Estate & Property Management",
+  "version": "1.0",
+  "description": "Property units, tenant contracts, lease schedules, rent invoicing, deposits, service charges, owner statements.",
+  "department_pack_keys": ["finance", "sales", "maintenance", "hr", "documents"],
+  "recommended_ops": ["provides_services", "manages_projects"],
+  "terminology": {"customer": "Tenant", "sale_order": "Lease Contract", "invoice": "Rent Invoice", "product": "Unit"},
+  "default_config": {
+    "roles": [
+      {"name": "Property Manager", "description": "Owns units, leases, renewals, and service charges."},
+      {"name": "Leasing Agent", "description": "Handles viewings, applications, and contract signing."},
+      {"name": "Collections Officer", "description": "Chases rent, manages deposits and arrears."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "lease_contract", "name": "Lease Approval", "tiers": [
+      {"min": 0, "max": 20000, "role": "Property Manager"},
+      {"min": 20000, "max": null, "role": "General Manager"}]},
+    {"document_type": "maintenance_work_order", "name": "Maintenance Work Order", "tiers": [
+      {"min": 0, "max": 300, "role": "Property Manager"},
+      {"min": 300, "max": null, "role": "Maintenance Manager"}]},
+    {"document_type": "deposit_refund", "name": "Deposit Refund", "tiers": [
+      {"min": 0, "max": null, "role": "Finance Manager"}]}
+  ],
+  "categories": ["Residential", "Commercial", "Retail", "Warehouse", "Land"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1180", "name": "Rent Receivable", "account_type": "asset", "parent": "1100"},
+      {"code": "2180", "name": "Security Deposits Held", "account_type": "liability", "parent": "2100"},
+      {"code": "2190", "name": "Unearned Rent", "account_type": "liability", "parent": "2100"},
+      {"code": "4240", "name": "Rental Income", "account_type": "income", "parent": "4200"},
+      {"code": "4250", "name": "Service Charge Income", "account_type": "income", "parent": "4200"},
+      {"code": "5350", "name": "Property Maintenance Expense", "account_type": "expense", "parent": "5300"}
+    ]
+  },
+  "industry_fields": {
+    "unit": ["building", "floor", "area_sqm", "unit_type", "status_vacant_occupied"],
+    "lease": ["start_date", "end_date", "annual_rent", "payment_frequency", "deposit_amount", "owner"]
+  },
+  "dashboards": ["Occupancy", "Rent Collection", "Arrears", "Owner Statements"],
+  "reports": ["Rent Roll", "Occupancy Report", "Lease Expiry Schedule", "Arrears Aging", "Owner Statement", "Service Charge Reconciliation"],
+  "doc_templates": ["Lease Contract", "Rent Invoice", "Renewal Notice", "Handover Checklist", "Owner Statement"],
+  "import_templates": [
+    {"entity": "properties", "columns": ["building", "unit_code", "unit_type", "floor", "area_sqm", "owner"]},
+    {"entity": "tenants", "columns": ["name", "national_id", "phone", "email"]},
+    {"entity": "leases", "columns": ["unit_code", "tenant", "start_date", "end_date", "annual_rent", "payment_frequency", "deposit_amount"]},
+    {"entity": "opening_balances", "columns": ["account_code", "debit", "credit"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Property ERP tracks unit occupancy and lease cashflows. Rent is invoiced on schedules (monthly/quarterly/annual cheques). Deposits are liabilities, not income. Owner statements split collections minus expenses per property.",
+    "starter_prompts": [
+      "Show occupancy rate by building.",
+      "Which leases expire in the next 90 days?",
+      "List tenants with arrears over 60 days.",
+      "Show rent collection rate this quarter.",
+      "Generate an owner statement summary for last month."
+    ]
+  }
+}

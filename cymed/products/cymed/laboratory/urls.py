@@ -18,4 +18,10 @@ urlpatterns = [
     path("blood-bank/", include("products.cymed.laboratory.blood_bank_foundation.urls")),
     path("analytics/", include("products.cymed.laboratory.analytics.urls")),
     path("reference/", include("products.cymed.laboratory.reference_lab.urls")),
+    # ── Gap-fill (P0-10) ───────────────────────────────────────────
+    path("patient-results/",  include("products.cymed.laboratory.patient_results.urls")),
+    path("home-collection/",  include("products.cymed.laboratory.home_collection.urls")),
+    path("booking/",          include("products.cymed.laboratory.online_booking.urls")),
+    path("dtc/",              include("products.cymed.laboratory.dtc_catalog.urls")),
+    path("courier/",          include("products.cymed.laboratory.courier_tracking.urls")),
 ]

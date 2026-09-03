@@ -1,0 +1,56 @@
+{
+  "key": "facility",
+  "name": "Facility Management Company",
+  "version": "1.0",
+  "description": "FM contracts, sites, SLAs, work orders, PPM, technician dispatch, spare parts, contract profitability.",
+  "department_pack_keys": ["finance", "sales", "maintenance", "inventory", "hr"],
+  "recommended_ops": ["provides_services", "manages_projects", "operates_branches"],
+  "terminology": {"customer": "Client Site", "sale_order": "FM Contract", "project": "Site"},
+  "default_config": {
+    "roles": [
+      {"name": "FM Operations Manager", "description": "Owns SLAs, dispatch, and contract delivery."},
+      {"name": "Site Supervisor", "description": "Runs one site's work orders and inspections."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "work_order", "name": "Work Order Approval", "tiers": [
+      {"min": 0, "max": 250, "role": "Site Supervisor"},
+      {"min": 250, "max": 2000, "role": "FM Operations Manager"},
+      {"min": 2000, "max": null, "role": "General Manager"}]},
+    {"document_type": "purchase_request", "name": "Spare Parts Purchase", "tiers": [
+      {"min": 0, "max": 500, "role": "Maintenance Manager"},
+      {"min": 500, "max": null, "role": "Procurement Manager"}]}
+  ],
+  "categories": ["Hard FM (MEP)", "Soft FM (Cleaning/Security)", "HVAC", "Electrical", "Plumbing", "Civil"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "4260", "name": "FM Contract Revenue", "account_type": "income", "parent": "4200"},
+      {"code": "4270", "name": "Reactive Callout Revenue", "account_type": "income", "parent": "4200"},
+      {"code": "5360", "name": "Subcontracted FM Services", "account_type": "expense", "parent": "5300"},
+      {"code": "5370", "name": "Spare Parts Consumed", "account_type": "expense", "parent": "5300"}
+    ]
+  },
+  "industry_fields": {
+    "contract": ["sla_response_hours", "sla_resolution_hours", "sites", "ppm_frequency"],
+    "work_order": ["site", "asset", "priority", "sla_due", "technician"]
+  },
+  "dashboards": ["SLA Compliance", "Open Work Orders", "PPM Compliance", "Contract Profitability"],
+  "reports": ["SLA Breach Report", "Work Order Register", "PPM Schedule", "Spare Parts Usage", "Contract P&L"],
+  "doc_templates": ["FM Contract", "Work Order", "Inspection Checklist", "Service Report"],
+  "import_templates": [
+    {"entity": "sites", "columns": ["client", "site_name", "address", "contract"]},
+    {"entity": "assets", "columns": ["site", "asset_code", "name", "category", "install_date", "ppm_frequency"]},
+    {"entity": "technicians", "columns": ["employee_number", "full_name", "trade", "phone"]},
+    {"entity": "contracts", "columns": ["client", "start_date", "end_date", "annual_value", "sla_response_hours"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "FM ERP lives on SLA clocks: response and resolution per priority per contract. PPM compliance prevents penalties. Contract margin = contract revenue minus labor, parts, and subcontractors per site.",
+    "starter_prompts": [
+      "Show SLA compliance by contract this month.",
+      "List overdue work orders by priority.",
+      "Which sites consumed the most spare parts?",
+      "Show PPM completion rate by site.",
+      "Report contract profitability year to date."
+    ]
+  }
+}

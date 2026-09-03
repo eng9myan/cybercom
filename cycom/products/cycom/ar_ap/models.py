@@ -102,6 +102,13 @@ class Invoice(BaseModel):
     journal_entry = models.ForeignKey(
         JournalEntry, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
     )
+    # Vendor bills may link to the PO they settle, enabling 3-way matching
+    # (PO ordered ↔ goods received ↔ this bill). String ref avoids an
+    # ar_ap→procurement import cycle (procurement already imports ar_ap).
+    purchase_order = models.ForeignKey(
+        "cycom_procurement.PurchaseOrder", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="vendor_bills",
+    )
 
     class Meta:
         db_table = "cycom_arap_invoices"

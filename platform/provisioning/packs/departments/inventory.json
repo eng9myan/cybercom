@@ -1,0 +1,14 @@
+{
+  "key": "inventory",
+  "name": "Inventory & Warehouse",
+  "description": "Warehouses, locations, transfers, lots/serials, counts, valuation.",
+  "version": "1.0",
+  "modules": ["inventory", "access"],
+  "roles": [
+    {"name": "Warehouse Manager", "description": "Owns stock, approves transfers and adjustments."},
+    {"name": "Storekeeper", "description": "Receives, picks, and counts stock."}
+  ],
+  "kpis": ["Stock value", "Stock turns", "Below reorder", "Transfer discrepancies"],
+  "dashboards": ["Inventory Overview", "Stock by Location"],
+  "reports": ["Stock Valuation", "Reorder Report", "Transfer Report", "Count Sheet"]
+}

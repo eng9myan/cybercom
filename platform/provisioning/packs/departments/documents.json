@@ -1,0 +1,13 @@
+{
+  "key": "documents",
+  "name": "Documents & Knowledge",
+  "description": "Document storage, templates, expiry tracking, knowledge base.",
+  "version": "1.0",
+  "modules": ["documents", "knowledge", "notes"],
+  "roles": [
+    {"name": "Document Controller", "description": "Owns document register, templates, and expiry alerts."}
+  ],
+  "kpis": ["Documents expiring 30d", "Uncontrolled documents"],
+  "dashboards": ["Document Register"],
+  "reports": ["Expiry Report", "Document Log"]
+}

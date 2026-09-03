@@ -3,7 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCycomList, m2oName, type Many2One } from '@/lib/cycomModels';
+import { searchRead, create } from '@/lib/cycom';
 import { MessageSquare, Send, Hash, Users, Search, Bell, Sparkles, Smile, ShieldAlert } from 'lucide-react';
+
+type CycomMessage = { id: number; author?: string; body?: string; create_date?: string };
 
 interface Message {
   id: string;
@@ -98,6 +101,31 @@ export default function DiscussPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!loading) setChannels(liveChannels); }, [loading]);
 
+  const initials = (name: string) => name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  const mapMsg = (m: CycomMessage): Message => ({
+    id: String(m.id),
+    sender: m.author || 'User',
+    avatar: initials(m.author || 'User'),
+    content: m.body || '',
+    time: m.create_date
+      ? new Date(m.create_date.replace(' ', 'T') + 'Z').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : '',
+    isSelf: (m.author || '') === 'Admin User',
+  });
+
+  // Load persisted messages whenever a real (UUID) channel is opened.
+  useEffect(() => {
+    if (activeTab !== 'channel') return;
+    const isRealChannel = channels.some((c) => c.id === activeId);
+    if (!isRealChannel) return;
+    let cancelled = false;
+    searchRead<CycomMessage>('mail.message', [['channel_id', '=', activeId]], ['author', 'body', 'create_date'], { order: 'create_date asc' })
+      .then((raw) => { if (!cancelled) setMessages((prev) => ({ ...prev, [activeId]: raw.map(mapMsg) })); })
+      .catch(() => { /* leave any existing messages in place */ });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, activeTab, channels.length]);
+
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -107,14 +135,15 @@ export default function DiscussPage() {
   const activeDm = dms.find(d => d.id === activeId);
   const currentMessages = messages[activeId] || [];
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputText.trim()) return;
+    const body = inputText;
 
     const newMsg: Message = {
       id: Date.now().toString(),
       sender: 'Admin User',
       avatar: 'AU',
-      content: inputText,
+      content: body,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isSelf: true
     };
@@ -123,26 +152,16 @@ export default function DiscussPage() {
       ...prev,
       [activeId]: [...(prev[activeId] || []), newMsg]
     }));
-
     setInputText('');
 
-    // Simulate agent auto-reply
-    setTimeout(() => {
-      const randomReply = BOT_REPLIES[Math.floor(Math.random() * BOT_REPLIES.length)];
-      const botMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: activeTab === 'channel' ? 'Cycom AI Bot' : activeDm?.name || 'User',
-        avatar: activeTab === 'channel' ? 'AI' : (activeDm?.name.split(' ').map(n => n[0]).join('') || 'U'),
-        content: randomReply,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isSelf: false
-      };
-
-      setMessages(prev => ({
-        ...prev,
-        [activeId]: [...(prev[activeId] || []), botMsg]
-      }));
-    }, 1500);
+    // Persist to backend for real channels; DMs stay local (no DM backend yet).
+    if (activeTab === 'channel' && channels.some((c) => c.id === activeId)) {
+      try {
+        await create('mail.message', { channel: activeId, author: 'Admin User', body });
+      } catch {
+        /* optimistic message stays; surface nothing intrusive */
+      }
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {

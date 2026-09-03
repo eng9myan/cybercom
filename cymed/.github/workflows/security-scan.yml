@@ -1,0 +1,121 @@
+name: security-scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: "17 4 * * 1"     # weekly Mondays 04:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write     # upload SARIF to code scanning
+  pull-requests: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Filesystem Trivy scan — vulnerabilities in the checked-out tree
+  # ---------------------------------------------------------------------------
+  trivy-fs:
+    name: trivy (filesystem)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy fs scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-fs.sarif
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-fs
+
+  # ---------------------------------------------------------------------------
+  # Image Trivy scan — build each image and scan it
+  # ---------------------------------------------------------------------------
+  trivy-image:
+    name: trivy image (${{ matrix.image }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: cymed-api
+            dockerfile: deploy/docker/Dockerfile.api
+          - image: cymed-worker
+            dockerfile: deploy/docker/Dockerfile.worker
+          - image: cymed-beat
+            dockerfile: deploy/docker/Dockerfile.beat
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build image (local)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          load: true
+          tags: local/${{ matrix.image }}:scan
+          cache-from: type=gha,scope=${{ matrix.image }}
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: local/${{ matrix.image }}:scan
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: sarif
+          output: trivy-${{ matrix.image }}.sarif
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-${{ matrix.image }}.sarif
+          category: trivy-${{ matrix.image }}
+
+  # ---------------------------------------------------------------------------
+  # Secret scanning — gitleaks
+  # ---------------------------------------------------------------------------
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          config-path: .gitleaks.toml
+
+  # ---------------------------------------------------------------------------
+  # Python dependency audit — pip-audit
+  # ---------------------------------------------------------------------------
+  pip-audit:
+    name: pip-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit==2.7.3
+      - name: Run pip-audit
+        run: pip-audit -r requirements.txt --strict --disable-pip

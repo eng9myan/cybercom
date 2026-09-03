@@ -1,0 +1,58 @@
+{
+  "key": "services",
+  "name": "Professional Services Company",
+  "version": "1.0",
+  "description": "Consulting, accounting, law, engineering, agencies, software — projects, timesheets, billable hours, retainers, utilization.",
+  "department_pack_keys": ["finance", "sales", "projects", "hr", "documents"],
+  "recommended_ops": ["provides_services", "manages_projects"],
+  "terminology": {"customer": "Client", "sale_order": "Engagement", "invoice": "Fee Note"},
+  "default_config": {
+    "roles": [
+      {"name": "Managing Partner", "description": "Approves engagements, write-offs, and rates."},
+      {"name": "Engagement Manager", "description": "Owns delivery, budget, and billing per engagement."},
+      {"name": "Consultant", "description": "Logs billable time against engagements."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "engagement", "name": "Engagement Approval", "tiers": [
+      {"min": 0, "max": 10000, "role": "Engagement Manager"},
+      {"min": 10000, "max": null, "role": "Managing Partner"}]},
+    {"document_type": "timesheet", "name": "Timesheet Approval", "tiers": [
+      {"min": 0, "max": null, "role": "Engagement Manager"}]},
+    {"document_type": "write_off", "name": "WIP Write-off", "tiers": [
+      {"min": 0, "max": 500, "role": "Engagement Manager"},
+      {"min": 500, "max": null, "role": "Managing Partner"}]}
+  ],
+  "categories": ["Advisory", "Audit", "Legal", "Engineering", "Creative", "Development", "Retainer"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1165", "name": "Unbilled WIP (Time)", "account_type": "asset", "parent": "1100"},
+      {"code": "2175", "name": "Deferred Revenue (Retainers)", "account_type": "liability", "parent": "2100"},
+      {"code": "4210", "name": "Consulting Fees", "account_type": "income", "parent": "4200"},
+      {"code": "4220", "name": "Retainer Revenue", "account_type": "income", "parent": "4200"}
+    ]
+  },
+  "industry_fields": {
+    "project": ["billing_type_tm_fixed_retainer", "hourly_rate", "budget_hours", "milestones"],
+    "employee": ["cost_rate", "billable_target_percent"]
+  },
+  "dashboards": ["Utilization", "WIP & Unbilled", "Engagement Profitability", "Pipeline"],
+  "reports": ["Timesheet Summary", "Utilization Report", "WIP Aging", "Milestone Billing", "Recurring Invoices"],
+  "doc_templates": ["Engagement Letter", "Retainer Agreement", "Fee Note", "Timesheet"],
+  "import_templates": [
+    {"entity": "clients", "columns": ["name", "industry", "contact_email", "payment_terms_days"]},
+    {"entity": "employees", "columns": ["employee_number", "full_name", "job_title", "cost_rate", "billable_target_percent"]},
+    {"entity": "engagements", "columns": ["client", "name", "billing_type", "budget_hours", "hourly_rate", "start_date"]},
+    {"entity": "opening_balances", "columns": ["account_code", "debit", "credit"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Services ERP monetizes time: utilization x realization x rate. Watch unbilled WIP aging and retainer burn. Fixed-fee engagements need milestone billing and budget-hour tracking.",
+    "starter_prompts": [
+      "Show utilization by consultant this month.",
+      "Which engagements are over budget hours?",
+      "List unbilled WIP older than 60 days.",
+      "Show retainer balances by client.",
+      "Compare realized rate vs standard rate by engagement."
+    ]
+  }
+}

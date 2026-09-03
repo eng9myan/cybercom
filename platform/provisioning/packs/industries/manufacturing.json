@@ -1,0 +1,61 @@
+{
+  "key": "manufacturing",
+  "name": "Manufacturing Company",
+  "version": "1.0",
+  "description": "Factories — BoM, production orders, work centers, quality, costing, planning, maintenance. Sub-verticals: food, sweets/bakery, pharma, furniture, textile, metal, plastic, chemical.",
+  "department_pack_keys": ["finance", "manufacturing", "procurement", "inventory", "hr", "sales", "maintenance"],
+  "recommended_ops": ["manufactures", "buys_products", "exports"],
+  "terminology": {"project": "Production Batch", "vendor": "Raw Material Supplier"},
+  "default_config": {
+    "roles": [
+      {"name": "General Manager", "description": "Approves capex and high-value purchases."},
+      {"name": "Planner", "description": "Runs MRP: forecasts, material requirements, schedules."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 1000, "role": "Department Manager"},
+      {"min": 1000, "max": 10000, "role": "Procurement Manager"},
+      {"min": 10000, "max": null, "role": "General Manager"}]},
+    {"document_type": "production_order", "name": "Production Order Release", "tiers": [
+      {"min": 0, "max": null, "role": "Production Manager"}]},
+    {"document_type": "payment", "name": "Payment Approval", "tiers": [
+      {"min": 0, "max": 10000, "role": "Finance Manager"},
+      {"min": 10000, "max": null, "role": "General Manager"}]}
+  ],
+  "categories": ["Raw Materials", "Packaging", "Work In Progress", "Finished Goods", "Spare Parts", "Consumables"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1141", "name": "Raw Materials Inventory", "account_type": "asset", "parent": "1140"},
+      {"code": "1142", "name": "WIP Inventory", "account_type": "asset", "parent": "1140"},
+      {"code": "1143", "name": "Finished Goods Inventory", "account_type": "asset", "parent": "1140"},
+      {"code": "5130", "name": "Direct Labor", "account_type": "expense", "parent": "5100"},
+      {"code": "5140", "name": "Manufacturing Overhead", "account_type": "expense", "parent": "5100"},
+      {"code": "5150", "name": "Scrap & Waste", "account_type": "expense", "parent": "5100"}
+    ]
+  },
+  "industry_fields": {
+    "product": ["bom_reference", "lot_tracked", "expiry_tracked", "standard_cost"],
+    "production_order": ["batch_number", "work_center", "planned_qty", "scrap_qty"]
+  },
+  "dashboards": ["Production Output", "Scrap & Quality", "Material Availability", "Unit Cost Trend"],
+  "reports": ["Production Register", "BoM Cost Rollup", "Material Requirements", "Batch Traceability", "Efficiency Report"],
+  "doc_templates": ["Production Order", "Material Issue Note", "Quality Certificate", "Batch Record"],
+  "import_templates": [
+    {"entity": "products", "columns": ["sku", "name", "type_raw_wip_finished", "uom", "standard_cost", "lot_tracked", "expiry_tracked"]},
+    {"entity": "bill_of_materials", "columns": ["finished_sku", "component_sku", "quantity", "uom", "scrap_percent"]},
+    {"entity": "work_centers", "columns": ["code", "name", "hourly_rate", "capacity_per_shift"]},
+    {"entity": "suppliers", "columns": ["legal_name", "cr_number", "tax_number", "category", "payment_terms_days"]},
+    {"entity": "opening_inventory", "columns": ["sku", "warehouse", "lot", "quantity", "unit_cost"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Manufacturing ERP tracks material flow raw -> WIP -> finished with costed BoMs. Margin lives in yield, scrap, and overhead absorption. Lot/expiry traceability is mandatory for food and pharma sub-verticals.",
+    "starter_prompts": [
+      "Show scrap rate by work center this month.",
+      "Which materials block this week's production plan?",
+      "Compare standard vs actual cost for last 10 batches.",
+      "List lots expiring within 60 days.",
+      "Show work-center efficiency trend."
+    ]
+  }
+}

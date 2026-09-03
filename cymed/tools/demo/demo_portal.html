@@ -1,0 +1,886 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CyMed Demo Portal — Specialized Hospital Amman</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --brand-a: #0062CC;
+    --brand-b: #00D4AA;
+  }
+  html, body { min-height: 100%; }
+  body {
+    background:
+      radial-gradient(1200px 600px at -10% -10%, rgba(0,98,204,0.18), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(0,212,170,0.18), transparent 60%),
+      linear-gradient(180deg, #eef4fb 0%, #f6fbf9 100%);
+    color: #0f172a;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .brand-gradient {
+    background: linear-gradient(90deg, var(--brand-a) 0%, var(--brand-b) 100%);
+  }
+  .glass {
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow: 0 10px 30px rgba(2, 32, 71, 0.08);
+    border-radius: 18px;
+  }
+  .glass-dark {
+    background: linear-gradient(180deg, rgba(0,98,204,0.9), rgba(0,110,180,0.85));
+    backdrop-filter: blur(10px);
+    color: white;
+    border-radius: 18px;
+    box-shadow: 0 12px 30px rgba(0,60,140,0.25);
+  }
+  .tab-btn.active {
+    background: linear-gradient(90deg, var(--brand-a), var(--brand-b));
+    color: white;
+    box-shadow: 0 6px 18px rgba(0,98,204,0.35);
+  }
+  .chip { display:inline-flex; align-items:center; gap:6px; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:600; }
+  .chip-green { background:#d1fae5; color:#065f46; }
+  .chip-amber { background:#fef3c7; color:#92400e; }
+  .chip-red   { background:#fee2e2; color:#991b1b; }
+  .chip-blue  { background:#dbeafe; color:#1e40af; }
+  .chip-slate { background:#e2e8f0; color:#334155; }
+  .kpi-num { font-size:28px; font-weight:700; letter-spacing:-0.02em; }
+  .divider { height:1px; background:linear-gradient(90deg,transparent,#cbd5e1,transparent); }
+  [dir="rtl"] .flip-ok { direction: rtl; }
+  .scroll-x { overflow-x:auto; }
+  table.demo { width:100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+  table.demo th { text-align:left; font-weight:600; color:#334155; padding:8px 10px; border-bottom:1px solid #e2e8f0; }
+  table.demo td { padding:8px 10px; border-bottom:1px dashed #e2e8f0; }
+  table.demo tr:hover td { background: rgba(0,98,204,0.04); }
+  .pulse-dot { width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 0 0 rgba(16,185,129,.7); animation:pulse 1.6s infinite; display:inline-block; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(16,185,129,.7);} 70%{box-shadow:0 0 0 10px rgba(16,185,129,0);} 100%{box-shadow:0 0 0 0 rgba(16,185,129,0);} }
+  .btn-brand { background: linear-gradient(90deg, var(--brand-a), var(--brand-b)); color:white; padding:8px 14px; border-radius:12px; font-weight:600; box-shadow:0 6px 18px rgba(0,98,204,.3); }
+  .btn-brand:disabled { opacity:.6; cursor: not-allowed; }
+  .btn-ghost { background: white; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 10px; font-weight:600; color:#0f172a; }
+  .lang-toggle button.active { background:#0f172a; color:white; }
+  .badge-jci { background:linear-gradient(90deg,#0062CC,#00D4AA); color:white; padding:2px 8px; border-radius:6px; font-weight:700; font-size:10px; letter-spacing:0.5px; }
+  .mini-bar { height:8px; background:#e2e8f0; border-radius:999px; overflow:hidden; }
+  .mini-bar > span { display:block; height:100%; background:linear-gradient(90deg,#0062CC,#00D4AA); }
+  .alert-cdss { border-left:4px solid #dc2626; background:#fef2f2; padding:10px 12px; border-radius:8px; }
+  .alert-cdss.warn { border-color:#d97706; background:#fffbeb; }
+  .alert-cdss.info { border-color:#0062CC; background:#eff6ff; }
+  .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background:#f1f5f9; border:1px solid #cbd5e1; border-bottom-width:2px; border-radius:6px; padding:1px 6px; font-size:11px; }
+</style>
+</head>
+<body>
+
+<header class="brand-gradient text-white">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+    <div class="flex items-center gap-4">
+      <div class="w-11 h-11 rounded-2xl bg-white/20 grid place-items-center text-2xl font-bold">C</div>
+      <div>
+        <div class="text-[11px] uppercase tracking-widest opacity-80" data-i18n="brand.tagline">Cybercom Healthcare · CyMed</div>
+        <div class="text-xl font-semibold leading-tight" data-i18n="brand.hospital">Specialized Hospital — Amman</div>
+        <div class="text-[11px] opacity-80">
+          <span data-i18n="brand.founded">Founded 1990 · Opened 1993</span> ·
+          <span>Al-Shmesani</span> ·
+          <span class="badge-jci">JCI x6</span>
+          <span class="badge-jci" style="background:linear-gradient(90deg,#b45309,#f59e0b)" data-i18n="brand.ccpc">CCPC #7 GLOBAL</span>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="hidden md:flex items-center gap-2 text-xs bg-white/15 px-3 py-2 rounded-xl">
+        <span class="pulse-dot"></span>
+        <span data-i18n="brand.api">API</span>:
+        <span id="apiBase" class="font-mono">http://localhost:8000</span>
+        <span id="apiStatus" class="chip chip-slate">offline</span>
+      </div>
+      <div class="lang-toggle flex items-center gap-1 bg-white/15 rounded-xl p-1 text-xs">
+        <button id="langEn" class="active px-3 py-1 rounded-lg">EN</button>
+        <button id="langAr" class="px-3 py-1 rounded-lg">ع</button>
+      </div>
+    </div>
+  </div>
+  <nav class="max-w-7xl mx-auto px-6 pb-4 flex flex-wrap gap-2">
+    <button class="tab-btn active px-4 py-2 rounded-xl text-sm bg-white/15 text-white/90" data-tab="reception" data-i18n="tab.reception">Reception</button>
+    <button class="tab-btn px-4 py-2 rounded-xl text-sm bg-white/15 text-white/90" data-tab="clinician" data-i18n="tab.clinician">Clinician Workstation</button>
+    <button class="tab-btn px-4 py-2 rounded-xl text-sm bg-white/15 text-white/90" data-tab="patient" data-i18n="tab.patient">Patient Portal</button>
+    <button class="tab-btn px-4 py-2 rounded-xl text-sm bg-white/15 text-white/90" data-tab="command" data-i18n="tab.command">Command Center</button>
+    <button class="tab-btn px-4 py-2 rounded-xl text-sm bg-white/15 text-white/90" data-tab="payment" data-i18n="tab.payment">Payment & Insurance</button>
+  </nav>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 py-6 space-y-6">
+
+  <!-- =================== RECEPTION =================== -->
+  <section id="tab-reception" class="tab-panel space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="rec.appts">Today's Appointments</div>
+        <div class="kpi-num" id="kpiAppts">—</div>
+        <div class="text-xs text-slate-500" data-i18n="rec.appts.sub">across 30 specialties</div>
+      </div>
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="rec.queue">Queue Length</div>
+        <div class="kpi-num" id="kpiQueue">—</div>
+        <div class="text-xs text-slate-500" data-i18n="rec.queue.sub">waiting at check-in</div>
+      </div>
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="rec.er">ER Inflow (last hour)</div>
+        <div class="kpi-num" id="kpiEr">—</div>
+        <div class="text-xs text-slate-500" data-i18n="rec.er.sub">triage 1–5</div>
+      </div>
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="rec.occ">Bed Occupancy</div>
+        <div class="flex items-center gap-3">
+          <svg id="occGauge" viewBox="0 0 120 70" width="120" height="70" aria-label="Occupancy gauge"></svg>
+          <div>
+            <div class="kpi-num" id="kpiOcc">—</div>
+            <div class="text-xs text-slate-500">of 265 <span data-i18n="rec.occ.beds">beds</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="glass p-5 lg:col-span-2">
+        <div class="flex items-center justify-between mb-3">
+          <div class="font-semibold" data-i18n="rec.list">Appointments — next 4 hours</div>
+          <div class="text-xs text-slate-500"><span class="pulse-dot"></span> <span data-i18n="rec.live">live</span></div>
+        </div>
+        <div class="scroll-x">
+          <table class="demo" id="tblAppts">
+            <thead>
+              <tr>
+                <th data-i18n="rec.col.time">Time</th>
+                <th data-i18n="rec.col.mrn">MRN</th>
+                <th data-i18n="rec.col.patient">Patient</th>
+                <th data-i18n="rec.col.dept">Department</th>
+                <th data-i18n="rec.col.doctor">Consultant</th>
+                <th data-i18n="rec.col.insurer">Insurer</th>
+                <th data-i18n="rec.col.status">Status</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="glass p-5">
+        <div class="font-semibold mb-3" data-i18n="rec.nicu">NICU — 28 Incubators</div>
+        <div id="nicuGrid" class="grid grid-cols-7 gap-2"></div>
+        <div class="mt-4 text-xs text-slate-500 flex items-center gap-3">
+          <span class="chip chip-green">free</span>
+          <span class="chip chip-amber">stable</span>
+          <span class="chip chip-red">critical</span>
+        </div>
+        <div class="divider my-4"></div>
+        <div class="font-semibold mb-2" data-i18n="rec.or">Operating Rooms — 21 total</div>
+        <div id="orMini" class="grid grid-cols-7 gap-2"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== CLINICIAN =================== -->
+  <section id="tab-clinician" class="tab-panel hidden space-y-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="glass p-5">
+        <div class="text-xs uppercase text-slate-500" data-i18n="cli.patient">Active Patient</div>
+        <div id="patName" class="text-xl font-semibold">—</div>
+        <div id="patSub" class="text-xs text-slate-500">MRN · Age · Sex</div>
+        <div class="divider my-3"></div>
+        <div class="font-semibold text-sm mb-2" data-i18n="cli.vitals">Vitals (last 4h)</div>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div><div class="text-xs text-slate-500">HR</div><div id="vHR" class="font-semibold">—</div></div>
+          <div><div class="text-xs text-slate-500">BP</div><div id="vBP" class="font-semibold">—</div></div>
+          <div><div class="text-xs text-slate-500">SpO₂</div><div id="vSpO2" class="font-semibold">—</div></div>
+          <div><div class="text-xs text-slate-500">Temp °C</div><div id="vT" class="font-semibold">—</div></div>
+          <div><div class="text-xs text-slate-500">RR</div><div id="vRR" class="font-semibold">—</div></div>
+          <div><div class="text-xs text-slate-500">Pain</div><div id="vPain" class="font-semibold">—</div></div>
+        </div>
+        <svg id="hrTrend" viewBox="0 0 300 70" width="100%" height="70" class="mt-3"></svg>
+      </div>
+
+      <div class="glass p-5 lg:col-span-2">
+        <div class="flex items-center justify-between mb-2">
+          <div class="font-semibold" data-i18n="cli.cdss">CDSS Alerts</div>
+          <span class="chip chip-red" id="cdssCount">3 active</span>
+        </div>
+        <div id="cdssList" class="space-y-2"></div>
+
+        <div class="divider my-4"></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div class="font-semibold mb-2" data-i18n="cli.orders">Active Orders</div>
+            <ul id="orders" class="text-sm space-y-1"></ul>
+          </div>
+          <div>
+            <div class="font-semibold mb-2" data-i18n="cli.labs">Recent Labs</div>
+            <table class="demo" id="tblLabs">
+              <thead><tr>
+                <th data-i18n="cli.lab.test">Test</th>
+                <th data-i18n="cli.lab.val">Value</th>
+                <th data-i18n="cli.lab.ref">Ref</th>
+                <th></th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== PATIENT =================== -->
+  <section id="tab-patient" class="tab-panel hidden space-y-6">
+    <div class="glass-dark p-5 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <div class="text-xs opacity-80" data-i18n="pat.welcome">Welcome back</div>
+        <div class="text-xl font-semibold">Sara Al-Halabi <span class="text-xs opacity-70">· MRN 100482</span></div>
+        <div class="text-xs opacity-80" data-i18n="pat.member">Cardiology follow-up · insurer: MedNet</div>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn-ghost text-slate-800" data-i18n="pat.download">Download all records</button>
+        <button class="btn-brand" data-i18n="pat.book">Book appointment</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="glass p-5">
+        <div class="font-semibold mb-2" data-i18n="pat.appts">My appointments</div>
+        <ul id="myAppts" class="text-sm space-y-2"></ul>
+      </div>
+      <div class="glass p-5">
+        <div class="font-semibold mb-2" data-i18n="pat.rx">My prescriptions</div>
+        <ul id="myRx" class="text-sm space-y-2"></ul>
+      </div>
+      <div class="glass p-5">
+        <div class="font-semibold mb-2" data-i18n="pat.results">My results</div>
+        <ul id="myResults" class="text-sm space-y-2"></ul>
+      </div>
+    </div>
+
+    <div class="glass p-5">
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-semibold" data-i18n="pat.bills">My bills (JOD)</div>
+        <div class="text-xs text-slate-500" data-i18n="pat.bills.sub">amounts in Jordanian Dinar</div>
+      </div>
+      <div class="scroll-x">
+        <table class="demo" id="tblMyBills">
+          <thead><tr>
+            <th data-i18n="pat.bills.date">Date</th>
+            <th data-i18n="pat.bills.desc">Description</th>
+            <th data-i18n="pat.bills.insurer">Insurer</th>
+            <th data-i18n="pat.bills.total">Total</th>
+            <th data-i18n="pat.bills.covered">Covered</th>
+            <th data-i18n="pat.bills.due">You owe</th>
+            <th data-i18n="pat.bills.status">Status</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== COMMAND CENTER =================== -->
+  <section id="tab-command" class="tab-panel hidden space-y-6">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="cc.occ">Bed Occupancy</div>
+        <div class="kpi-num" id="ccOcc">—</div>
+        <div class="mini-bar mt-2"><span id="ccOccBar" style="width:0%"></span></div>
+      </div>
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="cc.edwait">ED Median Wait</div>
+        <div class="kpi-num"><span id="ccEd">—</span><span class="text-base text-slate-500"> min</span></div>
+        <div class="text-xs text-slate-500" data-i18n="cc.edwait.sub">door-to-doctor</div>
+      </div>
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="cc.or">OR Utilisation</div>
+        <div class="kpi-num" id="ccOr">—</div>
+        <div class="text-xs text-slate-500">21 rooms</div>
+      </div>
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="cc.dso">DSO</div>
+        <div class="kpi-num"><span id="ccDso">—</span><span class="text-base text-slate-500"> d</span></div>
+        <div class="text-xs text-slate-500" data-i18n="cc.dso.sub">days sales outstanding</div>
+      </div>
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="cc.den">Denial Rate</div>
+        <div class="kpi-num"><span id="ccDen">—</span><span class="text-base text-slate-500"> %</span></div>
+        <div class="text-xs text-slate-500" data-i18n="cc.den.sub">first-pass</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="glass p-5">
+        <div class="flex items-center justify-between mb-2">
+          <div class="font-semibold" data-i18n="cc.orgrid">Operating Rooms — live status</div>
+          <div class="text-xs text-slate-500">21 <span data-i18n="cc.rooms">rooms</span></div>
+        </div>
+        <div id="orGrid" class="grid grid-cols-7 gap-2"></div>
+        <div class="mt-3 flex gap-3 text-xs text-slate-500">
+          <span class="chip chip-green">idle</span>
+          <span class="chip chip-blue">in-case</span>
+          <span class="chip chip-amber">turnover</span>
+          <span class="chip chip-slate">closed</span>
+        </div>
+      </div>
+      <div class="glass p-5">
+        <div class="font-semibold mb-2" data-i18n="cc.depts">Occupancy by department</div>
+        <div id="deptBars" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <div class="glass p-5">
+      <div class="font-semibold mb-3" data-i18n="cc.alerts">Operational alerts</div>
+      <div id="ccAlerts" class="space-y-2"></div>
+    </div>
+  </section>
+
+  <!-- =================== PAYMENT & INSURANCE =================== -->
+  <section id="tab-payment" class="tab-panel hidden space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="pay.outstanding">Outstanding (JOD)</div>
+        <div class="kpi-num" id="payTotal">—</div>
+      </div>
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="pay.pending">Pending adjudication</div>
+        <div class="kpi-num" id="payPending">—</div>
+      </div>
+      <div class="glass p-4">
+        <div class="text-xs uppercase text-slate-500" data-i18n="pay.denied">Denied (this week)</div>
+        <div class="kpi-num" id="payDenied">—</div>
+      </div>
+    </div>
+
+    <div class="glass p-5">
+      <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
+        <div class="font-semibold" data-i18n="pay.bills">Claims & bills</div>
+        <div class="flex gap-2 items-center flex-wrap">
+          <span class="text-xs text-slate-500" data-i18n="pay.filter">Insurer:</span>
+          <select id="insFilter" class="btn-ghost text-sm">
+            <option value="">All</option>
+            <option>Aman</option>
+            <option>MedNet</option>
+            <option>GlobeMed</option>
+            <option>Nextcare</option>
+            <option>Al-Nisr Al-Arabi</option>
+            <option>Jordan Insurance</option>
+            <option>Jerusalem Insurance</option>
+            <option>Islamic Insurance</option>
+            <option>Trust International</option>
+            <option>First Insurance</option>
+            <option>RMS Referral</option>
+          </select>
+          <button id="btnAdjudicate" class="btn-brand" data-i18n="pay.adjudicate">Run real-time adjudication</button>
+        </div>
+      </div>
+      <div class="scroll-x">
+        <table class="demo" id="tblBills">
+          <thead>
+            <tr>
+              <th data-i18n="pay.col.claim">Claim #</th>
+              <th data-i18n="pay.col.patient">Patient</th>
+              <th data-i18n="pay.col.insurer">Insurer</th>
+              <th data-i18n="pay.col.service">Service</th>
+              <th data-i18n="pay.col.total">Total JOD</th>
+              <th data-i18n="pay.col.approved">Approved</th>
+              <th data-i18n="pay.col.copay">Co-pay</th>
+              <th data-i18n="pay.col.status">Status</th>
+              <th data-i18n="pay.col.msg">Payer message</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="glass p-5">
+      <div class="font-semibold mb-2" data-i18n="pay.log">Adjudication log</div>
+      <pre id="adjLog" class="text-xs bg-slate-900 text-emerald-300 p-3 rounded-lg h-48 overflow-auto whitespace-pre-wrap"></pre>
+    </div>
+  </section>
+</main>
+
+<footer class="max-w-7xl mx-auto px-6 pb-8 pt-2 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2">
+  <div>
+    <span data-i18n="foot.brand">CyMed demo shell · Cybercom Healthcare</span>
+    · <span data-i18n="foot.disclaimer">simulated data — for demonstration only</span>
+  </div>
+  <div>
+    <span class="kbd">1</span>–<span class="kbd">5</span> <span data-i18n="foot.tabs">switch tabs</span>
+    · <span class="kbd">L</span> <span data-i18n="foot.lang">toggle language</span>
+  </div>
+</footer>
+
+<script>
+/* ------------------------------------------------------------------ *
+ * CyMed Demo Portal — Specialized Hospital Amman
+ * Single-file, offline-safe. Fetches window.CYMED_API_BASE endpoints,
+ * falls back to bundled sample JSON if the request fails.
+ * ------------------------------------------------------------------ */
+
+const API_BASE = (window.CYMED_API_BASE || 'http://localhost:8000').replace(/\/+$/, '');
+document.getElementById('apiBase').textContent = API_BASE;
+
+/* ---------- i18n ---------- */
+const I18N = {
+  en: {
+    "brand.tagline": "Cybercom Healthcare · CyMed",
+    "brand.hospital": "Specialized Hospital — Amman",
+    "brand.founded": "Founded 1990 · Opened 1993",
+    "brand.ccpc": "CCPC #7 GLOBAL",
+    "brand.api": "API",
+    "tab.reception": "Reception",
+    "tab.clinician": "Clinician Workstation",
+    "tab.patient": "Patient Portal",
+    "tab.command": "Command Center",
+    "tab.payment": "Payment & Insurance",
+    "rec.appts": "Today's Appointments",
+    "rec.appts.sub": "across 30 specialties",
+    "rec.queue": "Queue Length",
+    "rec.queue.sub": "waiting at check-in",
+    "rec.er": "ER Inflow (last hour)",
+    "rec.er.sub": "triage 1–5",
+    "rec.occ": "Bed Occupancy",
+    "rec.occ.beds": "beds",
+    "rec.list": "Appointments — next 4 hours",
+    "rec.live": "live",
+    "rec.col.time": "Time", "rec.col.mrn":"MRN", "rec.col.patient":"Patient",
+    "rec.col.dept":"Department", "rec.col.doctor":"Consultant",
+    "rec.col.insurer":"Insurer", "rec.col.status":"Status",
+    "rec.nicu": "NICU — 28 Incubators",
+    "rec.or": "Operating Rooms — 21 total",
+    "cli.patient":"Active Patient", "cli.vitals":"Vitals (last 4h)",
+    "cli.cdss":"CDSS Alerts", "cli.orders":"Active Orders", "cli.labs":"Recent Labs",
+    "cli.lab.test":"Test","cli.lab.val":"Value","cli.lab.ref":"Ref",
+    "pat.welcome":"Welcome back",
+    "pat.member":"Cardiology follow-up · insurer: MedNet",
+    "pat.download":"Download all records","pat.book":"Book appointment",
+    "pat.appts":"My appointments","pat.rx":"My prescriptions","pat.results":"My results",
+    "pat.bills":"My bills (JOD)","pat.bills.sub":"amounts in Jordanian Dinar",
+    "pat.bills.date":"Date","pat.bills.desc":"Description","pat.bills.insurer":"Insurer",
+    "pat.bills.total":"Total","pat.bills.covered":"Covered","pat.bills.due":"You owe","pat.bills.status":"Status",
+    "cc.occ":"Bed Occupancy","cc.edwait":"ED Median Wait","cc.edwait.sub":"door-to-doctor",
+    "cc.or":"OR Utilisation","cc.dso":"DSO","cc.dso.sub":"days sales outstanding",
+    "cc.den":"Denial Rate","cc.den.sub":"first-pass",
+    "cc.orgrid":"Operating Rooms — live status","cc.rooms":"rooms",
+    "cc.depts":"Occupancy by department","cc.alerts":"Operational alerts",
+    "pay.outstanding":"Outstanding (JOD)","pay.pending":"Pending adjudication",
+    "pay.denied":"Denied (this week)",
+    "pay.bills":"Claims & bills","pay.filter":"Insurer:",
+    "pay.adjudicate":"Run real-time adjudication",
+    "pay.col.claim":"Claim #","pay.col.patient":"Patient","pay.col.insurer":"Insurer",
+    "pay.col.service":"Service","pay.col.total":"Total JOD","pay.col.approved":"Approved",
+    "pay.col.copay":"Co-pay","pay.col.status":"Status","pay.col.msg":"Payer message",
+    "pay.log":"Adjudication log",
+    "foot.brand":"CyMed demo shell · Cybercom Healthcare",
+    "foot.disclaimer":"simulated data — for demonstration only",
+    "foot.tabs":"switch tabs","foot.lang":"toggle language"
+  },
+  ar: {
+    "brand.tagline": "سايبركوم للرعاية الصحية · سايمِد",
+    "brand.hospital": "المستشفى التخصصي — عمّان",
+    "brand.founded": "تأسّس 1990 · افتُتح 1993",
+    "brand.ccpc": "الترتيب العالمي #7 CCPC",
+    "brand.api": "الواجهة",
+    "tab.reception": "الاستقبال",
+    "tab.clinician": "محطة الطبيب",
+    "tab.patient": "بوابة المريض",
+    "tab.command": "مركز القيادة",
+    "tab.payment": "الفوترة والتأمين",
+    "rec.appts": "مواعيد اليوم",
+    "rec.appts.sub": "عبر 30 تخصصاً",
+    "rec.queue": "طول الطابور",
+    "rec.queue.sub": "بانتظار التسجيل",
+    "rec.er": "تدفّق الطوارئ (آخر ساعة)",
+    "rec.er.sub": "فرز 1–5",
+    "rec.occ": "إشغال الأسرّة",
+    "rec.occ.beds": "سرير",
+    "rec.list": "المواعيد — الأربع ساعات القادمة",
+    "rec.live": "مباشر",
+    "rec.col.time":"الوقت","rec.col.mrn":"الملف","rec.col.patient":"المريض",
+    "rec.col.dept":"القسم","rec.col.doctor":"الاستشاري",
+    "rec.col.insurer":"التأمين","rec.col.status":"الحالة",
+    "rec.nicu": "حضّانات الأطفال — 28 حضّانة",
+    "rec.or": "غرف العمليات — 21 غرفة",
+    "cli.patient":"المريض النشط","cli.vitals":"العلامات الحيوية (آخر 4 ساعات)",
+    "cli.cdss":"تنبيهات دعم القرار","cli.orders":"الأوامر الفعّالة","cli.labs":"أحدث التحاليل",
+    "cli.lab.test":"التحليل","cli.lab.val":"القيمة","cli.lab.ref":"المرجع",
+    "pat.welcome":"أهلاً بعودتك",
+    "pat.member":"متابعة قلبية · التأمين: MedNet",
+    "pat.download":"تنزيل كل السجلّات","pat.book":"احجز موعد",
+    "pat.appts":"مواعيدي","pat.rx":"وصفاتي","pat.results":"نتائجي",
+    "pat.bills":"فواتيري (دينار أردني)","pat.bills.sub":"القيم بالدينار الأردني",
+    "pat.bills.date":"التاريخ","pat.bills.desc":"البيان","pat.bills.insurer":"التأمين",
+    "pat.bills.total":"الإجمالي","pat.bills.covered":"المُغطّى","pat.bills.due":"عليك","pat.bills.status":"الحالة",
+    "cc.occ":"إشغال الأسرّة","cc.edwait":"وسيط انتظار الطوارئ","cc.edwait.sub":"من الباب للطبيب",
+    "cc.or":"استخدام غرف العمليات","cc.dso":"أيام التحصيل","cc.dso.sub":"DSO",
+    "cc.den":"نسبة الرفض","cc.den.sub":"من أول تقديم",
+    "cc.orgrid":"غرف العمليات — الوضع اللحظي","cc.rooms":"غرفة",
+    "cc.depts":"الإشغال حسب القسم","cc.alerts":"تنبيهات تشغيلية",
+    "pay.outstanding":"المستحق (دينار)","pay.pending":"بانتظار الموافقة",
+    "pay.denied":"مرفوض هذا الأسبوع",
+    "pay.bills":"المطالبات والفواتير","pay.filter":"التأمين:",
+    "pay.adjudicate":"شغّل التسوية الفورية",
+    "pay.col.claim":"رقم المطالبة","pay.col.patient":"المريض","pay.col.insurer":"التأمين",
+    "pay.col.service":"الخدمة","pay.col.total":"الإجمالي","pay.col.approved":"المعتمد",
+    "pay.col.copay":"مشاركة المريض","pay.col.status":"الحالة","pay.col.msg":"رسالة الدافع",
+    "pay.log":"سجل التسوية",
+    "foot.brand":"واجهة عرض سايمِد · سايبركوم للرعاية الصحية",
+    "foot.disclaimer":"بيانات محاكاة — لأغراض العرض فقط",
+    "foot.tabs":"تبديل التبويبات","foot.lang":"تبديل اللغة"
+  }
+};
+let lang = 'en';
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.documentElement.dir  = (lang === 'ar') ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (I18N[lang][k]) el.textContent = I18N[lang][k];
+  });
+  document.getElementById('langEn').classList.toggle('active', lang === 'en');
+  document.getElementById('langAr').classList.toggle('active', lang === 'ar');
+}
+document.getElementById('langEn').onclick = () => { lang = 'en'; applyLang(); };
+document.getElementById('langAr').onclick = () => { lang = 'ar'; applyLang(); };
+
+/* ---------- Tabs ---------- */
+function showTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('hidden', p.id !== 'tab-' + name));
+}
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+document.addEventListener('keydown', (e) => {
+  const map = {'1':'reception','2':'clinician','3':'patient','4':'command','5':'payment'};
+  if (map[e.key]) showTab(map[e.key]);
+  if (e.key.toLowerCase() === 'l') { lang = (lang==='en')?'ar':'en'; applyLang(); }
+});
+
+/* ---------- Offline sample data ---------- */
+const SAMPLE = {
+  reception: {
+    kpis: { appointments_today: 412, queue_length: 23, er_last_hour: 14, beds_occupied: 232, beds_total: 265 },
+    appointments: [
+      { time: "09:00", mrn: "100482", patient: "Sara Al-Halabi",    dept: "Cardiology",      doctor: "Dr. Omar Nasser",    insurer: "MedNet",              status: "checked-in" },
+      { time: "09:15", mrn: "100488", patient: "Faisal Odeh",       dept: "Orthopaedics",    doctor: "Dr. Layla Kassem",   insurer: "Aman",                status: "waiting"    },
+      { time: "09:30", mrn: "100501", patient: "Nour Khalil",       dept: "OB/GYN",          doctor: "Dr. Rana Barghouti", insurer: "GlobeMed",            status: "in-room"    },
+      { time: "09:30", mrn: "100517", patient: "Ahmad Sabbagh",     dept: "Oncology",        doctor: "Dr. Yousef Rashid",  insurer: "Al-Nisr Al-Arabi",    status: "waiting"    },
+      { time: "09:45", mrn: "100523", patient: "Layan Haddad",      dept: "Paediatrics",     doctor: "Dr. Hala Zaid",      insurer: "Nextcare",            status: "checked-in" },
+      { time: "10:00", mrn: "100539", patient: "Khalid Awad",       dept: "Cardiology CCPC", doctor: "Dr. Omar Nasser",    insurer: "Jordan Insurance",    status: "waiting"    },
+      { time: "10:15", mrn: "100544", patient: "Maria Sahyoun",     dept: "Dermatology",     doctor: "Dr. Rima Khoury",    insurer: "Trust International", status: "in-room"    },
+      { time: "10:30", mrn: "100561", patient: "Bilal Nabulsi",     dept: "Neurology",       doctor: "Dr. Karim Farhan",   insurer: "Islamic Insurance",   status: "waiting"    },
+      { time: "10:45", mrn: "100572", patient: "Reem Salhab",       dept: "ENT",             doctor: "Dr. Nadia Sabbagh",  insurer: "Jerusalem Insurance", status: "checked-in" },
+      { time: "11:00", mrn: "100588", patient: "Samir Qutaishat",   dept: "Urology",         doctor: "Dr. Ziad Al-Zoubi",  insurer: "First Insurance",     status: "waiting"    },
+      { time: "11:15", mrn: "100599", patient: "Diala Nawwab",      dept: "Endocrinology",   doctor: "Dr. Sami Malhas",    insurer: "MedNet",              status: "waiting"    },
+      { time: "11:30", mrn: "100610", patient: "Rakan Al-Saket",    dept: "GI Endoscopy",    doctor: "Dr. Firas Amro",     insurer: "RMS Referral",        status: "waiting"    }
+    ]
+  },
+  clinician: {
+    patient: { name: "Khalid Awad", mrn: "100539", age: 62, sex: "M", diagnosis: "NSTEMI, day 2", location: "CCU Bed 4" },
+    vitals:  { hr: "78 bpm", bp: "132/84", spo2: "97%", temp: "36.8", rr: "18", pain: "2/10",
+               hr_trend: [72,74,76,80,78,82,79,77,75,78,80,84,81,79,78] },
+    orders:  [ "Aspirin 81 mg PO daily",
+               "Atorvastatin 80 mg PO nightly",
+               "Enoxaparin 1 mg/kg SC BID",
+               "Cardiac echo — order pending radiology",
+               "NPO after midnight (cath tomorrow 07:30)" ],
+    labs:    [ { t: "Troponin I", v: "0.82 ng/mL", r: "<0.04",  flag: "H" },
+               { t: "hs-CRP",     v: "18 mg/L",    r: "<3",     flag: "H" },
+               { t: "Creatinine", v: "1.1 mg/dL",  r: "0.6–1.3",flag: "N" },
+               { t: "K+",         v: "3.9 mmol/L", r: "3.5–5.0",flag: "N" },
+               { t: "INR",        v: "1.1",        r: "0.9–1.1",flag: "N" } ],
+    cdss:    [ { level: "critical", text: "Allergy: patient allergic to Clopidogrel — Prasugrel suggested instead." },
+               { level: "warn",     text: "Interaction: Atorvastatin + Clarithromycin — myopathy risk. Consider Azithromycin." },
+               { level: "info",     text: "JCI CCPC bundle — reminder: schedule LVEF within 24 h and Beta-blocker start today." } ]
+  },
+  patient: {
+    appointments: [ { d: "Wed 26 Aug 09:00", doc: "Dr. Omar Nasser",   dept: "Cardiology" },
+                    { d: "Mon 08 Sep 11:30", doc: "Dr. Sami Malhas",   dept: "Endocrinology" } ],
+    prescriptions: [ { rx: "Bisoprolol 2.5 mg — 1 tab morning",  refills: 2 },
+                     { rx: "Atorvastatin 40 mg — 1 tab at night", refills: 1 } ],
+    results: [ { name: "Lipid panel", d: "18 Aug", note: "LDL 118 — down from 142" },
+               { name: "HbA1c",       d: "18 Aug", note: "6.4 — target met" } ],
+    bills: [ { date: "12 Aug 2026", desc: "Cardiology follow-up + ECG", insurer: "MedNet", total: 145.000, covered: 130.500, due:  14.500, status: "closed" },
+             { date: "05 Aug 2026", desc: "Lab panel (lipids, HbA1c)",   insurer: "MedNet", total:  62.000, covered:  55.800, due:   6.200, status: "closed" },
+             { date: "29 Jul 2026", desc: "Echocardiogram",              insurer: "MedNet", total: 240.000, covered: 216.000, due:  24.000, status: "closed" } ]
+  },
+  command: {
+    kpis: { occ_pct: 87, ed_wait_min: 24, or_util_pct: 78, dso_days: 41, denial_pct: 6.2 },
+    depts: [ { name: "Cardiology CCPC", occ: 96 },
+             { name: "Oncology",        occ: 92 },
+             { name: "Surgical Ward",   occ: 88 },
+             { name: "Paediatrics",     occ: 74 },
+             { name: "Obstetrics",      occ: 81 },
+             { name: "NICU",            occ: 82 },
+             { name: "ICU (Adult)",     occ: 94 } ],
+    alerts: [ { sev: "critical", text: "ICU-A at 94% — 1 bed free. Contact bed manager." },
+              { sev: "warn",     text: "OR-14 turnover time 42 min — target 25." },
+              { sev: "info",     text: "Denial rate down 0.4 pp week-on-week (MedNet)." } ]
+  },
+  payment: {
+    kpis: { outstanding: 284315.500, pending: 47, denied_week: 6 },
+    bills: [
+      { claim: "CLM-25017", patient: "Sara Al-Halabi",   insurer: "MedNet",              service: "Cardiology + ECG",   total: 145.000, approved: 130.500, copay: 14.500, status: "approved",   msg: "Bundle CPT covered" },
+      { claim: "CLM-25018", patient: "Faisal Odeh",      insurer: "Aman",                service: "Knee MRI",           total: 320.000, approved:   0.000, copay:  0.000, status: "pending",    msg: "Awaiting pre-auth #A-88214" },
+      { claim: "CLM-25019", patient: "Nour Khalil",      insurer: "GlobeMed",            service: "OB anomaly scan",    total: 180.000, approved: 162.000, copay: 18.000, status: "approved",   msg: "Coverage confirmed" },
+      { claim: "CLM-25020", patient: "Ahmad Sabbagh",    insurer: "Al-Nisr Al-Arabi",    service: "Chemo cycle 3",      total: 2450.000,approved: 2205.000,copay:245.000, status: "approved",   msg: "Oncology plan — 90%" },
+      { claim: "CLM-25021", patient: "Layan Haddad",     insurer: "Nextcare",            service: "Peds ENT day-case",  total: 640.000, approved: 512.000, copay:128.000, status: "approved",   msg: "80% coverage per plan" },
+      { claim: "CLM-25022", patient: "Khalid Awad",      insurer: "Jordan Insurance",    service: "Cath lab + stent",   total: 4820.000,approved: 4820.000,copay:  0.000, status: "approved",   msg: "CCPC bundle, no co-pay" },
+      { claim: "CLM-25023", patient: "Maria Sahyoun",    insurer: "Trust International", service: "Dermatology visit",  total:  85.000, approved:   0.000, copay:  0.000, status: "denied",     msg: "Cosmetic exclusion" },
+      { claim: "CLM-25024", patient: "Bilal Nabulsi",    insurer: "Islamic Insurance",   service: "EEG + MRI brain",    total: 610.000, approved: 549.000, copay: 61.000, status: "approved",   msg: "Neurology plan — 90%" },
+      { claim: "CLM-25025", patient: "Samir Qutaishat",  insurer: "First Insurance",     service: "URO cystoscopy",     total: 275.000, approved:   0.000, copay:  0.000, status: "pending",    msg: "Missing referral doc" },
+      { claim: "CLM-25026", patient: "Reem Salhab",      insurer: "Jerusalem Insurance", service: "Audiology + tymp.",  total: 120.000, approved: 108.000, copay: 12.000, status: "approved",   msg: "Standard 90%" },
+      { claim: "CLM-25027", patient: "Rakan Al-Saket",   insurer: "RMS Referral",        service: "Colonoscopy",        total: 380.000, approved: 380.000, copay:  0.000, status: "approved",   msg: "RMS full coverage" },
+      { claim: "CLM-25028", patient: "Diala Nawwab",     insurer: "MedNet",              service: "Endocrine labs",     total:  95.000, approved:  85.500, copay:  9.500, status: "approved",   msg: "Panel covered" }
+    ]
+  }
+};
+
+/* ---------- Fetch with graceful fallback ---------- */
+async function safeFetch(path, fallback) {
+  try {
+    const r = await fetch(API_BASE + path, { headers: { 'Accept': 'application/json' } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    document.getElementById('apiStatus').textContent = 'live';
+    document.getElementById('apiStatus').className = 'chip chip-green';
+    return await r.json();
+  } catch (e) {
+    document.getElementById('apiStatus').textContent = 'offline';
+    document.getElementById('apiStatus').className = 'chip chip-slate';
+    return fallback;
+  }
+}
+
+/* ---------- Reception ---------- */
+function statusChip(s) {
+  const cls = ({ 'checked-in':'chip chip-green','waiting':'chip chip-amber','in-room':'chip chip-blue' })[s] || 'chip chip-slate';
+  return `<span class="${cls}">${s}</span>`;
+}
+function drawOccGauge(pct) {
+  const svg = document.getElementById('occGauge');
+  const cx=60, cy=60, r=48, start=Math.PI, end=0;
+  const angle = start - (start - end) * (pct/100);
+  const x1=cx+r*Math.cos(start), y1=cy+r*Math.sin(start);
+  const x2=cx+r*Math.cos(angle), y2=cy+r*Math.sin(angle);
+  const x3=cx+r*Math.cos(end),   y3=cy+r*Math.sin(end);
+  const largeArc = pct > 50 ? 1 : 0;
+  svg.innerHTML = `
+    <defs><linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#0062CC"/><stop offset="1" stop-color="#00D4AA"/></linearGradient></defs>
+    <path d="M ${x1} ${y1} A ${r} ${r} 0 1 1 ${x3} ${y3}" stroke="#e2e8f0" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <path d="M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}" stroke="url(#g1)" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <text x="${cx}" y="${cy}" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">${pct}%</text>`;
+}
+function drawTrend(id, arr, min, max) {
+  const svg = document.getElementById(id);
+  const W=300, H=70, pad=6;
+  const rng = (max - min) || 1;
+  const step = (W - pad*2) / (arr.length - 1);
+  const pts = arr.map((v,i) => `${pad+i*step},${H-pad-((v-min)/rng)*(H-pad*2)}`).join(' ');
+  svg.innerHTML = `
+    <defs><linearGradient id="tg" x1="0" x2="1"><stop offset="0" stop-color="#0062CC"/><stop offset="1" stop-color="#00D4AA"/></linearGradient></defs>
+    <polyline fill="none" stroke="url(#tg)" stroke-width="2" points="${pts}"/>
+    ${arr.map((v,i)=>`<circle cx="${pad+i*step}" cy="${H-pad-((v-min)/rng)*(H-pad*2)}" r="2" fill="#0062CC"/>`).join('')}
+  `;
+}
+async function loadReception() {
+  const data = await safeFetch('/api/demo/reception/', SAMPLE.reception);
+  document.getElementById('kpiAppts').textContent = data.kpis.appointments_today;
+  document.getElementById('kpiQueue').textContent = data.kpis.queue_length;
+  document.getElementById('kpiEr').textContent    = data.kpis.er_last_hour;
+  const pct = Math.round(100 * data.kpis.beds_occupied / data.kpis.beds_total);
+  document.getElementById('kpiOcc').textContent   = data.kpis.beds_occupied;
+  drawOccGauge(pct);
+
+  const tbody = document.querySelector('#tblAppts tbody');
+  tbody.innerHTML = data.appointments.map(a => `
+    <tr><td>${a.time}</td><td class="font-mono">${a.mrn}</td><td>${a.patient}</td>
+        <td>${a.dept}</td><td>${a.doctor}</td><td>${a.insurer}</td><td>${statusChip(a.status)}</td></tr>
+  `).join('');
+
+  const nicu = document.getElementById('nicuGrid');
+  // 28 incubators — deterministic pattern
+  const states = ['free','stable','stable','critical','stable','free','stable',
+                  'stable','stable','stable','free','stable','critical','stable',
+                  'stable','free','stable','stable','stable','stable','stable',
+                  'critical','stable','stable','free','stable','stable','stable'];
+  nicu.innerHTML = states.map((s,i) => {
+    const cls = { free:'chip-green', stable:'chip-amber', critical:'chip-red' }[s];
+    return `<div class="chip ${cls}" title="Incubator ${i+1} — ${s}">N${i+1}</div>`;
+  }).join('');
+
+  const or = document.getElementById('orMini');
+  const orStates = ['in-case','in-case','turnover','in-case','idle','in-case','in-case',
+                    'in-case','turnover','in-case','idle','in-case','in-case','in-case',
+                    'closed','in-case','idle','in-case','in-case','turnover','in-case'];
+  or.innerHTML = orStates.map((s,i) => {
+    const cls = { 'idle':'chip-green','in-case':'chip-blue','turnover':'chip-amber','closed':'chip-slate' }[s];
+    return `<div class="chip ${cls}" title="OR-${(i+1).toString().padStart(2,'0')} · ${s}">OR${(i+1).toString().padStart(2,'0')}</div>`;
+  }).join('');
+}
+
+/* ---------- Clinician ---------- */
+async function loadClinician() {
+  const d = await safeFetch('/api/demo/clinician/active-patient/', SAMPLE.clinician);
+  document.getElementById('patName').textContent = d.patient.name;
+  document.getElementById('patSub').textContent  = `MRN ${d.patient.mrn} · ${d.patient.age}${d.patient.sex} · ${d.patient.diagnosis} · ${d.patient.location}`;
+  document.getElementById('vHR').textContent    = d.vitals.hr;
+  document.getElementById('vBP').textContent    = d.vitals.bp;
+  document.getElementById('vSpO2').textContent  = d.vitals.spo2;
+  document.getElementById('vT').textContent     = d.vitals.temp;
+  document.getElementById('vRR').textContent    = d.vitals.rr;
+  document.getElementById('vPain').textContent  = d.vitals.pain;
+  drawTrend('hrTrend', d.vitals.hr_trend, 60, 100);
+
+  document.getElementById('orders').innerHTML = d.orders.map(o => `<li class="flex gap-2"><span class="chip chip-blue">order</span>${o}</li>`).join('');
+
+  const labs = document.querySelector('#tblLabs tbody');
+  labs.innerHTML = d.labs.map(l => {
+    const chip = ({H:'chip-red',L:'chip-amber',N:'chip-green'})[l.flag];
+    return `<tr><td>${l.t}</td><td class="font-mono">${l.v}</td><td class="text-slate-500">${l.r}</td><td><span class="chip ${chip}">${l.flag}</span></td></tr>`;
+  }).join('');
+
+  document.getElementById('cdssCount').textContent = d.cdss.length + ' active';
+  document.getElementById('cdssList').innerHTML = d.cdss.map(c => {
+    const cls = c.level === 'critical' ? '' : (c.level === 'warn' ? 'warn' : 'info');
+    const badge = c.level === 'critical' ? 'chip-red' : (c.level === 'warn' ? 'chip-amber' : 'chip-blue');
+    return `<div class="alert-cdss ${cls}"><span class="chip ${badge}">${c.level}</span> <span class="text-sm">${c.text}</span></div>`;
+  }).join('');
+}
+
+/* ---------- Patient portal ---------- */
+async function loadPatient() {
+  const d = await safeFetch('/api/demo/patient/me/', SAMPLE.patient);
+  document.getElementById('myAppts').innerHTML   = d.appointments.map(a => `<li><b>${a.d}</b> — ${a.doc} <span class="text-slate-500">(${a.dept})</span></li>`).join('');
+  document.getElementById('myRx').innerHTML      = d.prescriptions.map(r => `<li>${r.rx} <span class="chip chip-slate">refills: ${r.refills}</span></li>`).join('');
+  document.getElementById('myResults').innerHTML = d.results.map(r => `<li><b>${r.name}</b> <span class="text-slate-500">${r.d}</span><br><span class="text-slate-600">${r.note}</span></li>`).join('');
+
+  const tbody = document.querySelector('#tblMyBills tbody');
+  tbody.innerHTML = d.bills.map(b => `
+    <tr>
+      <td>${b.date}</td><td>${b.desc}</td><td>${b.insurer}</td>
+      <td class="font-mono">${b.total.toFixed(3)}</td>
+      <td class="font-mono">${b.covered.toFixed(3)}</td>
+      <td class="font-mono font-semibold">${b.due.toFixed(3)}</td>
+      <td><span class="chip chip-green">${b.status}</span></td>
+    </tr>`).join('');
+}
+
+/* ---------- Command Center ---------- */
+async function loadCommand() {
+  const d = await safeFetch('/api/demo/command-center/', SAMPLE.command);
+  document.getElementById('ccOcc').textContent = d.kpis.occ_pct + '%';
+  document.getElementById('ccOccBar').style.width = d.kpis.occ_pct + '%';
+  document.getElementById('ccEd').textContent  = d.kpis.ed_wait_min;
+  document.getElementById('ccOr').textContent  = d.kpis.or_util_pct + '%';
+  document.getElementById('ccDso').textContent = d.kpis.dso_days;
+  document.getElementById('ccDen').textContent = d.kpis.denial_pct;
+
+  const orGrid = document.getElementById('orGrid');
+  const orStates = ['in-case','in-case','turnover','in-case','idle','in-case','in-case',
+                    'in-case','turnover','in-case','idle','in-case','in-case','in-case',
+                    'closed','in-case','idle','in-case','in-case','turnover','in-case'];
+  orGrid.innerHTML = orStates.map((s,i) => {
+    const cls = { 'idle':'chip-green','in-case':'chip-blue','turnover':'chip-amber','closed':'chip-slate' }[s];
+    return `<div class="chip ${cls}" style="justify-content:center">OR-${(i+1).toString().padStart(2,'0')}</div>`;
+  }).join('');
+
+  const dept = document.getElementById('deptBars');
+  dept.innerHTML = d.depts.map(x => `
+    <div>
+      <div class="flex justify-between text-xs mb-1"><span>${x.name}</span><span class="font-mono">${x.occ}%</span></div>
+      <div class="mini-bar"><span style="width:${x.occ}%"></span></div>
+    </div>`).join('');
+
+  document.getElementById('ccAlerts').innerHTML = d.alerts.map(a => {
+    const cls = a.sev==='critical'?'':(a.sev==='warn'?'warn':'info');
+    const badge = a.sev==='critical'?'chip-red':(a.sev==='warn'?'chip-amber':'chip-blue');
+    return `<div class="alert-cdss ${cls}"><span class="chip ${badge}">${a.sev}</span> <span class="text-sm">${a.text}</span></div>`;
+  }).join('');
+}
+
+/* ---------- Payment & insurance ---------- */
+let currentBills = [];
+function renderBills(rows) {
+  const tbody = document.querySelector('#tblBills tbody');
+  const stChip = s => ({approved:'chip-green', pending:'chip-amber', denied:'chip-red'})[s] || 'chip-slate';
+  tbody.innerHTML = rows.map(b => `
+    <tr data-claim="${b.claim}">
+      <td class="font-mono">${b.claim}</td>
+      <td>${b.patient}</td>
+      <td>${b.insurer}</td>
+      <td>${b.service}</td>
+      <td class="font-mono">${b.total.toFixed(3)}</td>
+      <td class="font-mono">${b.approved.toFixed(3)}</td>
+      <td class="font-mono">${b.copay.toFixed(3)}</td>
+      <td><span class="chip ${stChip(b.status)}">${b.status}</span></td>
+      <td class="text-slate-600">${b.msg}</td>
+    </tr>`).join('');
+}
+async function loadPayment() {
+  const d = await safeFetch('/api/demo/payments/', SAMPLE.payment);
+  document.getElementById('payTotal').textContent   = d.kpis.outstanding.toFixed(3);
+  document.getElementById('payPending').textContent = d.kpis.pending;
+  document.getElementById('payDenied').textContent  = d.kpis.denied_week;
+  currentBills = d.bills.slice();
+  renderBills(currentBills);
+}
+document.getElementById('insFilter').addEventListener('change', (e) => {
+  const v = e.target.value;
+  renderBills(v ? currentBills.filter(b => b.insurer === v) : currentBills);
+});
+
+document.getElementById('btnAdjudicate').addEventListener('click', async () => {
+  const btn = document.getElementById('btnAdjudicate');
+  const log = document.getElementById('adjLog');
+  btn.disabled = true;
+  log.textContent = '';
+  const line = (s) => { log.textContent += s + '\n'; log.scrollTop = log.scrollHeight; };
+  line('▶ POST ' + API_BASE + '/api/demo/adjudicate/  { batch: pending+approved }');
+  await new Promise(r => setTimeout(r, 300));
+  for (const b of currentBills) {
+    line(`  ↔ ${b.claim.padEnd(10)} ${b.insurer.padEnd(24)} ${b.service}`);
+    await new Promise(r => setTimeout(r, 90));
+    if (b.status === 'pending') {
+      const approve = Math.random() > 0.35;
+      if (approve) {
+        b.approved = +(b.total * 0.9).toFixed(3);
+        b.copay    = +(b.total - b.approved).toFixed(3);
+        b.status   = 'approved';
+        b.msg      = 'Real-time adjudication OK (90% plan)';
+        line(`    → APPROVED  JOD ${b.approved.toFixed(3)}  copay ${b.copay.toFixed(3)}`);
+      } else {
+        b.status = 'denied';
+        b.msg    = 'Missing pre-auth — resubmit with doc #A-88214';
+        line(`    → DENIED    reason: pre-auth missing`);
+      }
+    } else if (b.status === 'denied') {
+      line(`    → SKIP (already denied)`);
+    } else {
+      line(`    → PAID      JOD ${b.approved.toFixed(3)}`);
+    }
+  }
+  line('✔ batch complete · ' + new Date().toLocaleTimeString());
+  renderBills(currentBills);
+  const approved = currentBills.filter(b => b.status==='approved').reduce((s,b)=>s+b.approved,0);
+  const pending  = currentBills.filter(b => b.status==='pending').length;
+  const denied   = currentBills.filter(b => b.status==='denied').length;
+  document.getElementById('payTotal').textContent   = (approved).toFixed(3);
+  document.getElementById('payPending').textContent = pending;
+  document.getElementById('payDenied').textContent  = denied;
+  btn.disabled = false;
+});
+
+/* ---------- Boot ---------- */
+applyLang();
+loadReception();
+loadClinician();
+loadPatient();
+loadCommand();
+loadPayment();
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+# =============================================================================
+# CyMed NetworkPolicies
+# Default-deny in the namespace; then whitelist:
+#   - ingress-nginx  -> api :8000
+#   - api            -> postgres :5432, redis :6379, external HTTPS
+#   - worker/beat    -> postgres :5432, redis :6379, external HTTPS
+# Postgres and Redis run either as sibling pods (in a data namespace) or as
+# managed services. If managed, the egress rules below still apply and the
+# ipBlock will be an RDS/ElastiCache CIDR — patch in the overlay.
+# =============================================================================
+
+---
+# 1. Default-deny all ingress and egress within the namespace.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: cymed
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# 2. Allow the cluster's ingress-nginx controller to reach the API pods.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-nginx-to-api
+  namespace: cymed
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cymed-api
+      app.kubernetes.io/component: api
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8000
+
+---
+# 3. Allow all workloads to resolve DNS (kube-dns / CoreDNS).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: cymed
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# 4. Allow API pods to talk to postgres and redis (in-cluster) and external HTTPS
+#    (payments/EHR/AI providers).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-egress
+  namespace: cymed
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cymed-api
+      app.kubernetes.io/component: api
+  policyTypes:
+    - Egress
+  egress:
+    # postgres — sibling pod in the same namespace (adjust for managed RDS).
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # external HTTPS (Stripe, NPHIES, WHO ICD-11, AI providers, telemetry).
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# 5. Same egress allowance for workers and beat.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-worker-beat-egress
+  namespace: cymed
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/component
+        operator: In
+        values: ["worker", "beat"]
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443

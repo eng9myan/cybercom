@@ -1,0 +1,1050 @@
+openapi: 3.1.0
+info:
+  title: CyMed Patient App API
+  version: 1.0.0
+  description: |
+    Public API for the CyMed Patient App (iOS + Android + Web PWA).
+    Base path: /api/v1/patient-app/
+    All requests except /auth/register and /auth/verify-otp require Bearer token.
+  contact:
+    name: CyMed Platform Team
+    email: platform@cymed.sa
+
+servers:
+  - url: https://api.cymed.sa/api/v1/patient-app
+    description: Production KSA
+  - url: https://api.cymed.jo/api/v1/patient-app
+    description: Production Jordan
+  - url: https://sandbox.cymed.sa/api/v1/patient-app
+    description: Sandbox
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Auth
+  - name: Profile
+  - name: NFC
+  - name: NFC-Public
+    description: Called by provider terminals with terminal token.
+  - name: Records
+  - name: Appointments
+  - name: Delegation
+  - name: Consent
+  - name: Billing
+  - name: Wearables
+  - name: Notifications
+
+paths:
+
+  # ─── AUTH ────────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      tags: [Auth]
+      security: []
+      summary: Start registration by phone + national ID; OTP sent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, national_id, dob]
+              properties:
+                phone: { type: string, example: '+966501234567' }
+                national_id: { type: string }
+                dob: { type: string, format: date }
+                preferred_language: { type: string, enum: [ar, en], default: ar }
+      responses:
+        '202':
+          description: OTP sent
+          content: { application/json: { schema: { $ref: '#/components/schemas/OtpChallenge' } } }
+        '409': { description: Patient already registered }
+
+  /auth/verify-otp:
+    post:
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, otp]
+              properties:
+                phone: { type: string }
+                otp: { type: string }
+      responses:
+        '200':
+          description: Verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: { type: string }
+                  refresh_token: { type: string }
+                  needs_biometric_setup: { type: boolean }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string, format: password }
+      responses:
+        '200': { $ref: '#/components/responses/TokenPair' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/biometric/challenge:
+    post:
+      tags: [Auth]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  challenge: { type: string, description: base64 32 bytes }
+                  rp_id: { type: string, example: 'cymed.sa' }
+                  timeout_ms: { type: integer, default: 60000 }
+
+  /auth/biometric/verify:
+    post:
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assertion, credential_id]
+              properties:
+                assertion: { type: string, description: base64 WebAuthn assertion }
+                credential_id: { type: string }
+      responses:
+        '200':
+          description: Long-lived session
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_token: { type: string }
+                  expires_at: { type: string, format: date-time }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/TokenPair' }
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      responses: { '204': { description: No content } }
+
+  /auth/devices:
+    get:
+      tags: [Auth]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/PatientDevice' } }
+
+  /auth/devices/{id}:
+    delete:
+      tags: [Auth]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '204': { description: Revoked } }
+
+  # ─── PROFILE + EMERGENCY ────────────────────────────────────────────────
+  /profile/me:
+    get:
+      tags: [Profile]
+      responses:
+        '200':
+          content: { application/json: { schema: { $ref: '#/components/schemas/PatientPortalProfile' } } }
+    patch:
+      tags: [Profile]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/PatientPortalProfilePatch' } } }
+      responses:
+        '200':
+          content: { application/json: { schema: { $ref: '#/components/schemas/PatientPortalProfile' } } }
+
+  /profile/emergency:
+    get:
+      tags: [Profile]
+      responses:
+        '200':
+          content: { application/json: { schema: { $ref: '#/components/schemas/EmergencyProfile' } } }
+    patch:
+      tags: [Profile]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/EmergencyProfilePatch' } } }
+      responses:
+        '200':
+          content: { application/json: { schema: { $ref: '#/components/schemas/EmergencyProfile' } } }
+
+  # ─── NFC (patient-facing) ───────────────────────────────────────────────
+  /nfc/cards:
+    get:
+      tags: [NFC]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/NFCCard' } }
+    post:
+      tags: [NFC]
+      description: Staff-only. Issue new card to patient.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [card_uuid, public_key_pem]
+              properties:
+                card_uuid: { type: string, format: uuid }
+                public_key_pem: { type: string }
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  card: { $ref: '#/components/schemas/NFCCard' }
+                  activation_code: { type: string, description: One-time 6-digit code shown to patient }
+
+  /nfc/cards/{id}/activate:
+    post:
+      tags: [NFC]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [activation_code, device_public_key]
+              properties:
+                activation_code: { type: string }
+                device_public_key: { type: string }
+      responses: { '204': { description: Activated } }
+
+  /nfc/cards/{id}/revoke:
+    post:
+      tags: [NFC]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties: { reason: { type: string } }
+      responses: { '204': { description: Revoked } }
+
+  /nfc/scans:
+    get:
+      tags: [NFC]
+      description: Recent NFC scans of my cards
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/NFCScanLog' } }
+
+  # ─── NFC (provider terminal public) ─────────────────────────────────────
+  /nfc/scan:
+    post:
+      tags: [NFC-Public]
+      security: [{ terminalAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [card_uuid, signature, purpose, terminal_id]
+              properties:
+                card_uuid: { type: string, format: uuid }
+                signature: { type: string, description: ECDSA sig of nonce w/ card key }
+                nonce: { type: string, description: base64 32 bytes challenge }
+                purpose:
+                  type: string
+                  enum: [reception, pharmacy, lab, imaging, emergency, other]
+                terminal_id: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  patient_summary:
+                    oneOf:
+                      - $ref: '#/components/schemas/ReceptionSummary'
+                      - $ref: '#/components/schemas/EmergencyProfile'
+                      - $ref: '#/components/schemas/PharmacySummary'
+                  scoped_access_token: { type: string }
+                  expires_in: { type: integer, description: seconds }
+        '401': { description: Invalid signature / revoked card }
+
+  /nfc/terminal/token:
+    post:
+      tags: [NFC-Public]
+      security: [{ mTLS: [] }]
+      description: Provider terminal exchanges mTLS cert for short-lived token
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  terminal_token: { type: string }
+                  expires_in: { type: integer, default: 900 }
+
+  # ─── RECORDS (aggregate across ecosystem) ────────────────────────────────
+  /records/timeline:
+    get:
+      tags: [Records]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: types, in: query, schema: { type: string, description: 'CSV: encounter,observation,rx,imaging,document' } }
+        - { name: on_behalf_of, in: query, schema: { type: string, format: uuid, description: subject profile ID if delegated } }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: '#/components/schemas/TimelineItem' } }
+                  next: { type: string, nullable: true }
+
+  /records/labs:
+    get:
+      tags: [Records]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/DiagnosticReport' } }
+
+  /records/labs/{id}:
+    get:
+      tags: [Records]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report: { $ref: '#/components/schemas/DiagnosticReport' }
+                  trend: { type: array, items: { $ref: '#/components/schemas/Observation' } }
+
+  /records/imaging:
+    get:
+      tags: [Records]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/ImagingStudy' } }
+
+  /records/imaging/{id}/viewer:
+    get:
+      tags: [Records]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  viewer_url: { type: string, format: uri, description: signed OHIF URL (5-min TTL) }
+                  study_uid: { type: string }
+
+  /records/prescriptions:
+    get:
+      tags: [Records]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/MedicationRequest' } }
+
+  /records/prescriptions/{id}/refill:
+    post:
+      tags: [Records]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                pharmacy_tenant_id: { type: string, format: uuid }
+                delivery: { type: boolean, default: false }
+                delivery_address: { type: string, nullable: true }
+      responses: { '202': { description: Refill request queued } }
+
+  /records/documents:
+    get:
+      tags: [Records]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/DocumentReference' } }
+
+  # ─── APPOINTMENTS ──────────────────────────────────────────────────────
+  /records/appointments:
+    get:
+      tags: [Appointments]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Appointment' } }
+    post:
+      tags: [Appointments]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider_tenant_id, service_id, slot_start]
+              properties:
+                provider_tenant_id: { type: string, format: uuid }
+                practitioner_id: { type: string, format: uuid, nullable: true }
+                service_id: { type: string }
+                slot_start: { type: string, format: date-time }
+                reason: { type: string, nullable: true }
+                on_behalf_of: { type: string, format: uuid, nullable: true }
+      responses:
+        '201':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Appointment' }
+
+  /records/appointments/{id}:
+    delete:
+      tags: [Appointments]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '204': { description: Cancelled } }
+
+  # ─── DELEGATION ────────────────────────────────────────────────────────
+  /delegations/granted:
+    get:
+      tags: [Delegation]
+      responses:
+        '200':
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/DelegatedAccess' } } } }
+
+  /delegations/received:
+    get:
+      tags: [Delegation]
+      responses:
+        '200':
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/DelegatedAccess' } } } }
+
+  /delegations:
+    post:
+      tags: [Delegation]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject_profile_id, relationship, scope]
+              properties:
+                subject_profile_id: { type: string, format: uuid }
+                relationship: { type: string, enum: [spouse, parent, child, sibling, guardian, friend, other] }
+                scope:
+                  type: object
+                  properties:
+                    read_records: { type: boolean }
+                    book_appt: { type: boolean }
+                    pay_bills: { type: boolean, default: true }
+                    max_amount: { type: number, nullable: true }
+                expiry: { type: string, format: date-time, nullable: true }
+      responses:
+        '201':
+          content: { application/json: { schema: { $ref: '#/components/schemas/DelegatedAccess' } } }
+
+  /delegations/{id}/accept:
+    post:
+      tags: [Delegation]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '200': { description: Accepted } }
+
+  /delegations/{id}/revoke:
+    post:
+      tags: [Delegation]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '204': { description: Revoked } }
+
+  # ─── CONSENT ───────────────────────────────────────────────────────────
+  /consents:
+    get:
+      tags: [Consent]
+      responses:
+        '200':
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ConsentGrant' } } } }
+    post:
+      tags: [Consent]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConsentGrantCreate' }
+      responses:
+        '201':
+          content: { application/json: { schema: { $ref: '#/components/schemas/ConsentGrant' } } }
+
+  /consents/{id}:
+    delete:
+      tags: [Consent]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses: { '204': { description: Revoked } }
+
+  # ─── BILLING SHELLS (delegate to P0-2) ─────────────────────────────────
+  /billing/bills:
+    get:
+      tags: [Billing]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/UnifiedBill' } }
+
+  /billing/bills/{id}:
+    get:
+      tags: [Billing]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      responses:
+        '200':
+          content: { application/json: { schema: { $ref: '#/components/schemas/UnifiedBill' } } }
+
+  /billing/bills/{id}/pay:
+    post:
+      tags: [Billing]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [method]
+              properties:
+                method: { type: string, enum: [card, wallet, apple_pay, google_pay, stc_pay, cliq, insurance] }
+                source_wallet_id: { type: string, format: uuid, nullable: true }
+                on_behalf_of: { type: string, format: uuid, nullable: true }
+                amount: { type: number, description: 'partial pay OK; if omitted = full amount' }
+      responses:
+        '202':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentTransaction' }
+
+  /billing/insurance:
+    get:
+      tags: [Billing]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/InsurancePolicy' } }
+    post:
+      tags: [Billing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [insurer, policy_number, member_no]
+              properties:
+                insurer: { type: string, example: 'BUPA' }
+                policy_number: { type: string }
+                member_no: { type: string }
+                card_image_base64: { type: string, nullable: true }
+      responses:
+        '201':
+          content: { application/json: { schema: { $ref: '#/components/schemas/InsurancePolicy' } } }
+
+  /billing/insurance/{id}/eligibility:
+    post:
+      tags: [Billing]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_code]
+              properties:
+                service_code: { type: string, description: CPT / SFDA / local code }
+                provider_tenant_id: { type: string, format: uuid, nullable: true }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  covered: { type: boolean }
+                  co_pay_amount: { type: number }
+                  co_pay_percent: { type: number }
+                  requires_preauth: { type: boolean }
+                  patient_responsibility: { type: number }
+                  raw_response: { type: object, description: NPHIES/Jofotara raw payload }
+
+  /billing/insurance/{id}/preauth:
+    post:
+      tags: [Billing]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_code, provider_tenant_id]
+              properties:
+                service_code: { type: string }
+                provider_tenant_id: { type: string, format: uuid }
+                clinical_justification: { type: string }
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  preauth_id: { type: string }
+                  status: { type: string, enum: [pending, approved, denied] }
+
+  # ─── WEARABLES ─────────────────────────────────────────────────────────
+  /wearables/connect:
+    post:
+      tags: [Wearables]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vendor]
+              properties:
+                vendor: { type: string, enum: [apple_health, fitbit, garmin, google_fit, glucose_libre] }
+                access_token: { type: string, nullable: true }
+      responses: { '200': { description: OK } }
+
+  /wearables/observations:
+    post:
+      tags: [Wearables]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items: { $ref: '#/components/schemas/Observation' }
+      responses: { '204': { description: Ingested } }
+
+  # ─── NOTIFICATIONS ─────────────────────────────────────────────────────
+  /notifications/register-push:
+    post:
+      tags: [Notifications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_id, push_token, platform]
+              properties:
+                device_id: { type: string, format: uuid }
+                push_token: { type: string }
+                platform: { type: string, enum: [ios, android, web] }
+      responses: { '204': { description: Registered } }
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: '#/components/schemas/Notification' } }
+
+  /notifications/{id}:
+    patch:
+      tags: [Notifications]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string, format: uuid } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { read: { type: boolean } }
+      responses: { '200': { description: OK } }
+
+# ─── COMPONENTS ───────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    terminalAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+    mTLS: { type: mutualTLS }
+
+  responses:
+    TokenPair:
+      description: Token pair
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              access_token: { type: string }
+              refresh_token: { type: string }
+              expires_in: { type: integer }
+    Unauthorized:
+      description: Invalid credentials
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail: { type: string }
+        code: { type: string }
+
+    OtpChallenge:
+      type: object
+      properties:
+        challenge_id: { type: string }
+        expires_in: { type: integer, example: 300 }
+
+    PatientDevice:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        platform: { type: string, enum: [ios, android, web] }
+        device_name: { type: string }
+        last_seen_at: { type: string, format: date-time, nullable: true }
+        revoked: { type: boolean }
+
+    NFCCard:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        card_uuid: { type: string, format: uuid }
+        issued_at: { type: string, format: date-time }
+        activated_at: { type: string, format: date-time, nullable: true }
+        revoked_at: { type: string, format: date-time, nullable: true }
+        revocation_reason: { type: string, nullable: true }
+
+    NFCScanLog:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        card_id: { type: string, format: uuid }
+        scanned_at: { type: string, format: date-time }
+        purpose: { type: string }
+        provider_tenant_id: { type: string, format: uuid }
+        terminal_id: { type: string }
+
+    PatientPortalProfile:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        patient_id: { type: string, format: uuid }
+        mrn: { type: string }
+        preferred_language: { type: string }
+        theme_preference: { type: string }
+        email_verified: { type: boolean }
+        phone_verified: { type: boolean }
+        two_factor_enabled: { type: boolean }
+        emergency_access_enabled: { type: boolean }
+        data_sharing_consent: { type: boolean }
+
+    PatientPortalProfilePatch:
+      type: object
+      properties:
+        preferred_language: { type: string, enum: [ar, en] }
+        theme_preference: { type: string, enum: [light, dark, system] }
+        two_factor_enabled: { type: boolean }
+        emergency_access_enabled: { type: boolean }
+        data_sharing_consent: { type: boolean }
+
+    EmergencyProfile:
+      type: object
+      properties:
+        blood_type: { type: string }
+        allergies:
+          type: array
+          items:
+            type: object
+            properties:
+              substance: { type: string }
+              severity: { type: string, enum: [mild, moderate, severe, life_threatening] }
+              reaction: { type: string }
+        current_medications:
+          type: array
+          items:
+            type: object
+            properties:
+              drug: { type: string }
+              dose: { type: string }
+              frequency: { type: string }
+        chronic_conditions:
+          type: array
+          items:
+            type: object
+            properties:
+              icd11: { type: string }
+              label: { type: string }
+        emergency_contacts:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              relation: { type: string }
+              phone: { type: string }
+        dnr_status: { type: string, enum: [none, dnr, dnr_cc, unknown] }
+        organ_donor: { type: boolean }
+        religious_preferences: { type: string }
+        preferred_language: { type: string }
+        updated_from_ehr_at: { type: string, format: date-time, nullable: true }
+
+    EmergencyProfilePatch:
+      allOf:
+        - $ref: '#/components/schemas/EmergencyProfile'
+
+    ReceptionSummary:
+      type: object
+      properties:
+        name: { type: string }
+        mrn: { type: string }
+        dob: { type: string, format: date }
+        phone: { type: string }
+        insurance: { type: array, items: { $ref: '#/components/schemas/InsurancePolicy' } }
+        allergies: { type: array, items: { type: string } }
+
+    PharmacySummary:
+      type: object
+      properties:
+        name: { type: string }
+        mrn: { type: string }
+        allergies: { type: array, items: { type: string } }
+        active_prescriptions: { type: array, items: { $ref: '#/components/schemas/MedicationRequest' } }
+
+    TimelineItem:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [encounter, observation, prescription, imaging, document, invoice] }
+        timestamp: { type: string, format: date-time }
+        provider: { type: string }
+        summary: { type: string }
+        detail_url: { type: string, format: uri }
+
+    DiagnosticReport:
+      type: object
+      description: FHIR R4 DiagnosticReport (subset for app UI)
+      properties:
+        id: { type: string }
+        status: { type: string }
+        category: { type: string }
+        code: { type: object, properties: { text: { type: string }, loinc: { type: string } } }
+        effectiveDateTime: { type: string, format: date-time }
+        performer: { type: string }
+        result: { type: array, items: { $ref: '#/components/schemas/Observation' } }
+        conclusion: { type: string }
+
+    Observation:
+      type: object
+      properties:
+        id: { type: string }
+        code: { type: object, properties: { text: { type: string }, loinc: { type: string } } }
+        value: { type: number, nullable: true }
+        unit: { type: string, nullable: true }
+        referenceRange: { type: string, nullable: true }
+        flag: { type: string, enum: [normal, high, low, critical], nullable: true }
+        effectiveDateTime: { type: string, format: date-time }
+
+    ImagingStudy:
+      type: object
+      properties:
+        id: { type: string }
+        study_uid: { type: string }
+        modality: { type: string }
+        body_site: { type: string }
+        performed_at: { type: string, format: date-time }
+        report_available: { type: boolean }
+        thumbnail_url: { type: string, format: uri, nullable: true }
+
+    MedicationRequest:
+      type: object
+      properties:
+        id: { type: string }
+        medication_name: { type: string }
+        dose: { type: string }
+        route: { type: string }
+        frequency: { type: string }
+        prescriber: { type: string }
+        authored_on: { type: string, format: date-time }
+        refills_remaining: { type: integer }
+        active: { type: boolean }
+
+    DocumentReference:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        category: { type: string }
+        created_at: { type: string, format: date-time }
+        content_type: { type: string }
+
+    Appointment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        provider_tenant_id: { type: string, format: uuid }
+        practitioner_id: { type: string, format: uuid, nullable: true }
+        practitioner_name: { type: string }
+        service: { type: string }
+        start: { type: string, format: date-time }
+        end: { type: string, format: date-time }
+        status: { type: string, enum: [booked, arrived, fulfilled, cancelled, noshow] }
+        location_name: { type: string, nullable: true }
+
+    DelegatedAccess:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        subject_profile_id: { type: string, format: uuid }
+        delegate_profile_id: { type: string, format: uuid }
+        relationship: { type: string }
+        scope: { type: object }
+        expiry: { type: string, format: date-time, nullable: true }
+        consent_signed_at: { type: string, format: date-time }
+        revoked_at: { type: string, format: date-time, nullable: true }
+
+    ConsentGrant:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        provider_tenant_id: { type: string, format: uuid }
+        scope: { type: object }
+        purpose: { type: string, enum: [treatment, payment, operations, research] }
+        valid_from: { type: string, format: date-time }
+        valid_until: { type: string, format: date-time, nullable: true }
+        revoked_at: { type: string, format: date-time, nullable: true }
+
+    ConsentGrantCreate:
+      type: object
+      required: [provider_tenant_id, scope, purpose, valid_from]
+      properties:
+        provider_tenant_id: { type: string, format: uuid }
+        scope: { type: object }
+        purpose: { type: string, enum: [treatment, payment, operations, research] }
+        valid_from: { type: string, format: date-time }
+        valid_until: { type: string, format: date-time, nullable: true }
+
+    UnifiedBill:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        patient_id: { type: string, format: uuid }
+        line_items:
+          type: array
+          items:
+            type: object
+            properties:
+              service: { type: string }
+              provider_tenant_id: { type: string, format: uuid }
+              encounter_id: { type: string, nullable: true }
+              amount: { type: number }
+        subtotal: { type: number }
+        vat: { type: number }
+        total: { type: number }
+        insurance_paid: { type: number }
+        patient_due: { type: number }
+        status: { type: string, enum: [draft, pending_insurance, patient_due, paid, partial] }
+
+    InsurancePolicy:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        insurer: { type: string }
+        policy_number: { type: string }
+        member_no: { type: string }
+        network_tier: { type: string, nullable: true }
+        deductible: { type: number, nullable: true }
+        deductible_met: { type: number, nullable: true }
+        co_pay_percent: { type: number, nullable: true }
+        valid_from: { type: string, format: date, nullable: true }
+        valid_to: { type: string, format: date, nullable: true }
+
+    PaymentTransaction:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        bill_id: { type: string, format: uuid }
+        payer_id: { type: string, format: uuid }
+        payee_patient_id: { type: string, format: uuid }
+        amount: { type: number }
+        method: { type: string }
+        status: { type: string, enum: [pending, completed, failed, refunded] }
+        gateway_reference: { type: string, nullable: true }
+
+    Notification:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        body: { type: string }
+        created_at: { type: string, format: date-time }
+        read: { type: boolean }
+        deeplink: { type: string, nullable: true }
