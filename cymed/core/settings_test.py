@@ -39,6 +39,19 @@ CACHES = {
 
 KEYCLOAK_ENABLED = False
 
+# Celery: run tasks inline, never touch a broker/result backend. Without this,
+# model post_save signals that call task.delay() (e.g. payments.stamp_bill_task)
+# try to reach Redis and stall the suite on a ~20-retry reconnect storm.
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_BROKER_URL = "memory://"
+CELERY_RESULT_BACKEND = "cache+memory://"
+
+# platform.security.middleware.RateLimitMiddleware throttles at 60 req/min/IP.
+# Test classes that make many sequential API calls (e.g. the hospital suite)
+# blow the bucket and get 429s only when run together, not in isolation.
+PLATFORM_RATE_LIMIT_ENABLED = False
+
 # Disable structured JSON logging — pythonjsonlogger may not be installed in test env
 LOGGING = {
     "version": 1,

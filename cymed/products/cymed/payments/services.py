@@ -22,6 +22,7 @@ def check_eligibility(policy_id: UUID, service_code: str,
     ins = get_insurer(policy.insurer_code, policy.profile.preferred_language and "SA")
     result = ins.eligibility(policy, service_code, provider_tenant_id)
     return EligibilityCheck.objects.create(
+        tenant_id=policy.tenant_id,
         policy=policy,
         service_code=service_code,
         provider_tenant_id=provider_tenant_id,
@@ -38,6 +39,7 @@ def submit_preauth(policy_id: UUID, service_code: str, justification: str,
     ins = get_insurer(policy.insurer_code)
     r = ins.preauth_submit(policy, service_code, justification, provider_tenant_id)
     return PreAuthorization.objects.create(
+        tenant_id=policy.tenant_id,
         policy=policy,
         provider_tenant_id=provider_tenant_id,
         service_code=service_code,
@@ -66,6 +68,7 @@ def pay_bill(bill_id: UUID, method_id: UUID, payer_profile_id: UUID,
     )
 
     txn = PaymentTransaction.objects.create(
+        tenant_id=bill.tenant_id,
         bill=bill,
         payer_profile_id=payer_profile_id,
         payee_profile_id=bill.patient_profile_id,
@@ -82,8 +85,13 @@ def pay_bill(bill_id: UUID, method_id: UUID, payer_profile_id: UUID,
     )
 
     if result.success:
-        prior = sum((t.amount for t in bill.transactions.filter(status="succeeded")), Decimal("0"))
-        if prior + charge_amount >= bill.total:
+        # `txn` (just created, status="succeeded") is already included here — do not
+        # add charge_amount again. The patient can only settle `patient_due`, not the
+        # insurance-covered portion, so compare against that, not `total`.
+        paid_so_far = sum(
+            (t.amount for t in bill.transactions.filter(status="succeeded")), Decimal("0")
+        )
+        if paid_so_far >= bill.patient_due:
             bill.status = "paid"
             bill.paid_at = timezone.now()
         else:

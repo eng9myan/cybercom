@@ -34,7 +34,11 @@ def _make_claim(**overrides):
         status="draft",
     )
     defaults.update(overrides)
-    return SimpleNamespace(**defaults)
+    # A fresh subclass per call: SimpleNamespace itself is immutable at the class
+    # level, but a subclass is not — ClaimScrubber does `type(claim).objects`, and
+    # tests attach a stub manager there. Fresh class per call keeps tests isolated.
+    claim_cls = type("_ClaimStub", (SimpleNamespace,), {})
+    return claim_cls(**defaults)
 
 
 class _EmptyManager:

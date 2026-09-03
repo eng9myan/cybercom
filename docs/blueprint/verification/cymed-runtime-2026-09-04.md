@@ -33,7 +33,26 @@ Admission, OperatingSession, etc.) already have implementations here to port.
 | Info | `datetime.datetime.utcnow()` in `integrations/hakeem/hl7_builder.py` — deprecated, removed in a future Python | Phase-1 cleanup |
 | Info | bare `select_related()` (no args) in `laboratory/orders/views.py`, `imaging/orders/views.py`, `pharmacy/*/views.py` — `RemovedInDjango70Warning` | Phase-1 cleanup (Django 7 blocker) |
 
-## Test failures — triaged into 4 clusters (Phase-1 hardening backlog)
+## Hardening pass (same day) — 486/23/6 → **510 pass / 5 fail / 0 err**
+
+| Fix | Files | Effect |
+|---|---|---|
+| `settings_test`: `CELERY_TASK_ALWAYS_EAGER` + memory broker/backend | `core/settings_test.py` | model `post_save` → `task.delay()` no longer stalls the suite on a ~20-retry Redis reconnect storm (220 s → 26 s) |
+| `settings_test`: `PLATFORM_RATE_LIMIT_ENABLED = False` | `core/settings_test.py` | **13 hospital tests** — passed solo, 429'd in the suite (60 req/min/IP `platform.security` middleware). Now pass. |
+| `pay_bill` / `check_eligibility` / `submit_preauth`: pass `tenant_id` from the loaded parent (`bill`/`policy`) | `payments/services.py` | 3 real tenant-scoping bugs — `BaseModel` rows created with no `tenant_id` → `IntegrityError`. |
+| `pay_bill`: settle against `patient_due`, and don't double-count the just-created txn | `payments/services.py` | real logic bug — a half payment was marked `paid` (added `charge_amount` on top of a `prior` sum that already included it; also compared to `total` incl. insurance). |
+| rcm scrubber tests: build a fresh `SimpleNamespace` **subclass** per claim | `rcm/tests/test_scrubber.py` | 6 errors + 2 fails — `type(claim).objects = ...` can't set attrs on immutable `SimpleNamespace`; a subclass is mutable. All 38 rcm tests pass. |
+
+### Remaining: 5 nphies tests — blocked on tenant-context infrastructure
+`NphiesInteraction` (a `BaseModel`, tenant-scoped) is created inside the NPHIES client,
+which has **no tenant awareness** — the client methods take `provider_tenant_id` as a
+free string (NPHIES provider licensee), not the platform tenant UUID. Correct fix =
+the `TenantScopedManager` + `tenant_context` ContextVar from
+`specs/canonical-data-model-v1.md` §2.2 (auto-inject `tenant_id` on `.create()` from
+request/task context). Lands with that implementation in Phase 1; a hack here would
+mask the design gap. Tracked in `M` R05.
+
+## Original failure triage (for reference)
 
 | Cluster | Count | Representative | Likely cause | Owner |
 |---|---|---|---|---|
