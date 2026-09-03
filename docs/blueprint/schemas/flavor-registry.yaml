@@ -1,0 +1,102 @@
+# CyberCom Flavor Registry — single source of truth
+# Maintained by the flavor governance board (blueprint F.1). CI validates each
+# referenced flavor pack against ../flavor.schema.yaml.
+#
+# status:   engine-only | community | verified | certified | ga
+#           - engine-only : expressible via config/Studio, no pack shipped yet
+#           - community   : an unreviewed pack exists (use-at-own-risk)
+#           - verified    : passed automated checks (schema, a11y/RTL, quotas)
+#           - certified   : CyberCom-reviewed, listed, revenue-share
+#           - ga          : CyberCom-built, tested, compliant per country, SLA-supported
+# wave:     1 (launch) | 2 | 3 | 4 | 5   — target GA/verified window, maps to blueprint G
+# core_plus: canonical primitives this flavor needs added to the core before it can be >= verified
+# ext:      needs a sandboxed extension app for novel logic
+
+meta:
+  version: 0.1.0
+  updated: 2026-09-04
+  owner: flavor-governance-board
+  ga_at_launch: [retail, clinic]        # the only two with a CyberCom SLA at launch
+  principle: >
+    The flavor ENGINE + Studio ship at launch so any flavor is expressible and a
+    partner can build one immediately. GA is staged. The registry shows ambition;
+    the wave/status columns show commitment. (blueprint N.9)
+
+families:
+
+  commerce:
+    - { key: retail,            name: RetailFlavour,                    wave: 1, status: ga }
+    - { key: five_star_resto,   name: FiveStarRestaurantFlavour,        wave: 2, status: engine-only }
+    - { key: fast_food,         name: FastFoodFlavour,                  wave: 2, status: engine-only }
+    - { key: multi_branch_chain,name: MultiBranchChainFlavour,          wave: 2, status: engine-only }
+    - { key: grocery,           name: GroceryFlavour,                   wave: 2, status: engine-only }
+    - { key: hypermarket,       name: HypermarketFlavour,               wave: 3, status: engine-only, core_plus: [Concession, PlanogramSlot] }
+    - { key: jewellery,         name: JewelleryCosmeticsFlavour,        wave: 3, status: engine-only }
+    - { key: fashion,           name: FashionApparelFlavour,            wave: 3, status: engine-only }
+    - { key: electronics,       name: ElectronicsFlavour,               wave: 3, status: engine-only }
+    - { key: home_improvement,  name: HomeImprovementHardwareFlavour,   wave: 3, status: engine-only }
+    - { key: pet_store,         name: PetStoreFlavour,                  wave: 4, status: engine-only }
+    - { key: fuel_forecourt,    name: ConvenienceFuelForecourtFlavour,  wave: 3, status: engine-only, core_plus: [Pump, WetStockReading, FuelCard] }
+    - { key: wholesale,         name: WholesaleDistributionFlavour,     wave: 2, status: engine-only }
+    - { key: hospitality_wholesale, name: HospitalityWholesaleFlavour,  wave: 4, status: engine-only, resolves_to: wholesale }
+
+  health:
+    - { key: clinic,            name: ClinicFlavour,                    wave: 1, status: ga }
+    - { key: hospital,          name: HospitalFlavour,                  wave: 3, status: engine-only, core_plus: [Ward, Admission, BedAssignment, OperatingSession] }
+    - { key: lab,               name: LabFlavour,                       wave: 3, status: engine-only }
+    - { key: pharmacy_retail,   name: PharmacyRetailFlavour,            wave: 2, status: engine-only }
+    - { key: imaging_centre,    name: ImagingCentreFlavour,             wave: 3, status: engine-only }
+    - { key: telemedicine,      name: TelemedicineFlavour,              wave: 3, status: engine-only, ext: true }
+    - { key: home_health,       name: HomeHealthFlavour,                wave: 4, status: engine-only }
+    - { key: dental,            name: DentalFlavour,                    wave: 4, status: engine-only }
+    - { key: health_group,      name: HealthGroupFlavour,               wave: 4, status: engine-only }
+    - { key: insurer_interface, name: InsurerInterfaceFlavour,          wave: 5, status: engine-only, ext: true }
+    - { key: health_analytics,  name: CymedAnalyticsFlavour,            wave: 3, status: engine-only, resolves_to: "analytics-kpi-pack" }
+
+  marketplace:
+    - { key: marketplace,       name: MarketplaceFlavour,               wave: 2, status: engine-only, core_plus: [VendorAccount, CommissionRule, SettlementBatch, Dispute, Review] }
+    - { key: merchant_portal,   name: CymartMerchantPortalFlavour,      wave: 2, status: engine-only, resolves_to: marketplace }
+
+  industrial:
+    - { key: manufacturing,     name: ManufacturingFlavour,             wave: 3, status: engine-only, core_plus: [BillOfMaterials, Routing, Operation, ProductionOrder, WorkCentre] }
+    - { key: process_mfg,       name: ProcessManufacturingFlavour,      wave: 4, status: engine-only, core_plus: [Recipe, Batch, LotGenealogy] }
+    - { key: construction,      name: ConstructionContractingFlavour,   wave: 5, status: engine-only, core_plus: [Project, WBSNode, ProgressBilling, Subcontract, Retention] }
+    - { key: logistics_3pl,     name: Logistics3PLFlavour,              wave: 4, status: engine-only, core_plus: [Consignment, Leg, Hub, ProofOfDelivery] }
+    - { key: agriculture,       name: AgricultureFlavour,               wave: 5, status: engine-only, ext: true }
+
+  services:
+    - { key: auto_dealer_service, name: AutomotiveDealerServiceFlavour, wave: 3, status: engine-only }
+    - { key: auto_parts,        name: AutoPartsFlavour,                 wave: 2, status: engine-only, core_plus: [Fitment, PartInterchange, Supersession] }
+    - { key: field_service,     name: FieldServiceFacilitiesFlavour,    wave: 3, status: engine-only, core_plus: [Asset, MaintenancePlan, WorkOrder, SLA] }
+    - { key: hotel_pms,         name: HospitalityHotelFlavour,          wave: 3, status: engine-only, core_plus: [RatePlan, Availability, Reservation, Folio, HousekeepingTask] }
+    - { key: travel_tour,       name: TravelTourOperatorFlavour,        wave: 4, status: engine-only, ext: true }
+    - { key: salon_spa,         name: BeautySalonSpaFlavour,            wave: 3, status: engine-only }
+    - { key: gym,               name: FitnessGymFlavour,                wave: 3, status: engine-only }
+    - { key: health_wellness,   name: HealthWellnessFlavour,            wave: 3, status: engine-only, resolves_to: [salon_spa, gym] }
+    - { key: real_estate,       name: RealEstatePropertyMgmtFlavour,    wave: 4, status: engine-only }
+    - { key: nonprofit,         name: NonprofitNGOFlavour,              wave: 5, status: engine-only }
+
+  public_and_regulated:
+    - { key: government,        name: GovernmentMunicipalPortalFlavour, wave: 4, status: engine-only, core_plus: [CaseFile, StatutoryWorkflow, FeeSchedule, Inspection, CitizenIdentity] }
+    - { key: government_ops,    name: GovernmentPortalOpsFlavour,       wave: 4, status: engine-only, resolves_to: government }
+    - { key: education,         name: EducationTrainingFlavour,         wave: 4, status: engine-only, core_plus: [Programme, Course, Section, Enrolment, AcademicRecord, Timetable] }
+    - { key: education_admin,   name: EducationAdminFlavour,            wave: 4, status: engine-only, resolves_to: education }
+    - { key: telecom,           name: TelecomServiceProviderFlavour,    wave: 4, status: engine-only, core_plus: [ServiceSubscription, ProvisioningOrder, UsageEvent, RatePlan] }
+    - { key: energy_utilities,  name: EnergyUtilitiesFlavour,           wave: 5, status: engine-only, core_plus: [ServicePoint, Meter, MeterReading, Tariff, Determinant, BillingCycle] }
+
+  cross_domain:
+    - { key: multi_branch,      name: MultiBranchFlavour,               wave: 2, status: engine-only,
+        note: "not a vertical — a composition overlay: HQ<->branch governance, central master data, consolidated reporting, inter-branch transfer, royalty/franchise calc. Applies on top of any commerce/services flavor." }
+
+# ── core_plus rollup: the finite 'build the core once' list (~25 primitives) ──
+core_plus_backlog:
+  phase_2: [VendorAccount, CommissionRule, SettlementBatch, Dispute, Review, Fitment, PartInterchange, Supersession]
+  phase_3: [BillOfMaterials, Routing, Operation, ProductionOrder, WorkCentre, Asset, MaintenancePlan, WorkOrder, SLA,
+            RatePlan, Availability, Reservation, Folio, HousekeepingTask, Concession, PlanogramSlot, Pump, WetStockReading, FuelCard,
+            Ward, Admission, BedAssignment, OperatingSession]
+  phase_4: [CaseFile, StatutoryWorkflow, FeeSchedule, Inspection, CitizenIdentity,
+            Programme, Course, Section, Enrolment, AcademicRecord, Timetable,
+            ServiceSubscription, ProvisioningOrder, UsageEvent, RatePlan,
+            Consignment, Leg, Hub, ProofOfDelivery, Recipe, Batch, LotGenealogy]
+  phase_5: [ServicePoint, Meter, MeterReading, Tariff, Determinant, BillingCycle,
+            Project, WBSNode, ProgressBilling, Subcontract, Retention]

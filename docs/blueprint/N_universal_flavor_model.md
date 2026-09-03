@@ -187,4 +187,45 @@ a factory, a clinic, a ministry, and a corner shop at the same time.
 | Extension-app sandbox + capability model | Phase 4 (with the hosting platform + developer marketplace) |
 | The ~25 `[core+]` primitives | Phases 3–5, one domain cluster at a time (industrial → services → public sector) |
 | Flavor certification pipeline | Phase 4–5 with the partner programme (`L.9`) |
-| Full flavor catalogue as a living registry | `flavor.schema.yaml` registry, maintained by the flavor board |
+| Full flavor catalogue as a living registry | `schemas/flavor-registry.yaml`, maintained by the flavor board |
+
+## N.9 The complete registry and the "launch with all flavors" question
+
+The machine-readable list of every flavor — family, wave, status, `[core+]` dependencies —
+lives in **`docs/blueprint/schemas/flavor-registry.yaml`**. It is the single source of truth;
+this document's N.4 table is a readable snapshot. Additions since the first draft (folded in
+from the expanded objective):
+
+| Flavor | Resolves to | Note |
+|---|---|---|
+| Health&WellnessFlavour | = BeautySalonSpaFlavour + FitnessGymFlavour + a wellness-retail profile, as one bundle | packaging |
+| CymedAnalyticsFlavour | an **analytics KPI pack** on the health read-model, not a flavor | belongs to Analytics service |
+| CymartMerchantPortalFlavour | the seller-facing surface of MarketplaceFlavour (dashboards, KPIs, payouts) | sub-surface, same flavor |
+| GovernmentPortalOpsFlavour | the back-office/case-worker surface of GovernmentMunicipalPortalFlavour | sub-surface, same flavor |
+| HospitalityWholesaleFlavour | = WholesaleDistributionFlavour + a hospitality-procurement profile | attribute profile |
+| EducationAdminFlavour | = EducationTrainingFlavour scoped to admin/procurement/asset ops (no LMS) | config subset |
+
+Net: no new top-level flavors — they compose from existing ones. Registry now lists **~55
+named flavors / surfaces** across 6 families.
+
+### Expert position on sequencing (this is a real disagreement worth stating)
+
+The request is to **launch with all flavors from day one**. As the engineering owner, the
+recommendation is: **the architecture supports all ~55 from day one; GA does not.**
+
+| What ships at launch | What doesn't |
+|---|---|
+| The flavor **engine** + Studio + `flavor.schema.yaml` contract — any flavor is *expressible* and a partner can build one in week 1 | 55 CyberCom-built, supported, GA flavors |
+| **2 GA flavors** (Retail, Clinic) — fully built, tested, compliant, referenceable | the other ~53 as "supported by CyberCom SLA" |
+| **~10 Verified flavors** by end of Phase 3 (config-only, community/partner-tested) | deep verticals (`[core+]`) before their primitives land |
+| The full **registry published** so the roadmap and the ecosystem are visible | marketing that implies all 55 are production-ready |
+
+Reasoning: (1) each GA flavor carries real cost — build, test, compliance per country,
+support, a runbook — and a small team that spreads across 55 delivers 55 half-products
+(risk R04, the exact failure the consolidation exists to fix); (2) the moat is the *engine*
+and *one canonical model*, not the count of pre-built verticals — Salesforce and Odoo both
+won with a platform + a handful of first-party apps + an ecosystem for the rest; (3)
+"available as config/Studio, Verified tier" is a truthful and strong market claim without
+over-committing support. The registry makes the *ambition* visible; the wave columns make
+the *commitment* honest. If a specific customer needs flavor #34 now, that is a
+partner-delivered or paid-accelerated flavor, tracked as such.
