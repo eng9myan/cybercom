@@ -166,6 +166,81 @@ def test_save_if_unchanged_compare_and_set():
 
 
 @pytest.mark.django_db
+def test_emit_domain_event_and_relay():
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    from platform.canonical.events import emit, unpublished
+
+    tid = uuid.uuid4()
+    agg = uuid.uuid4()
+    with tenant_context(tid):
+        e = emit(
+            event_type="order.placed", aggregate_type="Order", aggregate_id=agg,
+            payload={"total": 10}, tenant_id=tid,
+        )
+        assert e.published_at is None
+        assert unpublished().filter(pk=e.pk).exists()
+
+        call_command("relay_domain_events", "--dry-run", stdout=StringIO())
+        e.refresh_from_db()
+        assert e.published_at is None  # dry run
+
+        call_command("relay_domain_events", stdout=StringIO())
+        e.refresh_from_db()
+        assert e.published_at is not None
+        assert not unpublished().filter(pk=e.pk).exists()
+
+
+@pytest.mark.django_db
+def test_consent_grant_gates_cross_tenant_access():
+    from platform.canonical.consent import ConsentDenied, has_consent, require_consent
+
+    grantor, grantee = uuid.uuid4(), uuid.uuid4()
+
+    # no grant -> denied
+    assert has_consent(grantor, grantee_tenant_id=grantee, entity="Referral",
+                       purpose="care_coordination") is False
+    with pytest.raises(ConsentDenied):
+        require_consent(grantor, grantee_tenant_id=grantee, entity="Referral",
+                        purpose="care_coordination")
+
+    with tenant_context(grantor):
+        ConsentGrant.objects.create(
+            tenant_id=grantor, grantee_tenant_id=grantee,
+            scope={"entities": ["Referral"], "purpose": "care_coordination"},
+        )
+
+    # covered scope -> allowed
+    assert has_consent(grantor, grantee_tenant_id=grantee, entity="Referral",
+                       purpose="care_coordination") is True
+    # wrong entity / purpose -> still denied
+    assert has_consent(grantor, grantee_tenant_id=grantee, entity="Invoice",
+                       purpose="care_coordination") is False
+    assert has_consent(grantor, grantee_tenant_id=grantee, entity="Referral",
+                       purpose="marketing") is False
+    # wrong grantee -> denied
+    assert has_consent(grantor, grantee_tenant_id=uuid.uuid4(), entity="Referral",
+                       purpose="care_coordination") is False
+
+
+@pytest.mark.django_db
+def test_consent_grant_expiry_is_respected():
+    from django.utils import timezone
+
+    from platform.canonical.consent import has_consent
+
+    grantor, grantee = uuid.uuid4(), uuid.uuid4()
+    with tenant_context(grantor):
+        ConsentGrant.objects.create(
+            tenant_id=grantor, grantee_tenant_id=grantee, scope={},
+            expires_at=timezone.now() - timezone.timedelta(days=1),
+        )
+    assert has_consent(grantor, grantee_tenant_id=grantee) is False
+
+
+@pytest.mark.django_db
 def test_backfill_audit_columns_command():
     from io import StringIO
 

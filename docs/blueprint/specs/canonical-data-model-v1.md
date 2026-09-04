@@ -516,6 +516,25 @@ pre-population row legitimately has no actor. There is *no* contract-to-non-null
 M3 only tightens what we *can* attribute. `attributes` (default `{}`) and `row_version`
 (default `0`, normalised to ≥ 1 by the backfill) are already `NOT NULL` with defaults.
 
+### 6.1d M4 canonical DomainEvent + ConsentGrant wiring — **shipped 2026-09-04**
+
+- `platform.canonical.events.emit(event_type, aggregate_type, aggregate_id, payload,
+  schema_version=1, tenant_id=None)` — one `core_domain_events` row inside the caller's
+  transaction. `unpublished()` is the relay queue. `manage.py relay_domain_events
+  [--limit] [--dry-run]` publishes + stamps `published_at` (logs by default; point at a
+  real publisher via `settings.DOMAIN_EVENT_PUBLISHER`). Run it from celery-beat / a
+  sidecar, not the deploy.
+- `platform.canonical.consent.has_consent(...)` / `require_consent(...)` (raises
+  `ConsentDenied`) — checks for an effective `ConsentGrant` covering an
+  `(entity, purpose)` scope and a grantee tenant/user.
+- **Wired:** `cymed.clinic.referral_loop` — `create_and_send` records a 90-day
+  `ConsentGrant` (grantor = sending tenant) + emits `cymed.referral.sent`; the receiving
+  tenant's `acknowledge` / `schedule` / `complete` / `share_result` are gated on
+  `require_consent`. `cymed.core.patients.merge_patients` dual-writes the merge event to
+  both the legacy `OutboxEvent` and the canonical `DomainEvent`.
+- Migration path: new consumers read `core_domain_events`; the `OutboxEvent` dual-write
+  is removed per event type once its last legacy consumer moves.
+
 ### 6.2 Expand/contract (ADR-0013)
 
 Never a breaking migration + the code that needs it in one deploy. Sequence per change:
