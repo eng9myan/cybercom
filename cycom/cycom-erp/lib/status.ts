@@ -17,9 +17,12 @@ export type StatusKey =
   | "approved"
   | "reimbursed"
   | "declined"
+  | "waiting"
+  | "ready"
+  | "completed"
   | "unknown";
 
-const GREEN: StatusKey[] = ["confirmed", "done", "approved", "reimbursed"];
+const GREEN: StatusKey[] = ["confirmed", "done", "approved", "reimbursed", "completed"];
 const RED: StatusKey[] = ["cancelled", "declined"];
 const YELLOW: StatusKey[] = [
   "draft",
@@ -28,6 +31,7 @@ const YELLOW: StatusKey[] = [
   "sent",
   "rfqSent",
   "submitted",
+  "waiting",
 ];
 
 /** Tailwind badge class for a status key (matches the design-system badges). */
@@ -62,4 +66,13 @@ export const EXPENSE_STATE: Record<string, StatusKey> = {
   done: "reimbursed",
   cancel: "declined",
   refused: "declined",
+};
+
+export const TRANSFER_STATE: Record<string, StatusKey> = {
+  draft: "draft",
+  waiting: "waiting",
+  confirmed: "confirmed",
+  assigned: "ready",
+  done: "completed",
+  cancel: "cancelled",
 };
