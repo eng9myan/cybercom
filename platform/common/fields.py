@@ -36,12 +36,14 @@ MASK = "••••"  # ••••
 class EncryptedText(models.BinaryField):
     description = "Per-tenant AES-256-GCM encrypted text"
 
+    empty_strings_allowed = False
+
     def __init__(self, *args, classification: str = "pii", blind_index: bool = False, **kwargs):
         self.classification = classification
         self.blind_index = blind_index
         kwargs.setdefault("editable", True)
         kwargs.setdefault("blank", True)
-        # values are variable-length ciphertext; no max_length on bytea
+        kwargs.setdefault("default", b"")   # variable-length ciphertext; empty = no value
         super().__init__(*args, **kwargs)
 
     def deconstruct(self):
@@ -60,15 +62,22 @@ class EncryptedText(models.BinaryField):
                 self.classification, self.blind_index,
             )
         if self.blind_index and not cls._meta.abstract:
-            bidx = models.CharField(max_length=64, db_index=True, null=True, blank=True, editable=False)
-            cls.add_to_class(f"{name}_bidx", bidx)
+            bidx_name = f"{name}_bidx"
+            if not any(f.name == bidx_name for f in cls._meta.local_fields):
+                cls.add_to_class(
+                    bidx_name,
+                    models.CharField(max_length=64, db_index=True, null=True,
+                                     blank=True, editable=False),
+                )
         self._name = name
 
     # ── read ──────────────────────────────────────────────────────────────
     def from_db_value(self, value, expression, connection):
         if value in (None, b"", ""):
             return value if value is None else ""
-        raw = bytes(value)
+        if isinstance(value, str):
+            return value  # legacy plaintext (SQLite keeps strings through a CharField→bytea alter)
+        raw = value if isinstance(value, bytes) else bytes(value)
         if not is_encrypted(raw):
             return raw.decode("utf-8", "replace")  # legacy plaintext, pre-migration
         tid = get_current_tenant()
@@ -86,11 +95,18 @@ class EncryptedText(models.BinaryField):
         return str(value)
 
     # ── write ─────────────────────────────────────────────────────────────
+    @staticmethod
+    def _is_empty(value) -> bool:
+        return value in (None, "", b"", MASK)
+
     def get_prep_value(self, value):
         if value is None:
             return None
-        if isinstance(value, (bytes, bytearray)) and is_encrypted(bytes(value)):
-            return bytes(value)  # already-encrypted (e.g. re-save of a loaded row)
+        if isinstance(value, (bytes, bytearray)):
+            b = bytes(value)
+            if b == b"" or is_encrypted(b):
+                return b  # empty, or already-encrypted (re-save of a loaded row)
+            value = b.decode("utf-8", "replace")  # legacy plaintext bytes
         if value == "":
             return b""
         tid = get_current_tenant()
@@ -102,10 +118,9 @@ class EncryptedText(models.BinaryField):
         return encrypt(tid, str(value))
 
     def pre_save(self, model_instance, add):
-        value = getattr(model_instance, self.attname)
         if self.blind_index:
-            bidx_val = blind_index(str(value)) if value not in (None, "", MASK) and not (
-                isinstance(value, (bytes, bytearray)) and is_encrypted(bytes(value))
-            ) else None
+            value = getattr(model_instance, self.attname)
+            already_ct = isinstance(value, (bytes, bytearray)) and is_encrypted(bytes(value))
+            bidx_val = None if (self._is_empty(value) or already_ct) else blind_index(str(value))
             setattr(model_instance, f"{self.attname}_bidx", bidx_val)
         return super().pre_save(model_instance, add)

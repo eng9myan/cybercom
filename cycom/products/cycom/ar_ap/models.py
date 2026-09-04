@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cycom.accounting.models import Account, JournalEntry
 
@@ -40,7 +41,9 @@ class Partner(BaseModel):
     cr_expiry = models.DateField(null=True, blank=True)
     bank_name = models.CharField(max_length=255, blank=True)
     bank_branch = models.CharField(max_length=255, blank=True)
-    iban = models.CharField(max_length=50, blank=True)
+    # financial identifier — encrypted per-tenant (platform.common.fields).
+    # blind_index so a partner can still be found by exact IBAN.
+    iban = EncryptedText(classification="financial_id", blind_index=True)
     swift_code = models.CharField(max_length=20, blank=True)
     credit_limit = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     payment_terms_days = models.PositiveIntegerField(default=30)
