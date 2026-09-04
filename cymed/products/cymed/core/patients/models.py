@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel, SoftDeleteMixin
 
 
@@ -17,8 +18,12 @@ class Patient(BaseModel, SoftDeleteMixin):
     dob = models.DateField()
     gender = models.CharField(max_length=10, choices=GenderType.choices, default=GenderType.UNKNOWN)
     mrn = models.CharField(max_length=100, unique=True, db_index=True)
-    national_id = models.CharField(max_length=100, null=True, blank=True, unique=True)
-    passport_number = models.CharField(max_length=100, null=True, blank=True)
+    # PHI-adjacent government identifiers — encrypted per-tenant. Uniqueness /
+    # dedup moves to the deterministic <field>_bidx blind index (ciphertext is
+    # non-deterministic so a plain unique= is impossible). Lookups:
+    #   Patient.objects.filter(national_id_bidx=blind_index(value))
+    national_id = EncryptedText(classification="national_id", blind_index=True)
+    passport_number = EncryptedText(classification="national_id", blind_index=True)
     is_active = models.BooleanField(default=True)
     merged_into = models.ForeignKey(
         "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="merged_patients"

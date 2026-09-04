@@ -56,12 +56,23 @@ class EncryptedText(models.BinaryField):
     # ── companion blind-index column + registry entry ──────────────────────
     def contribute_to_class(self, cls, name, **kwargs):
         super().contribute_to_class(cls, name, **kwargs)
-        if not cls._meta.abstract:
-            register_pii_field(
-                f"{cls._meta.app_label}.{cls.__name__}", name,
-                self.classification, self.blind_index,
-            )
-        if self.blind_index and not cls._meta.abstract:
+        self._name = name
+        if cls._meta.abstract:
+            return
+
+        # Only act on the real app model, not migration-state reconstructions
+        # (those get the _bidx column from the explicit AddField in the migration).
+        from django.apps import apps as global_apps
+
+        is_real_model = getattr(cls._meta, "apps", None) is global_apps
+        if not is_real_model:
+            return
+
+        register_pii_field(
+            f"{cls._meta.app_label}.{cls.__name__}", name,
+            self.classification, self.blind_index,
+        )
+        if self.blind_index:
             bidx_name = f"{name}_bidx"
             if not any(f.name == bidx_name for f in cls._meta.local_fields):
                 cls.add_to_class(
@@ -69,7 +80,6 @@ class EncryptedText(models.BinaryField):
                     models.CharField(max_length=64, db_index=True, null=True,
                                      blank=True, editable=False),
                 )
-        self._name = name
 
     # ── read ──────────────────────────────────────────────────────────────
     def from_db_value(self, value, expression, connection):
@@ -100,27 +110,45 @@ class EncryptedText(models.BinaryField):
         return value in (None, "", b"", MASK)
 
     def get_prep_value(self, value):
+        # Encryption already happened in pre_save (which has the model instance,
+        # hence its tenant_id). Here we only serialise bytes for the DB.
         if value is None:
             return None
         if isinstance(value, (bytes, bytearray)):
-            b = bytes(value)
-            if b == b"" or is_encrypted(b):
-                return b  # empty, or already-encrypted (re-save of a loaded row)
-            value = b.decode("utf-8", "replace")  # legacy plaintext bytes
+            return bytes(value)
         if value == "":
             return b""
+        # A value reaching the DB still as a str = it was set on an instance that
+        # was never pre_save'd (e.g. .update(), raw). Encrypt from context.
         tid = get_current_tenant()
         if tid is None:
             raise TenantContextMissing(
                 f"writing encrypted field '{getattr(self, '_name', '?')}' with no tenant "
-                f"context — pass tenant_id= / wrap in tenant_context(...)."
+                f"context (and no model instance) — use save() with tenant_id set, or "
+                f"wrap in tenant_context(...)."
             )
         return encrypt(tid, str(value))
 
+    def _resolve_tid(self, model_instance):
+        return getattr(model_instance, "tenant_id", None) or get_current_tenant()
+
     def pre_save(self, model_instance, add):
-        if self.blind_index:
-            value = getattr(model_instance, self.attname)
-            already_ct = isinstance(value, (bytes, bytearray)) and is_encrypted(bytes(value))
-            bidx_val = None if (self._is_empty(value) or already_ct) else blind_index(str(value))
-            setattr(model_instance, f"{self.attname}_bidx", bidx_val)
+        value = getattr(model_instance, self.attname)
+        already_ct = isinstance(value, (bytes, bytearray)) and is_encrypted(bytes(value))
+
+        if not self._is_empty(value) and not already_ct:
+            plain = value.decode("utf-8", "replace") if isinstance(value, (bytes, bytearray)) else str(value)
+            tid = self._resolve_tid(model_instance)
+            if tid is None:
+                raise TenantContextMissing(
+                    f"encrypting '{self.attname}' needs a tenant — set the model's "
+                    f"tenant_id or wrap the save in tenant_context(...)."
+                )
+            ciphertext = encrypt(tid, plain)
+            setattr(model_instance, self.attname, ciphertext)
+            if self.blind_index:
+                setattr(model_instance, f"{self.attname}_bidx", blind_index(plain))
+        elif self._is_empty(value) and self.blind_index:
+            setattr(model_instance, f"{self.attname}_bidx", None)
+
         return super().pre_save(model_instance, add)

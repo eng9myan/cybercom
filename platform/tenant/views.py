@@ -13,6 +13,7 @@ class DemoRequestThrottle(AnonRateThrottle):
     scope = "website_demo_request"
 
 from platform.tenant.models import (
+    InvoicePaymentMethod,
     InvoiceStatus,
     Tenant,
     TenantAuditConfiguration,
@@ -224,6 +225,16 @@ def subscription_register(request):
     except PaymentError as exc:
         checkout = {"provider": invoice.provider, "mode": "manual", "error": str(exc)}
 
+    # Manual / bank-transfer invoices sit with finance until the transfer is
+    # confirmed; an online gateway checkout is waiting on the payer. The tenant
+    # stays PENDING either way, but the label reflects who acts next.
+    reg_status = (
+        "pending_approval"
+        if checkout.get("mode") == "manual"
+        or invoice.payment_method == InvoicePaymentMethod.BANK_TRANSFER
+        else "pending_payment"
+    )
+
     return Response(
         {
             "tenant_slug": tenant.slug,
@@ -235,7 +246,7 @@ def subscription_register(request):
             "payment_method": invoice.payment_method,
             "provider": invoice.provider,
             "due_date": invoice.due_date.isoformat(),
-            "status": "pending_payment",
+            "status": reg_status,
             "checkout": checkout,
             "username": getattr(tenant, "demo_username", None),
             "password": getattr(tenant, "demo_password", None),

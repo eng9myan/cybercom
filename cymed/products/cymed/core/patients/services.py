@@ -29,16 +29,21 @@ class PatientService:
         Fuzzy duplicate detection for patients in the same tenant.
         Finds patients with matching National ID, Passport, or matching Name + DOB.
         """
-        # 1. Exact match on National ID or Passport
+        # 1. Exact match on National ID or Passport. Both are encrypted, so match
+        #    on the deterministic blind index rather than the ciphertext.
+        from platform.security.crypto import blind_index
+
         if national_id:
             qs = Patient.objects.filter(
-                tenant_id=tenant_id, national_id=national_id, is_active=True
+                tenant_id=tenant_id, national_id_bidx=blind_index(national_id), is_active=True
             )
             if qs.exists():
                 return qs
         if passport_number:
             qs = Patient.objects.filter(
-                tenant_id=tenant_id, passport_number=passport_number, is_active=True
+                tenant_id=tenant_id,
+                passport_number_bidx=blind_index(passport_number),
+                is_active=True,
             )
             if qs.exists():
                 return qs
