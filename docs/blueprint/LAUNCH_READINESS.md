@@ -89,14 +89,15 @@ start on internal invoices while it lands.
 | Commerce demo tenant for sales | CyberCom | ✅ done (`seed_demo_commerce`) |
 | `/api/schema/` + Swagger + dev portal schema | CyberCom | ✅ fixed this session |
 | Deploy scripts (single-box, OCI, compose) | CyberCom | ✅ in repo (`infrastructure/`) |
-| Raise backend test coverage on money paths | CyberCom | ⏳ §5 — Phase-0/1 |
-| Wire HyperPay/PayTabs/Moyasar to the payment seam | CyberCom | ⏳ ~3–5 days once you pick one |
-| **JoFotara clearance engine** | CyberCom | 🟡 **engine built + wired + tested** (`platform/einvoicing/`, `cycom/ar_ap` migration 0004). Remaining = XAdES signing + XSD/Schematron + ISTD sandbox onboarding (regulator cycle, not eng). |
-| ZATCA clearance engine | CyberCom | ⏳ same structure, + ZATCA CSID onboarding (long pole) |
-| Arabic/RTL for POS + receipts | CyberCom | ⏳ workstream (`RTL_AUDIT.md`) |
+| Raise backend test coverage on money paths | CyberCom | ✅ **done** — GL-balance/atomicity, POS checkout GL+stock+oversell, sales quotations, e-invoicing (cycom 103→158, cymed 486/23/6→515/0) |
+| Wire a real PSP to the payment seam | CyberCom | ✅ **HyperPay done** (`platform/tenant/payments.py`): create_checkout + verify (redirect-return) + encrypted webhook (fail-closed). Enabled by 3 env vars + `CYCOM_PAYMENT_PROVIDER=hyperpay`. PayTabs/Moyasar = same pattern when needed. |
+| **JoFotara clearance engine** | CyberCom | 🟢 **engine + XAdES-B signing + wiring + tests** (`platform/einvoicing/`, migration 0004). Remaining = XSD/Schematron + ISTD sandbox onboarding (regulator cycle). |
+| **ZATCA clearance engine** | CyberCom | 🟢 **`sa_zatca` built** — UBL, TLV QR, ECDSA stamp, clearance (B2B) / reporting (B2C), wired. Remaining = ZATCA CSID compliance onboarding + full UBLExtensions block. |
+| Tenant-write isolation (the "forgot tenant_id" bug class) | CyberCom | ✅ **closed** — `TenantScopedMixin.save()` auto-fills from ambient context or raises clearly; `TenantContextMiddleware` wired (§2.2) |
+| Arabic/RTL for POS + receipts | CyberCom | ⏳ workstream (`RTL_AUDIT.md`) — **not a JO soft-launch blocker** |
 | **A host + DNS + TLS** | **You** | ⛔ blocks Tier 1 |
 | **Secrets** (DB, Django, Keycloak) | **You** | ⛔ blocks Tier 1 |
-| **PSP account + keys** (HyperPay/…) | **You** | ⛔ blocks Tier 2 |
+| **HyperPay account + keys** (`HYPERPAY_ENTITY_ID` / `_ACCESS_TOKEN` / `_WEBHOOK_SECRET`) | **You** | ⛔ blocks Tier 2 self-serve card payments (code is ready) |
 | **Confirm 2 payroll rates** (SA GOSI scheme, UAE national %) | **You** | ⛔ blocks payroll compliance claims |
 | Pick KSA sovereign region (if selling KSA) | **You** | ⛔ blocks KSA data-residency |
 | Business registration / merchant agreements / terms + DPA | **You** | ⛔ blocks paid contracts |
