@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Shield, MapPin, Calendar, FileText, CheckCircle2, 
-  AlertTriangle, RefreshCw, Clock, ArrowRight, UserCheck
+import {
+  MapPin, CheckCircle2,
+  AlertTriangle, Clock, UserCheck
 } from 'lucide-react';
 import { useCycomList, fmtCode, m2oName, type Many2One } from '@/lib/cycomModels';
+import { useT } from '@/lib/i18n';
 
 interface PortalLeave {
   id: string;
@@ -35,7 +36,14 @@ const INITIAL_PAYSLIPS: PortalPayslip[] = [
   { id: 'PS-1192', period: 'April 2026', baseSalary: 750, netSalary: 750, datePaid: '2026-04-28' },
 ];
 
+const STATUS_KEY: Record<PortalLeave['status'], string> = {
+  Pending: 'status.pendingApproval',
+  Approved: 'status.approved',
+  Rejected: 'status.declined',
+};
+
 export default function PortalDashboard() {
+  const t = useT();
   const { rows: liveLeaves, loading: leavesLoading } = useCycomList<any, PortalLeave>(
     'hr.leave',
     [],
@@ -82,7 +90,7 @@ export default function PortalDashboard() {
       setPayslips(livePayslips);
     }
   }, [livePayslips, paysLoading]);
-  
+
   // Leave form states
   const [leaveType, setLeaveType] = useState('Annual Leave');
   const [startDate, setStartDate] = useState('');
@@ -128,7 +136,7 @@ export default function PortalDashboard() {
   const handleCheckIn = () => {
     const lat = parseFloat(gpsLat);
     const lng = parseFloat(gpsLng);
-    
+
     // HQ Coords
     const hqLat = 31.9522;
     const hqLng = 35.9250;
@@ -170,25 +178,25 @@ export default function PortalDashboard() {
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Employee Self-Service Portal</h1>
-          <p className="page-subtitle">Submit leaf requests, verify GPS coordinates for mobile check-in, and download historical payslips.</p>
+          <h1 className="page-title text-white">{t('portalMain.title')}</h1>
+          <p className="page-subtitle">{t('portalMain.subtitle')}</p>
         </div>
         <div className="flex gap-2 items-center text-xs text-slate-400">
           <Clock className="w-4 h-4 text-cyan-400" />
-          <span>Active Session: <strong>Ahmad Masri (EMP-029)</strong></span>
+          <span>{t('portalMain.activeSession', { name: 'Ahmad Masri (EMP-029)' })}</span>
         </div>
       </div>
 
       {/* Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Column - Geofenced Mobile Check-In */}
         <div className="space-y-6">
-          
+
           {/* Mobile Check-In Console */}
           <div className="glass-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Mobile GPS Check-In</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('portalMain.checkinHeading')}</h2>
               <span className="text-[10px] bg-blue-500/20 text-[#5DADE2] border border-blue-500/30 px-2 py-0.5 rounded font-bold">
                 portal_check_in
               </span>
@@ -196,29 +204,29 @@ export default function PortalDashboard() {
 
             <div className="space-y-4 text-xs">
               <div className="p-3 rounded-xl bg-white/3 border border-white/5 space-y-2">
-                <p className="font-bold text-slate-300">HQ Geofence Constraint</p>
+                <p className="font-bold text-slate-300">{t('portalMain.geofenceConstraintTitle')}</p>
                 <p className="text-[11px] text-slate-500 leading-normal">
-                  Checked coordinates must be within <strong>150 meters</strong> of HQ Center (31.9522, 35.9250).
+                  {t('portalMain.geofenceConstraintNote')}
                 </p>
               </div>
 
               {/* GPS coordinates mock inputs */}
               <div className="grid grid-cols-2 gap-2 font-mono">
                 <div className="space-y-1">
-                  <label className="text-[9px] text-slate-500 uppercase font-bold">Latitude (GPS)</label>
-                  <input 
-                    type="number" 
-                    step="0.0001" 
+                  <label className="text-[9px] text-slate-500 uppercase font-bold">{t('portalMain.latitude')}</label>
+                  <input
+                    type="number"
+                    step="0.0001"
                     value={gpsLat}
                     onChange={e => { setGpsLat(e.target.value); setCheckInStatus('idle'); }}
                     className="input-field py-1"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] text-slate-500 uppercase font-bold">Longitude (GPS)</label>
-                  <input 
-                    type="number" 
-                    step="0.0001" 
+                  <label className="text-[9px] text-slate-500 uppercase font-bold">{t('portalMain.longitude')}</label>
+                  <input
+                    type="number"
+                    step="0.0001"
                     value={gpsLng}
                     onChange={e => { setGpsLng(e.target.value); setCheckInStatus('idle'); }}
                     className="input-field py-1"
@@ -228,59 +236,59 @@ export default function PortalDashboard() {
 
               {/* Coordinates Simulator presets */}
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={() => setSimulatedLocation('HQ')}
                   className="flex-1 py-1 rounded bg-[#10B981]/10 hover:bg-[#10B981]/20 border border-[#10B981]/25 text-[#10B981] font-bold text-[10px]"
                 >
-                  Preset: At HQ
+                  {t('portalMain.presetHq')}
                 </button>
-                <button 
+                <button
                   onClick={() => setSimulatedLocation('Outside')}
                   className="flex-1 py-1 rounded bg-[#EF4444]/10 hover:bg-[#EF4444]/20 border border-[#EF4444]/25 text-[#EF4444] font-bold text-[10px]"
                 >
-                  Preset: Outside
+                  {t('portalMain.presetOutside')}
                 </button>
               </div>
 
               {/* Check-In Status Messages */}
               <AnimatePresence mode="wait">
                 {checkInStatus === 'success' && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 space-y-1"
                   >
                     <div className="flex items-center gap-2 font-bold">
                       <UserCheck className="w-4 h-4 animate-bounce" />
-                      <span>Check-In Verified</span>
+                      <span>{t('portalMain.checkInVerified')}</span>
                     </div>
                     <p className="text-[10px] text-emerald-500/80">
-                      Coordinates matched geofence profile successfully at {lastCheckTime}. Log written to biometric sync database.
+                      {t('portalMain.checkInVerifiedNote', { time: lastCheckTime ?? '' })}
                     </p>
                   </motion.div>
                 )}
                 {checkInStatus === 'out_of_bounds' && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-[#EF4444] space-y-1"
                   >
                     <div className="flex items-center gap-2 font-bold">
                       <AlertTriangle className="w-4 h-4 animate-pulse" />
-                      <span>Check-In Blocked</span>
+                      <span>{t('portalMain.checkInBlocked')}</span>
                     </div>
                     <p className="text-[10px] text-red-500/80">
-                      Out of Bounds Exception: Simulated GPS distance exceeds maximum allowed 150m radius from office HQ center.
+                      {t('portalMain.checkInBlockedNote')}
                     </p>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              <button 
+              <button
                 onClick={handleCheckIn}
                 className="btn-primary w-full py-2 flex items-center justify-center gap-2"
               >
-                <MapPin className="w-4 h-4" /> Trigger Check-In Scan
+                <MapPin className="w-4 h-4" /> {t('portalMain.triggerCheckIn')}
               </button>
             </div>
           </div>
@@ -289,11 +297,11 @@ export default function PortalDashboard() {
 
         {/* Right Column - Leaves Center & Payslip History */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Leaves Request Center */}
           <div className="glass-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Leave Request Center</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('portalMain.leaveCenterHeading')}</h2>
               <span className="text-[10px] bg-purple-500/20 text-[#A855F7] border border-[#A855F7]/30 px-2 py-0.5 rounded font-bold">
                 portal_leaves
               </span>
@@ -305,41 +313,41 @@ export default function PortalDashboard() {
                 <div className="h-[200px] flex flex-col items-center justify-center text-center space-y-3 text-xs text-emerald-400">
                   <CheckCircle2 className="w-10 h-10 animate-bounce" />
                   <div>
-                    <p className="font-bold">Leave Request Logged</p>
-                    <p className="text-[10px] text-slate-500 mt-1">Request successfully routed to your department supervisor for approval validation.</p>
+                    <p className="font-bold">{t('portalMain.leaveLogged')}</p>
+                    <p className="text-[10px] text-slate-500 mt-1">{t('portalMain.leaveLoggedNote')}</p>
                   </div>
                 </div>
               ) : (
                 <form onSubmit={handleLeaveSubmit} className="space-y-3 text-xs">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Leave Category</label>
-                    <select 
-                      value={leaveType} 
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">{t('portalMain.leaveCategory')}</label>
+                    <select
+                      value={leaveType}
                       onChange={e => setLeaveType(e.target.value)}
                       className="input-field"
                     >
-                      <option value="Annual Leave">Annual Leave</option>
-                      <option value="Sick Leave">Sick Leave</option>
-                      <option value="Emergency Leave">Emergency Leave</option>
-                      <option value="Unpaid Leave">Unpaid Leave</option>
+                      <option value="Annual Leave">{t('portalMain.optAnnual')}</option>
+                      <option value="Sick Leave">{t('portalMain.optSick')}</option>
+                      <option value="Emergency Leave">{t('portalMain.optEmergency')}</option>
+                      <option value="Unpaid Leave">{t('portalMain.optUnpaid')}</option>
                     </select>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Start Date</label>
-                      <input 
-                        type="date" 
-                        required 
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{t('portalMain.startDate')}</label>
+                      <input
+                        type="date"
+                        required
                         value={startDate}
                         onChange={e => setStartDate(e.target.value)}
                         className="input-field py-1"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">End Date</label>
-                      <input 
-                        type="date" 
-                        required 
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{t('portalMain.endDate')}</label>
+                      <input
+                        type="date"
+                        required
                         value={endDate}
                         onChange={e => setEndDate(e.target.value)}
                         className="input-field py-1"
@@ -347,25 +355,25 @@ export default function PortalDashboard() {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Reason description</label>
-                    <input 
-                      type="text" 
-                      required 
-                      placeholder="Specify reason detail..." 
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">{t('portalMain.reasonDescription')}</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={t('portalMain.reasonPh')}
                       value={leaveReason}
                       onChange={e => setLeaveReason(e.target.value)}
                       className="input-field"
                     />
                   </div>
                   <button type="submit" className="btn-primary w-full py-2">
-                    Submit Leave Request
+                    {t('portalMain.submitLeave')}
                   </button>
                 </form>
               )}
 
               {/* Requests history */}
               <div className="space-y-2">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">Request History</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-2">{t('portalMain.requestHistory')}</p>
                 <div className="space-y-2 max-h-[180px] overflow-y-auto">
                   {leaves.map(lv => (
                     <div key={lv.id} className="p-3 rounded-xl bg-white/3 border border-white/5 flex items-center justify-between">
@@ -377,7 +385,7 @@ export default function PortalDashboard() {
                       <span className={`badge text-[9px] ${
                         lv.status === 'Approved' ? 'badge-green' :
                         lv.status === 'Rejected' ? 'badge-red' : 'badge-yellow'
-                      }`}>{lv.status}</span>
+                      }`}>{t(STATUS_KEY[lv.status])}</span>
                     </div>
                   ))}
                 </div>
@@ -388,7 +396,7 @@ export default function PortalDashboard() {
           {/* Personal Payslips Registry */}
           <div className="glass-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Personal Payslip Records</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('portalMain.payslipsHeading')}</h2>
               <span className="text-[10px] bg-emerald-500/20 text-[#10B981] border border-[#10B981]/30 px-2 py-0.5 rounded font-bold">
                 portal_employee_payslip
               </span>
@@ -398,12 +406,12 @@ export default function PortalDashboard() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Slip ID</th>
-                    <th>Period</th>
-                    <th>Base Wage</th>
-                    <th>Net Deposited</th>
-                    <th>Payment Date</th>
-                    <th className="text-right">Action</th>
+                    <th>{t('portalMain.colSlipId')}</th>
+                    <th>{t('portalMain.colPeriod')}</th>
+                    <th>{t('portalMain.colBaseWage')}</th>
+                    <th>{t('portalMain.colNetDeposited')}</th>
+                    <th>{t('portalMain.colPaymentDate')}</th>
+                    <th className="text-end">{t('portalMain.colAction')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -414,9 +422,9 @@ export default function PortalDashboard() {
                       <td className="font-mono">JOD {ps.baseSalary}</td>
                       <td className="font-mono font-bold text-white">JOD {ps.netSalary}</td>
                       <td>{ps.datePaid}</td>
-                      <td className="text-right">
+                      <td className="text-end">
                         <button className="p-1 px-2 text-[10px] font-bold rounded bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-[#10B981]">
-                          Download PDF
+                          {t('portalMain.downloadPdf')}
                         </button>
                       </td>
                     </tr>
