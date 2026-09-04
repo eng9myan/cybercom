@@ -3,8 +3,18 @@
 Delivery-lead log. Model tier per task + phase status. Short by design; detail lives in the named docs.
 
 ## Decisions locked
-- **Launch product: CyCom** (Commerce/Retail-first). CyShop folds in as a vertical (merge underway). CyMed = fast-follow #2. — approved 2026-08-25.
-- **Orchestration: ruflo** (claude-flow) — installed (`ruflo-core`/`swarm`/`agentdb`), `npx ruflo init` run, daemon up. MCP memory layer connects on next real-terminal restart; not blocking.
+- **Launch product: CyCom** (Commerce/Retail-first), branded **CyShop** to customers. CyShop-standalone repo archived. CyMed = fast-follow #2. — approved 2026-08-25.
+- **Unified ecosystem plan** — `docs/blueprint/` (A–Q + specs + `flavor-registry.yaml`). Every industry is a flavor; ~2 GA at launch. — 2026-09-04.
+- **Canonical checkout = `D:\cybercom` `feat/oci-demo-deploy` → `develop`.** Other two working copies read-only. — 2026-09-04.
+- **Orchestration: ruflo** (claude-flow) — installed; daemon OFF on Windows (native bridge OOM #3024); CLI + user-scope MCP.
+
+## 2026-09-04 session (see `docs/blueprint/SESSION_2026-09-04.md`)
+- R01 closed: ~760 unbacked buildout files committed + pushed.
+- CyMed 486/23/6 → **515/0**; CyCom 103 → **164**. `/api/schema/` 500 fixed.
+- **E-invoicing engine** `platform/einvoicing/`: JoFotara (UBL PINT-JO + XAdES-B) + ZATCA (UBL + TLV QR + ECDSA stamp + clearance/reporting), wired into AR invoice posting (migration 0004).
+- **Tenant-write isolation** closed the "forgot tenant_id" bug class (`TenantScopedMixin.save()` + `TenantContextMiddleware`).
+- **HyperPay** PSP fully implemented on the payment seam + `payment_verify` view.
+- Money-path invariant test coverage; CI extended to platform pieces.
 
 ## Phase status
 | Phase | State | Deliverable | Model tier |
