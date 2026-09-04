@@ -127,13 +127,29 @@ Shipped (`platform/common/`):
 - **Closed the class of bug found in CyMed** (`pay_bill`, the NPHIES client, etc. creating a
   `BaseModel` row with no `tenant_id`). CyMed suite went 510/5 → **515/0** as a result.
 
-### 2.3 Layer 3 — per-tenant encryption
+### 2.3 Layer 3 — per-tenant encryption — **shipped 2026-09-04**
 
-- `Tenant.encryption_key_ref` → a KMS key id (per-tenant DEK, envelope-encrypted).
-- Fields tagged `pii=True` / `phi=True` (national id, Iqama, IBAN, MRN, clinical notes) use a
-  `EncryptedField` that encrypts with the tenant DEK on write, decrypts on read within the
-  tenant context. Ciphertext stored as `bytea`; a `<field>_hash` (HMAC) column supports exact-match lookup.
-- Registry: `platform/common/pii_registry.py` lists every encrypted field → drives the DPIA and residency checks.
+Shipped (`platform/security/crypto.py`, `platform/common/fields.py`, `pii_registry.py`):
+- **DEK derivation** — `HKDF-SHA256(master_key, salt=tenant_id)`. Every tenant's ciphertext is
+  under a distinct key; no per-tenant DEK to store or wrap (rotation = rotate the master +
+  re-encrypt). `MASTER_KEY_PROVIDER` swappable for a KMS-per-tenant-key path later
+  (`Tenant.encryption_key_ref` reserved for it).
+- **Cipher** — AES-256-GCM, random 96-bit nonce per value. Wire: `b"cc1" + nonce(12) + ct+tag`,
+  stored as `bytea`.
+- **`EncryptedText(classification=..., blind_index=...)`** field — encrypts on write with the
+  DEK from the ambient tenant context (raises `TenantContextMissing` if none); decrypts on read
+  when context is present, else yields the mask `••••` (never leaks, never crashes a list).
+  Tolerates legacy plaintext rows (returns them decoded) so a field can be flipped to encrypted
+  without a same-deploy backfill. `blind_index=True` adds a `<name>_bidx` HMAC column for
+  exact-match lookup: `.filter(national_id_bidx=blind_index(value))`.
+- **Registry** — every `EncryptedText` self-registers `model.field → {pii|phi|financial_id|national_id}`.
+  `manage.py dump_pii_map [--json]` prints the data map for the DPIA / residency lint / DSAR.
+- **`FIELD_ENCRYPTION_KEY`** setting (env), 32 bytes base64/hex. Prod value from the secret manager.
+
+**Not yet done:** converting the actual columns (`Employee.national_id`/`iqama`/`iban`,
+`Patient` demographics, clinical `notes`). Each is a per-model reviewed migration (change the
+field + a data migration to encrypt existing rows + populate blind indexes). The field's
+legacy-plaintext tolerance makes a phased rollout safe.
 
 ### 2.4 Layer 4 — object storage
 

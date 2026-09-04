@@ -328,6 +328,14 @@ LOGGING = {
 TENANT_GUC_SETTING = "app.current_tenant_id"
 TENANT_HEADER = "X-Tenant-ID"
 
+# Per-tenant field encryption (platform.common.fields.EncryptedText). 32 random
+# bytes, base64. Required to read/write PII/PHI columns. In production this comes
+# from the secret manager / KMS; the dev default here is NOT a secret.
+FIELD_ENCRYPTION_KEY = os.environ.get(
+    "FIELD_ENCRYPTION_KEY",
+    "nFaZ1aVOzttKgjGuZ/tdc8VmDRdp6W1TZEiidlBggVc=",  # sha256("cybercom-dev-field-key-cycom") — 32 bytes
+)
+
 # PostgreSQL row-level-security enforcement. When true, TenantContextMiddleware
 # sets the tenant GUC per request and `manage.py apply_rls` (run in deploy)
 # installs the policies. Keep false until the app DB role is confirmed

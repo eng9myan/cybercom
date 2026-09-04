@@ -478,6 +478,14 @@ OTEL_EXPORTER_OTLP_PROTOCOL = os.environ.get("OTEL_EXPORTER_OTLP_PROTOCOL", "grp
 TENANT_GUC_SETTING = "app.current_tenant_id"
 TENANT_HEADER = "X-Tenant-ID"
 
+# Per-tenant field encryption (platform.common.fields.EncryptedText). 32 random
+# bytes, base64. Required for PHI/PII columns. Production value from the secret
+# manager / KMS; the dev default is NOT a secret.
+FIELD_ENCRYPTION_KEY = os.environ.get(
+    "FIELD_ENCRYPTION_KEY",
+    "nA924BBgLP5/rfXoSsY4kj1m4MzPrJ1KM/W6xZfYpbA=",  # sha256("cybercom-dev-field-key-cymed") — 32 bytes
+)
+
 # PostgreSQL row-level-security enforcement (see canonical-data-model-v1.md §2.1).
 # Keep false until the app DB role is confirmed non-superuser / non-BYPASSRLS;
 # `manage.py apply_rls` installs the policies in deploy.

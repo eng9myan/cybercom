@@ -58,6 +58,7 @@ jobs:
           ../platform/tenant/test_payments.py
       # RLS policy DDL is well-formed and covers the tenant-scoped tables.
       - run: cd cycom && python manage.py apply_rls --dry-run | head -20
+      - run: cd cycom && python manage.py dump_pii_map
 
       # Build-only check (no push) — catches Dockerfile/dependency
       # errors before the deploy job ever reaches the real server, same
