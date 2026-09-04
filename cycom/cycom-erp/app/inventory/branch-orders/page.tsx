@@ -4,13 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, Plus, Send, RefreshCw, FileText, CheckCircle2, 
-  AlertTriangle, Truck, Clock, X, Search, Trash2
+import {
+  ArrowLeft, Plus, Send, Truck, X, Search, Trash2
 } from 'lucide-react';
-import { useCycomList, fmtCode } from '@/lib/cycomModels';
+import { useCycomList } from '@/lib/cycomModels';
 import { call } from '@/lib/cycom';
 import { LoadingCard } from '@/components/CycomEmptyStates';
+import { useT } from '@/lib/i18n';
 
 interface InternalOrderRow {
   rawId: number;
@@ -52,7 +52,18 @@ const STATUS_BADGE: Record<string, string> = {
   cancelled: 'bg-rose-950/40 text-rose-400 border border-rose-500/20'
 };
 
+const STATUS_KEY: Record<string, string> = {
+  draft: 'status.draft',
+  submitted: 'status.submitted',
+  allocated: 'status.allocated',
+  dispatched: 'status.dispatched',
+  received: 'status.received',
+  partially_received: 'status.partiallyReceived',
+  cancelled: 'status.cancelled',
+};
+
 export default function BranchOrders() {
+  const t = useT();
   const router = useRouter();
   const { rows: liveOrders, loading, error, reload } = useCycomList<CycomIO, InternalOrderRow>(
     'cy.internal.order',
@@ -64,7 +75,7 @@ export default function BranchOrders() {
 
   const [orders, setOrders] = useState<InternalOrderRow[]>([]);
   const [showModal, setShowModal] = useState(false);
-  
+
   // Search & Selector for products in wizard
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState<any[]>([]);
@@ -114,7 +125,7 @@ export default function BranchOrders() {
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) {
-      alert('Cart is empty. Please add at least one product.');
+      alert(t('branchOrders.cartEmpty'));
       return;
     }
 
@@ -159,14 +170,14 @@ export default function BranchOrders() {
           args: [ioId]
         });
 
-        alert('Replenishment request submitted successfully!');
+        alert(t('branchOrders.submittedSuccess'));
         setShowModal(false);
         setCart([]);
         setNotes('');
         reload();
       }
     } catch (err: any) {
-      alert('Error creating internal order: ' + err.message);
+      alert(t('branchOrders.submitError', { msg: err.message }));
     }
   };
 
@@ -174,34 +185,34 @@ export default function BranchOrders() {
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 text-xs md:text-sm">
       <div className="max-w-5xl mx-auto flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => router.push('/inventory')}
             className="p-2 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 transition"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-400" />
+            <ArrowLeft className="w-5 h-5 text-slate-400 rtl:-scale-x-100" />
           </button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              Branch Replenishment Requests
+              {t('branchOrders.title')}
             </h1>
-            <p className="text-xs text-slate-400 mt-1">Request stock transfers from the central warehouse and receive inventory packages.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('branchOrders.subtitle')}</p>
           </div>
         </div>
 
-        <button 
+        <button
           onClick={() => setShowModal(true)}
           className="btn-primary flex items-center gap-2"
         >
-          <Plus className="w-4 h-4" /> New Replenishment Request
+          <Plus className="w-4 h-4" /> {t('branchOrders.newRequest')}
         </button>
       </div>
 
-      {loading && <LoadingCard label="Loading replenishment logs…" />}
+      {loading && <LoadingCard label={t('branchOrders.loading')} />}
       {error && <div className="max-w-5xl mx-auto glass-card p-6 border-red-500/20 text-red-400">{error}</div>}
-      
+
       {!loading && !error && orders.length === 0 && (
         <div className="max-w-5xl mx-auto glass-card p-12 text-center text-slate-500">
-          No replenishment requests logged yet. Click 'New Replenishment Request' to create one.
+          {t('branchOrders.empty')}
         </div>
       )}
 
@@ -211,12 +222,12 @@ export default function BranchOrders() {
             <table className="data-table w-full border-collapse">
               <thead>
                 <tr className="border-b border-white/5 text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-                  <th className="pb-3 text-left">Order Reference</th>
-                  <th className="pb-3 text-left">Branch</th>
-                  <th className="pb-3 text-left">Required Date</th>
-                  <th className="pb-3 text-left">Priority</th>
-                  <th className="pb-3 text-left">Fulfillment Status</th>
-                  <th className="pb-3 text-right">Actions</th>
+                  <th className="pb-3 text-start">{t('branchOrders.colOrderRef')}</th>
+                  <th className="pb-3 text-start">{t('branchOrders.colBranch')}</th>
+                  <th className="pb-3 text-start">{t('branchOrders.colRequiredDate')}</th>
+                  <th className="pb-3 text-start">{t('branchOrders.colPriority')}</th>
+                  <th className="pb-3 text-start">{t('branchOrders.colFulfillmentStatus')}</th>
+                  <th className="pb-3 text-end">{t('branchOrders.colActions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -234,16 +245,16 @@ export default function BranchOrders() {
                     </td>
                     <td className="py-4">
                       <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-md tracking-wider ${STATUS_BADGE[o.status] || STATUS_BADGE['draft']}`}>
-                        {o.status.replace('_', ' ')}
+                        {STATUS_KEY[o.status] ? t(STATUS_KEY[o.status]) : o.status}
                       </span>
                     </td>
-                    <td className="py-4 text-right">
+                    <td className="py-4 text-end">
                       {o.status === 'dispatched' && (
-                        <Link 
+                        <Link
                           href={`/inventory/branch-orders/${o.rawId}/receive`}
                           className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded text-xs font-semibold text-white transition flex items-center gap-1.5 inline-flex"
                         >
-                          <Truck className="w-3.5 h-3.5" /> Confirm Receipt
+                          <Truck className="w-3.5 h-3.5" /> {t('branchOrders.confirmReceipt')}
                         </Link>
                       )}
                     </td>
@@ -259,14 +270,14 @@ export default function BranchOrders() {
       <AnimatePresence>
         {showModal && (
           <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-2xl shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                <h3 className="font-bold text-slate-200">New Replenishment Request</h3>
+                <h3 className="font-bold text-slate-200">{t('branchOrders.modalTitle')}</h3>
                 <button onClick={() => setShowModal(false)} className="p-1 hover:bg-slate-800 rounded-lg transition">
                   <X className="w-4 h-4" />
                 </button>
@@ -275,36 +286,36 @@ export default function BranchOrders() {
               <form onSubmit={handleSubmitOrder} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs text-slate-400">Required Date</label>
-                    <input 
+                    <label className="text-xs text-slate-400">{t('branchOrders.requiredDate')}</label>
+                    <input
                       type="date" required
                       value={requiredDate} onChange={e => setRequiredDate(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-slate-400">Priority</label>
-                    <select 
+                    <label className="text-xs text-slate-400">{t('branchOrders.priority')}</label>
+                    <select
                       value={priority} onChange={e => setPriority(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
                     >
-                      <option value="low">Low</option>
-                      <option value="normal">Normal</option>
-                      <option value="high">High</option>
-                      <option value="urgent">Urgent</option>
+                      <option value="low">{t('branchOrders.priorityLow')}</option>
+                      <option value="normal">{t('branchOrders.priorityNormal')}</option>
+                      <option value="high">{t('branchOrders.priorityHigh')}</option>
+                      <option value="urgent">{t('branchOrders.priorityUrgent')}</option>
                     </select>
                   </div>
                 </div>
 
                 {/* Product Search & Cart */}
                 <div className="space-y-2 border-t border-white/5 pt-3">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Add Items to Replenish</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{t('branchOrders.addItemsHeading')}</label>
                   <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input 
-                      type="text" placeholder="Search catalog by name or code..."
+                    <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type="text" placeholder={t('branchOrders.searchCatalogPh')}
                       value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-850 rounded-lg pl-9 pr-3 py-2 text-slate-200 outline-none"
+                      className="w-full bg-slate-950 border border-slate-850 rounded-lg ps-9 pe-3 py-2 text-slate-200 outline-none"
                     />
                   </div>
 
@@ -312,15 +323,15 @@ export default function BranchOrders() {
                   {searchTerm && products.length > 0 && (
                     <div className="bg-slate-950 border border-slate-850 rounded-lg max-h-40 overflow-y-auto divide-y divide-white/5">
                       {products.map(p => (
-                        <div 
+                        <div
                           key={p.id} onClick={() => addToCart(p)}
                           className="p-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-900/60"
                         >
                           <div>
                             <span className="font-semibold text-slate-300">{p.name}</span>
-                            <span className="text-[10px] text-slate-500 ml-2">SKU: {p.code || '—'}</span>
+                            <span className="text-[10px] text-slate-500 ms-2">{t('branchOrders.skuLabel', { code: p.code || '—' })}</span>
                           </div>
-                          <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded">Add</span>
+                          <span className="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded">{t('branchOrders.add')}</span>
                         </div>
                       ))}
                     </div>
@@ -333,9 +344,9 @@ export default function BranchOrders() {
                     <table className="w-full border-collapse bg-slate-950/20 text-xs">
                       <thead>
                         <tr className="bg-slate-950 text-slate-500 uppercase font-semibold border-b border-slate-850">
-                          <th className="p-3 text-left">Product</th>
-                          <th className="p-3 text-left w-24">Qty Requested</th>
-                          <th className="p-3 text-right w-16">Remove</th>
+                          <th className="p-3 text-start">{t('branchOrders.colProduct')}</th>
+                          <th className="p-3 text-start w-24">{t('branchOrders.colQtyRequested')}</th>
+                          <th className="p-3 text-end w-16">{t('branchOrders.colRemove')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -343,17 +354,17 @@ export default function BranchOrders() {
                           <tr key={item.id}>
                             <td className="p-3">
                               <div className="font-semibold text-slate-300">{item.name}</div>
-                              <div className="text-[10px] text-slate-500">SKU: {item.code}</div>
+                              <div className="text-[10px] text-slate-500">{t('branchOrders.skuLabel', { code: item.code })}</div>
                             </td>
                             <td className="p-3">
-                              <input 
+                              <input
                                 type="number" min={1} required
                                 value={item.qty} onChange={e => updateCartQty(idx, parseInt(e.target.value))}
                                 className="w-full bg-slate-950 border border-slate-850 rounded px-2 py-1 text-slate-200 outline-none text-center"
                               />
                             </td>
-                            <td className="p-3 text-right">
-                              <button 
+                            <td className="p-3 text-end">
+                              <button
                                 type="button" onClick={() => removeFromCart(idx)}
                                 className="p-1 hover:bg-red-500/10 rounded text-rose-400"
                               >
@@ -368,26 +379,26 @@ export default function BranchOrders() {
                 )}
 
                 <div className="space-y-1">
-                  <label className="text-xs text-slate-400">Request Notes</label>
-                  <textarea 
-                    rows={3} placeholder="Provide any extra details or instructions..."
+                  <label className="text-xs text-slate-400">{t('branchOrders.requestNotes')}</label>
+                  <textarea
+                    rows={3} placeholder={t('branchOrders.requestNotesPh')}
                     value={notes} onChange={e => setNotes(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-850 rounded-lg p-3 text-slate-200 outline-none"
                   />
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-                  <button 
+                  <button
                     type="button" onClick={() => setShowModal(false)}
                     className="px-4 py-2 border border-slate-800 hover:bg-slate-800 rounded-lg transition text-xs font-semibold"
                   >
-                    Cancel
+                    {t('branchOrders.cancel')}
                   </button>
-                  <button 
+                  <button
                     type="submit"
                     className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-semibold shadow-lg shadow-blue-600/15 transition text-xs"
                   >
-                    <Send className="w-4 h-4" /> Send Replenishment Request
+                    <Send className="w-4 h-4" /> {t('branchOrders.sendRequest')}
                   </button>
                 </div>
               </form>

@@ -2,24 +2,16 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Upload, ArrowLeft, CheckCircle2, AlertTriangle, 
+import { motion } from 'framer-motion';
+import {
+  Upload, ArrowLeft, CheckCircle2,
   Settings, Database, Play, Download, AlertCircle, FileSpreadsheet
 } from 'lucide-react';
 import { call } from '@/lib/cycom';
-
-const SCHEMA_FIELDS = [
-  { key: 'code', label: 'Product Code / SKU (Required)', required: true },
-  { key: 'name', label: 'Product Name (Required)', required: true },
-  { key: 'barcode', label: 'Barcode', required: false },
-  { key: 'category', label: 'Category', required: false },
-  { key: 'uom', label: 'Unit of Measure', required: false },
-  { key: 'cost', label: 'Cost Price', required: false },
-  { key: 'price', label: 'Sale Price', required: false },
-];
+import { useT } from '@/lib/i18n';
 
 export default function ProductImport() {
+  const t = useT();
   const router = useRouter();
   const [csvText, setCsvText] = useState('');
   const [headers, setHeaders] = useState<string[]>([]);
@@ -30,6 +22,16 @@ export default function ProductImport() {
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [importedCount, setImportedCount] = useState(0);
+
+  const SCHEMA_FIELDS = [
+    { key: 'code', label: t('inventoryImport.fieldCode'), required: true },
+    { key: 'name', label: t('inventoryImport.fieldName'), required: true },
+    { key: 'barcode', label: t('inventoryImport.fieldBarcode'), required: false },
+    { key: 'category', label: t('inventoryImport.fieldCategory'), required: false },
+    { key: 'uom', label: t('inventoryImport.fieldUom'), required: false },
+    { key: 'cost', label: t('inventoryImport.fieldCost'), required: false },
+    { key: 'price', label: t('inventoryImport.fieldPrice'), required: false },
+  ];
 
   // Helper: Download a sample CSV template
   const downloadTemplate = () => {
@@ -51,12 +53,12 @@ export default function ProductImport() {
   const handleParse = (text: string) => {
     const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     if (lines.length < 2) {
-      alert("Invalid CSV: Must contain at least a header row and one data row.");
+      alert(t('inventoryImport.invalidCsv'));
       return;
     }
     const headerCols = lines[0].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
     const dataRows = lines.slice(1).map(line => line.split(',').map(c => c.trim().replace(/^["']|["']$/g, '')));
-    
+
     setHeaders(headerCols);
     setRows(dataRows);
 
@@ -91,8 +93,8 @@ export default function ProductImport() {
     const codeIdx = mappings['code'];
     const nameIdx = mappings['name'];
 
-    if (!codeIdx) errors.push("Missing mapping for Product Code / SKU.");
-    if (!nameIdx) errors.push("Missing mapping for Product Name.");
+    if (!codeIdx) errors.push(t('inventoryImport.missingCode'));
+    if (!nameIdx) errors.push(t('inventoryImport.missingName'));
 
     if (errors.length > 0) {
       setValidationErrors(errors);
@@ -101,13 +103,13 @@ export default function ProductImport() {
 
     const codeColIdx = parseInt(codeIdx);
     const nameColIdx = parseInt(nameIdx);
-    
+
     rows.forEach((row, idx) => {
       if (!row[codeColIdx]) {
-        errors.push(`Row ${idx + 1}: Missing Product Code / SKU.`);
+        errors.push(t('inventoryImport.rowMissingCode', { n: idx + 1 }));
       }
       if (!row[nameColIdx]) {
-        errors.push(`Row ${idx + 1}: Missing Product Name.`);
+        errors.push(t('inventoryImport.rowMissingName', { n: idx + 1 }));
       }
     });
 
@@ -137,7 +139,7 @@ export default function ProductImport() {
         method: 'bulk_import',
         args: [payloadItems]
       });
-      
+
       setProgress(85);
       if (res?.success) {
         setImportedCount(res.imported_count);
@@ -153,49 +155,51 @@ export default function ProductImport() {
     }
   };
 
+  const STEP_LABELS = [
+    { step: 1, label: t('inventoryImport.stepUpload') },
+    { step: 2, label: t('inventoryImport.stepMap') },
+    { step: 3, label: t('inventoryImport.stepPreview') },
+    { step: 4, label: t('inventoryImport.stepComplete') }
+  ];
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8">
       {/* Header */}
       <div className="max-w-5xl mx-auto flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => router.push('/inventory')}
             className="p-2 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 transition"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-400" />
+            <ArrowLeft className="w-5 h-5 text-slate-400 rtl:-scale-x-100" />
           </button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-teal-400 to-emerald-400 bg-clip-text text-transparent">
-              Bulk Import Products
+              {t('inventoryImport.title')}
             </h1>
-            <p className="text-sm text-slate-400">Onboard inventory items by importing spreadsheet records</p>
+            <p className="text-sm text-slate-400">{t('inventoryImport.subtitle')}</p>
           </div>
         </div>
-        
-        <button 
+
+        <button
           onClick={downloadTemplate}
           className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 transition text-sm"
         >
           <Download className="w-4 h-4" />
-          Download Template
+          {t('inventoryImport.downloadTemplate')}
         </button>
       </div>
 
       <div className="max-w-5xl mx-auto bg-slate-900/40 border border-slate-800 rounded-2xl p-6 backdrop-blur-xl">
         {/* Step Indicator */}
         <div className="flex justify-between items-center mb-8 border-b border-slate-800/60 pb-6">
-          {[
-            { step: 1, label: 'Upload Sheet' },
-            { step: 2, label: 'Map Fields' },
-            { step: 3, label: 'Preview & Verify' },
-            { step: 4, label: 'Complete' }
-          ].map((s) => (
+          {STEP_LABELS.map((s) => (
             <div key={s.step} className="flex items-center gap-2">
               <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                step === s.step 
-                  ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20' 
-                  : step > s.step 
-                    ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' 
+                step === s.step
+                  ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20'
+                  : step > s.step
+                    ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
                     : 'bg-slate-800 text-slate-500 border border-slate-700/50'
               }`}>
                 {step > s.step ? '✓' : s.step}
@@ -209,18 +213,18 @@ export default function ProductImport() {
         {step === 1 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center py-12">
             <div className="border-2 border-dashed border-slate-800 hover:border-teal-500/50 transition-all rounded-2xl p-8 max-w-xl mx-auto cursor-pointer relative">
-              <input 
-                type="file" 
-                accept=".csv" 
+              <input
+                type="file"
+                accept=".csv"
                 onChange={handleFileUpload}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
               <Upload className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-              <h3 className="font-semibold text-lg mb-1">Upload CSV Document</h3>
-              <p className="text-sm text-slate-400 mb-6">Drag and drop your export file here, or click to browse</p>
+              <h3 className="font-semibold text-lg mb-1">{t('inventoryImport.uploadHeading')}</h3>
+              <p className="text-sm text-slate-400 mb-6">{t('inventoryImport.uploadNote')}</p>
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-medium text-slate-300">
                 <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
-                Supports comma-separated values (.csv)
+                {t('inventoryImport.csvSupport')}
               </div>
             </div>
           </motion.div>
@@ -230,7 +234,7 @@ export default function ProductImport() {
         {step === 2 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <Settings className="w-5 h-5 text-teal-400" /> Map Sheet Headers to System Fields
+              <Settings className="w-5 h-5 text-teal-400" /> {t('inventoryImport.mapHeading')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {SCHEMA_FIELDS.map((f) => (
@@ -243,7 +247,7 @@ export default function ProductImport() {
                     onChange={(e) => setMappings({ ...mappings, [f.key]: e.target.value })}
                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-teal-500/50"
                   >
-                    <option value="">-- Ignore Field --</option>
+                    <option value="">{t('inventoryImport.ignoreField')}</option>
                     {headers.map((h, idx) => (
                       <option key={idx} value={idx}>{h}</option>
                     ))}
@@ -253,17 +257,17 @@ export default function ProductImport() {
             </div>
 
             <div className="flex justify-end gap-3 border-t border-slate-800/60 pt-6">
-              <button 
+              <button
                 onClick={() => setStep(1)}
                 className="px-4 py-2 border border-slate-800 hover:bg-slate-800 rounded-lg text-sm transition"
               >
-                Back
+                {t('inventoryImport.back')}
               </button>
-              <button 
+              <button
                 onClick={handleValidate}
                 className="px-5 py-2 bg-teal-600 hover:bg-teal-550 rounded-lg text-sm text-white font-medium shadow-lg shadow-teal-600/15 transition"
               >
-                Verify Data
+                {t('inventoryImport.verifyData')}
               </button>
             </div>
           </motion.div>
@@ -273,20 +277,20 @@ export default function ProductImport() {
         {step === 3 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-              <Database className="w-5 h-5 text-emerald-400" /> Preview Verification Results
+              <Database className="w-5 h-5 text-emerald-400" /> {t('inventoryImport.previewHeading')}
             </h2>
 
             {validationErrors.length > 0 ? (
               <div className="bg-red-950/20 border border-red-900/30 rounded-xl p-4 mb-6 flex gap-3 items-start">
                 <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-red-400 text-sm mb-1">Validation Errors Found</h4>
+                  <h4 className="font-semibold text-red-400 text-sm mb-1">{t('inventoryImport.validationErrorsFound')}</h4>
                   <ul className="text-xs text-red-300/80 list-disc list-inside space-y-1">
                     {validationErrors.slice(0, 10).map((err, i) => (
                       <li key={i}>{err}</li>
                     ))}
                     {validationErrors.length > 10 && (
-                      <li>...and {validationErrors.length - 10} more discrepancies</li>
+                      <li>{t('inventoryImport.moreDiscrepancies', { n: validationErrors.length - 10 })}</li>
                     )}
                   </ul>
                 </div>
@@ -294,13 +298,13 @@ export default function ProductImport() {
             ) : (
               <div className="bg-emerald-950/20 border border-emerald-900/30 rounded-xl p-4 mb-6 flex gap-3 items-center">
                 <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                <p className="text-sm text-emerald-400 font-medium">All columns parsed successfully with zero format errors!</p>
+                <p className="text-sm text-emerald-400 font-medium">{t('inventoryImport.allParsedOk')}</p>
               </div>
             )}
 
             {/* Preview table */}
             <div className="overflow-x-auto border border-slate-850 rounded-xl mb-6">
-              <table className="w-full border-collapse text-left text-xs">
+              <table className="w-full border-collapse text-start text-xs">
                 <thead>
                   <tr className="bg-slate-950 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
                     {SCHEMA_FIELDS.map(f => (
@@ -325,7 +329,7 @@ export default function ProductImport() {
               </table>
               {rows.length > 5 && (
                 <div className="p-3 text-center bg-slate-950/30 text-slate-500 text-xs">
-                  + {rows.length - 5} more rows waiting to import
+                  {t('inventoryImport.moreRows', { n: rows.length - 5 })}
                 </div>
               )}
             </div>
@@ -333,7 +337,7 @@ export default function ProductImport() {
             {importing && (
               <div className="mb-6">
                 <div className="flex justify-between text-xs text-slate-400 mb-1">
-                  <span>Importing inventory items...</span>
+                  <span>{t('inventoryImport.importingRecords')}</span>
                   <span>{progress}%</span>
                 </div>
                 <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
@@ -343,20 +347,20 @@ export default function ProductImport() {
             )}
 
             <div className="flex justify-end gap-3 border-t border-slate-800/60 pt-6">
-              <button 
+              <button
                 onClick={() => setStep(2)}
                 disabled={importing}
                 className="px-4 py-2 border border-slate-800 hover:bg-slate-800 rounded-lg text-sm transition"
               >
-                Back
+                {t('inventoryImport.back')}
               </button>
-              <button 
+              <button
                 onClick={startImport}
                 disabled={importing || validationErrors.length > 0}
                 className="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm text-white font-medium shadow-lg shadow-emerald-600/15 transition"
               >
                 <Play className="w-4 h-4" />
-                Commit to Database
+                {t('inventoryImport.commitToDb')}
               </button>
             </div>
           </motion.div>
@@ -368,15 +372,15 @@ export default function ProductImport() {
             <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-8 h-8 text-emerald-400" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">Import Successful</h2>
+            <h2 className="text-2xl font-bold mb-2">{t('inventoryImport.importSuccessful')}</h2>
             <p className="text-sm text-slate-400 max-w-md mx-auto mb-8">
-              Successfully parsed and saved <span className="font-semibold text-slate-200">{importedCount}</span> products to the inventory database.
+              {t('inventoryImport.importSuccessfulNote', { n: importedCount })}
             </p>
-            <button 
+            <button
               onClick={() => router.push('/inventory')}
               className="px-6 py-2.5 bg-slate-900 border border-slate-800 hover:bg-slate-800 transition rounded-xl text-sm font-semibold"
             >
-              Return to Inventory
+              {t('inventoryImport.returnToInventory')}
             </button>
           </motion.div>
         )}

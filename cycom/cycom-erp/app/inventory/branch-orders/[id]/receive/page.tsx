@@ -2,13 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { 
-  ArrowLeft, CheckCircle2, AlertTriangle, ShieldCheck, 
-  Database, Play, Truck, X, FileText, CheckCircle
+import {
+  ArrowLeft, CheckCircle
 } from 'lucide-react';
 import { call } from '@/lib/cycom';
 import { LoadingCard } from '@/components/CycomEmptyStates';
+import { useT } from '@/lib/i18n';
 
 interface OrderDetails {
   id: number;
@@ -28,6 +27,7 @@ interface OrderLine {
 }
 
 export default function ReceiveReplenishment() {
+  const t = useT();
   const router = useRouter();
   const params = useParams();
   const idStr = params?.id as string;
@@ -68,12 +68,13 @@ export default function ReceiveReplenishment() {
           setReceipts(initialReceipts);
         }
       } catch (err: any) {
-        alert('Error loading order details: ' + err.message);
+        alert(t('receiveOrder.loadError', { msg: err.message }));
       } finally {
         setLoading(false);
       }
     };
     fetchOrderDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
   const handleQtyChange = (lineId: number, qty: number, maxQty: number) => {
@@ -107,51 +108,51 @@ export default function ReceiveReplenishment() {
         args: [orderId, receipts]
       });
       if (res) {
-        alert('Stock receipt confirmed successfully!');
+        alert(t('receiveOrder.confirmedSuccess'));
         router.push('/inventory/branch-orders');
       }
     } catch (err: any) {
-      alert('Error confirming receipt: ' + err.message);
+      alert(t('receiveOrder.confirmError', { msg: err.message }));
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-slate-950 text-slate-100 p-8"><LoadingCard label="Loading replenishment logs…" /></div>;
-  if (!order) return <div className="min-h-screen bg-slate-950 text-slate-100 p-8 text-center text-slate-400 font-medium">Request record not found.</div>;
+  if (loading) return <div className="min-h-screen bg-slate-950 text-slate-100 p-8"><LoadingCard label={t('receiveOrder.loading')} /></div>;
+  if (!order) return <div className="min-h-screen bg-slate-950 text-slate-100 p-8 text-center text-slate-400 font-medium">{t('receiveOrder.notFound')}</div>;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 text-xs md:text-sm">
       {/* Header */}
       <div className="max-w-4xl mx-auto flex items-center gap-4 mb-8">
-        <button 
+        <button
           onClick={() => router.push('/inventory/branch-orders')}
           className="p-2 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 transition"
         >
-          <ArrowLeft className="w-5 h-5 text-slate-400" />
+          <ArrowLeft className="w-5 h-5 text-slate-400 rtl:-scale-x-100" />
         </button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
-            Confirm Replenishment Receipt: {order.name}
+            {t('receiveOrder.title', { name: order.name })}
           </h1>
-          <p className="text-xs text-slate-400 mt-1">Branch #{order.branch_id} • Status: <span className="text-purple-400 uppercase font-semibold">{order.state}</span></p>
+          <p className="text-xs text-slate-400 mt-1">{t('receiveOrder.subtitlePrefix', { branch: order.branch_id })} <span className="text-purple-400 uppercase font-semibold">{order.state}</span></p>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto bg-slate-900/40 border border-slate-800 rounded-2xl p-6 backdrop-blur-xl">
         <form onSubmit={handleConfirmReceipt} className="space-y-6">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 border-b border-white/5 pb-2">
-            Verify Dispatched Packages
+            {t('receiveOrder.verifyHeading')}
           </h3>
 
           <div className="border border-slate-850 rounded-xl overflow-hidden">
-            <table className="w-full border-collapse bg-slate-950/20 text-xs text-left">
+            <table className="w-full border-collapse bg-slate-950/20 text-xs text-start">
               <thead>
                 <tr className="bg-slate-950 text-slate-500 uppercase font-semibold border-b border-slate-850">
-                  <th className="p-3">Product</th>
-                  <th className="p-3 w-28 text-center">Shipped Qty</th>
-                  <th className="p-3 w-28 text-center">Received Qty</th>
-                  <th className="p-3 text-left">Discrepancy Reason</th>
+                  <th className="p-3">{t('receiveOrder.colProduct')}</th>
+                  <th className="p-3 w-28 text-center">{t('receiveOrder.colShippedQty')}</th>
+                  <th className="p-3 w-28 text-center">{t('receiveOrder.colReceivedQty')}</th>
+                  <th className="p-3 text-start">{t('receiveOrder.colDiscrepancyReason')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -168,7 +169,7 @@ export default function ReceiveReplenishment() {
                       </td>
                       <td className="p-3 text-center font-bold text-slate-400">{line.shipped_qty}</td>
                       <td className="p-3 text-center">
-                        <input 
+                        <input
                           type="number" min={0} max={line.shipped_qty} required
                           value={recData.received_qty}
                           onChange={e => handleQtyChange(line.id, parseInt(e.target.value), line.shipped_qty)}
@@ -177,15 +178,15 @@ export default function ReceiveReplenishment() {
                       </td>
                       <td className="p-3">
                         {hasDiscrepancy ? (
-                          <input 
+                          <input
                             type="text" required
-                            placeholder="e.g. Broken packaging, missing items"
+                            placeholder={t('receiveOrder.discrepancyPh')}
                             value={recData.reason}
                             onChange={e => handleReasonChange(line.id, e.target.value)}
                             className="w-full bg-slate-950 border border-rose-500/20 rounded px-3 py-1.5 text-slate-200 outline-none focus:border-rose-500/50"
                           />
                         ) : (
-                          <span className="text-slate-500 italic">No discrepancy</span>
+                          <span className="text-slate-500 italic">{t('receiveOrder.noDiscrepancy')}</span>
                         )}
                       </td>
                     </tr>
@@ -197,23 +198,23 @@ export default function ReceiveReplenishment() {
 
           {order.notes && (
             <div className="p-4 bg-slate-950/40 border border-slate-850 rounded-xl text-xs">
-              <h5 className="text-[10px] font-bold text-slate-500 uppercase mb-1">Request Notes</h5>
+              <h5 className="text-[10px] font-bold text-slate-500 uppercase mb-1">{t('receiveOrder.requestNotes')}</h5>
               <p className="text-slate-300 leading-relaxed">{order.notes}</p>
             </div>
           )}
 
           <div className="flex justify-end gap-3 border-t border-white/5 pt-6">
-            <button 
+            <button
               type="button" onClick={() => router.push('/inventory/branch-orders')}
               className="px-4 py-2 border border-slate-800 hover:bg-slate-800 rounded-lg transition font-semibold"
             >
-              Cancel
+              {t('receiveOrder.cancel')}
             </button>
-            <button 
+            <button
               type="submit" disabled={saving}
               className="flex items-center gap-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white font-semibold shadow-lg shadow-emerald-600/15 transition disabled:opacity-50"
             >
-              <CheckCircle className="w-4 h-4" /> Confirm & Log Receipt
+              <CheckCircle className="w-4 h-4" /> {t('receiveOrder.confirmLog')}
             </button>
           </div>
         </form>
