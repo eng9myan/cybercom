@@ -12,11 +12,13 @@ import { AdvisorPanel } from '@/components/setup/AdvisorPanel';
 import { ReviewRow } from '@/components/setup/ReviewRow';
 import { ResultBanner } from '@/components/setup/ResultBanner';
 import { ToggleRow } from '@/components/setup/ToggleRow';
+import { useT } from '@/lib/i18n';
 
-const STEPS = ['Motion', 'Approval policy', 'Review'] as const;
 type StepIdx = 0 | 1 | 2;
 
 export default function SalesWizard() {
+  const t = useT();
+  const STEPS = [t('setupSales.motionHeading'), t('setupWizard.stepModules'), t('setupWizard.stepReview')] as const;
   const [step, setStep] = useState<StepIdx>(0);
   const [industry, setIndustry] = useState<string | undefined>();
 
@@ -56,17 +58,19 @@ export default function SalesWizard() {
     setApplying(false);
   };
 
+  const onOff = (v: boolean) => v ? t('setupWizard.on') : t('setupWizard.off');
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="page-header">
         <div>
           <h1 className="page-title text-white flex items-center gap-3">
-            <TrendingUp className="w-7 h-7 text-[#E67E22]" /> Sales Pipeline
+            <TrendingUp className="w-7 h-7 text-[#E67E22]" /> {t('setupSales.title')}
           </h1>
-          <p className="page-subtitle">Sales motion, discount ceilings, and dual-approval thresholds.</p>
+          <p className="page-subtitle">{t('setupSales.subtitle')}</p>
         </div>
         <a href="/cycom/cycom/action-sale.action_orders" target="_blank" rel="noreferrer" className="btn-secondary flex items-center gap-2 text-xs">
-          <Wrench className="w-3.5 h-3.5" /> Configure manually
+          <Wrench className="w-3.5 h-3.5" /> {t('setupWizard.configureManually')}
         </a>
       </div>
 
@@ -76,18 +80,18 @@ export default function SalesWizard() {
         {step === 0 && (
           <>
             <div className="glass-card p-6 space-y-5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Sales motion</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('setupSales.motionHeading')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {(['b2c', 'b2b', 'mixed'] as SalesMotion[]).map((m) => (
-                  <button key={m} type="button" onClick={() => setSalesMotion(m)} className={'text-left p-4 rounded-xl border transition-all ' + (m === salesMotion ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10')}>
+                  <button key={m} type="button" onClick={() => setSalesMotion(m)} className={'text-start p-4 rounded-xl border transition-all ' + (m === salesMotion ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10')}>
                     <div className="text-sm font-bold">{MOTION_LABEL[m]}</div>
                   </button>
                 ))}
               </div>
             </div>
             <AdvisorPanel lines={[
-              industry ? `"${industry}" tenants typically run a ${MOTION_LABEL[getSalesDefaults(industry).motion]} motion.` : 'Run Company Setup first.',
-              'B2B motions emphasize approval workflows; B2C emphasizes promotional discounts.',
+              industry ? t('setupSales.motionAdvisor', { industry, motion: MOTION_LABEL[getSalesDefaults(industry).motion] }) : t('setupWizard.runCompanyFirst'),
+              t('setupSales.motionAdvisorNote'),
             ]} />
           </>
         )}
@@ -96,23 +100,23 @@ export default function SalesWizard() {
           <>
             <div className="glass-card p-6 space-y-5">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Shield className="w-4 h-4 text-rose-400" /> Discount ceilings
+                <Shield className="w-4 h-4 text-rose-400" /> {t('setupSales.ceilingsHeading')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Pct label="Free discount limit %" desc="No approval needed up to this %." value={freeDiscountLimitPct} setValue={setFreeDiscountLimitPct} />
-                <Pct label="Manager limit %" desc="Above this needs manager approval." value={managerDiscountLimitPct} setValue={setManagerDiscountLimitPct} />
-                <Pct label="Dual approval threshold %" desc="Above this needs two approvers." value={dualApprovalThresholdPct} setValue={setDualApprovalThresholdPct} />
+                <Pct label={t('setupSales.freeLimitLabel')} desc={t('setupSales.freeLimitDesc')} value={freeDiscountLimitPct} setValue={setFreeDiscountLimitPct} />
+                <Pct label={t('setupSales.managerLimitLabel')} desc={t('setupSales.managerLimitDesc')} value={managerDiscountLimitPct} setValue={setManagerDiscountLimitPct} />
+                <Pct label={t('setupSales.dualThresholdLabel')} desc={t('setupSales.dualThresholdDesc')} value={dualApprovalThresholdPct} setValue={setDualApprovalThresholdPct} />
               </div>
 
               <div className="space-y-3 pt-1">
-                <ToggleRow label="Discount exception approval"
-                  description="sale_discount_exception_approval — quantity-based ceilings + dual approval over the threshold." on={enableDiscountExceptionApproval} setOn={setEnableDiscountExceptionApproval} />
-                <ToggleRow label="Sale line approval"
-                  description="ag_sale_line_approval — line-level approvals for sensitive items." on={enableLineLevelApproval} setOn={setEnableLineLevelApproval} />
-                <ToggleRow label="Cycom pricing control"
-                  description="cycom_sale_pricing_control — lock pricing against unauthorized overrides." on={enablePricingControl} setOn={setEnablePricingControl} />
-                <ToggleRow label="Keep price across fiscal positions"
-                  description="sale_fiscal_position_keep_price — fiscal position changes don't reprice the line." on={enableSaleFiscalKeepPrice} setOn={setEnableSaleFiscalKeepPrice} />
+                <ToggleRow label={t('setupSales.exceptionApprovalLabel')}
+                  description={t('setupSales.exceptionApprovalDesc')} on={enableDiscountExceptionApproval} setOn={setEnableDiscountExceptionApproval} />
+                <ToggleRow label={t('setupSales.lineApprovalLabel')}
+                  description={t('setupSales.lineApprovalDesc')} on={enableLineLevelApproval} setOn={setEnableLineLevelApproval} />
+                <ToggleRow label={t('setupSales.pricingControlLabel')}
+                  description={t('setupSales.pricingControlDesc')} on={enablePricingControl} setOn={setEnablePricingControl} />
+                <ToggleRow label={t('setupSales.fiscalKeepLabel')}
+                  description={t('setupSales.fiscalKeepDesc')} on={enableSaleFiscalKeepPrice} setOn={setEnableSaleFiscalKeepPrice} />
               </div>
             </div>
           </>
@@ -122,17 +126,17 @@ export default function SalesWizard() {
           <>
             <div className="glass-card p-6 space-y-4">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#E67E22]" /> Review
+                <Layers className="w-4 h-4 text-[#E67E22]" /> {t('setupWizard.stepReview')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <ReviewRow label="Motion" value={MOTION_LABEL[salesMotion]} />
-                <ReviewRow label="Free discount up to" value={`${freeDiscountLimitPct}%`} />
-                <ReviewRow label="Manager up to" value={`${managerDiscountLimitPct}%`} />
-                <ReviewRow label="Dual approval over" value={`${dualApprovalThresholdPct}%`} />
-                <ReviewRow label="Discount exception approval" value={enableDiscountExceptionApproval ? 'On' : 'Off'} />
-                <ReviewRow label="Sale line approval" value={enableLineLevelApproval ? 'On' : 'Off'} />
-                <ReviewRow label="Pricing control" value={enablePricingControl ? 'On' : 'Off'} />
-                <ReviewRow label="Fiscal-keep-price" value={enableSaleFiscalKeepPrice ? 'On' : 'Off'} />
+                <ReviewRow label={t('setupSales.reviewMotion')} value={MOTION_LABEL[salesMotion]} />
+                <ReviewRow label={t('setupSales.reviewFreeUpTo')} value={`${freeDiscountLimitPct}%`} />
+                <ReviewRow label={t('setupSales.reviewManagerUpTo')} value={`${managerDiscountLimitPct}%`} />
+                <ReviewRow label={t('setupSales.reviewDualOver')} value={`${dualApprovalThresholdPct}%`} />
+                <ReviewRow label={t('setupSales.reviewExceptionApproval')} value={onOff(enableDiscountExceptionApproval)} />
+                <ReviewRow label={t('setupSales.reviewLineApproval')} value={onOff(enableLineLevelApproval)} />
+                <ReviewRow label={t('setupSales.reviewPricingControl')} value={onOff(enablePricingControl)} />
+                <ReviewRow label={t('setupSales.reviewFiscalKeep')} value={onOff(enableSaleFiscalKeepPrice)} />
               </div>
             </div>
             {result && <ResultBanner result={result} />}
@@ -144,7 +148,7 @@ export default function SalesWizard() {
         applying={applying} applied={Boolean(result?.ok)}
         onBack={() => setStep((s) => (Math.max(0, s - 1) as StepIdx))}
         onNext={() => setStep((s) => (Math.min(STEPS.length - 1, s + 1) as StepIdx))}
-        onApply={submit} applyLabel="Configure sales" />
+        onApply={submit} applyLabel={t('setupSales.applyLabel')} />
     </div>
   );
 }

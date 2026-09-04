@@ -11,11 +11,13 @@ import { WizardFooter } from '@/components/setup/WizardFooter';
 import { AdvisorPanel } from '@/components/setup/AdvisorPanel';
 import { ReviewRow } from '@/components/setup/ReviewRow';
 import { ResultBanner } from '@/components/setup/ResultBanner';
+import { useT } from '@/lib/i18n';
 
-const STEPS = ['Costing', 'Policy', 'Review'] as const;
 type StepIdx = 0 | 1 | 2;
 
 export default function WarehouseWizard() {
+  const t = useT();
+  const STEPS = [t('setupWarehouse.costingHeading'), t('setupWarehouse.policyHeading'), t('setupWizard.stepReview')] as const;
   const [step, setStep] = useState<StepIdx>(0);
   const [industry, setIndustry] = useState<string | undefined>();
 
@@ -49,17 +51,19 @@ export default function WarehouseWizard() {
     setApplying(false);
   };
 
+  const onOff = (v: boolean) => v ? t('setupWizard.on') : t('setupWizard.off');
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="page-header">
         <div>
           <h1 className="page-title text-white flex items-center gap-3">
-            <Package className="w-7 h-7 text-[#E67E22]" /> Warehouse & Locations
+            <Package className="w-7 h-7 text-[#E67E22]" /> {t('setupWarehouse.title')}
           </h1>
-          <p className="page-subtitle">Stock policy, costing, and inventory guards. Cycom creates a warehouse per company automatically.</p>
+          <p className="page-subtitle">{t('setupWarehouse.subtitle')}</p>
         </div>
         <a href="/cycom/cycom/action-stock.action_warehouse_form" target="_blank" rel="noreferrer" className="btn-secondary flex items-center gap-2 text-xs">
-          <Wrench className="w-3.5 h-3.5" /> Configure manually
+          <Wrench className="w-3.5 h-3.5" /> {t('setupWizard.configureManually')}
         </a>
       </div>
 
@@ -70,19 +74,19 @@ export default function WarehouseWizard() {
           <>
             <div className="glass-card p-6 space-y-5">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Settings2 className="w-4 h-4 text-cyan-400" /> Costing method
+                <Settings2 className="w-4 h-4 text-cyan-400" /> {t('setupWarehouse.costingHeading')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {(['standard', 'fifo', 'average'] as CostingMethod[]).map((m) => (
-                  <button key={m} type="button" onClick={() => setCostingMethod(m)} className={'text-left p-4 rounded-xl border transition-all ' + (m === costingMethod ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10')}>
+                  <button key={m} type="button" onClick={() => setCostingMethod(m)} className={'text-start p-4 rounded-xl border transition-all ' + (m === costingMethod ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10')}>
                     <div className="text-sm font-bold">{COSTING_LABEL[m]}</div>
                   </button>
                 ))}
               </div>
             </div>
             <AdvisorPanel lines={[
-              industry ? `Cycom pre-filled the typical costing method for "${industry}" tenants.` : 'Run Company Setup first.',
-              'Standard cost is best for manufacturing with predictable BOM costs. FIFO suits retail/wholesale. Weighted average suits hospitality and services with frequent small purchases.',
+              industry ? t('setupWarehouse.costingAdvisor', { industry }) : t('setupWizard.runCompanyFirst'),
+              t('setupWarehouse.costingAdvisorNote'),
             ]} />
           </>
         )}
@@ -90,30 +94,30 @@ export default function WarehouseWizard() {
         {step === 1 && (
           <>
             <div className="glass-card p-6 space-y-5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Stock policy</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('setupWarehouse.policyHeading')}</h2>
 
               <div className="space-y-3">
-                <ToggleRow label="Block negative stock"
-                  description="stock_qty_guard + stock_location_negative_block — refuse pickings that would drive a location negative."
+                <ToggleRow label={t('setupWarehouse.negativeGuardLabel')}
+                  description={t('setupWarehouse.negativeGuardDesc')}
                   on={negativeStockGuard} setOn={setNegativeStockGuard} />
-                <ToggleRow label="Restrict users to their assigned warehouse"
-                  description="warehouse_restriction_for_user — operators can only post against their warehouse."
+                <ToggleRow label={t('setupWarehouse.warehouseRestrictionLabel')}
+                  description={t('setupWarehouse.warehouseRestrictionDesc')}
                   on={enableWarehouseRestriction} setOn={setEnableWarehouseRestriction} />
-                <ToggleRow label="Inter-warehouse discrepancy approval"
-                  description="stock_transfer_discrepancy_new — flag mismatches between sent and received quantities for approval."
+                <ToggleRow label={t('setupWarehouse.discrepancyLabel')}
+                  description={t('setupWarehouse.discrepancyDesc')}
                   on={enableDiscrepancyWorkflow} setOn={setEnableDiscrepancyWorkflow} />
               </div>
 
               <div className="pt-2">
-                <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">Low-stock threshold (units)</label>
+                <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">{t('setupWarehouse.lowStockLabel')}</label>
                 <input type="number" min={0} className="input-field py-2.5 max-w-[200px]"
                   value={lowStockThreshold} onChange={(e) => setLowStockThreshold(parseFloat(e.target.value) || 0)} />
-                <p className="text-[10px] text-slate-500 mt-1">Products at or below this level trigger reorder alerts.</p>
+                <p className="text-[10px] text-slate-500 mt-1">{t('setupWarehouse.lowStockNote')}</p>
               </div>
             </div>
             <AdvisorPanel lines={[
-              'Blocking negative stock is correct for retail and wholesale, where a sale below zero usually means an unscanned receipt.',
-              'Manufacturing tenants often need to allow short-term negative stock during component allocation — turn the guard off in that case.',
+              t('setupWarehouse.policyAdvisor'),
+              t('setupWarehouse.policyAdvisorNote'),
             ]} />
           </>
         )}
@@ -122,14 +126,14 @@ export default function WarehouseWizard() {
           <>
             <div className="glass-card p-6 space-y-4">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#E67E22]" /> Review
+                <Layers className="w-4 h-4 text-[#E67E22]" /> {t('setupWizard.stepReview')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <ReviewRow label="Costing method" value={COSTING_LABEL[costingMethod]} />
-                <ReviewRow label="Negative stock guard" value={negativeStockGuard ? 'On' : 'Off'} />
-                <ReviewRow label="Warehouse restriction" value={enableWarehouseRestriction ? 'On' : 'Off'} />
-                <ReviewRow label="Discrepancy approval" value={enableDiscrepancyWorkflow ? 'On' : 'Off'} />
-                <ReviewRow label="Low-stock threshold" value={`${lowStockThreshold} units`} />
+                <ReviewRow label={t('setupWarehouse.reviewCosting')} value={COSTING_LABEL[costingMethod]} />
+                <ReviewRow label={t('setupWarehouse.reviewNegGuard')} value={onOff(negativeStockGuard)} />
+                <ReviewRow label={t('setupWarehouse.reviewWhRestriction')} value={onOff(enableWarehouseRestriction)} />
+                <ReviewRow label={t('setupWarehouse.reviewDiscrepancy')} value={onOff(enableDiscrepancyWorkflow)} />
+                <ReviewRow label={t('setupWarehouse.reviewLowStock')} value={t('setupWarehouse.unitsN', { n: lowStockThreshold })} />
               </div>
             </div>
             {result && <ResultBanner result={result} />}
@@ -141,16 +145,16 @@ export default function WarehouseWizard() {
         applying={applying} applied={Boolean(result?.ok)}
         onBack={() => setStep((s) => (Math.max(0, s - 1) as StepIdx))}
         onNext={() => setStep((s) => (Math.min(STEPS.length - 1, s + 1) as StepIdx))}
-        onApply={submit} applyLabel="Configure inventory" />
+        onApply={submit} applyLabel={t('setupWarehouse.applyLabel')} />
     </div>
   );
 }
 
 function ToggleRow({ label, description, on, setOn }: { label: string; description: string; on: boolean; setOn: (v: boolean) => void }) {
   return (
-    <button type="button" onClick={() => setOn(!on)} className={'w-full text-left flex items-center gap-3 p-3 rounded-xl border transition-all ' + (on ? 'bg-gradient-to-br from-emerald-500/10 to-cyan-500/5 border-emerald-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10')}>
+    <button type="button" onClick={() => setOn(!on)} className={'w-full text-start flex items-center gap-3 p-3 rounded-xl border transition-all ' + (on ? 'bg-gradient-to-br from-emerald-500/10 to-cyan-500/5 border-emerald-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10')}>
       <div className={'w-9 h-5 rounded-full relative transition-colors ' + (on ? 'bg-emerald-500/60' : 'bg-white/10')}>
-        <div className={'absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ' + (on ? 'left-4' : 'left-0.5')} />
+        <div className={'absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ' + (on ? 'start-4' : 'start-0.5')} />
       </div>
       <div className="flex-1">
         <div className="text-sm font-bold text-white">{label}</div>
