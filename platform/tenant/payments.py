@@ -293,8 +293,138 @@ class PaddleProvider(_UnconfiguredProvider):
     code = "paddle"
 
 
-class HyperPayProvider(_UnconfiguredProvider):
+class HyperPayProvider(PaymentProvider):
+    """HyperPay / OPPWA (COPYandPAY) — the recommended first regional gateway
+    (JO + SA + UAE coverage, mada/KNET/benefit, tokenisation).
+
+    Enabled the moment HYPERPAY_ENTITY_ID + HYPERPAY_ACCESS_TOKEN are set.
+      HYPERPAY_ENV            "test" (default) -> test.oppwa.com | "live" -> oppwa.com
+      HYPERPAY_ENTITY_ID      the channel entityId
+      HYPERPAY_ACCESS_TOKEN   Bearer token for the API
+      HYPERPAY_WEBHOOK_SECRET hex-encoded AES key for decrypting async notifications
+
+    Flow: create_checkout() -> a checkout id; the frontend mounts the
+    COPYandPAY widget with that id (mode="hyperpay_widget"). On return we call
+    verify_payment(checkout_id). HyperPay also POSTs an encrypted webhook which
+    parse_webhook() decrypts + authenticates (fail-closed).
+    """
+
     code = "hyperpay"
+    _SUCCESS_RE = r"^(000\.000\.|000\.100\.1|000\.[36]|000\.400\.0[^3]|000\.400\.100)"
+
+    def __init__(self):
+        self.entity_id = getattr(settings, "HYPERPAY_ENTITY_ID", "") or ""
+        self.access_token = getattr(settings, "HYPERPAY_ACCESS_TOKEN", "") or ""
+        self.webhook_secret = getattr(settings, "HYPERPAY_WEBHOOK_SECRET", "") or ""
+        env = (getattr(settings, "HYPERPAY_ENV", "test") or "test").lower()
+        self.base_url = "https://oppwa.com" if env == "live" else "https://test.oppwa.com"
+        if not self.entity_id or not self.access_token:
+            raise PaymentProviderNotConfigured(
+                "HyperPayProvider requires settings.HYPERPAY_ENTITY_ID and "
+                "HYPERPAY_ACCESS_TOKEN. Set them (and HYPERPAY_WEBHOOK_SECRET) once "
+                "the HyperPay account exists, then set CYCOM_PAYMENT_PROVIDER=hyperpay."
+            )
+
+    def _headers(self) -> dict:
+        return {"Authorization": f"Bearer {self.access_token}"}
+
+    def create_checkout(self, invoice, *, success_url: str = "", cancel_url: str = "") -> CheckoutSession:
+        import httpx  # lazy: only needed when HyperPay is actually selected
+
+        amount = str(Decimal(invoice.amount).quantize(Decimal("0.01")))
+        resp = httpx.post(
+            f"{self.base_url}/v1/checkouts",
+            headers=self._headers(),
+            data={
+                "entityId": self.entity_id,
+                "amount": amount,
+                "currency": invoice.currency.upper(),
+                "paymentType": "DB",
+                "merchantTransactionId": invoice.invoice_number,
+            },
+            timeout=20,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        checkout_id = data.get("id", "")
+        if not checkout_id:
+            raise PaymentError(f"HyperPay did not return a checkout id: {data!r}")
+        return CheckoutSession(
+            provider=self.code,
+            mode="hyperpay_widget",
+            reference=invoice.invoice_number,
+            client_secret=checkout_id,               # widget data-checkout-id
+            url=f"{self.base_url}/v1/paymentWidgets.js?checkoutId={checkout_id}",
+            instructions={"base_url": self.base_url},
+        )
+
+    def verify_payment(self, checkout_id: str) -> PaymentEvent:
+        """Redirect-return path: query the payment result for a checkout id."""
+        import re
+
+        import httpx
+
+        if not checkout_id:
+            raise PaymentError("checkout_id is required")
+        resp = httpx.get(
+            f"{self.base_url}/v1/checkouts/{checkout_id}/payment",
+            headers=self._headers(),
+            params={"entityId": self.entity_id},
+            timeout=20,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        code = (data.get("result", {}) or {}).get("code", "")
+        return PaymentEvent(
+            provider=self.code,
+            invoice_number=data.get("merchantTransactionId", ""),
+            paid=bool(re.match(self._SUCCESS_RE, code)),
+            provider_ref=data.get("id", ""),
+            raw=data,
+        )
+
+    def parse_webhook(self, *, body: bytes, headers: dict) -> PaymentEvent:
+        """Decrypt + authenticate a HyperPay async notification (AES-256-GCM).
+
+        The IV and auth tag arrive in headers; the body is the ciphertext. A
+        missing key or a failed tag check is a hard reject — an unauthenticated
+        'paid' event must never activate a tenant."""
+        import binascii
+        import re
+
+        from cryptography.exceptions import InvalidTag
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+        if not self.webhook_secret:
+            raise WebhookVerificationError(
+                "HYPERPAY_WEBHOOK_SECRET is not set — refusing to trust an unverified webhook"
+            )
+        iv_hex = headers.get("X-Initialization-Vector", "")
+        tag_hex = headers.get("X-Authentication-Tag", "")
+        if not iv_hex or not tag_hex:
+            raise WebhookVerificationError("missing HyperPay IV / auth-tag headers")
+        try:
+            key = binascii.unhexlify(self.webhook_secret)
+            iv = binascii.unhexlify(iv_hex)
+            tag = binascii.unhexlify(tag_hex)
+            plaintext = AESGCM(key).decrypt(iv, (body or b"") + tag, None)
+        except (binascii.Error, ValueError, InvalidTag) as exc:
+            raise WebhookVerificationError(f"HyperPay webhook decryption failed: {exc}") from exc
+
+        try:
+            payload = json.loads(plaintext or b"{}")
+        except json.JSONDecodeError as exc:
+            raise WebhookVerificationError("decrypted HyperPay payload is not JSON") from exc
+
+        p = payload.get("payload", payload)
+        code = (p.get("result", {}) or {}).get("code", "")
+        return PaymentEvent(
+            provider=self.code,
+            invoice_number=p.get("merchantTransactionId", ""),
+            paid=bool(re.match(self._SUCCESS_RE, code)),
+            provider_ref=p.get("id", ""),
+            raw=payload,
+        )
 
 
 _REGISTRY = {

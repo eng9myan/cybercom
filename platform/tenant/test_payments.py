@@ -3,6 +3,7 @@
 import uuid
 from datetime import date, timedelta
 from decimal import Decimal
+from unittest import mock
 
 from django.test import SimpleTestCase, TestCase, override_settings
 
@@ -122,3 +123,99 @@ class StripeWebhookVerificationTests(SimpleTestCase):
         event = self._prov().parse_webhook(body=body, headers={"Stripe-Signature": f"t={t},v1={sig}"})
         self.assertTrue(event.paid)
         self.assertEqual(event.invoice_number, "INV-OK")
+
+
+_HP = dict(HYPERPAY_ENTITY_ID="8ac7a4c7", HYPERPAY_ACCESS_TOKEN="tok_test",
+           HYPERPAY_WEBHOOK_SECRET="00" * 32, HYPERPAY_ENV="test",
+           PAYMENT_PROVIDER="hyperpay")
+
+
+class HyperPayTests(SimpleTestCase):
+    def _prov(self):
+        from platform.tenant.payments import HyperPayProvider
+        return HyperPayProvider()
+
+    def test_unconfigured_fails_loud(self):
+        from platform.tenant.payments import PaymentProviderNotConfigured
+        with override_settings(HYPERPAY_ENTITY_ID="", HYPERPAY_ACCESS_TOKEN=""):
+            with self.assertRaises(PaymentProviderNotConfigured):
+                self._prov()
+
+    @override_settings(**_HP)
+    def test_create_checkout_calls_oppwa_and_returns_widget_session(self):
+        import httpx
+
+        captured = {}
+
+        def _fake_post(url, **kw):
+            captured["url"] = url
+            captured["data"] = kw.get("data")
+            return httpx.Response(200, json={"id": "checkout_123", "result": {"code": "000.200.100"}},
+                                  request=httpx.Request("POST", url))
+
+        with mock.patch("httpx.post", _fake_post):
+            inv = _FakeInvoice(invoice_number="INV-HP", amount=Decimal("149.00"), currency="SAR")
+            session = self._prov().create_checkout(inv).as_dict()
+
+        assert captured["url"] == "https://test.oppwa.com/v1/checkouts"
+        assert captured["data"]["merchantTransactionId"] == "INV-HP"
+        assert captured["data"]["amount"] == "149.00"
+        assert session["mode"] == "hyperpay_widget"
+        assert session["client_secret"] == "checkout_123"
+
+    @override_settings(**_HP)
+    def test_webhook_missing_headers_rejected(self):
+        with self.assertRaises(WebhookVerificationError):
+            self._prov().parse_webhook(body=b"x", headers={})
+
+    @override_settings(HYPERPAY_ENTITY_ID="e", HYPERPAY_ACCESS_TOKEN="t", HYPERPAY_WEBHOOK_SECRET="")
+    def test_webhook_missing_secret_fails_closed(self):
+        with self.assertRaises(WebhookVerificationError):
+            self._prov().parse_webhook(
+                body=b"x", headers={"X-Initialization-Vector": "00", "X-Authentication-Tag": "00"}
+            )
+
+    @override_settings(**_HP)
+    def test_webhook_decrypts_authenticated_payload(self):
+        import binascii
+        import json as _json
+
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+        key = b"\x00" * 32
+        iv = b"\x11" * 12
+        plaintext = _json.dumps({
+            "payload": {"merchantTransactionId": "INV-HP", "id": "8ac_pay_1",
+                        "result": {"code": "000.100.110"}}
+        }).encode()
+        blob = AESGCM(key).encrypt(iv, plaintext, None)
+        ct, tag = blob[:-16], blob[-16:]
+
+        event = self._prov().parse_webhook(body=ct, headers={
+            "X-Initialization-Vector": binascii.hexlify(iv).decode(),
+            "X-Authentication-Tag": binascii.hexlify(tag).decode(),
+        })
+        assert event.paid is True
+        assert event.invoice_number == "INV-HP"
+        assert event.provider_ref == "8ac_pay_1"
+
+    @override_settings(**_HP)
+    def test_webhook_tampered_ciphertext_rejected(self):
+        import binascii
+
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+        key = b"\x00" * 32
+        iv = b"\x11" * 12
+        blob = AESGCM(key).encrypt(iv, b'{"x":1}', None)
+        ct, tag = blob[:-16], blob[-16:]
+        with self.assertRaises(WebhookVerificationError):
+            self._prov().parse_webhook(body=ct + b"tamper", headers={
+                "X-Initialization-Vector": binascii.hexlify(iv).decode(),
+                "X-Authentication-Tag": binascii.hexlify(tag).decode(),
+            })
+
+
+class _FakeInvoice:
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
