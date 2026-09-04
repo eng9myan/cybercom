@@ -22,16 +22,31 @@ export function m2oId(v: Many2One | undefined): number | null {
   return v ? v[0] : null;
 }
 
+// Locale-aware formatting. Reads the viewer's stored locale (set by the language
+// toggle via components/LocaleDirection); falls back to the browser locale, then
+// 'en'. Arabic ('ar') renders Arabic-Indic numerals + RTL-aware dates.
+function activeLocale(): string {
+  try {
+    const stored = typeof localStorage !== 'undefined' && localStorage.getItem('cycom.locale');
+    if (stored) return stored;
+  } catch {
+    /* storage blocked */
+  }
+  if (typeof navigator !== 'undefined' && navigator.language) return navigator.language;
+  return 'en';
+}
+
 export function fmtDate(s?: string): string {
   if (!s) return '—';
   const d = new Date(s.replace(' ', 'T') + (s.length === 10 ? '' : 'Z'));
   if (isNaN(d.getTime())) return s;
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+  return d.toLocaleDateString(activeLocale(), { year: 'numeric', month: 'short', day: '2-digit' });
 }
 
 export function fmtMoney(n?: number, currency = ''): string {
   if (n == null) return '—';
-  return `${currency ? currency + ' ' : ''}${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const num = n.toLocaleString(activeLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${currency ? currency + ' ' : ''}${num}`;
 }
 
 export function fmtCode(prefix: string, id: number, width = 4): string {

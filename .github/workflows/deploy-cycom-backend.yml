@@ -46,7 +46,15 @@ jobs:
       - run: pip install -r cycom/requirements.txt
       - run: python cycom/manage.py check
       - run: python cycom/manage.py migrate --noinput
-      - run: cd cycom && python -m pytest products/cycom -q --no-cov
+      # cycom product apps + the shared platform pieces it hosts (einvoicing,
+      # tenant-context, tenant/payments). platform/ has no standalone Django
+      # project, so it's tested through cycom's, from cycom's cwd.
+      - run: >
+          cd cycom && python -m pytest -q --no-cov
+          products/cycom
+          ../platform/einvoicing
+          ../platform/common/tests/test_tenant_context.py
+          ../platform/tenant/test_payments.py
 
       # Build-only check (no push) — catches Dockerfile/dependency
       # errors before the deploy job ever reaches the real server, same
