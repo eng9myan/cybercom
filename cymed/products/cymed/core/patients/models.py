@@ -65,7 +65,7 @@ class PatientContact(BaseModel):
             ("sms", "SMS"),
         ],
     )
-    telecom_value = models.CharField(max_length=255)
+    telecom_value = EncryptedText(classification="pii")  # phone / email — direct-contact PII
     use = models.CharField(
         max_length=20,
         choices=[("home", "Home"), ("work", "Work"), ("mobile", "Mobile"), ("old", "Old")],
@@ -78,11 +78,11 @@ class PatientContact(BaseModel):
 
 class PatientAddress(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="addresses")
-    line1 = models.CharField(max_length=255)
-    line2 = models.CharField(max_length=255, blank=True)
+    line1 = EncryptedText(classification="pii")  # street address — direct-contact PII
+    line2 = EncryptedText(classification="pii")
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100, blank=True)
-    postal_code = models.CharField(max_length=20, blank=True)
+    postal_code = EncryptedText(classification="pii")
     country = models.CharField(max_length=100)
     use = models.CharField(
         max_length=20,

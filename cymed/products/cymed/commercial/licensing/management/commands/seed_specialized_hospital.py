@@ -918,20 +918,23 @@ class Command(BaseCommand):
             if len(first_mrns) < 3:
                 first_mrns.append(mrn)
 
+            # telecom_value / line1 are encrypted (non-deterministic ciphertext),
+            # so they can't be get_or_create lookup keys — match on the stable
+            # (patient, system/use) pair and carry the value in defaults.
             PatientContact.objects.get_or_create(
                 patient=patient,
                 telecom_system="phone",
-                telecom_value=mobile,
-                defaults={"tenant_id": tenant_id, "use": "mobile"},
+                use="mobile",
+                defaults={"tenant_id": tenant_id, "telecom_value": mobile},
             )
             PatientAddress.objects.get_or_create(
                 patient=patient,
-                line1=f"{random.randint(1, 200)} Al-Salam Street",
+                use="home",
                 defaults={
                     "tenant_id": tenant_id,
+                    "line1": f"{random.randint(1, 200)} Al-Salam Street",
                     "city": city,
                     "country": "Jordan",
-                    "use": "home",
                 },
             )
 

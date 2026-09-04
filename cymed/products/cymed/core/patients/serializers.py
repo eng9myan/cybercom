@@ -16,12 +16,19 @@ class PatientIdentifierSerializer(serializers.ModelSerializer):
 
 
 class PatientContactSerializer(serializers.ModelSerializer):
+    # EncryptedText storage — treat as plain text, not base64 BinaryField.
+    telecom_value = serializers.CharField(max_length=255)
+
     class Meta:
         model = PatientContact
         fields = ["id", "telecom_system", "telecom_value", "use"]
 
 
 class PatientAddressSerializer(serializers.ModelSerializer):
+    line1 = serializers.CharField(max_length=255)
+    line2 = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    postal_code = serializers.CharField(max_length=20, required=False, allow_blank=True)
+
     class Meta:
         model = PatientAddress
         fields = ["id", "line1", "line2", "city", "state", "postal_code", "country", "use"]
