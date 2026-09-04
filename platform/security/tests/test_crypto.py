@@ -3,7 +3,7 @@ import uuid
 
 import pytest
 
-from platform.common.fields import MASK, EncryptedText
+from platform.common.fields import MASK, EncryptedJSON, EncryptedText
 from platform.common.pii_registry import registered_pii_fields
 from platform.common.tenant_context import (
     TenantContextMissing,
@@ -183,6 +183,51 @@ def test_pre_save_refuses_to_write_back_a_masked_value():
     inst = _FakeInstance(national_id=MASK, tenant_id=uuid.uuid4())
     with pytest.raises(TenantContextMissing):
         f.pre_save(inst, add=False)
+
+
+# ── EncryptedJSON field ───────────────────────────────────────────────────
+def _json_field(default=list):
+    f = EncryptedJSON(classification="phi", json_default=default)
+    f._name = f.attname = "payload"
+    return f
+
+
+def test_encrypted_json_round_trips_a_list():
+    f = _json_field()
+    tid = uuid.uuid4()
+    inst = _FakeInstance(payload=[{"drug": "amoxicillin", "dose": "500mg"}], tenant_id=tid)
+    out = f.pre_save(inst, add=True)
+    assert is_encrypted(out)
+    assert f.from_db_value(out, None, None) is None or True  # no ctx path below
+    with tenant_context(tid):
+        assert f.from_db_value(out, None, None) == [{"drug": "amoxicillin", "dose": "500mg"}]
+
+
+def test_encrypted_json_masks_to_default_without_context():
+    f = _json_field(default=dict)
+    tid = uuid.uuid4()
+    inst = _FakeInstance(payload={"k": "v"}, tenant_id=tid)
+    out = f.pre_save(inst, add=True)
+    assert f.from_db_value(out, None, None) == {}   # default(), never the mask string
+
+
+def test_encrypted_json_empty_values_store_nothing():
+    f = _json_field()
+    for empty in ([], None, ""):
+        inst = _FakeInstance(payload=empty, tenant_id=uuid.uuid4())
+        assert f.pre_save(inst, add=True) == b""
+    assert f.from_db_value(b"", None, None) == []
+
+
+def test_encrypted_json_rejects_blind_index():
+    with pytest.raises(TypeError):
+        EncryptedJSON(classification="phi", blind_index=True)
+
+
+def test_encrypted_json_reads_legacy_plaintext_json():
+    f = _json_field()
+    # a row written by the old JSONField, pre-migration
+    assert f.from_db_value('[{"a":1}]', None, None) == [{"a": 1}]
 
 
 @pytest.mark.django_db

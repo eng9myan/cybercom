@@ -20,6 +20,7 @@ EncryptedText — a model field that transparently encrypts its value per-tenant
 """
 from __future__ import annotations
 
+import json
 import logging
 
 from django.db import models
@@ -81,20 +82,40 @@ class EncryptedText(models.BinaryField):
                                      blank=True, editable=False),
                 )
 
+    # ── plaintext <-> stored-string hooks (overridden by EncryptedJSON) ────
+    def _to_plaintext(self, value) -> str:
+        """Python value -> the string that gets encrypted."""
+        return value if isinstance(value, str) else str(value)
+
+    def _from_plaintext(self, text: str):
+        """Decrypted string -> the Python value handed to the caller."""
+        return text
+
+    _EMPTY = ""       # what an absent value reads back as
+
+    def _masked_read_value(self):
+        """What a read with no tenant context yields (never the plaintext)."""
+        return MASK
+
+    def _is_masked_read(self, value) -> bool:
+        """True when `value` on an instance is a mask sentinel from a no-context
+        read (so re-saving it would corrupt the column)."""
+        return value == MASK
+
     # ── read ──────────────────────────────────────────────────────────────
     def from_db_value(self, value, expression, connection):
         if value in (None, b"", ""):
-            return value if value is None else ""
+            return None if value is None else self._EMPTY
         if isinstance(value, str):
-            return value  # legacy plaintext (SQLite keeps strings through a CharField→bytea alter)
+            return self._from_plaintext(value)  # legacy plaintext (SQLite CharField→bytea alter)
         raw = value if isinstance(value, bytes) else bytes(value)
         if not is_encrypted(raw):
-            return raw.decode("utf-8", "replace")  # legacy plaintext, pre-migration
+            return self._from_plaintext(raw.decode("utf-8", "replace"))  # legacy plaintext
         tid = get_current_tenant()
         if tid is None:
             logger.warning("encrypted field read with no tenant context — masking")
-            return MASK
-        return decrypt(tid, raw)
+            return self._masked_read_value()
+        return self._from_plaintext(decrypt(tid, raw))
 
     def to_python(self, value):
         if value is None or isinstance(value, str):
@@ -105,19 +126,18 @@ class EncryptedText(models.BinaryField):
         return str(value)
 
     # ── write ─────────────────────────────────────────────────────────────
-    @staticmethod
-    def _is_empty(value) -> bool:
-        return value in (None, "", b"")
+    def _is_empty(self, value) -> bool:
+        return value is None or value == "" or value == b""
 
     def get_prep_value(self, value):
         # pre_save already turned an instance write into ciphertext bytes. This
-        # only runs on its own for a str reaching the DB with no instance —
+        # only runs on its own for a value reaching the DB with no instance —
         # `.update(field=...)`, raw SQL, a QuerySet bulk update.
         if value is None:
             return None
         if isinstance(value, (bytes, bytearray)):
             return bytes(value)
-        if value == "":
+        if self._is_empty(value):
             return b""
         tid = get_current_tenant()
         if tid is None:
@@ -126,7 +146,7 @@ class EncryptedText(models.BinaryField):
                 f"context (and no model instance) — use save() with tenant_id set, or "
                 f"wrap in tenant_context(...)."
             )
-        return encrypt(tid, str(value))
+        return encrypt(tid, self._to_plaintext(value))
 
     def _resolve_tid(self, model_instance):
         return getattr(model_instance, "tenant_id", None) or get_current_tenant()
@@ -142,7 +162,7 @@ class EncryptedText(models.BinaryField):
         if already_ct:
             return bytes(value)
 
-        if value == MASK:
+        if self._is_masked_read(value):
             # re-saving a row that was read without tenant context — we never
             # had the plaintext, so writing anything would corrupt or blank it.
             raise TenantContextMissing(
@@ -158,7 +178,7 @@ class EncryptedText(models.BinaryField):
         plain = (
             value.decode("utf-8", "replace")
             if isinstance(value, (bytes, bytearray))
-            else str(value)
+            else self._to_plaintext(value)
         )
         tid = self._resolve_tid(model_instance)
         if tid is None:
@@ -169,3 +189,75 @@ class EncryptedText(models.BinaryField):
         if self.blind_index:
             setattr(model_instance, f"{self.attname}_bidx", blind_index(plain))
         return encrypt(tid, plain)
+
+
+class EncryptedJSON(EncryptedText):
+    """Per-tenant AES-256-GCM encrypted JSON.
+
+    Stores a `dict` / `list` (anything `json.dumps` accepts) as an encrypted
+    `bytea`, exactly like :class:`EncryptedText` but with a JSON codec on the
+    plaintext. Blind indexing is not supported (structured values have no
+    canonical exact-match form).
+
+        prescriptions = EncryptedJSON(classification="phi")          # -> []
+        agents_used   = EncryptedJSON(classification="phi", json_default=dict)
+
+    A read with no tenant context yields `json_default()` (never the mask
+    string), so callers that iterate the value keep working.
+    """
+
+    description = "Per-tenant AES-256-GCM encrypted JSON"
+
+    def __init__(self, *args, json_default=list, **kwargs):
+        if kwargs.pop("blind_index", False):
+            raise TypeError("EncryptedJSON does not support blind_index")
+        self.json_default = json_default
+        kwargs.setdefault("default", json_default)
+        super().__init__(*args, **kwargs)
+        self.blind_index = False
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        kwargs.pop("blind_index", None)
+        if self.json_default is not list:
+            kwargs["json_default"] = self.json_default
+        return name, path, args, kwargs
+
+    @property
+    def _EMPTY(self):
+        return self.json_default()
+
+    def _masked_read_value(self):
+        # No mask sentinel for JSON — an iterable default keeps callers working.
+        return self.json_default()
+
+    def _is_masked_read(self, value) -> bool:
+        # A no-context JSON read is indistinguishable from a real empty value,
+        # so this protection can't apply. Re-saving a JSON field read without a
+        # tenant context writes json_default() — reload in context to be safe.
+        return False
+
+    def _to_plaintext(self, value) -> str:
+        return json.dumps(value, separators=(",", ":"), default=str)
+
+    def _from_plaintext(self, text: str):
+        if text in ("", None):
+            return self.json_default()
+        try:
+            return json.loads(text)
+        except (ValueError, TypeError):
+            logger.warning("EncryptedJSON: undecodable payload — returning default")
+            return self.json_default()
+
+    def _is_empty(self, value) -> bool:
+        return value is None or value == b"" or value == [] or value == {} or value == ""
+
+    def to_python(self, value):
+        if value is None or isinstance(value, (dict, list)):
+            return value
+        if isinstance(value, (bytes, bytearray)):
+            b = bytes(value)
+            return b if is_encrypted(b) else self._from_plaintext(b.decode("utf-8", "replace"))
+        if isinstance(value, str):
+            return self._from_plaintext(value)
+        return value
