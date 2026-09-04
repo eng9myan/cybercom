@@ -8,6 +8,9 @@ import {
 import { searchRead, create, write, unlink } from '@/lib/cycom';
 import { fmtCode, m2oName, type Many2One } from '@/lib/cycomModels';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/CycomEmptyStates';
+import { useT } from '@/lib/i18n';
+
+type StageKey = 'new' | 'qualified' | 'proposition' | 'won' | 'lost';
 
 interface LeadCard {
   id: string;
@@ -15,7 +18,7 @@ interface LeadCard {
   clientName: string;
   expectedRevenue: number;
   probability: number;
-  stage: 'New' | 'Qualified' | 'Proposition' | 'Won' | 'Lost';
+  stage: StageKey;
   contact: string;
 }
 
@@ -29,25 +32,23 @@ type CycomLead = {
   email_from?: string | false;
 };
 
-const STAGES: Array<'New' | 'Qualified' | 'Proposition' | 'Won' | 'Lost'> = [
-  'New', 'Qualified', 'Proposition', 'Won', 'Lost',
-];
+const STAGES: StageKey[] = ['new', 'qualified', 'proposition', 'won', 'lost'];
 
-const STAGE_BG_STYLES = {
-  New: 'border-slate-500/25 bg-slate-500/3',
-  Qualified: 'border-cyan-500/25 bg-cyan-500/3',
-  Proposition: 'border-purple-500/25 bg-purple-500/3',
-  Won: 'border-emerald-500/25 bg-emerald-500/3',
-  Lost: 'border-red-500/25 bg-red-500/3',
+const STAGE_BG_STYLES: Record<StageKey, string> = {
+  new: 'border-slate-500/25 bg-slate-500/3',
+  qualified: 'border-cyan-500/25 bg-cyan-500/3',
+  proposition: 'border-purple-500/25 bg-purple-500/3',
+  won: 'border-emerald-500/25 bg-emerald-500/3',
+  lost: 'border-red-500/25 bg-red-500/3',
 };
 
-function cycomStageToCycom(cycomStage: string): LeadCard['stage'] {
+function stageFromCycom(cycomStage: string): StageKey {
   const s = cycomStage.toLowerCase();
-  if (s.includes('won')) return 'Won';
-  if (s.includes('lost') || s.includes('dead')) return 'Lost';
-  if (s.includes('propos') || s.includes('quot')) return 'Proposition';
-  if (s.includes('qualif')) return 'Qualified';
-  return 'New';
+  if (s.includes('won')) return 'won';
+  if (s.includes('lost') || s.includes('dead')) return 'lost';
+  if (s.includes('propos') || s.includes('quot')) return 'proposition';
+  if (s.includes('qualif')) return 'qualified';
+  return 'new';
 }
 
 function mapLead(r: CycomLead): LeadCard {
@@ -57,17 +58,17 @@ function mapLead(r: CycomLead): LeadCard {
     clientName: (r.partner_name as string) || (r.contact_name as string) || `Lead ${r.id}`,
     expectedRevenue: Number(r.expected_revenue || 0),
     probability: Math.round(Number(r.probability || 0)),
-    stage: r.stage_id ? cycomStageToCycom(m2oName(r.stage_id)) : 'New',
+    stage: r.stage_id ? stageFromCycom(m2oName(r.stage_id)) : 'new',
     contact: (r.email_from as string) || 'no-reply@lead.com',
   };
 }
 
 export default function CRMPage() {
+  const t = useT();
   const [leads, setLeads] = useState<LeadCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // New lead form
   const [client, setClient] = useState('');
   const [revenue, setRevenue] = useState('');
   const [prob, setProb] = useState('50');
@@ -89,6 +90,14 @@ export default function CRMPage() {
 
   useEffect(loadLeads, []);
 
+  const stageLabel: Record<StageKey, string> = {
+    new: t('crm.stageNew'),
+    qualified: t('crm.stageQualified'),
+    proposition: t('crm.stageProposition'),
+    won: t('crm.stageWon'),
+    lost: t('crm.stageLost'),
+  };
+
   const handleCreateLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!client || !revenue) return;
@@ -101,7 +110,7 @@ export default function CRMPage() {
         email_from: contact || false,
       });
       setLeads([
-        { rawId: id, id: fmtCode('LD', id, 3), clientName: client, expectedRevenue: parseFloat(revenue), probability: parseFloat(prob), stage: 'New', contact: contact || 'no-reply@lead.com' },
+        { rawId: id, id: fmtCode('LD', id, 3), clientName: client, expectedRevenue: parseFloat(revenue), probability: parseFloat(prob), stage: 'new', contact: contact || 'no-reply@lead.com' },
         ...leads,
       ]);
       setClient(''); setRevenue(''); setContact('');
@@ -113,21 +122,19 @@ export default function CRMPage() {
   const promoteLead = async (rawId: number) => {
     const ld = leads.find((l) => l.rawId === rawId);
     if (!ld) return;
-    const currIdx = STAGES.indexOf(ld.stage);
-    const nextIdx = Math.min(currIdx + 1, STAGES.length - 1);
+    const nextIdx = Math.min(STAGES.indexOf(ld.stage) + 1, STAGES.length - 1);
     const newStage = STAGES[nextIdx];
-    const newProb = newStage === 'Won' ? 100 : newStage === 'Lost' ? 0 : newStage === 'Proposition' ? 75 : ld.probability;
+    const newProb = newStage === 'won' ? 100 : newStage === 'lost' ? 0 : newStage === 'proposition' ? 75 : ld.probability;
     setLeads(leads.map((l) => (l.rawId === rawId ? { ...l, stage: newStage, probability: newProb } : l)));
-    try { await write('crm.lead', [rawId], { probability: newProb }); } catch { /* swallow — UI already moved */ }
+    try { await write('crm.lead', [rawId], { probability: newProb }); } catch { /* swallow */ }
   };
 
   const demoteLead = async (rawId: number) => {
     const ld = leads.find((l) => l.rawId === rawId);
     if (!ld) return;
-    const currIdx = STAGES.indexOf(ld.stage);
-    const nextIdx = Math.max(currIdx - 1, 0);
+    const nextIdx = Math.max(STAGES.indexOf(ld.stage) - 1, 0);
     const newStage = STAGES[nextIdx];
-    const newProb = newStage === 'New' ? 10 : newStage === 'Qualified' ? 40 : ld.probability;
+    const newProb = newStage === 'new' ? 10 : newStage === 'qualified' ? 40 : ld.probability;
     setLeads(leads.map((l) => (l.rawId === rawId ? { ...l, stage: newStage, probability: newProb } : l)));
     try { await write('crm.lead', [rawId], { probability: newProb }); } catch { /* swallow */ }
   };
@@ -137,91 +144,86 @@ export default function CRMPage() {
     try { await unlink('crm.lead', [rawId]); } catch { /* swallow */ }
   };
 
-  // Calculate stats
-  const totalPipeline = leads.filter((l) => l.stage !== 'Lost').reduce((acc, curr) => acc + curr.expectedRevenue, 0);
-  const weightedPipeline = leads.filter((l) => l.stage !== 'Lost').reduce((acc, curr) => acc + (curr.expectedRevenue * (curr.probability / 100)), 0);
+  const totalPipeline = leads.filter((l) => l.stage !== 'lost').reduce((acc, curr) => acc + curr.expectedRevenue, 0);
+  const weightedPipeline = leads.filter((l) => l.stage !== 'lost').reduce((acc, curr) => acc + (curr.expectedRevenue * (curr.probability / 100)), 0);
 
   return (
     <div className="space-y-6">
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">CRM &amp; Opportunity Pipeline</h1>
-          <p className="page-subtitle">Drag/promote opportunities, adjust probabilities, and evaluate pipeline values.</p>
+          <h1 className="page-title text-white">{t('crm.title')}</h1>
+          <p className="page-subtitle">{t('crm.subtitle')}</p>
         </div>
       </div>
 
-      {loading && <LoadingCard label="Loading leads…" />}
+      {loading && <LoadingCard label={t('crm.loading')} />}
       {error && <ErrorCard error={error} />}
 
       {!loading && !error && (
         <>
-          {/* KPI Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="stat-card flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Pipeline Value</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('crm.totalPipelineValue')}</span>
                 <p className="text-2xl font-black text-white">JOD {totalPipeline.toLocaleString()}</p>
               </div>
               <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400"><DollarSign className="w-5 h-5" /></div>
             </div>
             <div className="stat-card flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Weighted Forecast</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('crm.weightedForecast')}</span>
                 <p className="text-2xl font-black text-[#10B981]">JOD {weightedPipeline.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
               </div>
               <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400"><Sparkles className="w-5 h-5" /></div>
             </div>
             <div className="stat-card flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Open Opportunities</span>
-                <p className="text-2xl font-black text-[#F59E0B]">{leads.filter((l) => l.stage !== 'Won' && l.stage !== 'Lost').length} leads</p>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('crm.openOpportunities')}</span>
+                <p className="text-2xl font-black text-[#F59E0B]">{t('crm.leadsUnit', { n: leads.filter((l) => l.stage !== 'won' && l.stage !== 'lost').length })}</p>
               </div>
               <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400"><Star className="w-5 h-5" /></div>
             </div>
             <div className="stat-card flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Won Deals</span>
-                <p className="text-2xl font-black text-[#10B981]">{leads.filter((l) => l.stage === 'Won').length} closed</p>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('crm.wonDeals')}</span>
+                <p className="text-2xl font-black text-[#10B981]">{t('crm.closedUnit', { n: leads.filter((l) => l.stage === 'won').length })}</p>
               </div>
               <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400"><Award className="w-5 h-5" /></div>
             </div>
           </div>
 
-          {leads.length === 0 && <EmptyCard label="No leads yet — create one on the left." />}
+          {leads.length === 0 && <EmptyCard label={t('crm.empty')} />}
 
-          {/* Main Workspace */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Left creator */}
             <div className="glass-card p-5 space-y-4 h-fit">
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Add New Lead Opportunity</h2>
+                <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('crm.addNewLead')}</h2>
                 <Plus className="w-4 h-4 text-[#A855F7]" />
               </div>
 
               <form onSubmit={handleCreateLead} className="space-y-3 text-xs">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Opportunity / Customer</label>
-                  <input type="text" required placeholder="e.g. Zarqa Outlet Store" value={client} onChange={(e) => setClient(e.target.value)} className="input-field" />
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('crm.opportunityCustomer')}</label>
+                  <input type="text" required placeholder={t('crm.opportunityPlaceholder')} value={client} onChange={(e) => setClient(e.target.value)} className="input-field" />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Expected JOD</label>
-                    <input type="number" required placeholder="e.g. 5000" value={revenue} onChange={(e) => setRevenue(e.target.value)} className="input-field font-mono" />
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">{t('crm.expectedJod')}</label>
+                    <input type="number" required placeholder="5000" value={revenue} onChange={(e) => setRevenue(e.target.value)} className="input-field font-mono" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Prob %</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">{t('crm.probPct')}</label>
                     <input type="number" min="0" max="100" value={prob} onChange={(e) => setProb(e.target.value)} className="input-field font-mono" />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Contact Email</label>
-                  <input type="email" placeholder="e.g. client@domain.jo" value={contact} onChange={(e) => setContact(e.target.value)} className="input-field" />
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('crm.contactEmail')}</label>
+                  <input type="email" placeholder="client@domain.jo" value={contact} onChange={(e) => setContact(e.target.value)} className="input-field" />
                 </div>
-                <button type="submit" className="btn-primary w-full py-2">Insert into Pipeline</button>
+                <button type="submit" className="btn-primary w-full py-2">{t('crm.insertIntoPipeline')}</button>
               </form>
             </div>
 
-            {/* Kanban */}
             <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-5 gap-3.5 items-start">
               {STAGES.map((stage) => {
                 const stageLeads = leads.filter((l) => l.stage === stage);
@@ -230,7 +232,7 @@ export default function CRMPage() {
                   <div key={stage} className={`p-3 rounded-2xl border ${STAGE_BG_STYLES[stage]} space-y-3 min-h-[460px] flex flex-col`}>
                     <div className="border-b border-white/5 pb-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-[11px] font-bold text-white uppercase">{stage}</span>
+                        <span className="text-[11px] font-bold text-white uppercase">{stageLabel[stage]}</span>
                         <span className="text-[9px] bg-white/5 px-2 py-0.2 rounded font-mono font-bold text-slate-400">{stageLeads.length}</span>
                       </div>
                       <p className="text-[10px] text-slate-500 mt-1 font-bold">JOD {stageRevenueSum.toLocaleString()}</p>
