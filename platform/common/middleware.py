@@ -1,30 +1,56 @@
 """
-TenantContextMiddleware — publishes `request.tenant_id` into the ambient
-tenant context (`platform.common.tenant_context`) for the duration of the
-request, then resets it.
+TenantContextMiddleware — the single place that binds the request's tenant to
+both isolation layers for the duration of the request, and unbinds them after:
 
-Must run AFTER whatever middleware sets `request.tenant_id` (the product's
-TenantIsolationMiddleware). With it in place, a tenant-scoped model created
-anywhere in the request (a service that forgot `tenant_id=`, a signal handler,
-a nested call) gets the right tenant automatically via
-`TenantScopedMixin.save()`.
+  1. the ambient tenant context (`platform.common.tenant_context`), read by
+     `TenantScopedMixin.save()` to fill `tenant_id` when a caller forgets it;
+  2. the PostgreSQL session GUC (`app.current_tenant_id`), read by the RLS
+     policies (`platform.security.rls_ddl`) — only touched when RLS is enforced
+     and the backend is PostgreSQL.
 
-The reset in `finally` matters: WSGI reuses worker threads, and a ContextVar
-set without reset would leak the previous request's tenant to the next one on
-the same thread.
+Must run AFTER whatever sets `request.tenant_id` (the product's
+TenantIsolationMiddleware). The reset in `finally` matters: WSGI reuses worker
+threads and pooled DB connections, so a value left set would leak to the next
+request on the same thread/connection.
 """
 from __future__ import annotations
 
+import logging
+
+from django.conf import settings
+
 from platform.common.tenant_context import _current_tenant
+
+logger = logging.getLogger("platform.common.tenant_ctx")
 
 
 class TenantContextMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
+        self._rls = bool(getattr(settings, "RLS_ENFORCED", False))
 
     def __call__(self, request):
-        token = _current_tenant.set(getattr(request, "tenant_id", None))
+        tid = getattr(request, "tenant_id", None)
+        token = _current_tenant.set(tid)
+        if self._rls and tid:
+            self._set_guc(str(tid))
         try:
             return self.get_response(request)
         finally:
             _current_tenant.reset(token)
+            if self._rls and tid:
+                self._set_guc("")
+
+    @staticmethod
+    def _set_guc(value: str) -> None:
+        # session-scoped (is_local=False): survives Django's autocommit mode,
+        # where a SET LOCAL would be discarded before the view's queries run.
+        from platform.security.rls import clear_tenant_guc, set_tenant_guc
+
+        try:
+            if value:
+                set_tenant_guc(value, local=False)
+            else:
+                clear_tenant_guc(local=False)
+        except Exception:  # pragma: no cover - never fail a request on GUC housekeeping
+            logger.exception("tenant GUC update failed")

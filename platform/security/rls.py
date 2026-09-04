@@ -103,25 +103,28 @@ def set_tenant_guc(tenant_id: str, *, local: bool = True) -> None:
     """
     Set the PostgreSQL session variable read by RLS policies.
 
-    ``SET LOCAL`` (default) restricts the change to the current transaction —
-    safe for connection pooling. ``local=False`` uses plain ``SET`` for the
-    connection's lifetime (only use outside a transaction).
+    Uses ``set_config(name, value, is_local)`` — unlike ``SET``, the setting
+    name can be a bind parameter, and it works from the DB-API cursor. With
+    ``local=True`` the change is scoped to the current transaction (safe under
+    connection pooling but lost in Django's autocommit mode); ``local=False``
+    holds it for the connection until reset — what request/job scoping needs.
+
+    No-op on non-PostgreSQL backends (SQLite tests have no GUC / RLS).
     """
+    if connection.vendor != "postgresql":
+        return
     guc = getattr(settings, "TENANT_GUC_SETTING", "app.current_tenant_id")
-    scope = "LOCAL" if local else "SESSION"
-    # tenant_id is stored as text to accept both int PKs and UUIDs.
     with connection.cursor() as cursor:
-        cursor.execute(
-            f"SET {scope} %s = %s", [guc, str(tenant_id)]
-        )
+        cursor.execute("SELECT set_config(%s, %s, %s)", [guc, str(tenant_id), local])
 
 
 def clear_tenant_guc(*, local: bool = True) -> None:
-    """Reset the tenant GUC — call after a background job finishes."""
+    """Reset the tenant GUC — call after a request / background job finishes."""
+    if connection.vendor != "postgresql":
+        return
     guc = getattr(settings, "TENANT_GUC_SETTING", "app.current_tenant_id")
-    scope = "LOCAL" if local else "SESSION"
     with connection.cursor() as cursor:
-        cursor.execute(f"SET {scope} %s = ''", [guc])
+        cursor.execute("SELECT set_config(%s, %s, %s)", [guc, "", local])
 
 
 def set_session_replication_role(role: str = "replica") -> None:

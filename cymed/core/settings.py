@@ -477,6 +477,11 @@ OTEL_EXPORTER_OTLP_PROTOCOL = os.environ.get("OTEL_EXPORTER_OTLP_PROTOCOL", "grp
 # ---------------------------------------------------------------------------
 TENANT_GUC_SETTING = "app.current_tenant_id"
 TENANT_HEADER = "X-Tenant-ID"
+
+# PostgreSQL row-level-security enforcement (see canonical-data-model-v1.md §2.1).
+# Keep false until the app DB role is confirmed non-superuser / non-BYPASSRLS;
+# `manage.py apply_rls` installs the policies in deploy.
+RLS_ENFORCED = os.environ.get("CYMED_RLS_ENFORCED", "0") == "1"
 TENANT_BYPASS_PATHS = [
     "/health",
     "/health/liveness",

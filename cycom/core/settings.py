@@ -61,6 +61,7 @@ PLATFORM_APPS = [
     "platform.cyai",
     "platform.provisioning",
     "platform.einvoicing",
+    "platform.security",
 ]
 
 PRODUCT_APPS = [
@@ -326,6 +327,12 @@ LOGGING = {
 # ---------------------------------------------------------------------------
 TENANT_GUC_SETTING = "app.current_tenant_id"
 TENANT_HEADER = "X-Tenant-ID"
+
+# PostgreSQL row-level-security enforcement. When true, TenantContextMiddleware
+# sets the tenant GUC per request and `manage.py apply_rls` (run in deploy)
+# installs the policies. Keep false until the app DB role is confirmed
+# non-superuser / non-BYPASSRLS. See canonical-data-model-v1.md §2.1.
+RLS_ENFORCED = os.environ.get("CYCOM_RLS_ENFORCED", "0") == "1"
 
 # ---------------------------------------------------------------------------
 # PASSWORD VALIDATION

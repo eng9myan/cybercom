@@ -68,24 +68,41 @@ class PlatformModel(UUIDPrimaryKeyMixin, TimestampMixin):
 
 ## 2. Tenant isolation — the four layers, concretely
 
-### 2.1 Layer 1 — RLS (PostgreSQL)
+### 2.1 Layer 1 — RLS (PostgreSQL) — **DDL + tooling shipped 2026-09-04**
 
-Every `core_*` / tenant-scoped table:
+Per tenant-scoped table:
 
 ```sql
-ALTER TABLE core_orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE core_orders FORCE ROW LEVEL SECURITY;
-CREATE POLICY tenant_isolation ON core_orders
-  USING (tenant_id = current_setting('app.current_tenant_id')::uuid)
-  WITH CHECK (tenant_id = current_setting('app.current_tenant_id')::uuid);
+ALTER TABLE "cycom_arap_invoices" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "cycom_arap_invoices" FORCE ROW LEVEL SECURITY;   -- binds the table owner too
+CREATE POLICY tenant_isolation ON "cycom_arap_invoices"
+  USING (tenant_id = current_setting('app.current_tenant_id', true)::uuid)
+  WITH CHECK (tenant_id = current_setting('app.current_tenant_id', true)::uuid);
 ```
 
-The app connects as a **non-superuser, non-BYPASSRLS role**. `current_setting('app.current_tenant_id')`
-is set per request/transaction. A background job or migration that must cross tenants uses a
-separate role + `all_tenants` manager + an audit-logged reason.
+`current_setting(..., true)` (missing_ok) → an **unset GUC yields NULL**, and `tenant_id = NULL`
+is false, so a connection with no tenant context sees **no rows** (fail-closed).
 
-Migration `M1`: a management command generates the `ENABLE RLS` + `CREATE POLICY` DDL for
-every `TenantScopedMixin` model; rolled out table-by-table behind `settings.RLS_ENFORCED`.
+Shipped (`platform/security/`):
+- `rls_ddl.py` — `rls_statements()` / `rls_teardown_statements()` iterate every model with a
+  `UUID tenant_id` and emit the DDL above, honouring `settings.TENANT_GUC_SETTING`.
+- `management/commands/apply_rls.py` — `manage.py apply_rls [--dry-run] [--teardown] [--force]`.
+  Idempotent; PostgreSQL-only (hard-errors on SQLite, never a silent no-op); refuses unless
+  `RLS_ENFORCED` or `--force`.
+- `TenantContextMiddleware` now also sets the GUC **session-scoped** (`set_config(guc, tid, false)`)
+  when `RLS_ENFORCED` — Django autocommit discards a `SET LOCAL`, so `SET LOCAL` in the product
+  middleware isn't enough on its own. Reset in `finally`.
+- `RLS_ENFORCED` setting (env `CYCOM_RLS_ENFORCED` / `CYMED_RLS_ENFORCED`), default **off**.
+
+**Deploy prerequisites:** the app DB role must NOT be a superuser and must NOT have
+`BYPASSRLS`. `FORCE ROW LEVEL SECURITY` covers the case where the app role owns the tables.
+A migration / cross-tenant job that must bypass uses `set_session_replication_role('replica')`
+(superuser, audit-logged) or a dedicated unrestricted role.
+
+**Rollout:** flip `RLS_ENFORCED=1` in staging → `manage.py apply_rls` → run the cross-tenant
+access test suite (`H` SEC4) → promote. Table-by-table is possible by editing
+`tenant_scoped_models()` filter, but all-at-once is fine given the defence-in-depth already
+in place (queryset scoping + `save()` autofill).
 
 ### 2.2 Layer 2 — app-layer context + save() auto-fill — **IMPLEMENTED 2026-09-04**
 
