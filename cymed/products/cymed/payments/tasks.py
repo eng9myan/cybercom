@@ -6,12 +6,19 @@ task contract, retry policy, and idempotency guarantees.
 """
 from celery import shared_task
 
+from platform.common.celery import tenant_task
+
 from .models import UnifiedBill
 
 
-@shared_task(bind=True, max_retries=5, default_retry_delay=60)
-def stamp_bill_task(self, bill_id: str):
-    """Route paid bill to ZATCA (SA) or JoFotara (JO) integration."""
+@tenant_task(bind=True, max_retries=5, default_retry_delay=60)
+def stamp_bill_task(self, tenant_id: str, bill_id: str):
+    """Route paid bill to ZATCA (SA) or JoFotara (JO) integration.
+
+    Runs inside `tenant_context(tenant_id)` (set by @tenant_task), so the bill
+    read + save + any interaction-log write are correctly tenant-scoped even
+    with no request and RLS enforced.
+    """
     from products.cymed.integrations.zakata.client import ZatcaClient
     from products.cymed.integrations.jofawtra.client import JoFawtraClient
     try:

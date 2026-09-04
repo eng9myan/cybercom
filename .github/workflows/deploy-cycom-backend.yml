@@ -54,6 +54,7 @@ jobs:
           products/cycom
           ../platform/einvoicing
           ../platform/common/tests/test_tenant_context.py
+          ../platform/common/tests/test_tenant_task.py
           ../platform/security/tests
           ../platform/tenant/test_payments.py
       # RLS policy DDL is well-formed and covers the tenant-scoped tables.

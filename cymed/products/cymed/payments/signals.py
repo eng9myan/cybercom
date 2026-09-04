@@ -14,7 +14,7 @@ def stamp_invoice_after_payment(sender, instance: UnifiedBill, **kwargs):
         return
     try:
         from .tasks import stamp_bill_task
-        stamp_bill_task.delay(str(instance.id))
+        stamp_bill_task.delay(str(instance.tenant_id), str(instance.id))
     except ImportError:
         # Celery not wired in test env; skip.
         return
