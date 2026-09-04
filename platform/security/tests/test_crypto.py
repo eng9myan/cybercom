@@ -118,6 +118,64 @@ def test_reencrypting_an_already_encrypted_value_is_idempotent():
         assert f.get_prep_value(blob) == blob  # not double-encrypted
 
 
+class _FakeInstance:
+    """Minimal stand-in for a model instance in pre_save()."""
+
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+
+
+def test_pre_save_encrypts_from_instance_tenant_id_without_ambient_context():
+    f = _field()
+    tid = uuid.uuid4()
+    inst = _FakeInstance(national_id="2001234567", tenant_id=tid)
+    # no tenant_context active — the instance's own tenant_id must be enough
+    out = f.pre_save(inst, add=True)
+    assert is_encrypted(out)
+    assert decrypt(tid, out) == "2001234567"
+    assert inst.national_id_bidx == blind_index("2001234567")
+
+
+def test_pre_save_prefers_instance_tenant_id_over_ambient():
+    f = _field()
+    inst_tid, ambient_tid = uuid.uuid4(), uuid.uuid4()
+    inst = _FakeInstance(national_id="99", tenant_id=inst_tid)
+    with tenant_context(ambient_tid):
+        f.pre_save(inst, add=True)
+    assert decrypt(inst_tid, inst.national_id) == "99"
+
+
+def test_pre_save_falls_back_to_ambient_context_when_instance_has_no_tenant():
+    f = _field()
+    tid = uuid.uuid4()
+    inst = _FakeInstance(national_id="42", tenant_id=None)
+    with tenant_context(tid):
+        f.pre_save(inst, add=True)
+    assert decrypt(tid, inst.national_id) == "42"
+
+
+def test_pre_save_raises_when_no_tenant_anywhere():
+    inst = _FakeInstance(national_id="x", tenant_id=None)
+    with pytest.raises(TenantContextMissing):
+        _field().pre_save(inst, add=True)
+
+
+def test_pre_save_empty_value_clears_blind_index_and_does_not_encrypt():
+    f = _field()
+    inst = _FakeInstance(national_id="", tenant_id=uuid.uuid4(), national_id_bidx="stale")
+    out = f.pre_save(inst, add=True)
+    assert out in (b"", "")
+    assert inst.national_id_bidx is None
+
+
+def test_pre_save_is_idempotent_on_an_already_encrypted_value():
+    f = _field()
+    tid = uuid.uuid4()
+    blob = encrypt(tid, "keep")
+    inst = _FakeInstance(national_id=blob, tenant_id=tid)
+    assert f.pre_save(inst, add=False) == blob  # not re-encrypted
+
+
 @pytest.mark.django_db
 def test_field_registers_itself_in_the_pii_map():
     # ar_ap / hr etc. haven't adopted EncryptedText yet; just assert the
