@@ -7,16 +7,11 @@ import {
   Building2, Mail, ArrowRight, ArrowLeft, Check, Rocket, Sparkles,
   AlertCircle, Zap,
 } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 // Product this signup provisions. The backend supports many product_codes;
 // cycom-erp signs customers up for the Cycom ERP product.
 const PRODUCT_CODE = 'cycom';
-
-const TIERS = [
-  { id: 'starter', label: 'Starter', desc: 'Single company · core modules', price: 'from $49/mo' },
-  { id: 'professional', label: 'Professional', desc: 'Multi-branch · full ERP · approvals', price: 'from $149/mo' },
-  { id: 'enterprise', label: 'Enterprise', desc: 'Multi-company · consolidation · SSO', price: "Let's talk" },
-];
 
 type Result = {
   tenant_slug?: string;
@@ -42,6 +37,7 @@ type Result = {
 };
 
 export default function SignupPage() {
+  const t = useT();
   const [step, setStep] = useState(1);
   const [org, setOrg] = useState('');
   const [email, setEmail] = useState('');
@@ -50,6 +46,12 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+
+  const TIERS = [
+    { id: 'starter', label: t('signupPage.tierStarterLabel'), desc: t('signupPage.tierStarterDesc'), price: t('signupPage.tierStarterPrice') },
+    { id: 'professional', label: t('signupPage.tierProLabel'), desc: t('signupPage.tierProDesc'), price: t('signupPage.tierProPrice') },
+    { id: 'enterprise', label: t('signupPage.tierEntLabel'), desc: t('signupPage.tierEntDesc'), price: t('signupPage.tierEntPrice') },
+  ];
 
   async function submit(mode: 'demo' | 'register') {
     setLoading(true);
@@ -67,7 +69,7 @@ export default function SignupPage() {
       setResult(data);
       setStep(3);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signup failed');
+      setError(err instanceof Error ? err.message : t('signupPage.signupFailed'));
     } finally {
       setLoading(false);
     }
@@ -90,8 +92,8 @@ export default function SignupPage() {
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#E67E22] to-[#D35400] flex items-center justify-center shadow-lg shadow-orange-500/20 mx-auto">
             <span className="text-white font-black text-xl">C</span>
           </div>
-          <h1 className="text-2xl font-black tracking-wide">Start with Cycom</h1>
-          <p className="text-[10px] text-[#E67E22] uppercase tracking-widest font-bold">Create your workspace</p>
+          <h1 className="text-2xl font-black tracking-wide">{t('signupPage.title')}</h1>
+          <p className="text-[10px] text-[#E67E22] uppercase tracking-widest font-bold">{t('signupPage.subtitle')}</p>
         </div>
 
         {/* Step dots */}
@@ -121,30 +123,30 @@ export default function SignupPage() {
             className="space-y-4"
           >
             <div>
-              <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">Organization Name</label>
+              <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">{t('signupPage.orgNameLabel')}</label>
               <div className="relative">
-                <Building2 className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input required value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Acme Trading Co."
-                  className="input-field w-full !pl-10" />
+                <Building2 className="w-4 h-4 absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input required value={org} onChange={(e) => setOrg(e.target.value)} placeholder={t('signupPage.orgNamePh')}
+                  className="input-field w-full !ps-10" />
               </div>
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">Work Email</label>
+              <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">{t('signupPage.workEmailLabel')}</label>
               <div className="relative">
-                <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@acme.com"
-                  className="input-field w-full !pl-10" autoComplete="email" />
+                <Mail className="w-4 h-4 absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t('signupPage.workEmailPh')}
+                  className="input-field w-full !ps-10" autoComplete="email" dir="ltr" />
               </div>
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">Language</label>
+              <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">{t('signupPage.languageLabel')}</label>
               <select value={locale} onChange={(e) => setLocale(e.target.value as 'en' | 'ar')} className="input-field w-full">
                 <option value="en">English</option>
                 <option value="ar">العربية</option>
               </select>
             </div>
             <button className="btn-primary w-full flex items-center justify-center gap-2" disabled={!org || !email}>
-              Continue <ArrowRight className="w-4 h-4" />
+              {t('signupPage.continueLabel')} <ArrowRight className="w-4 h-4 rtl:-scale-x-100" />
             </button>
           </form>
         )}
@@ -153,36 +155,36 @@ export default function SignupPage() {
         {step === 2 && (
           <div className="space-y-4">
             <div className="space-y-2">
-              {TIERS.map((t) => (
-                <button key={t.id} onClick={() => setTier(t.id)}
-                  className={`w-full text-left rounded-xl border p-3 transition ${
-                    tier === t.id ? 'border-[#E67E22] bg-[#E67E22]/10' : 'border-white/10 bg-white/5 hover:border-white/25'
+              {TIERS.map((tr) => (
+                <button key={tr.id} onClick={() => setTier(tr.id)}
+                  className={`w-full text-start rounded-xl border p-3 transition ${
+                    tier === tr.id ? 'border-[#E67E22] bg-[#E67E22]/10' : 'border-white/10 bg-white/5 hover:border-white/25'
                   }`}>
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-sm">{t.label}</span>
-                    <span className="text-xs text-[#E67E22] font-semibold">{t.price}</span>
+                    <span className="font-bold text-sm">{tr.label}</span>
+                    <span className="text-xs text-[#E67E22] font-semibold">{tr.price}</span>
                   </div>
-                  <div className="text-xs text-white/50 mt-0.5">{t.desc}</div>
+                  <div className="text-xs text-white/50 mt-0.5">{tr.desc}</div>
                 </button>
               ))}
             </div>
 
             <button onClick={() => submit('register')} disabled={loading}
               className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50">
-              {loading ? 'Creating…' : <>Create workspace <Rocket className="w-4 h-4" /></>}
+              {loading ? t('signupPage.creating') : <>{t('signupPage.createWorkspace')} <Rocket className="w-4 h-4" /></>}
             </button>
 
             <div className="flex items-center gap-3 text-white/30 text-xs">
-              <div className="flex-1 h-px bg-white/10" /> or <div className="flex-1 h-px bg-white/10" />
+              <div className="flex-1 h-px bg-white/10" /> {t('signupPage.orDivider')} <div className="flex-1 h-px bg-white/10" />
             </div>
 
             <button onClick={() => submit('demo')} disabled={loading}
               className="btn-secondary w-full flex items-center justify-center gap-2 disabled:opacity-50">
-              <Zap className="w-4 h-4 text-[#00F0FF]" /> Try a 72-hour free trial
+              <Zap className="w-4 h-4 text-[#00F0FF]" /> {t('signupPage.tryTrial')}
             </button>
 
             <button onClick={() => setStep(1)} className="w-full text-xs text-white/40 hover:text-white/70 flex items-center justify-center gap-1">
-              <ArrowLeft className="w-3.5 h-3.5" /> Back
+              <ArrowLeft className="w-3.5 h-3.5 rtl:-scale-x-100" /> {t('signupPage.back')}
             </button>
           </div>
         )}
@@ -194,25 +196,25 @@ export default function SignupPage() {
               <div className="w-12 h-12 mx-auto rounded-full bg-[#10B981]/15 border border-[#10B981]/30 flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-[#10B981]" />
               </div>
-              <h2 className="text-lg font-black">Workspace created</h2>
-              <p className="text-xs text-white/50">Tenant <span className="font-mono text-white/80">{result.tenant_slug}</span></p>
+              <h2 className="text-lg font-black">{t('signupPage.workspaceCreated')}</h2>
+              <p className="text-xs text-white/50">{t('signupPage.tenantLabel')} <span className="font-mono text-white/80">{result.tenant_slug}</span></p>
             </div>
 
             <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-2 text-sm">
               {result.username && (
-                <div className="flex justify-between"><span className="text-white/50">Username</span><span className="font-mono">{result.username}</span></div>
+                <div className="flex justify-between"><span className="text-white/50">{t('signupPage.username')}</span><span className="font-mono">{result.username}</span></div>
               )}
               {result.password && (
-                <div className="flex justify-between"><span className="text-white/50">Password</span><span className="font-mono">{result.password}</span></div>
+                <div className="flex justify-between"><span className="text-white/50">{t('signupPage.password')}</span><span className="font-mono">{result.password}</span></div>
               )}
               {result.trial_ends_at && (
-                <div className="flex justify-between"><span className="text-white/50">Trial ends</span><span>{new Date(result.trial_ends_at).toLocaleString()}</span></div>
+                <div className="flex justify-between"><span className="text-white/50">{t('signupPage.trialEnds')}</span><span>{new Date(result.trial_ends_at).toLocaleString()}</span></div>
               )}
               {result.invoice_number && (
                 <>
-                  <div className="flex justify-between"><span className="text-white/50">Invoice</span><span className="font-mono">{result.invoice_number}</span></div>
-                  <div className="flex justify-between"><span className="text-white/50">Amount due</span><span className="font-semibold">{result.amount} {result.currency}</span></div>
-                  {result.due_date && <div className="flex justify-between"><span className="text-white/50">Due</span><span>{new Date(result.due_date).toLocaleDateString()}</span></div>}
+                  <div className="flex justify-between"><span className="text-white/50">{t('signupPage.invoice')}</span><span className="font-mono">{result.invoice_number}</span></div>
+                  <div className="flex justify-between"><span className="text-white/50">{t('signupPage.amountDue')}</span><span className="font-semibold">{result.amount} {result.currency}</span></div>
+                  {result.due_date && <div className="flex justify-between"><span className="text-white/50">{t('signupPage.due')}</span><span>{new Date(result.due_date).toLocaleDateString()}</span></div>}
                 </>
               )}
             </div>
@@ -222,14 +224,14 @@ export default function SignupPage() {
                 send the browser to the gateway. */}
             {result.checkout && result.checkout.mode === 'manual' && (
               <div className="rounded-xl border border-[#00F0FF]/25 bg-[#00F0FF]/[0.04] p-4 space-y-2 text-sm">
-                <div className="font-bold text-[#00F0FF] text-xs uppercase tracking-wider">Pay by bank transfer</div>
+                <div className="font-bold text-[#00F0FF] text-xs uppercase tracking-wider">{t('signupPage.payByBank')}</div>
                 {Object.entries(result.checkout.instructions || {}).map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-4">
                     <span className="text-white/50 capitalize">{k.replace(/_/g, ' ')}</span>
                     <span className="font-mono text-right break-all">{String(v)}</span>
                   </div>
                 ))}
-                <p className="text-xs text-white/40 pt-1">Transfer using the reference above. Your workspace activates once finance confirms the payment.</p>
+                <p className="text-xs text-white/40 pt-1">{t('signupPage.bankTransferNote')}</p>
               </div>
             )}
 
@@ -238,20 +240,20 @@ export default function SignupPage() {
                 onClick={() => { window.location.href = result.checkout!.url!; }}
                 className="btn-primary w-full flex items-center justify-center gap-2"
               >
-                Pay {result.amount} {result.currency} now <ArrowRight className="w-4 h-4" />
+                {t('signupPage.payNow', { amount: result.amount ?? '', currency: result.currency ?? '' })} <ArrowRight className="w-4 h-4 rtl:-scale-x-100" />
               </button>
             )}
 
             <Link href="/login" className="btn-secondary w-full flex items-center justify-center gap-2">
-              Go to login <ArrowRight className="w-4 h-4" />
+              {t('signupPage.goToLogin')} <ArrowRight className="w-4 h-4 rtl:-scale-x-100" />
             </Link>
           </div>
         )}
 
         {step !== 3 && (
           <p className="text-center text-xs text-white/40">
-            Already have a workspace?{' '}
-            <Link href="/login" className="text-[#E67E22] font-semibold hover:underline">Sign in</Link>
+            {t('signupPage.alreadyHaveWorkspace')}{' '}
+            <Link href="/login" className="text-[#E67E22] font-semibold hover:underline">{t('signupPage.signIn')}</Link>
           </p>
         )}
       </motion.div>

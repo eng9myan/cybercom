@@ -5,8 +5,10 @@ import { motion } from 'framer-motion';
 import { Lock, User, Eye, EyeOff, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useT } from '@/lib/i18n';
 
 export default function LoginPage() {
+  const t = useT();
   const router = useRouter();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
@@ -23,7 +25,7 @@ export default function LoginPage() {
       await login(email, password);
       router.push('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : t('loginPage.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -49,42 +51,43 @@ export default function LoginPage() {
             <span className="text-white font-black text-xl">C</span>
           </div>
           <h1 className="text-2xl font-black text-white tracking-wide">CYCOM ERP</h1>
-          <p className="text-[10px] text-[#E67E22] uppercase tracking-widest font-bold">Cycom Portal</p>
+          <p className="text-[10px] text-[#E67E22] uppercase tracking-widest font-bold">{t('loginPage.brandSubtitle')}</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">Email Address</label>
+            <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">{t('loginPage.emailLabel')}</label>
             <div className="relative">
-              <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input 
-                type="email" 
+              <User className="w-4 h-4 absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="email"
                 required
-                placeholder="name@cycom.jo" 
-                className="input-field !pl-10 !py-3"
+                placeholder={t('loginPage.emailPh')}
+                className="input-field !ps-10 !py-3"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                dir="ltr"
               />
             </div>
           </div>
 
           <div>
-            <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">Password</label>
+            <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">{t('loginPage.passwordLabel')}</label>
             <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input 
-                type={showPassword ? 'text' : 'password'} 
+              <Lock className="w-4 h-4 absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type={showPassword ? 'text' : 'password'}
                 required
-                placeholder="••••••••" 
-                className="input-field !pl-10 !pr-10 !py-3"
+                placeholder="••••••••"
+                className="input-field !ps-10 !pe-10 !py-3"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white flex items-center justify-center"
+                className="absolute end-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white flex items-center justify-center"
               >
                 {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
               </button>
@@ -94,9 +97,9 @@ export default function LoginPage() {
           <div className="flex items-center justify-between text-xs text-slate-400">
             <label className="flex items-center gap-1.5 cursor-pointer">
               <input type="checkbox" className="rounded bg-white/5 border-white/10" />
-              <span>Remember me</span>
+              <span>{t('loginPage.rememberMe')}</span>
             </label>
-            <a href="#" className="hover:underline text-cyan-400">Forgot password?</a>
+            <a href="#" className="hover:underline text-cyan-400">{t('loginPage.forgotPassword')}</a>
           </div>
 
           {error && (
@@ -113,14 +116,14 @@ export default function LoginPage() {
             {loading ? (
               <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             ) : (
-              'Sign In to Workspace'
+              t('loginPage.signInButton')
             )}
           </button>
         </form>
 
         <div className="border-t border-white/5 pt-4 text-center text-[10px] text-slate-500 flex items-center justify-center gap-1.5">
           <Shield className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Secured with Single Device Hardware binding (cycom_mobile_single_device)</span>
+          <span>{t('loginPage.securedFooter')}</span>
         </div>
       </motion.div>
     </div>

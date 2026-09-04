@@ -6,6 +6,7 @@ import {
   Percent, Ruler, Warehouse as WarehouseIcon, Package, Rocket,
   ArrowRight, ArrowLeft, Check, AlertCircle,
 } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 // Commerce quick-setup. cyshop's original onboarding drove per-Company/Branch
 // tenant endpoints that Cycom doesn't have; Cycom scopes by tenant_id and its
@@ -15,14 +16,6 @@ import {
 // through the DRF endpoints (products.cycom.catalog / inventory).
 
 const CURRENCIES = ['JOD', 'SAR', 'AED', 'USD', 'EUR', 'GBP'];
-
-const STEPS = [
-  { id: 1, label: 'Tax', icon: Percent },
-  { id: 2, label: 'Unit', icon: Ruler },
-  { id: 3, label: 'Warehouse', icon: WarehouseIcon },
-  { id: 4, label: 'First product', icon: Package },
-  { id: 5, label: 'Go live', icon: Rocket },
-];
 
 async function post(path: string, body: unknown) {
   const res = await fetch(`/api/cycom/rest/${path}`, {
@@ -40,10 +33,19 @@ async function post(path: string, body: unknown) {
 }
 
 export default function OnboardingPage() {
+  const t = useT();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const STEPS = [
+    { id: 1, label: t('onboardingPage.stepTax'), icon: Percent },
+    { id: 2, label: t('onboardingPage.stepUnit'), icon: Ruler },
+    { id: 3, label: t('onboardingPage.stepWarehouse'), icon: WarehouseIcon },
+    { id: 4, label: t('onboardingPage.stepProduct'), icon: Package },
+    { id: 5, label: t('onboardingPage.stepGoLive'), icon: Rocket },
+  ];
 
   const [currency, setCurrency] = useState('JOD');
   const [tax, setTax] = useState({ name: 'Standard', code: 'STD', rate: '16' });
@@ -67,7 +69,7 @@ export default function OnboardingPage() {
       setCreated((c) => ({ ...c, taxId: row.id }));
       if (typeof window !== 'undefined') localStorage.setItem('cycom.currency', currency);
       advance();
-    } catch (err) { setError(err instanceof Error ? err.message : 'Failed'); } finally { setSaving(false); }
+    } catch (err) { setError(err instanceof Error ? err.message : t('onboardingPage.failed')); } finally { setSaving(false); }
   };
 
   const saveUnit = async (e: React.FormEvent) => {
@@ -76,7 +78,7 @@ export default function OnboardingPage() {
       const row = await post('catalog/units/', unit);
       setCreated((c) => ({ ...c, unitId: row.id }));
       advance();
-    } catch (err) { setError(err instanceof Error ? err.message : 'Failed'); } finally { setSaving(false); }
+    } catch (err) { setError(err instanceof Error ? err.message : t('onboardingPage.failed')); } finally { setSaving(false); }
   };
 
   const saveWarehouse = async (e: React.FormEvent) => {
@@ -85,7 +87,7 @@ export default function OnboardingPage() {
       const row = await post('inventory/warehouses/', wh);
       setCreated((c) => ({ ...c, whId: row.id }));
       advance();
-    } catch (err) { setError(err instanceof Error ? err.message : 'Failed'); } finally { setSaving(false); }
+    } catch (err) { setError(err instanceof Error ? err.message : t('onboardingPage.failed')); } finally { setSaving(false); }
   };
 
   const saveProduct = async (e: React.FormEvent) => {
@@ -101,7 +103,7 @@ export default function OnboardingPage() {
       });
       setCreated((c) => ({ ...c, productId: row.id }));
       advance();
-    } catch (err) { setError(err instanceof Error ? err.message : 'Failed'); } finally { setSaving(false); }
+    } catch (err) { setError(err instanceof Error ? err.message : t('onboardingPage.failed')); } finally { setSaving(false); }
   };
 
   const S = STEPS[step - 1];
@@ -109,8 +111,8 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-[#030712] text-white flex flex-col">
       <header className="h-16 px-6 flex items-center border-b border-white/10">
-        <span className="font-black text-lg tracking-wide">Commerce Setup</span>
-        <span className="ml-3 text-[10px] text-[#E67E22] uppercase tracking-widest font-bold">Cycom</span>
+        <span className="font-black text-lg tracking-wide">{t('onboardingPage.headerTitle')}</span>
+        <span className="ms-3 text-[10px] text-[#E67E22] uppercase tracking-widest font-bold">Cycom</span>
       </header>
 
       <main className="flex-1 flex items-center justify-center p-6">
@@ -130,7 +132,7 @@ export default function OnboardingPage() {
 
           <div className="glass-card p-8">
             <h1 className="text-2xl font-black mb-1">{S.label}</h1>
-            <p className="text-sm text-white/50 mb-6">Step {step} of {STEPS.length}</p>
+            <p className="text-sm text-white/50 mb-6">{t('onboardingPage.stepOf', { step, total: STEPS.length })}</p>
 
             {error && (
               <div className="mb-5 flex items-start gap-2 p-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-sm">
@@ -141,27 +143,27 @@ export default function OnboardingPage() {
             {step === 1 && (
               <form onSubmit={saveTax} className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-white/60 block mb-1.5">Base Currency</label>
+                  <label className="text-xs font-semibold text-white/60 block mb-1.5">{t('onboardingPage.baseCurrency')}</label>
                   <select className="input-field w-full" value={currency} onChange={(e) => setCurrency(e.target.value)}>
                     {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-1">
-                    <label className="text-xs font-semibold text-white/60 block mb-1.5">Tax name</label>
+                    <label className="text-xs font-semibold text-white/60 block mb-1.5">{t('onboardingPage.taxName')}</label>
                     <input className="input-field w-full" value={tax.name} onChange={(e) => setTax((t) => ({ ...t, name: e.target.value }))} />
                   </div>
                   <div className="col-span-1">
-                    <label className="text-xs font-semibold text-white/60 block mb-1.5">Code</label>
+                    <label className="text-xs font-semibold text-white/60 block mb-1.5">{t('onboardingPage.taxCode')}</label>
                     <input className="input-field w-full" value={tax.code} onChange={(e) => setTax((t) => ({ ...t, code: e.target.value }))} />
                   </div>
                   <div className="col-span-1">
-                    <label className="text-xs font-semibold text-white/60 block mb-1.5">Rate (%)</label>
+                    <label className="text-xs font-semibold text-white/60 block mb-1.5">{t('onboardingPage.taxRate')}</label>
                     <input type="number" step="0.01" min="0" className="input-field w-full" value={tax.rate} onChange={(e) => setTax((t) => ({ ...t, rate: e.target.value }))} />
                   </div>
                 </div>
                 <button disabled={saving} className="btn-primary w-full flex items-center justify-center gap-2">
-                  {saving ? 'Saving…' : <>Continue <ArrowRight className="w-4 h-4" /></>}
+                  {saving ? t('onboardingPage.saving') : <>{t('onboardingPage.continueLabel')} <ArrowRight className="w-4 h-4 rtl:-scale-x-100" /></>}
                 </button>
               </form>
             )}
@@ -170,15 +172,15 @@ export default function OnboardingPage() {
               <form onSubmit={saveUnit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-white/60 block mb-1.5">Unit name</label>
+                    <label className="text-xs font-semibold text-white/60 block mb-1.5">{t('onboardingPage.unitName')}</label>
                     <input className="input-field w-full" value={unit.name} onChange={(e) => setUnit((u) => ({ ...u, name: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-white/60 block mb-1.5">Abbreviation</label>
+                    <label className="text-xs font-semibold text-white/60 block mb-1.5">{t('onboardingPage.unitAbbr')}</label>
                     <input className="input-field w-full" value={unit.abbreviation} onChange={(e) => setUnit((u) => ({ ...u, abbreviation: e.target.value }))} />
                   </div>
                 </div>
-                <StepButtons saving={saving} onBack={back} />
+                <StepButtons saving={saving} onBack={back} t={t} />
               </form>
             )}
 
@@ -186,45 +188,45 @@ export default function OnboardingPage() {
               <form onSubmit={saveWarehouse} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-semibold text-white/60 block mb-1.5">Warehouse code</label>
+                    <label className="text-xs font-semibold text-white/60 block mb-1.5">{t('onboardingPage.warehouseCode')}</label>
                     <input className="input-field w-full" value={wh.code} onChange={(e) => setWh((w) => ({ ...w, code: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-white/60 block mb-1.5">Name</label>
+                    <label className="text-xs font-semibold text-white/60 block mb-1.5">{t('onboardingPage.warehouseName')}</label>
                     <input className="input-field w-full" value={wh.name} onChange={(e) => setWh((w) => ({ ...w, name: e.target.value }))} />
                   </div>
                 </div>
-                <StepButtons saving={saving} onBack={back} />
+                <StepButtons saving={saving} onBack={back} t={t} />
               </form>
             )}
 
             {step === 4 && (
               <form onSubmit={saveProduct} className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-white/60 block mb-1.5">Product name *</label>
-                  <input required className="input-field w-full" value={product.name} onChange={(e) => setProduct((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. Espresso" />
+                  <label className="text-xs font-semibold text-white/60 block mb-1.5">{t('onboardingPage.productName')}</label>
+                  <input required className="input-field w-full" value={product.name} onChange={(e) => setProduct((p) => ({ ...p, name: e.target.value }))} placeholder={t('onboardingPage.productNamePh')} />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-white/60 block mb-1.5">Sell price ({currency})</label>
+                  <label className="text-xs font-semibold text-white/60 block mb-1.5">{t('onboardingPage.sellPrice', { currency })}</label>
                   <input type="number" step="0.01" min="0" className="input-field w-full" value={product.sell_price} onChange={(e) => setProduct((p) => ({ ...p, sell_price: e.target.value }))} />
                 </div>
-                <StepButtons saving={saving} onBack={back} disabled={!product.name} />
+                <StepButtons saving={saving} onBack={back} disabled={!product.name} t={t} />
               </form>
             )}
 
             {step === 5 && (
               <div className="space-y-5">
                 <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-white/50">Currency</span><span className="font-semibold">{currency}</span></div>
-                  <div className="flex justify-between"><span className="text-white/50">Tax class</span><span className="font-semibold">{tax.name} ({tax.rate}%)</span></div>
-                  <div className="flex justify-between"><span className="text-white/50">Unit</span><span className="font-semibold">{unit.name}</span></div>
-                  <div className="flex justify-between"><span className="text-white/50">Warehouse</span><span className="font-semibold">{wh.name}</span></div>
-                  <div className="flex justify-between"><span className="text-white/50">First product</span><span className="font-semibold">{product.name || '—'}</span></div>
+                  <div className="flex justify-between"><span className="text-white/50">{t('onboardingPage.reviewCurrency')}</span><span className="font-semibold">{currency}</span></div>
+                  <div className="flex justify-between"><span className="text-white/50">{t('onboardingPage.reviewTaxClass')}</span><span className="font-semibold">{t('onboardingPage.reviewTaxClassVal', { name: tax.name, rate: tax.rate })}</span></div>
+                  <div className="flex justify-between"><span className="text-white/50">{t('onboardingPage.reviewUnit')}</span><span className="font-semibold">{unit.name}</span></div>
+                  <div className="flex justify-between"><span className="text-white/50">{t('onboardingPage.reviewWarehouse')}</span><span className="font-semibold">{wh.name}</span></div>
+                  <div className="flex justify-between"><span className="text-white/50">{t('onboardingPage.reviewProduct')}</span><span className="font-semibold">{product.name || '—'}</span></div>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => router.push('/pos')} className="btn-secondary flex-1 flex items-center justify-center gap-2">Open POS</button>
+                  <button onClick={() => router.push('/pos')} className="btn-secondary flex-1 flex items-center justify-center gap-2">{t('onboardingPage.openPos')}</button>
                   <button onClick={() => router.push('/kds')} className="btn-primary flex-1 flex items-center justify-center gap-2">
-                    Open Kitchen <Rocket className="w-4 h-4" />
+                    {t('onboardingPage.openKitchen')} <Rocket className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -236,14 +238,14 @@ export default function OnboardingPage() {
   );
 }
 
-function StepButtons({ saving, onBack, disabled }: { saving: boolean; onBack: () => void; disabled?: boolean }) {
+function StepButtons({ saving, onBack, disabled, t }: { saving: boolean; onBack: () => void; disabled?: boolean; t: (key: string, vars?: Record<string, string | number>) => string }) {
   return (
     <div className="flex gap-3 pt-1">
       <button type="button" onClick={onBack} className="btn-secondary flex-1 flex items-center justify-center gap-2">
-        <ArrowLeft className="w-4 h-4" /> Back
+        <ArrowLeft className="w-4 h-4 rtl:-scale-x-100" /> {t('onboardingPage.back')}
       </button>
       <button disabled={saving || disabled} className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50">
-        {saving ? 'Saving…' : <>Continue <ArrowRight className="w-4 h-4" /></>}
+        {saving ? t('onboardingPage.saving') : <>{t('onboardingPage.continueLabel')} <ArrowRight className="w-4 h-4 rtl:-scale-x-100" /></>}
       </button>
     </div>
   );

@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useCycomList, m2oName, fmtDate, type Many2One } from '@/lib/cycomModels';
-import { 
-  CreditCard, TrendingUp, Users, Percent, Shield, ArrowUpRight, 
-  Search, Sliders, CheckSquare, Square, RefreshCcw, DollarSign 
+import {
+  CreditCard, TrendingUp, Users, Percent, Shield, ArrowUpRight,
+  Search, Sliders, CheckSquare, Square, RefreshCcw, DollarSign
 } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 interface Contract {
   id: string;
@@ -43,6 +44,7 @@ const mapSaleOrder = (r: CycomSaleOrder): Contract => {
 };
 
 export default function SubscriptionsPage() {
+  const t = useT();
   const { rows: liveContracts, loading } = useCycomList<CycomSaleOrder, Contract>(
     'sale.order',
     [['is_subscription', '=', true]],
@@ -54,11 +56,24 @@ export default function SubscriptionsPage() {
   useEffect(() => { if (!loading) setContracts(liveContracts); }, [loading]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>('All');
-  
+
   // Interactive Simulator variables
   const [simUsers, setSimUsers] = useState<number>(15);
   const [simNodes, setSimNodes] = useState<number>(4);
   const [hasSLA, setHasSLA] = useState<boolean>(true);
+
+  const STATUS_LABEL: Record<Contract['status'], string> = {
+    Active: t('status.active'),
+    Trial: t('status.trial'),
+    Suspended: t('status.suspended'),
+  };
+
+  const FILTERS = [
+    { id: 'All', label: t('subscriptionsPage.filterAll') },
+    { id: 'Active', label: STATUS_LABEL.Active },
+    { id: 'Trial', label: STATUS_LABEL.Trial },
+    { id: 'Suspended', label: STATUS_LABEL.Suspended },
+  ];
 
   // Math totals
   const totalMRR = contracts
@@ -69,7 +84,7 @@ export default function SubscriptionsPage() {
   const trialCount = contracts.filter(c => c.status === 'Trial').length;
 
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
@@ -127,19 +142,19 @@ export default function SubscriptionsPage() {
     return c.status === filterStatus;
   });
 
-  if (loading) return <div style={{ padding: '2rem', color: '#ccc' }}>Loading...</div>;
+  if (loading) return <div style={{ padding: '2rem', color: '#ccc' }}>{t('subscriptionsPage.loading')}</div>;
 
   return (
     <div className="space-y-6 max-w-[1200px] mx-auto">
       {/* Page Header */}
       <div className="page-header flex justify-between items-center">
         <div>
-          <h1 className="page-title text-white">Subscriptions & Contract Billing</h1>
-          <p className="page-subtitle">Manage customer recurring services, monthly active licenses, and SaaS contracts.</p>
+          <h1 className="page-title text-white">{t('subscriptionsPage.title')}</h1>
+          <p className="page-subtitle">{t('subscriptionsPage.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2 font-mono text-xs text-slate-500">
           <Shield className="w-3.5 h-3.5 text-[#E67E22]" />
-          <span>Secured Ledger Sync</span>
+          <span>{t('subscriptionsPage.securedLedgerSync')}</span>
         </div>
       </div>
 
@@ -147,50 +162,50 @@ export default function SubscriptionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="glass-card p-4 space-y-1 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[#E67E22]/30 to-transparent" />
-          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">MONTHLY RECURRING REV (MRR)</span>
+          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">{t('subscriptionsPage.mrr')}</span>
           <p className="text-xl font-black text-white">JOD {totalMRR.toLocaleString()}</p>
           <span className="text-[10px] text-emerald-400 font-bold inline-flex items-center gap-0.5">
-            <TrendingUp className="w-3 h-3" /> +8.4% this month
+            <TrendingUp className="w-3 h-3" /> {t('subscriptionsPage.mrrDelta')}
           </span>
         </div>
 
         <div className="glass-card p-4 space-y-1">
-          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">ACTIVE LICENSES</span>
+          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">{t('subscriptionsPage.activeLicenses')}</span>
           <p className="text-xl font-black text-white">{activeCount}</p>
-          <span className="text-[10px] text-slate-500">Excluding trial accounts</span>
+          <span className="text-[10px] text-slate-500">{t('subscriptionsPage.activeLicensesNote')}</span>
         </div>
 
         <div className="glass-card p-4 space-y-1">
-          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">TRIAL CONTRACTS</span>
+          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">{t('subscriptionsPage.trialContracts')}</span>
           <p className="text-xl font-black text-[#5DADE2]">{trialCount}</p>
-          <span className="text-[10px] text-slate-500">Expires in 30 days max</span>
+          <span className="text-[10px] text-slate-500">{t('subscriptionsPage.trialContractsNote')}</span>
         </div>
 
         <div className="glass-card p-4 space-y-1">
-          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">ANNUAL CHURN RATE</span>
+          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">{t('subscriptionsPage.churnRate')}</span>
           <p className="text-xl font-black text-[#EF4444]">1.2%</p>
-          <span className="text-[10px] text-emerald-400 font-bold">Below industry average (2.5%)</span>
+          <span className="text-[10px] text-emerald-400 font-bold">{t('subscriptionsPage.churnRateNote')}</span>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        
+
         {/* Subscriptions List Table */}
         <div className="glass-card p-5 lg:col-span-2 space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-white/5">
-            <h2 className="text-xs font-bold text-white uppercase tracking-wider">RECURRING CLIENTS LIST</h2>
-            
+            <h2 className="text-xs font-bold text-white uppercase tracking-wider">{t('subscriptionsPage.clientsListHeading')}</h2>
+
             {/* Filter buttons */}
             <div className="flex items-center gap-1.5 bg-black/20 p-1 border border-white/5 rounded-xl text-[10px] font-semibold text-slate-400">
-              {['All', 'Active', 'Trial', 'Suspended'].map(st => (
+              {FILTERS.map(st => (
                 <button
-                  key={st}
-                  onClick={() => setFilterStatus(st)}
+                  key={st.id}
+                  onClick={() => setFilterStatus(st.id)}
                   className={`px-2.5 py-1 rounded-lg transition-all ${
-                    filterStatus === st ? 'bg-[#E67E22] text-white' : 'hover:text-white'
+                    filterStatus === st.id ? 'bg-[#E67E22] text-white' : 'hover:text-white'
                   }`}
                 >
-                  {st}
+                  {st.label}
                 </button>
               ))}
             </div>
@@ -204,20 +219,20 @@ export default function SubscriptionsPage() {
               className="flex items-center justify-between px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded-xl"
             >
               <span className="text-xs font-medium text-slate-300">
-                {selectedIds.length} subscription{selectedIds.length > 1 ? 's' : ''} selected
+                {t('subscriptionsPage.selectedCount', { n: selectedIds.length, plural: selectedIds.length > 1 ? 's' : '' })}
               </span>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={handleBulkRenew}
                   className="px-2.5 py-1 rounded bg-[#E67E22] hover:bg-orange-600 text-white text-[10px] font-bold transition-all"
                 >
-                  Renew Active / Sync
+                  {t('subscriptionsPage.renewSync')}
                 </button>
-                <button 
+                <button
                   onClick={handleBulkSuspend}
                   className="px-2.5 py-1 rounded bg-[#EF4444] hover:bg-red-600 text-white text-[10px] font-bold transition-all"
                 >
-                  Pause Billing
+                  {t('subscriptionsPage.pauseBilling')}
                 </button>
               </div>
             </motion.div>
@@ -225,7 +240,7 @@ export default function SubscriptionsPage() {
 
           {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse">
+            <table className="w-full text-xs text-start border-collapse">
               <thead>
                 <tr className="border-b border-white/5 text-slate-500 uppercase tracking-widest text-[9px] font-bold">
                   <th className="py-2.5 px-3 w-8">
@@ -237,19 +252,19 @@ export default function SubscriptionsPage() {
                       )}
                     </button>
                   </th>
-                  <th className="py-2.5 px-3">Contract Ref</th>
-                  <th className="py-2.5 px-3">Customer</th>
-                  <th className="py-2.5 px-3">Service Tier</th>
-                  <th className="py-2.5 px-3 text-right">Cost (JOD)</th>
-                  <th className="py-2.5 px-3">Renewal</th>
-                  <th className="py-2.5 px-3 text-center">Status</th>
+                  <th className="py-2.5 px-3">{t('subscriptionsPage.colContractRef')}</th>
+                  <th className="py-2.5 px-3">{t('subscriptionsPage.colCustomer')}</th>
+                  <th className="py-2.5 px-3">{t('subscriptionsPage.colServiceTier')}</th>
+                  <th className="py-2.5 px-3 text-end">{t('subscriptionsPage.colCost')}</th>
+                  <th className="py-2.5 px-3">{t('subscriptionsPage.colRenewal')}</th>
+                  <th className="py-2.5 px-3 text-center">{t('subscriptionsPage.colStatus')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 font-sans">
                 {filteredContracts.map(c => {
                   const isSel = selectedIds.includes(c.id);
                   return (
-                    <tr 
+                    <tr
                       key={c.id}
                       className={`hover:bg-white/2 transition-colors ${isSel ? 'bg-orange-500/3' : ''}`}
                     >
@@ -265,17 +280,17 @@ export default function SubscriptionsPage() {
                       <td className="py-2.5 px-3 font-mono font-bold text-slate-400">{c.id}</td>
                       <td className="py-2.5 px-3 font-semibold text-slate-200">{c.customer}</td>
                       <td className="py-2.5 px-3 text-slate-400">{c.plan}</td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-white">JOD {c.cost}</td>
+                      <td className="py-2.5 px-3 text-end font-mono font-bold text-white">JOD {c.cost}</td>
                       <td className="py-2.5 px-3 font-mono text-slate-400">{c.renewal}</td>
                       <td className="py-2.5 px-3 text-center">
                         <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${
-                          c.status === 'Active' 
-                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                          c.status === 'Active'
+                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                             : c.status === 'Trial'
                               ? 'bg-blue-500/10 border-blue-500/20 text-[#5DADE2]'
                               : 'bg-red-500/10 border-red-500/20 text-red-400'
                         }`}>
-                          {c.status}
+                          {STATUS_LABEL[c.status]}
                         </span>
                       </td>
                     </tr>
@@ -290,15 +305,15 @@ export default function SubscriptionsPage() {
         <div className="glass-card p-5 space-y-4">
           <h2 className="text-xs font-bold text-white uppercase tracking-wider pb-3 border-b border-white/5 flex items-center gap-1.5">
             <Sliders className="w-4 h-4 text-[#E67E22]" />
-            PROJECTION CALCULATOR
+            {t('subscriptionsPage.calculatorHeading')}
           </h2>
 
           <div className="space-y-4">
             {/* Users slider */}
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-slate-400">Total Users</span>
-                <span className="text-white font-bold">{simUsers} Seats</span>
+                <span className="text-slate-400">{t('subscriptionsPage.totalUsers')}</span>
+                <span className="text-white font-bold">{t('subscriptionsPage.seatsN', { n: simUsers })}</span>
               </div>
               <input
                 type="range"
@@ -308,14 +323,14 @@ export default function SubscriptionsPage() {
                 onChange={(e) => setSimUsers(parseInt(e.target.value))}
                 className="w-full accent-[#E67E22] bg-white/10 h-1 rounded-lg outline-none cursor-pointer"
               />
-              <span className="text-[8px] text-slate-500 block">JOD 15 per active user / month</span>
+              <span className="text-[8px] text-slate-500 block">{t('subscriptionsPage.userPriceNote')}</span>
             </div>
 
             {/* POS Nodes slider */}
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
-                <span className="text-slate-400">POS Nodes / Registers</span>
-                <span className="text-white font-bold">{simNodes} Terminals</span>
+                <span className="text-slate-400">{t('subscriptionsPage.posNodes')}</span>
+                <span className="text-white font-bold">{t('subscriptionsPage.terminalsN', { n: simNodes })}</span>
               </div>
               <input
                 type="range"
@@ -325,14 +340,14 @@ export default function SubscriptionsPage() {
                 onChange={(e) => setSimNodes(parseInt(e.target.value))}
                 className="w-full accent-[#5DADE2] bg-white/10 h-1 rounded-lg outline-none cursor-pointer"
               />
-              <span className="text-[8px] text-slate-500 block">JOD 45 per active POS terminal / month</span>
+              <span className="text-[8px] text-slate-500 block">{t('subscriptionsPage.nodePriceNote')}</span>
             </div>
 
             {/* SLA toggle */}
             <div className="flex items-center justify-between py-2 border-y border-white/5">
-              <div className="text-left">
-                <span className="text-xs text-slate-300 font-semibold block">Custom Cloud SLA</span>
-                <span className="text-[9px] text-slate-500">24/7 technical callout engineer</span>
+              <div className="text-start">
+                <span className="text-xs text-slate-300 font-semibold block">{t('subscriptionsPage.customSla')}</span>
+                <span className="text-[9px] text-slate-500">{t('subscriptionsPage.slaNote')}</span>
               </div>
               <button
                 onClick={() => setHasSLA(!hasSLA)}
@@ -340,17 +355,17 @@ export default function SubscriptionsPage() {
                   hasSLA ? 'bg-[#E67E22]' : 'bg-white/10'
                 }`}
               >
-                <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                  hasSLA ? 'translate-x-5' : 'translate-x-0'
+                <div className={`w-4 h-4 rounded-full bg-white transition-transform rtl:-scale-x-100 ${
+                  hasSLA ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'
                 }`} />
               </button>
             </div>
 
             {/* Recalculated total */}
             <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/25 text-center space-y-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">ESTIMATED MONTHLY FEE</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">{t('subscriptionsPage.estimatedFee')}</span>
               <p className="text-2xl font-black text-white">JOD {calcBasePrice().toLocaleString()}</p>
-              <span className="text-[9px] text-slate-500">Recalculated in real-time</span>
+              <span className="text-[9px] text-slate-500">{t('subscriptionsPage.recalculatedNote')}</span>
             </div>
           </div>
         </div>

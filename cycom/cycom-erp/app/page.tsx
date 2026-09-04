@@ -9,54 +9,56 @@ import {
   Sparkles, FileText, Settings, ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-
-const CYCOM_MODULES = [
-  { id: 'setup', label: 'Setup', href: '/setup', icon: Sparkles, color: 'from-fuchsia-500 to-purple-600' },
-  { id: 'discuss', label: 'Discuss', href: '/discuss', icon: MessageSquare, color: 'from-purple-500 to-indigo-500' },
-  { id: 'sign', label: 'eSign', href: '/sign', icon: PenTool, color: 'from-rose-500 to-pink-500' },
-  { id: 'sales', label: 'Sales', href: '/sales', icon: TrendingUp, color: 'from-blue-500 to-cyan-500' },
-  { id: 'pos', label: 'Point of Sale', href: '/pos', icon: ShoppingCart, color: 'from-orange-500 to-red-500' },
-  { id: 'accounting', label: 'Accounting', href: '/accounting', icon: FileText, color: 'from-teal-500 to-emerald-500' },
-  { id: 'purchase', label: 'Purchase', href: '/purchase', icon: Package, color: 'from-amber-500 to-yellow-600' },
-  { id: 'inventory', label: 'Inventory', href: '/inventory', icon: Package, color: 'from-amber-500 to-orange-500' },
-  { id: 'hr', label: 'Employees', href: '/hr', icon: Users, color: 'from-indigo-500 to-blue-500' },
-  { id: 'payroll', label: 'Payroll', href: '/payroll', icon: DollarSign, color: 'from-emerald-500 to-green-500' },
-  { id: 'attendance', label: 'Attendance', href: '/attendance', icon: Clock, color: 'from-yellow-500 to-amber-500' },
-  { id: 'recruitment', label: 'Recruitment', href: '/recruitment', icon: UserCheck, color: 'from-blue-400 to-indigo-500' },
-  { id: 'project', label: 'Project', href: '/project', icon: Layers, color: 'from-cyan-500 to-blue-500' },
-  { id: 'helpdesk', label: 'Helpdesk', href: '/helpdesk', icon: HelpCircle, color: 'from-purple-400 to-purple-600' },
-  { id: 'marketing', label: 'Marketing', href: '/marketing', icon: Mail, color: 'from-pink-500 to-rose-500' },
-  { id: 'plm', label: 'Manufacturing', href: '/plm', icon: Wrench, color: 'from-slate-500 to-slate-700' },
-  { id: 'fleet', label: 'Fleet', href: '/fleet', icon: Car, color: 'from-sky-500 to-blue-600' },
-  { id: 'documents', label: 'Documents', href: '/documents', icon: FolderOpen, color: 'from-indigo-400 to-purple-500' },
-  { id: 'settings', label: 'Settings', href: '/settings', icon: Settings, color: 'from-gray-600 to-gray-800' },
-];
-
-// Functional roles → the modules each one works in. 'gm' sees everything.
-const ROLE_MODULES: Record<string, string[] | 'all'> = {
-  gm: 'all',
-  accounting_officer: ['accounting', 'purchase', 'documents', 'sign', 'discuss'],
-  hr_officer: ['hr', 'payroll', 'attendance', 'recruitment', 'documents', 'discuss'],
-  supply_chain_officer: ['inventory', 'purchase', 'sales', 'documents', 'discuss'],
-  ops_manager: ['sales', 'pos', 'project', 'helpdesk', 'plm', 'fleet', 'marketing', 'discuss'],
-};
-
-const ROLES = [
-  { id: 'gm', label: 'General Manager' },
-  { id: 'accounting_officer', label: 'Accounting Officer' },
-  { id: 'hr_officer', label: 'HR Officer' },
-  { id: 'supply_chain_officer', label: 'Supply Chain Officer' },
-  { id: 'ops_manager', label: 'Operations Manager' },
-];
+import { useT } from '@/lib/i18n';
 
 export default function AppLauncher() {
+  const t = useT();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [switcherOpen, setSwitcherOpen] = useState(false);
 
+  const CYCOM_MODULES = [
+    { id: 'setup', label: t('appLauncher.modSetup'), href: '/setup', icon: Sparkles, color: 'from-fuchsia-500 to-purple-600' },
+    { id: 'discuss', label: t('appLauncher.modDiscuss'), href: '/discuss', icon: MessageSquare, color: 'from-purple-500 to-indigo-500' },
+    { id: 'sign', label: t('appLauncher.modSign'), href: '/sign', icon: PenTool, color: 'from-rose-500 to-pink-500' },
+    { id: 'sales', label: t('appLauncher.modSales'), href: '/sales', icon: TrendingUp, color: 'from-blue-500 to-cyan-500' },
+    { id: 'pos', label: t('appLauncher.modPos'), href: '/pos', icon: ShoppingCart, color: 'from-orange-500 to-red-500' },
+    { id: 'accounting', label: t('appLauncher.modAccounting'), href: '/accounting', icon: FileText, color: 'from-teal-500 to-emerald-500' },
+    { id: 'purchase', label: t('appLauncher.modPurchase'), href: '/purchase', icon: Package, color: 'from-amber-500 to-yellow-600' },
+    { id: 'inventory', label: t('appLauncher.modInventory'), href: '/inventory', icon: Package, color: 'from-amber-500 to-orange-500' },
+    { id: 'hr', label: t('appLauncher.modHr'), href: '/hr', icon: Users, color: 'from-indigo-500 to-blue-500' },
+    { id: 'payroll', label: t('appLauncher.modPayroll'), href: '/payroll', icon: DollarSign, color: 'from-emerald-500 to-green-500' },
+    { id: 'attendance', label: t('appLauncher.modAttendance'), href: '/attendance', icon: Clock, color: 'from-yellow-500 to-amber-500' },
+    { id: 'recruitment', label: t('appLauncher.modRecruitment'), href: '/recruitment', icon: UserCheck, color: 'from-blue-400 to-indigo-500' },
+    { id: 'project', label: t('appLauncher.modProject'), href: '/project', icon: Layers, color: 'from-cyan-500 to-blue-500' },
+    { id: 'helpdesk', label: t('appLauncher.modHelpdesk'), href: '/helpdesk', icon: HelpCircle, color: 'from-purple-400 to-purple-600' },
+    { id: 'marketing', label: t('appLauncher.modMarketing'), href: '/marketing', icon: Mail, color: 'from-pink-500 to-rose-500' },
+    { id: 'plm', label: t('appLauncher.modPlm'), href: '/plm', icon: Wrench, color: 'from-slate-500 to-slate-700' },
+    { id: 'fleet', label: t('appLauncher.modFleet'), href: '/fleet', icon: Car, color: 'from-sky-500 to-blue-600' },
+    { id: 'documents', label: t('appLauncher.modDocuments'), href: '/documents', icon: FolderOpen, color: 'from-indigo-400 to-purple-500' },
+    { id: 'settings', label: t('appLauncher.modSettings'), href: '/settings', icon: Settings, color: 'from-gray-600 to-gray-800' },
+  ];
+
+  // Functional roles → the modules each one works in. 'gm' sees everything.
+  const ROLE_MODULES: Record<string, string[] | 'all'> = {
+    gm: 'all',
+    accounting_officer: ['accounting', 'purchase', 'documents', 'sign', 'discuss'],
+    hr_officer: ['hr', 'payroll', 'attendance', 'recruitment', 'documents', 'discuss'],
+    supply_chain_officer: ['inventory', 'purchase', 'sales', 'documents', 'discuss'],
+    ops_manager: ['sales', 'pos', 'project', 'helpdesk', 'plm', 'fleet', 'marketing', 'discuss'],
+  };
+
+  const ROLES = [
+    { id: 'gm', label: t('appLauncher.roleGm') },
+    { id: 'accounting_officer', label: t('appLauncher.roleAccounting') },
+    { id: 'hr_officer', label: t('appLauncher.roleHr') },
+    { id: 'supply_chain_officer', label: t('appLauncher.roleSupplyChain') },
+    { id: 'ops_manager', label: t('appLauncher.roleOps') },
+  ];
+
   const role = user?.role || 'gm';
   const allowed = ROLE_MODULES[role] ?? 'all';
-  const roleLabel = ROLES.find((r) => r.id === role)?.label || 'General Manager';
+  const roleLabel = ROLES.find((r) => r.id === role)?.label || t('appLauncher.roleGm');
 
   const visibleModules = CYCOM_MODULES.filter(
     (m) => allowed === 'all' || allowed.includes(m.id),
@@ -74,10 +76,10 @@ export default function AppLauncher() {
         <header className="flex items-center justify-between mb-10 gap-4 flex-wrap">
           <div>
             <h1 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
-              Welcome to Cycom
+              {t('appLauncher.welcomeTitle')}
             </h1>
             <p className="text-slate-400 mt-1">
-              Signed in as <span className="text-[var(--cy-orange)] font-semibold">{user?.name || roleLabel}</span> · {roleLabel}
+              {t('appLauncher.signedInAs', { name: user?.name || roleLabel, role: roleLabel })}
             </p>
           </div>
 
@@ -93,9 +95,9 @@ export default function AppLauncher() {
                 <ChevronDown className="w-4 h-4 text-slate-500" />
               </button>
               {switcherOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-[#0c1122] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-20">
+                <div className="absolute end-0 mt-2 w-56 bg-[#0c1122] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-20">
                   <div className="px-3 py-2 text-[0.7rem] uppercase font-bold text-slate-500 border-b border-white/5">
-                    View as role
+                    {t('appLauncher.viewAsRole')}
                   </div>
                   {ROLES.map((r) => (
                     <a
@@ -115,10 +117,10 @@ export default function AppLauncher() {
             <div className="relative w-56">
               <input
                 type="text"
-                placeholder="Search apps…"
+                placeholder={t('appLauncher.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Search apps"
+                aria-label={t('appLauncher.searchAriaLabel')}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500/50 transition-all"
               />
             </div>
@@ -145,7 +147,7 @@ export default function AppLauncher() {
 
         {filteredModules.length === 0 && (
           <div className="text-center py-20 text-slate-500">
-            No apps {searchTerm ? `matching "${searchTerm}"` : `for the ${roleLabel} role`}.
+            {searchTerm ? t('appLauncher.noAppsMatching', { term: searchTerm }) : t('appLauncher.noAppsForRole', { role: roleLabel })}
           </div>
         )}
       </div>
