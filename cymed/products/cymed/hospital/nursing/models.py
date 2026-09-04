@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.hospital.adt.models import Admission
 
@@ -27,7 +28,7 @@ class NursingAssessment(BaseModel):
     admission = models.ForeignKey(Admission, on_delete=models.CASCADE)
     assessed_by = models.UUIDField()
     assessed_at = models.DateTimeField(auto_now_add=True)
-    nursing_summary = models.TextField()
+    nursing_summary = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_nursing_assessments"
@@ -35,8 +36,8 @@ class NursingAssessment(BaseModel):
 
 class NursingCarePlan(BaseModel):
     admission = models.ForeignKey(Admission, on_delete=models.CASCADE)
-    goals = models.TextField()
-    activities = models.TextField()
+    goals = EncryptedText(classification="phi")
+    activities = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_nursing_careplans"
@@ -62,8 +63,8 @@ class NursingHandover(BaseModel):
     outgoing_nurse_id = models.UUIDField()
     incoming_nurse_id = models.UUIDField()
     handover_time = models.DateTimeField(auto_now_add=True)
-    situation_background = models.TextField()  # SBAR format
-    assessment_recommendation = models.TextField()
+    situation_background = EncryptedText(classification="phi")  # SBAR format
+    assessment_recommendation = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_nursing_handovers"

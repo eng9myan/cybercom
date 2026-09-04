@@ -22,6 +22,8 @@ from typing import Any
 from django.db import transaction
 from django.utils import timezone
 
+from platform.common.tenant_context import tenant_context
+
 logger = logging.getLogger(__name__)
 
 
@@ -576,20 +578,23 @@ class EmergencyService:
         visit_uuid = uuid.UUID(str(visit_id))
         nurse_uuid = uuid.UUID(str(triaged_by))
 
-        visit = EmergencyVisit.objects.get(id=visit_uuid, tenant_id=tenant_uuid)
+        # tenant_context so the encrypted presenting_complaint decrypts when we
+        # copy it onto the triage record below.
+        with tenant_context(tenant_uuid):
+            visit = EmergencyVisit.objects.get(id=visit_uuid, tenant_id=tenant_uuid)
 
-        # Simple algorithm to compute ESI level (1 to 5)
-        esi_level = int(triage_data.get("esi_level", 3))
-        news2_score = int(triage_data.get("news2_score", 0))
+            # Simple algorithm to compute ESI level (1 to 5)
+            esi_level = int(triage_data.get("esi_level", 3))
+            news2_score = int(triage_data.get("news2_score", 0))
 
-        # Create triage record
-        triage = EmergencyTriage.objects.create(
-            tenant_id=tenant_uuid,
-            visit=visit,
-            esi_level=esi_level,
-            chief_complaint=visit.presenting_complaint,
-            triage_nurse_id=nurse_uuid,
-        )
+            # Create triage record
+            triage = EmergencyTriage.objects.create(
+                tenant_id=tenant_uuid,
+                visit=visit,
+                esi_level=esi_level,
+                chief_complaint=visit.presenting_complaint,
+                triage_nurse_id=nurse_uuid,
+            )
 
         # Create Acuity record
         EmergencyAcuity.objects.create(

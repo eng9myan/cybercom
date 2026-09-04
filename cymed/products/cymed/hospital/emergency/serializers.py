@@ -11,7 +11,14 @@ from products.cymed.hospital.emergency.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class EmergencyVisitSerializer(serializers.ModelSerializer):
+    presenting_complaint = _phi_text()
+
     class Meta:
         model = EmergencyVisit
         fields = [
@@ -46,6 +53,8 @@ class EmergencyVisitSerializer(serializers.ModelSerializer):
 
 
 class EmergencyTriageSerializer(serializers.ModelSerializer):
+    chief_complaint = _phi_text()
+
     class Meta:
         model = EmergencyTriage
         fields = ["id", "visit", "esi_level", "chief_complaint", "triage_nurse_id", "logged_at"]
@@ -112,12 +121,16 @@ class EmergencyAcuitySerializer(serializers.ModelSerializer):
 
 
 class EmergencyDispositionSerializer(serializers.ModelSerializer):
+    notes = _phi_text()
+
     class Meta:
         model = EmergencyDisposition
         fields = "__all__"
 
 
 class EmergencyObservationSerializer(serializers.ModelSerializer):
+    notes = _phi_text()
+
     class Meta:
         model = EmergencyObservation
         fields = "__all__"

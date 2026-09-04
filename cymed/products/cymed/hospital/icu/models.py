@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.hospital.inpatient.models import HospitalStay
 
@@ -59,8 +60,8 @@ class CriticalEvent(BaseModel):
     icu_stay = models.ForeignKey(ICUStay, on_delete=models.CASCADE)
     event_time = models.DateTimeField(auto_now_add=True)
     event_type = models.CharField(max_length=100)  # cardiac_arrest, intubation, line_displacement
-    details = models.TextField()
-    actions_taken = models.TextField()
+    details = EncryptedText(classification="phi")
+    actions_taken = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_icu_critical_events"

@@ -11,6 +11,11 @@ from products.cymed.hospital.nursing.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class NursingShiftSerializer(serializers.ModelSerializer):
     class Meta:
         model = NursingShift
@@ -43,12 +48,17 @@ class NursingAssignmentSerializer(serializers.ModelSerializer):
 
 
 class NursingAssessmentSerializer(serializers.ModelSerializer):
+    nursing_summary = _phi_text()
+
     class Meta:
         model = NursingAssessment
         fields = "__all__"
 
 
 class NursingCarePlanSerializer(serializers.ModelSerializer):
+    goals = _phi_text()
+    activities = _phi_text()
+
     class Meta:
         model = NursingCarePlan
         fields = "__all__"
@@ -88,6 +98,9 @@ class NursingTaskSerializer(serializers.ModelSerializer):
 
 
 class NursingHandoverSerializer(serializers.ModelSerializer):
+    situation_background = _phi_text()
+    assessment_recommendation = _phi_text()
+
     class Meta:
         model = NursingHandover
         fields = "__all__"

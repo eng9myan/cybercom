@@ -10,6 +10,11 @@ from products.cymed.hospital.icu.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class ICUStaySerializer(serializers.ModelSerializer):
     class Meta:
         model = ICUStay
@@ -118,6 +123,9 @@ class VentilatorRecordSerializer(serializers.ModelSerializer):
 
 
 class CriticalEventSerializer(serializers.ModelSerializer):
+    details = _phi_text()
+    actions_taken = _phi_text()
+
     class Meta:
         model = CriticalEvent
         fields = ["id", "icu_stay", "event_time", "event_type", "details", "actions_taken"]

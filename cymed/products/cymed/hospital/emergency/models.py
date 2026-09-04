@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.core.patients.models import Patient
 
@@ -8,7 +9,7 @@ class EmergencyVisit(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     arrival_time = models.DateTimeField(auto_now_add=True)
     arrival_method = models.CharField(max_length=100)  # ambulance, walk-in, police, flight
-    presenting_complaint = models.TextField()
+    presenting_complaint = EncryptedText(classification="phi")
     status = models.CharField(
         max_length=50,
         choices=[
@@ -29,7 +30,7 @@ class EmergencyVisit(BaseModel):
 class EmergencyTriage(BaseModel):
     visit = models.OneToOneField(EmergencyVisit, on_delete=models.CASCADE, related_name="triage")
     esi_level = models.PositiveSmallIntegerField()  # Emergency Severity Index (1 to 5)
-    chief_complaint = models.TextField()
+    chief_complaint = EncryptedText(classification="phi")
     triage_nurse_id = models.UUIDField()
     logged_at = models.DateTimeField(auto_now_add=True)
 
@@ -51,7 +52,7 @@ class EmergencyDisposition(BaseModel):
         EmergencyVisit, on_delete=models.CASCADE, related_name="disposition"
     )
     disposition_type = models.CharField(max_length=100)  # discharged, admitted, transferred, AMA
-    notes = models.TextField(blank=True)
+    notes = EncryptedText(classification="phi")
     logged_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -67,7 +68,7 @@ class EmergencyObservation(BaseModel):
     resp_rate = models.PositiveIntegerField()
     temp_c = models.DecimalField(max_digits=4, decimal_places=2)
     o2_sat = models.PositiveIntegerField()
-    notes = models.TextField(blank=True)
+    notes = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_emergency_observations"

@@ -9,19 +9,30 @@ from products.cymed.hospital.anesthesia.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class AnesthesiaAssessmentSerializer(serializers.ModelSerializer):
+    notes = _phi_text()
+
     class Meta:
         model = AnesthesiaAssessment
         fields = "__all__"
 
 
 class AnesthesiaPlanSerializer(serializers.ModelSerializer):
+    plan_description = _phi_text()
+
     class Meta:
         model = AnesthesiaPlan
         fields = "__all__"
 
 
 class AnesthesiaRecordSerializer(serializers.ModelSerializer):
+    notes = _phi_text()
+
     class Meta:
         model = AnesthesiaRecord
         fields = [
@@ -56,6 +67,8 @@ class AnesthesiaRecordSerializer(serializers.ModelSerializer):
 
 
 class RecoveryAssessmentSerializer(serializers.ModelSerializer):
+    comments = _phi_text()
+
     class Meta:
         model = RecoveryAssessment
         fields = "__all__"
