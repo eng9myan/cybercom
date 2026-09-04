@@ -110,6 +110,21 @@ class Invoice(BaseModel):
         null=True, blank=True, related_name="vendor_bills",
     )
 
+    # ── E-invoicing (JoFotara / ZATCA / Peppol) — populated by
+    #    platform.einvoicing.engine.clear_invoice after the invoice is posted.
+    #    All nullable: an invoice in a country with no e-invoicing mandate, or
+    #    issued before clearance ran, simply has einvoice_status="none".
+    einvoice_mode = models.CharField(max_length=16, blank=True)
+    einvoice_uuid = models.UUIDField(null=True, blank=True)
+    einvoice_icv = models.PositiveBigIntegerField(null=True, blank=True)
+    einvoice_pih = models.TextField(blank=True)
+    einvoice_hash = models.TextField(blank=True)
+    einvoice_qr = models.TextField(blank=True)
+    einvoice_status = models.CharField(max_length=16, default="none")
+    einvoice_reference = models.CharField(max_length=200, blank=True)
+    einvoice_response = models.JSONField(default=dict, blank=True)
+    einvoice_cleared_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         db_table = "cycom_arap_invoices"
         unique_together = [("tenant_id", "number")]

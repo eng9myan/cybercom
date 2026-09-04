@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 
 from rest_framework.decorators import action
@@ -8,9 +9,12 @@ from core.viewsets import TenantScopedModelViewSet
 from platform.tenant.permissions import IsPlatformAdmin
 from products.cycom.accounting.services import UnbalancedEntryError, post_journal_entry
 from products.cycom.ar_ap.compliance_client import notify_invoice_finalized
+from products.cycom.ar_ap.einvoice import run_einvoice_clearance
 from products.cycom.ar_ap.models import Invoice, Partner, Payment
 from products.cycom.ar_ap.serializers import InvoiceSerializer, PartnerSerializer, PaymentSerializer
 from products.cycom.localization.services import get_jurisdiction_for_tenant
+
+logger = logging.getLogger("cycom.ar_ap")
 
 
 class PartnerViewSet(TenantScopedModelViewSet):
@@ -121,6 +125,16 @@ class InvoiceViewSet(TenantScopedModelViewSet):
         if jurisdiction:
             notify_invoice_finalized(invoice, jurisdiction)
 
+        # E-invoicing clearance (JoFotara today; ZATCA/Peppol as they land).
+        # Non-blocking by policy for JO — a failure sets einvoice_status
+        # "rejected" and is surfaced in the UI, never rolls back the posting.
+        if invoice.invoice_type == "customer":
+            try:
+                run_einvoice_clearance(invoice)
+            except Exception:  # pragma: no cover - defensive; helper already guards
+                logger.exception("e-invoice clearance raised for %s", invoice.number)
+
+        invoice.refresh_from_db()
         return Response(InvoiceSerializer(invoice).data)
 
     @action(detail=True, methods=["get"], url_path="three-way-match")

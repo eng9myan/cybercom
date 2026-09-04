@@ -60,6 +60,7 @@ PLATFORM_APPS = [
     "platform.events",
     "platform.cyai",
     "platform.provisioning",
+    "platform.einvoicing",
 ]
 
 PRODUCT_APPS = [
