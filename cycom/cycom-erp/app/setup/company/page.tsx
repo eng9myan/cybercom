@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   Building2, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle,
-  Sparkles, Globe, Coins, Calendar, MapPin, Plus, Trash2, Layers, Wrench, Lightbulb,
+  Sparkles, Globe, Calendar, MapPin, Plus, Trash2, Layers, Wrench, Lightbulb,
 } from 'lucide-react';
 import {
   COUNTRIES,
@@ -15,23 +15,27 @@ import {
   type IndustryKey,
 } from '@/lib/setup/industry-templates';
 import { applyCompanySetup, type CompanySetupBranch } from '@/lib/setup/companySetup';
+import { useT } from '@/lib/i18n';
 
-const STEPS = ['Basics', 'Financials', 'Sites', 'Review'] as const;
 type StepIdx = 0 | 1 | 2 | 3;
 
-const PAYMENT_TERM_LABEL: Record<string, string> = {
-  net_30: 'Net 30',
-  net_15: 'Net 15',
-  on_delivery: 'On delivery',
-  cash: 'Cash on sale',
-};
-
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
 export default function CompanySetupWizard() {
+  const t = useT();
+  const STEPS = [t('setupCompany.stepBasics'), t('setupCompany.stepFinancials'), t('setupCompany.stepSites'), t('setupWizard.stepReview')] as const;
+
+  const PAYMENT_TERM_LABEL: Record<string, string> = {
+    net_30: t('setupCompany.ptNet30'),
+    net_15: t('setupCompany.ptNet15'),
+    on_delivery: t('setupCompany.ptDelivery'),
+    cash: t('setupCompany.ptCash'),
+  };
+
+  const MONTHS = [
+    t('setupCompany.monthJan'), t('setupCompany.monthFeb'), t('setupCompany.monthMar'), t('setupCompany.monthApr'),
+    t('setupCompany.monthMay'), t('setupCompany.monthJun'), t('setupCompany.monthJul'), t('setupCompany.monthAug'),
+    t('setupCompany.monthSep'), t('setupCompany.monthOct'), t('setupCompany.monthNov'), t('setupCompany.monthDec'),
+  ];
+
   const [step, setStep] = useState<StepIdx>(0);
 
   // Form state
@@ -64,15 +68,15 @@ export default function CompanySetupWizard() {
   // When industry changes, re-apply its defaults — but never clobber values the user already touched
   // in a way that would surprise them. We only apply on industry-change for fields that derive from it.
   const applyIndustryDefaults = (key: IndustryKey) => {
-    const t = getIndustry(key);
+    const tmpl = getIndustry(key);
     setIndustry(key);
-    setMultiSite(t.defaults.multiSite);
-    setBranches(Array.from({ length: t.defaults.typicalSiteCount }, (_, i) => ({
+    setMultiSite(tmpl.defaults.multiSite);
+    setBranches(Array.from({ length: tmpl.defaults.typicalSiteCount }, (_, i) => ({
       name: `Branch ${i + 1}`, city: '',
     })));
-    setFiscalYearStartMonth(t.defaults.fiscalYearStartMonth);
-    setPaymentTerms(t.defaults.paymentTerms);
-    setPricingMode(t.defaults.pricingMode);
+    setFiscalYearStartMonth(tmpl.defaults.fiscalYearStartMonth);
+    setPaymentTerms(tmpl.defaults.paymentTerms);
+    setPricingMode(tmpl.defaults.pricingMode);
   };
 
   const applyCountryDefaults = (code: string) => {
@@ -120,10 +124,10 @@ export default function CompanySetupWizard() {
         <div>
           <h1 className="page-title text-white flex items-center gap-3">
             <Building2 className="w-7 h-7 text-[#E67E22]" />
-            Company Setup
+            {t('setupCompany.title')}
           </h1>
           <p className="page-subtitle">
-            Answer a few business questions. Cycom configures your tenant — no ERP knowledge required.
+            {t('setupCompany.subtitle')}
           </p>
         </div>
         <a
@@ -133,7 +137,7 @@ export default function CompanySetupWizard() {
           className="btn-secondary flex items-center gap-2 text-xs"
           title="Drop into the raw Cycom Companies configuration page"
         >
-          <Wrench className="w-3.5 h-3.5" /> Configure manually
+          <Wrench className="w-3.5 h-3.5" /> {t('setupWizard.configureManually')}
         </a>
       </div>
 
@@ -182,16 +186,16 @@ export default function CompanySetupWizard() {
         {step === 0 && (
           <>
             <div className="glass-card p-6 space-y-5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Your business</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('setupCompany.businessHeading')}</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                    Legal name <span className="text-rose-400">*</span>
+                    {t('setupCompany.legalName')} <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Cycom Retail Co."
+                    placeholder={t('setupCompany.legalNamePh')}
                     className="input-field py-2.5"
                     value={legalName}
                     onChange={(e) => setLegalName(e.target.value)}
@@ -199,11 +203,11 @@ export default function CompanySetupWizard() {
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                    Short name <span className="text-slate-500 font-normal">(optional)</span>
+                    {t('setupCompany.shortName')} <span className="text-slate-500 font-normal">{t('setupCompany.optional')}</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Cycom Retail"
+                    placeholder={t('setupCompany.shortNamePh')}
                     className="input-field py-2.5"
                     value={shortName}
                     onChange={(e) => setShortName(e.target.value)}
@@ -214,30 +218,30 @@ export default function CompanySetupWizard() {
 
             <div className="glass-card p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Industry</h2>
-                <span className="badge badge-cyan font-mono text-[10px]">Cycom Industry Templates</span>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('setupCompany.industryHeading')}</h2>
+                <span className="badge badge-cyan font-mono text-[10px]">{t('setupCompany.industryBadge')}</span>
               </div>
               <p className="text-xs text-slate-500">
-                Pick the closest match. Cycom uses this to pre-fill the next steps with sensible defaults.
+                {t('setupCompany.industryNote')}
               </p>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {INDUSTRY_TEMPLATES.map((t) => {
-                  const active = t.key === industry;
+                {INDUSTRY_TEMPLATES.map((tmpl) => {
+                  const active = tmpl.key === industry;
                   return (
                     <button
-                      key={t.key}
+                      key={tmpl.key}
                       type="button"
-                      onClick={() => applyIndustryDefaults(t.key)}
+                      onClick={() => applyIndustryDefaults(tmpl.key)}
                       className={
-                        'text-left p-4 rounded-xl border transition-all ' +
+                        'text-start p-4 rounded-xl border transition-all ' +
                         (active
                           ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white shadow-md shadow-orange-500/5'
                           : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20')
                       }
                     >
-                      <div className="text-sm font-bold mb-1">{t.label}</div>
-                      <div className="text-[11px] text-slate-400">{t.blurb}</div>
+                      <div className="text-sm font-bold mb-1">{tmpl.label}</div>
+                      <div className="text-[11px] text-slate-400">{tmpl.blurb}</div>
                     </button>
                   );
                 })}
@@ -252,13 +256,13 @@ export default function CompanySetupWizard() {
           <>
             <div className="glass-card p-6 space-y-5">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Globe className="w-4 h-4 text-cyan-400" /> Country &amp; currency
+                <Globe className="w-4 h-4 text-cyan-400" /> {t('setupCompany.countryCurrencyHeading')}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                    Country <span className="text-rose-400">*</span>
+                    {t('setupCompany.country')} <span className="text-rose-400">*</span>
                   </label>
                   <select
                     className="input-field py-2.5"
@@ -272,18 +276,19 @@ export default function CompanySetupWizard() {
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                    Currency <span className="text-rose-400">*</span>
+                    {t('setupCompany.currency')} <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="text"
                     maxLength={3}
-                    placeholder="JOD"
+                    placeholder={t('setupCompany.currencyPh')}
                     className="input-field py-2.5 uppercase"
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+                    dir="ltr"
                   />
                   <p className="text-[10px] text-slate-500 mt-1">
-                    Pre-filled from the country. Override if your reporting currency differs.
+                    {t('setupCompany.currencyNote')}
                   </p>
                 </div>
               </div>
@@ -291,13 +296,13 @@ export default function CompanySetupWizard() {
 
             <div className="glass-card p-6 space-y-5">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-purple-400" /> Fiscal &amp; commercial defaults
+                <Calendar className="w-4 h-4 text-purple-400" /> {t('setupCompany.fiscalHeading')}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                    Fiscal year starts
+                    {t('setupCompany.fiscalYearStarts')}
                   </label>
                   <select
                     className="input-field py-2.5"
@@ -311,11 +316,11 @@ export default function CompanySetupWizard() {
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                    Tax registration <span className="text-slate-500 font-normal">(optional)</span>
+                    {t('setupCompany.taxRegistration')} <span className="text-slate-500 font-normal">{t('setupCompany.optional')}</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="VAT / Tax ID"
+                    placeholder={t('setupCompany.taxRegistrationPh')}
                     className="input-field py-2.5"
                     value={taxRegistrationNumber}
                     onChange={(e) => setTaxRegistrationNumber(e.target.value)}
@@ -323,30 +328,30 @@ export default function CompanySetupWizard() {
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                    Default payment terms
+                    {t('setupCompany.defaultPaymentTerms')}
                   </label>
                   <select
                     className="input-field py-2.5"
                     value={paymentTerms}
                     onChange={(e) => setPaymentTerms(e.target.value as typeof paymentTerms)}
                   >
-                    <option value="cash">Cash on sale</option>
-                    <option value="on_delivery">On delivery</option>
-                    <option value="net_15">Net 15</option>
-                    <option value="net_30">Net 30</option>
+                    <option value="cash">{t('setupCompany.ptCash')}</option>
+                    <option value="on_delivery">{t('setupCompany.ptDelivery')}</option>
+                    <option value="net_15">{t('setupCompany.ptNet15')}</option>
+                    <option value="net_30">{t('setupCompany.ptNet30')}</option>
                   </select>
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                    Pricing mode
+                    {t('setupCompany.pricingMode')}
                   </label>
                   <select
                     className="input-field py-2.5"
                     value={pricingMode}
                     onChange={(e) => setPricingMode(e.target.value as typeof pricingMode)}
                   >
-                    <option value="tax_inclusive">Tax-inclusive (shelf price = paid price)</option>
-                    <option value="tax_exclusive">Tax-exclusive (tax shown as line)</option>
+                    <option value="tax_inclusive">{t('setupCompany.pmInclusive')}</option>
+                    <option value="tax_exclusive">{t('setupCompany.pmExclusive')}</option>
                   </select>
                 </div>
               </div>
@@ -354,10 +359,14 @@ export default function CompanySetupWizard() {
 
             <AdvisorPanel
               lines={[
-                `${industryTemplate.label} businesses in ${COUNTRIES.find((c) => c.code === countryCode)?.name ?? 'this country'} typically use ${currency} as their primary currency.`,
+                t('setupCompany.financialsAdvisor', {
+                  industry: industryTemplate.label,
+                  country: COUNTRIES.find((c) => c.code === countryCode)?.name ?? countryCode,
+                  currency,
+                }),
                 pricingMode === 'tax_inclusive'
-                  ? 'Tax-inclusive is the right default for retail and hospitality — the shelf label is the price the customer pays.'
-                  : 'Tax-exclusive is the right default for B2B sales — invoices show tax as a separate line and customers can reclaim it.',
+                  ? t('setupCompany.inclusiveAdvisor')
+                  : t('setupCompany.exclusiveAdvisor'),
               ]}
             />
           </>
@@ -367,7 +376,7 @@ export default function CompanySetupWizard() {
           <>
             <div className="glass-card p-6 space-y-5">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-emerald-400" /> Locations
+                <MapPin className="w-4 h-4 text-emerald-400" /> {t('setupCompany.locationsHeading')}
               </h2>
 
               <div className="flex gap-3">
@@ -375,40 +384,40 @@ export default function CompanySetupWizard() {
                   type="button"
                   onClick={() => setMultiSite(false)}
                   className={
-                    'flex-1 p-4 rounded-xl border text-left transition-all ' +
+                    'flex-1 p-4 rounded-xl border text-start transition-all ' +
                     (!multiSite
                       ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white'
                       : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10')
                   }
                 >
-                  <div className="font-bold text-sm">Single location</div>
-                  <div className="text-[11px] text-slate-400 mt-1">One office, one warehouse, one POS terminal.</div>
+                  <div className="font-bold text-sm">{t('setupCompany.singleLocation')}</div>
+                  <div className="text-[11px] text-slate-400 mt-1">{t('setupCompany.singleLocationDesc')}</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setMultiSite(true)}
                   className={
-                    'flex-1 p-4 rounded-xl border text-left transition-all ' +
+                    'flex-1 p-4 rounded-xl border text-start transition-all ' +
                     (multiSite
                       ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white'
                       : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10')
                   }
                 >
-                  <div className="font-bold text-sm">Multiple branches</div>
-                  <div className="text-[11px] text-slate-400 mt-1">Each branch will be created as a child company.</div>
+                  <div className="font-bold text-sm">{t('setupCompany.multiBranch')}</div>
+                  <div className="text-[11px] text-slate-400 mt-1">{t('setupCompany.multiBranchDesc')}</div>
                 </button>
               </div>
 
               {multiSite && (
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Branches</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('setupCompany.branches')}</span>
                     <button
                       type="button"
                       onClick={() => setBranches([...branches, { name: `Branch ${branches.length + 1}`, city: '' }])}
                       className="btn-secondary flex items-center gap-1.5 text-[10px] py-1.5 px-2.5"
                     >
-                      <Plus className="w-3 h-3" /> Add branch
+                      <Plus className="w-3 h-3" /> {t('setupCompany.addBranch')}
                     </button>
                   </div>
 
@@ -418,7 +427,7 @@ export default function CompanySetupWizard() {
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-2">
                           <input
                             type="text"
-                            placeholder="Branch name"
+                            placeholder={t('setupCompany.branchNamePh')}
                             className="input-field py-2 text-sm"
                             value={b.name}
                             onChange={(e) => {
@@ -429,7 +438,7 @@ export default function CompanySetupWizard() {
                           />
                           <input
                             type="text"
-                            placeholder="City (optional)"
+                            placeholder={t('setupCompany.cityPh')}
                             className="input-field py-2 text-sm"
                             value={b.city ?? ''}
                             onChange={(e) => {
@@ -443,7 +452,7 @@ export default function CompanySetupWizard() {
                           type="button"
                           onClick={() => setBranches(branches.filter((_, j) => j !== i))}
                           className="p-2 rounded-lg text-slate-400 hover:bg-rose-500/10 hover:text-rose-400 transition-colors"
-                          title="Remove branch"
+                          title={t('setupCompany.removeBranch')}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -457,8 +466,8 @@ export default function CompanySetupWizard() {
             <AdvisorPanel
               lines={[
                 multiSite
-                  ? `Each branch will be created as a child of "${legalName || 'your company'}" in Cycom (res.company.parent_id). Inter-branch transfers and consolidated reporting will work out of the box.`
-                  : 'Single-location tenants skip the multi-company setup entirely — everything posts to one company ledger.',
+                  ? t('setupCompany.multiSiteAdvisor', { company: legalName || t('setupCompany.yourCompany') })
+                  : t('setupCompany.singleSiteAdvisor'),
               ]}
             />
           </>
@@ -468,31 +477,29 @@ export default function CompanySetupWizard() {
           <>
             <div className="glass-card p-6 space-y-4">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#E67E22]" /> Review
+                <Layers className="w-4 h-4 text-[#E67E22]" /> {t('setupWizard.stepReview')}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <ReviewRow label="Legal name" value={legalName || '—'} />
-                <ReviewRow label="Short name" value={shortName || '—'} />
-                <ReviewRow label="Industry" value={industryTemplate.label} />
-                <ReviewRow label="Country" value={COUNTRIES.find((c) => c.code === countryCode)?.name ?? countryCode} />
-                <ReviewRow label="Currency" value={currency} />
-                <ReviewRow label="Fiscal year starts" value={MONTHS[fiscalYearStartMonth - 1]} />
-                <ReviewRow label="Tax registration" value={taxRegistrationNumber || '—'} />
-                <ReviewRow label="Payment terms" value={PAYMENT_TERM_LABEL[paymentTerms]} />
-                <ReviewRow label="Pricing mode" value={pricingMode === 'tax_inclusive' ? 'Tax-inclusive' : 'Tax-exclusive'} />
+                <ReviewRow label={t('setupCompany.reviewLegalName')} value={legalName || '—'} />
+                <ReviewRow label={t('setupCompany.reviewShortName')} value={shortName || '—'} />
+                <ReviewRow label={t('setupCompany.reviewIndustry')} value={industryTemplate.label} />
+                <ReviewRow label={t('setupCompany.reviewCountry')} value={COUNTRIES.find((c) => c.code === countryCode)?.name ?? countryCode} />
+                <ReviewRow label={t('setupCompany.reviewCurrency')} value={currency} />
+                <ReviewRow label={t('setupCompany.reviewFiscalStart')} value={MONTHS[fiscalYearStartMonth - 1]} />
+                <ReviewRow label={t('setupCompany.reviewTaxReg')} value={taxRegistrationNumber || '—'} />
+                <ReviewRow label={t('setupCompany.reviewPaymentTerms')} value={PAYMENT_TERM_LABEL[paymentTerms]} />
+                <ReviewRow label={t('setupCompany.reviewPricingMode')} value={pricingMode === 'tax_inclusive' ? t('setupCompany.pmInclusive') : t('setupCompany.pmExclusive')} />
                 <ReviewRow
-                  label="Locations"
-                  value={multiSite ? `${branches.length} branches: ${branches.map((b) => b.name).join(', ')}` : 'Single location'}
+                  label={t('setupCompany.reviewLocations')}
+                  value={multiSite ? t('setupCompany.locationsSummary', { n: branches.length, names: branches.map((b) => b.name).join(', ') }) : t('setupCompany.singleLocationVal')}
                 />
               </div>
 
               <div className="bg-cyan-500/5 border border-cyan-500/20 rounded-xl p-4 text-xs text-cyan-200/90 flex items-start gap-3">
                 <Sparkles className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
                 <div>
-                  When you click <strong className="text-white">Apply</strong>, Cycom will create the company (and branches) in Cycom,
-                  activate the currency if needed, and persist your industry + commercial defaults so the next setup wizard
-                  (Chart of Accounts) inherits them. No manual Cycom configuration is required.
+                  {t('setupCompany.applyNote')}
                 </div>
               </div>
             </div>
@@ -500,7 +507,7 @@ export default function CompanySetupWizard() {
             {result && result.ok && (
               <div className="glass-card p-6 border border-emerald-500/30 bg-emerald-500/5 space-y-3">
                 <div className="flex items-center gap-2 text-emerald-300 font-bold">
-                  <CheckCircle2 className="w-5 h-5" /> Company configured
+                  <CheckCircle2 className="w-5 h-5" /> {t('setupCompany.companyConfigured')}
                 </div>
                 <ul className="text-xs text-slate-300 space-y-1 list-disc list-inside">
                   {result.summary.map((s, i) => (
@@ -510,7 +517,7 @@ export default function CompanySetupWizard() {
                 {result.warnings.length > 0 && (
                   <div className="text-[11px] text-amber-300 space-y-1">
                     <div className="font-bold flex items-center gap-1.5">
-                      <AlertTriangle className="w-3.5 h-3.5" /> Warnings
+                      <AlertTriangle className="w-3.5 h-3.5" /> {t('setupWizard.warnings')}
                     </div>
                     <ul className="list-disc list-inside ml-1">
                       {result.warnings.map((w, i) => (
@@ -520,8 +527,8 @@ export default function CompanySetupWizard() {
                   </div>
                 )}
                 <div className="pt-2 flex gap-2">
-                  <Link href="/setup" className="btn-secondary text-xs py-2 px-3">Continue to next wizard</Link>
-                  <Link href="/dashboard" className="btn-primary text-xs py-2 px-3">Go to dashboard</Link>
+                  <Link href="/setup" className="btn-secondary text-xs py-2 px-3">{t('setupCompany.continueNext')}</Link>
+                  <Link href="/dashboard" className="btn-primary text-xs py-2 px-3">{t('setupCompany.goToDashboard')}</Link>
                 </div>
               </div>
             )}
@@ -529,11 +536,11 @@ export default function CompanySetupWizard() {
             {result && !result.ok && (
               <div className="glass-card p-6 border border-rose-500/30 bg-rose-500/5 space-y-2">
                 <div className="flex items-center gap-2 text-rose-300 font-bold">
-                  <AlertTriangle className="w-5 h-5" /> Setup failed
+                  <AlertTriangle className="w-5 h-5" /> {t('setupWizard.setupFailed')}
                 </div>
                 <p className="text-xs text-rose-200">{result.error}</p>
                 <p className="text-[10px] text-slate-500">
-                  Confirm the Cycom backend is running and you're logged in. You can re-run the wizard once the issue is fixed.
+                  {t('setupWizard.recoveryHint')}
                 </p>
               </div>
             )}
@@ -549,7 +556,7 @@ export default function CompanySetupWizard() {
           onClick={() => setStep((s) => (Math.max(0, s - 1) as StepIdx))}
           className="btn-secondary flex items-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <ChevronLeft className="w-4 h-4" /> Back
+          <ChevronLeft className="w-4 h-4 rtl:-scale-x-100" /> {t('setupWizard.back')}
         </button>
 
         {step < 3 ? (
@@ -559,7 +566,7 @@ export default function CompanySetupWizard() {
             onClick={() => setStep((s) => (Math.min(3, s + 1) as StepIdx))}
             className="btn-primary flex items-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Next <ChevronRight className="w-4 h-4" />
+            {t('setupWizard.next')} <ChevronRight className="w-4 h-4 rtl:-scale-x-100" />
           </button>
         ) : (
           <button
@@ -571,15 +578,15 @@ export default function CompanySetupWizard() {
             {applying ? (
               <>
                 <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                Applying…
+                {t('setupWizard.applying')}
               </>
             ) : result?.ok ? (
               <>
-                <CheckCircle2 className="w-4 h-4" /> Applied
+                <CheckCircle2 className="w-4 h-4" /> {t('setupWizard.applied')}
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4" /> Apply setup
+                <Sparkles className="w-4 h-4" /> {t('setupWizard.applySetup')}
               </>
             )}
           </button>
@@ -599,11 +606,12 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
 }
 
 function AdvisorPanel({ lines }: { lines: string[] }) {
+  const t = useT();
   return (
     <div className="glass-card p-5 border border-purple-500/20 bg-purple-500/5">
       <div className="flex items-center gap-2 mb-2">
         <Lightbulb className="w-4 h-4 text-purple-300" />
-        <span className="text-xs font-bold uppercase tracking-wider text-purple-200">Cycom AI Recommendation</span>
+        <span className="text-xs font-bold uppercase tracking-wider text-purple-200">{t('setupWizard.aiRecommendation')}</span>
       </div>
       <ul className="space-y-1.5 text-xs text-slate-300">
         {lines.map((line, i) => (
