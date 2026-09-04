@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 
 
@@ -21,8 +22,10 @@ class Employee(BaseModel):
     employee_number = models.CharField(max_length=50)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    email = models.EmailField(blank=True)
-    phone = models.CharField(max_length=50, blank=True)
+    # Contact PII — encrypted per-tenant. email is blind-indexed for exact-match
+    # lookup (Employee.objects.filter(email_bidx=blind_index(value))).
+    email = EncryptedText(classification="pii", blind_index=True)
+    phone = EncryptedText(classification="pii")
     job_title = models.CharField(max_length=150, blank=True)
     department = models.CharField(max_length=150, blank=True)
     hire_date = models.DateField()

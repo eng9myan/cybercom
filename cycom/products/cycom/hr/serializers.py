@@ -4,9 +4,18 @@ from products.cycom.hr.models import Contract, Employee
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    # email / phone are EncryptedText (BinaryField storage); DRF would otherwise
+    # base64-encode them. The field hands us plain text on read / write.
+    email = serializers.EmailField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True, max_length=50)
+
     class Meta:
         model = Employee
-        fields = "__all__"
+        fields = [
+            "id", "tenant_id", "employee_number", "first_name", "last_name",
+            "email", "phone", "job_title", "department", "hire_date", "status",
+            "marital", "spouse_employed", "created_at", "updated_at",
+        ]
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
 
 
