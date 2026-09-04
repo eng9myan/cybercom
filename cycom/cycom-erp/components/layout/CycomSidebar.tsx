@@ -14,8 +14,11 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useCompany } from '@/context/CompanyContext';
+import { useT } from '@/lib/i18n';
 
 interface SidebarItem {
+  /** i18n key (sidebar.* / common.*); `label` is the English fallback. */
+  tKey: string;
   label: string;
   href: string;
   icon: React.ComponentType<any>;
@@ -23,6 +26,7 @@ interface SidebarItem {
 }
 
 interface ModuleConfig {
+  titleKey: string;
   title: string;
   icon: React.ComponentType<any>;
   items: SidebarItem[];
@@ -30,80 +34,72 @@ interface ModuleConfig {
 
 const MODULE_SIDEBARS: Record<string, ModuleConfig> = {
   setup: {
-    title: 'Cycom Setup',
-    icon: Sparkles,
+    titleKey: 'nav.setup', title: 'Cycom Setup', icon: Sparkles,
     items: [
-      { label: 'Setup Hub', href: '/setup', icon: LayoutGrid, dot: '#A855F7' },
-      { label: 'Company', href: '/setup/company', icon: Building2, dot: '#E67E22' },
-      { label: 'Chart of Accounts', href: '/setup/coa', icon: Calculator, dot: '#5DADE2' },
-      { label: 'Payroll Structure', href: '/setup/payroll', icon: DollarSign, dot: '#10B981' },
-      { label: 'Warehouse', href: '/setup/warehouse', icon: Package, dot: '#F59E0B' }
+      { tKey: 'sidebar.setupHub', label: 'Setup Hub', href: '/setup', icon: LayoutGrid, dot: '#A855F7' },
+      { tKey: 'sidebar.company', label: 'Company', href: '/setup/company', icon: Building2, dot: '#E67E22' },
+      { tKey: 'sidebar.chartOfAccounts', label: 'Chart of Accounts', href: '/setup/coa', icon: Calculator, dot: '#5DADE2' },
+      { tKey: 'sidebar.payrollStructure', label: 'Payroll Structure', href: '/setup/payroll', icon: DollarSign, dot: '#10B981' },
+      { tKey: 'sidebar.warehouse', label: 'Warehouse', href: '/setup/warehouse', icon: Package, dot: '#F59E0B' }
     ]
   },
   sign: {
-    title: 'eSign Documents',
-    icon: PenTool,
+    titleKey: 'nav.esign', title: 'eSign Documents', icon: PenTool,
     items: [
-      { label: 'Dashboard', href: '/sign', icon: BarChart2, dot: '#F43F5E' },
-      { label: 'Templates', href: '/sign/templates', icon: FileText, dot: '#A855F7' },
-      { label: 'Signature Requests', href: '/sign/requests', icon: Send, dot: '#00F0FF' }
+      { tKey: 'common.dashboard', label: 'Dashboard', href: '/sign', icon: BarChart2, dot: '#F43F5E' },
+      { tKey: 'sidebar.templates', label: 'Templates', href: '/sign/templates', icon: FileText, dot: '#A855F7' },
+      { tKey: 'sidebar.signatureRequests', label: 'Signature Requests', href: '/sign/requests', icon: Send, dot: '#00F0FF' }
     ]
   },
   sales: {
-    title: 'Sales & Pricing',
-    icon: TrendingUp,
+    titleKey: 'nav.sales', title: 'Sales & Pricing', icon: TrendingUp,
     items: [
-      { label: 'Overview', href: '/sales', icon: BarChart2, dot: '#3B82F6' },
-      { label: 'Orders Registry', href: '/sales/orders', icon: Package, dot: '#10B981' },
-      { label: 'Approvals', href: '/sales/approvals', icon: UserCheck, dot: '#F59E0B' }
+      { tKey: 'common.overview', label: 'Overview', href: '/sales', icon: BarChart2, dot: '#3B82F6' },
+      { tKey: 'sidebar.ordersRegistry', label: 'Orders Registry', href: '/sales/orders', icon: Package, dot: '#10B981' },
+      { tKey: 'common.approvals', label: 'Approvals', href: '/sales/approvals', icon: UserCheck, dot: '#F59E0B' }
     ]
   },
   pos: {
-    title: 'Point of Sale',
-    icon: ShoppingCart,
+    titleKey: 'nav.pos', title: 'Point of Sale', icon: ShoppingCart,
     items: [
-      { label: 'Session Manager', href: '/pos', icon: BarChart2, dot: '#EF4444' },
-      { label: 'Cash Drawer', href: '/pos#register', icon: DollarSign, dot: '#10B981' },
-      { label: 'Advance & Pledge', href: '/pos#pledges', icon: FileText, dot: '#5DADE2' }
+      { tKey: 'sidebar.sessionManager', label: 'Session Manager', href: '/pos', icon: BarChart2, dot: '#EF4444' },
+      { tKey: 'sidebar.cashDrawer', label: 'Cash Drawer', href: '/pos#register', icon: DollarSign, dot: '#10B981' },
+      { tKey: 'sidebar.advancePledge', label: 'Advance & Pledge', href: '/pos#pledges', icon: FileText, dot: '#5DADE2' }
     ]
   },
   attendance: {
-    title: 'Attendance',
-    icon: Clock,
+    titleKey: 'nav.attendance', title: 'Attendance', icon: Clock,
     items: [
-      { label: 'Biometric Terminals', href: '/attendance', icon: Server, dot: '#F59E0B' },
-      { label: 'Live event stream', href: '/attendance#logs', icon: Activity, dot: '#10B981' },
-      { label: 'Overtime calculator', href: '/attendance#overtime', icon: Calculator, dot: '#EF4444' },
-      { label: 'Geofence config', href: '/attendance#geofence', icon: MapPin, dot: '#3B82F6' },
-      { label: 'Punch corrections', href: '/attendance#corrections', icon: Edit3, dot: '#EC4899' }
+      { tKey: 'sidebar.biometricTerminals', label: 'Biometric Terminals', href: '/attendance', icon: Server, dot: '#F59E0B' },
+      { tKey: 'sidebar.liveEventStream', label: 'Live event stream', href: '/attendance#logs', icon: Activity, dot: '#10B981' },
+      { tKey: 'sidebar.overtimeCalculator', label: 'Overtime calculator', href: '/attendance#overtime', icon: Calculator, dot: '#EF4444' },
+      { tKey: 'sidebar.geofenceConfig', label: 'Geofence config', href: '/attendance#geofence', icon: MapPin, dot: '#3B82F6' },
+      { tKey: 'sidebar.punchCorrections', label: 'Punch corrections', href: '/attendance#corrections', icon: Edit3, dot: '#EC4899' }
     ]
   },
   plm: {
-    title: 'Manufacturing & PLM',
-    icon: Layers,
+    titleKey: 'nav.plm', title: 'Manufacturing & PLM', icon: Layers,
     items: [
-      { label: 'BOM Selector', href: '/plm', icon: Layers, dot: '#A855F7' },
-      { label: 'Cost Analysis', href: '/plm#rollup', icon: Calculator, dot: '#10B981' },
-      { label: 'ECO approvals', href: '/plm#ecos', icon: CheckCircle, dot: '#EF4444' }
+      { tKey: 'sidebar.bomSelector', label: 'BOM Selector', href: '/plm', icon: Layers, dot: '#A855F7' },
+      { tKey: 'sidebar.costAnalysis', label: 'Cost Analysis', href: '/plm#rollup', icon: Calculator, dot: '#10B981' },
+      { tKey: 'sidebar.ecoApprovals', label: 'ECO approvals', href: '/plm#ecos', icon: CheckCircle, dot: '#EF4444' }
     ]
   },
   expenses: {
-    title: 'Expenses Claim',
-    icon: FileSignature,
+    titleKey: 'nav.expenses', title: 'Expenses Claim', icon: FileSignature,
     items: [
-      { label: 'Overview', href: '/expenses', icon: BarChart2, dot: '#EC4899' },
-      { label: 'Log Expense', href: '/expenses#log', icon: Plus, dot: '#3B82F6' },
-      { label: 'Approvals Queue', href: '/expenses#approvals', icon: Clipboard, dot: '#F59E0B' },
-      { label: 'Ledger Record', href: '/expenses#ledger', icon: FileText, dot: '#10B981' }
+      { tKey: 'common.overview', label: 'Overview', href: '/expenses', icon: BarChart2, dot: '#EC4899' },
+      { tKey: 'sidebar.logExpense', label: 'Log Expense', href: '/expenses#log', icon: Plus, dot: '#3B82F6' },
+      { tKey: 'sidebar.approvalsQueue', label: 'Approvals Queue', href: '/expenses#approvals', icon: Clipboard, dot: '#F59E0B' },
+      { tKey: 'sidebar.ledgerRecord', label: 'Ledger Record', href: '/expenses#ledger', icon: FileText, dot: '#10B981' }
     ]
   },
   project: {
-    title: 'Project Management',
-    icon: Layers,
+    titleKey: 'nav.project', title: 'Project Management', icon: Layers,
     items: [
-      { label: 'Kanban Board', href: '/project', icon: Layers, dot: '#3B82F6' },
-      { label: 'Timesheets Logs', href: '/project#timesheets', icon: Clock, dot: '#10B981' },
-      { label: 'Create Task', href: '/project#create', icon: Plus, dot: '#F59E0B' }
+      { tKey: 'sidebar.kanbanBoard', label: 'Kanban Board', href: '/project', icon: Layers, dot: '#3B82F6' },
+      { tKey: 'sidebar.timesheetsLogs', label: 'Timesheets Logs', href: '/project#timesheets', icon: Clock, dot: '#10B981' },
+      { tKey: 'sidebar.createTask', label: 'Create Task', href: '/project#create', icon: Plus, dot: '#F59E0B' }
     ]
   }
 };
@@ -112,18 +108,18 @@ const getModuleConfig = (segment: string): ModuleConfig => {
   if (MODULE_SIDEBARS[segment]) {
     return MODULE_SIDEBARS[segment];
   }
-  // Generic Fallback Config
   const title = segment.charAt(0).toUpperCase() + segment.slice(1);
   return {
-    title: title,
+    titleKey: '', title,
     icon: Layers,
     items: [
-      { label: `${title} Dashboard`, href: `/${segment}`, icon: BarChart2, dot: '#3B82F6' }
+      { tKey: 'common.dashboard', label: `${title} Dashboard`, href: `/${segment}`, icon: BarChart2, dot: '#3B82F6' }
     ]
   };
 };
 
 export default function CycomSidebar() {
+  const t = useT();
   const pathname = usePathname() || '';
   const { activeCompany, setActiveCompany, allCompanies } = useCompany();
   const [companySwitcherOpen, setCompanySwitcherOpen] = useState(false);
@@ -134,7 +130,7 @@ export default function CycomSidebar() {
   const ModuleIcon = moduleConfig.icon;
 
   return (
-    <aside className="w-[240px] h-screen flex flex-col flex-shrink-0 bg-gradient-to-b from-[#0a0f1e] to-[#080d18] border-r border-white/5 font-sans relative z-30">
+    <aside className="w-[240px] h-screen flex flex-col flex-shrink-0 bg-gradient-to-b from-[#0a0f1e] to-[#080d18] border-e border-white/5 font-sans relative z-30">
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-white/5 flex-shrink-0">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E67E22] to-[#5DADE2] flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-orange-500/10">
@@ -159,7 +155,7 @@ export default function CycomSidebar() {
           className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/4 border border-white/8 hover:border-white/15 hover:bg-white/6 transition-all text-xs font-bold text-slate-300 hover:text-white"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Apps Launcher</span>
+          <span>{t('sidebar.backToLauncher')}</span>
         </Link>
       </div>
 
@@ -179,7 +175,7 @@ export default function CycomSidebar() {
         
         {companySwitcherOpen && (
           <div className="mt-1.5 rounded-xl bg-[#0f1526] border border-white/10 overflow-hidden shadow-xl shadow-black/30 animate-slide-up">
-            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 pt-2.5 pb-1">Switch Company</p>
+            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest px-3 pt-2.5 pb-1">{t('sidebar.switchCompany')}</p>
             {allCompanies.map(company => (
               <button
                 key={company.id}
@@ -211,8 +207,8 @@ export default function CycomSidebar() {
             <ModuleIcon className="w-4.5 h-4.5" />
           </div>
           <div className="min-w-0">
-            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Active Module</span>
-            <h2 className="text-xs font-black text-white truncate uppercase tracking-wider">{moduleConfig.title}</h2>
+            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">{t('sidebar.activeModule')}</span>
+            <h2 className="text-xs font-black text-white truncate uppercase tracking-wider">{moduleConfig.titleKey ? t(moduleConfig.titleKey) : moduleConfig.title}</h2>
           </div>
         </div>
       </div>
@@ -237,10 +233,10 @@ export default function CycomSidebar() {
             >
               <Icon className={`w-4 h-4 ${active ? 'text-[#E67E22]' : 'text-slate-500'}`} />
               <span className={`text-[12.5px] ${active ? 'font-semibold' : 'font-medium'} truncate`}>
-                {item.label}
+                {t(item.tKey)}
               </span>
               <span
-                className="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
+                className="ms-auto w-1.5 h-1.5 rounded-full flex-shrink-0"
                 style={{
                   background: active ? item.dot : 'rgba(255,255,255,0.05)',
                   boxShadow: active ? `0 0 8px ${item.dot}` : 'none',

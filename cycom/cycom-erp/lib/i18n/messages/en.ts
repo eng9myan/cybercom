@@ -1,6 +1,5 @@
 // English message catalog. Keep keys stable; `ar.ts` mirrors this shape exactly
-// (a vitest test enforces key parity). Namespaced by surface. Extend as screens
-// are wrapped in t() — see RTL_AUDIT.md.
+// (a vitest test enforces key parity). Namespaced by surface.
 
 const en = {
   common: {
@@ -30,11 +29,15 @@ const en = {
     yes: "Yes",
     no: "No",
     close: "Close",
+    overview: "Overview",
+    dashboard: "Dashboard",
+    approvals: "Approvals",
+    create: "Create",
   },
   nav: {
     dashboard: "Dashboard",
     pos: "Point of Sale",
-    sales: "Sales",
+    sales: "Sales & Pricing",
     inventory: "Inventory",
     catalog: "Catalog",
     purchasing: "Purchasing",
@@ -44,7 +47,50 @@ const en = {
     payroll: "Payroll",
     reports: "Reports",
     settings: "Settings",
-    setup: "Setup",
+    setup: "Cycom Setup",
+    esign: "eSign Documents",
+    attendance: "Attendance",
+    plm: "Manufacturing & PLM",
+    expenses: "Expenses Claim",
+    project: "Project Management",
+  },
+  sidebar: {
+    backToLauncher: "Back to Apps Launcher",
+    activeModule: "Active Module",
+    switchCompany: "Switch Company",
+    // setup
+    setupHub: "Setup Hub",
+    company: "Company",
+    chartOfAccounts: "Chart of Accounts",
+    payrollStructure: "Payroll Structure",
+    warehouse: "Warehouse",
+    // esign
+    templates: "Templates",
+    signatureRequests: "Signature Requests",
+    // sales
+    ordersRegistry: "Orders Registry",
+    // pos
+    sessionManager: "Session Manager",
+    cashDrawer: "Cash Drawer",
+    advancePledge: "Advance & Pledge",
+    // attendance
+    biometricTerminals: "Biometric Terminals",
+    liveEventStream: "Live event stream",
+    overtimeCalculator: "Overtime calculator",
+    geofenceConfig: "Geofence config",
+    punchCorrections: "Punch corrections",
+    // plm
+    bomSelector: "BOM Selector",
+    costAnalysis: "Cost Analysis",
+    ecoApprovals: "ECO approvals",
+    // expenses
+    logExpense: "Log Expense",
+    approvalsQueue: "Approvals Queue",
+    ledgerRecord: "Ledger Record",
+    // project
+    kanbanBoard: "Kanban Board",
+    timesheetsLogs: "Timesheets Logs",
+    createTask: "Create Task",
   },
   pos: {
     title: "Point of Sale",
@@ -108,7 +154,5 @@ const en = {
 
 export default en;
 
-// The catalog shape with values widened to `string`, so ar.ts (and any future
-// locale) can supply its own translations while keeping the exact key structure.
 type Widen<T> = { [K in keyof T]: T[K] extends string ? string : Widen<T[K]> };
 export type Messages = Widen<typeof en>;

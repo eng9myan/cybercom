@@ -1,7 +1,6 @@
 // Arabic (العربية) message catalog. Mirrors en.ts key-for-key (vitest-enforced).
-// ERP terminology reviewed for correctness (accounting/POS/tax terms are not
-// safely machine-translatable — RTL_AUDIT.md item 3). Professional review
-// still recommended before an Arabic-market GA.
+// ERP terminology reviewed for correctness. Professional review still
+// recommended before an Arabic-market GA (RTL_AUDIT.md item 3).
 
 import type { Messages } from "./en";
 
@@ -33,11 +32,15 @@ const ar: Messages = {
     yes: "نعم",
     no: "لا",
     close: "إغلاق",
+    overview: "نظرة عامة",
+    dashboard: "لوحة التحكم",
+    approvals: "الموافقات",
+    create: "إنشاء",
   },
   nav: {
     dashboard: "لوحة التحكم",
     pos: "نقطة البيع",
-    sales: "المبيعات",
+    sales: "المبيعات والتسعير",
     inventory: "المخزون",
     catalog: "الكتالوج",
     purchasing: "المشتريات",
@@ -47,7 +50,42 @@ const ar: Messages = {
     payroll: "الرواتب",
     reports: "التقارير",
     settings: "الإعدادات",
-    setup: "الإعداد",
+    setup: "إعداد سايكوم",
+    esign: "التوقيع الإلكتروني",
+    attendance: "الحضور والانصراف",
+    plm: "التصنيع وإدارة المنتج",
+    expenses: "مطالبات المصروفات",
+    project: "إدارة المشاريع",
+  },
+  sidebar: {
+    backToLauncher: "العودة إلى قائمة التطبيقات",
+    activeModule: "الوحدة النشطة",
+    switchCompany: "تبديل الشركة",
+    setupHub: "مركز الإعداد",
+    company: "الشركة",
+    chartOfAccounts: "دليل الحسابات",
+    payrollStructure: "هيكل الرواتب",
+    warehouse: "المستودع",
+    templates: "القوالب",
+    signatureRequests: "طلبات التوقيع",
+    ordersRegistry: "سجل الطلبات",
+    sessionManager: "إدارة الجلسات",
+    cashDrawer: "درج النقد",
+    advancePledge: "الدفعات المقدمة والحجوزات",
+    biometricTerminals: "أجهزة البصمة",
+    liveEventStream: "بث الأحداث المباشر",
+    overtimeCalculator: "حاسبة الوقت الإضافي",
+    geofenceConfig: "إعداد النطاق الجغرافي",
+    punchCorrections: "تصحيح البصمات",
+    bomSelector: "اختيار قائمة المواد",
+    costAnalysis: "تحليل التكاليف",
+    ecoApprovals: "موافقات أوامر التغيير",
+    logExpense: "تسجيل مصروف",
+    approvalsQueue: "قائمة الموافقات",
+    ledgerRecord: "قيد دفتر الأستاذ",
+    kanbanBoard: "لوحة كانبان",
+    timesheetsLogs: "سجلات ساعات العمل",
+    createTask: "إنشاء مهمة",
   },
   pos: {
     title: "نقطة البيع",
