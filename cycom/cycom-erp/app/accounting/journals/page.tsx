@@ -5,6 +5,7 @@ import { RefreshCw } from 'lucide-react';
 import { useCycomList, fmtCode, fmtMoney, fmtDate, m2oName, type Many2One } from '@/lib/cycomModels';
 import { write } from '@/lib/cycom';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/CycomEmptyStates';
+import { useT } from '@/lib/i18n';
 
 type CycomMove = {
   id: number;
@@ -19,15 +20,16 @@ type CycomMove = {
   currency_id?: Many2One;
 };
 
+type MoveStatusKey = 'posted' | 'draft' | 'unknown';
+
 interface JournalEntry {
   rawId: number;
   id: string;
   journal: string;
   date: string;
   partner: string;
-  account: string;
   amount: string;
-  status: string;
+  statusKey: MoveStatusKey;
   selected: boolean;
 }
 
@@ -37,13 +39,13 @@ const mapMove = (r: CycomMove): JournalEntry => ({
   journal: `${m2oName(r.journal_id, 'General')}${r.ref ? ` (${r.ref})` : ''}`,
   date: fmtDate(r.invoice_date || r.date),
   partner: m2oName(r.partner_id, '—'),
-  account: '—',
   amount: fmtMoney(r.amount_total ?? 0, m2oName(r.currency_id, '')),
-  status: r.state === 'posted' ? 'Posted' : r.state === 'draft' ? 'Draft' : (r.state || '—'),
+  statusKey: r.state === 'posted' ? 'posted' : r.state === 'draft' ? 'draft' : 'unknown',
   selected: false,
 });
 
 export default function JournalEntries() {
+  const t = useT();
   const { rows: server, loading, error, reload } = useCycomList<CycomMove, JournalEntry>(
     'account.move',
     [],
@@ -65,22 +67,22 @@ export default function JournalEntries() {
     try {
       await write('account.move', selected, { state: 'draft' });
       const next: Record<number, Partial<JournalEntry>> = {};
-      selected.forEach((id) => { next[id] = { selected: false, status: 'Draft' }; });
+      selected.forEach((id) => { next[id] = { selected: false, statusKey: 'draft' }; });
       setOverrides({ ...overrides, ...next });
     } catch {
-      // best-effort — backend will tell us via error state on reload
       reload();
     }
   };
 
   const selectedCount = list.filter((item) => item.selected).length;
+  const badgeTone = (k: MoveStatusKey) => (k === 'posted' ? 'badge-green' : 'badge-yellow');
 
   return (
     <div className="space-y-6">
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Journal Entries Ledger</h1>
-          <p className="page-subtitle">Post or audit accounting moves, verify cash/bank account restrictions, and perform bulk draft overrides (account_move_bulk_set_draft).</p>
+          <h1 className="page-title text-white">{t('journals.title')}</h1>
+          <p className="page-subtitle">{t('journals.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           {selectedCount > 0 && (
@@ -88,37 +90,35 @@ export default function JournalEntries() {
               onClick={handleBulkDraft}
               className="px-3 py-2 text-xs font-bold bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 rounded-md transition-colors flex items-center gap-1.5"
             >
-              <RefreshCw className="w-4 h-4" /> Reset ({selectedCount}) to Draft
+              <RefreshCw className="w-4 h-4" /> {t('journals.resetToDraft', { n: selectedCount })}
             </button>
           )}
         </div>
       </div>
 
       <div className="glass-card p-6 border-cyan-500/20 bg-cyan-950/10 text-xs">
-        <h3 className="text-sm font-bold text-white mb-2">Journal Domain Restrictions</h3>
-        <p className="text-slate-400 leading-relaxed mb-4">
-          <strong>custom_cash_bank_journal_account_domain:</strong> restricts cash and bank journal account selection to predefined chart of accounts domains (e.g. cash journals can only post to Cash-in-Hand accounts, and bank journals to Liquid Bank assets). Prevents ledger accounting errors.
-        </p>
+        <h3 className="text-sm font-bold text-white mb-2">{t('journals.restrictionsHeading')}</h3>
+        <p className="text-slate-400 leading-relaxed mb-4">{t('journals.restrictionsBody')}</p>
       </div>
 
-      {loading && <LoadingCard label="Loading journal entries…" />}
+      {loading && <LoadingCard label={t('journals.loading')} />}
       {error && <ErrorCard error={error} />}
-      {!loading && !error && list.length === 0 && <EmptyCard label="No journal entries yet. Post or import a few to populate this register." />}
+      {!loading && !error && list.length === 0 && <EmptyCard label={t('journals.empty')} />}
 
       {!loading && !error && list.length > 0 && (
         <div className="glass-card p-6">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Journal Entries Register</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">{t('journals.register')}</h2>
           <div className="overflow-x-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th className="w-10">Select</th>
-                  <th>Entry Code</th>
-                  <th>Journal Code</th>
-                  <th>Partner</th>
-                  <th>Date</th>
-                  <th>Total Value</th>
-                  <th>Status</th>
+                  <th className="w-10">{t('journals.select')}</th>
+                  <th>{t('journals.entryCode')}</th>
+                  <th>{t('journals.journalCode')}</th>
+                  <th>{t('journals.partner')}</th>
+                  <th>{t('common.date')}</th>
+                  <th>{t('journals.totalValue')}</th>
+                  <th>{t('common.status')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -132,9 +132,7 @@ export default function JournalEntries() {
                     <td>{item.partner}</td>
                     <td className="text-slate-400">{item.date}</td>
                     <td className="font-bold text-white">{item.amount}</td>
-                    <td>
-                      <span className={`badge ${item.status === 'Posted' ? 'badge-green' : 'badge-yellow'}`}>{item.status}</span>
-                    </td>
+                    <td><span className={`badge ${badgeTone(item.statusKey)}`}>{t(`status.${item.statusKey}`)}</span></td>
                   </tr>
                 ))}
               </tbody>
