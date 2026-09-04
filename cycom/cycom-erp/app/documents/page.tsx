@@ -3,11 +3,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useCycomList, m2oName, fmtDate, type Many2One } from '@/lib/cycomModels';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FolderOpen, Folder, Plus, Trash2, Download, Search, 
-  FileText, ShieldCheck, Tag, Info, CheckCircle, PenTool,
-  Send, Sparkles, Mail, Users, FileSignature, ShieldAlert, Award, RefreshCw, X
+import {
+  FolderOpen, Folder, Plus, Trash2, Download, Search,
+  FileText, ShieldCheck, CheckCircle, PenTool,
+  Send, FileSignature, Award, X
 } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 interface DocFile {
   id: string;
@@ -63,6 +64,20 @@ const WORKSPACES: Array<'Finance' | 'HR' | 'Operations' | 'Legal'> = ['Finance',
 const TAGS: Array<'Invoice' | 'Contract' | 'ID' | 'Report' | 'Other'> = ['Invoice', 'Contract', 'ID', 'Report', 'Other'];
 
 export default function DocumentsPage() {
+  const t = useT();
+  const WS_LABEL: Record<DocFile['workspace'], string> = {
+    Finance: t('documentsPage.wsFinance'), HR: t('documentsPage.wsHr'),
+    Operations: t('documentsPage.wsOperations'), Legal: t('documentsPage.wsLegal'),
+  };
+  const TAG_LABEL: Record<DocFile['tag'], string> = {
+    Invoice: t('documentsPage.tagInvoice'), Contract: t('documentsPage.tagContract'),
+    ID: t('documentsPage.tagId'), Report: t('documentsPage.tagReport'), Other: t('documentsPage.tagOther'),
+  };
+  const ROLE_LABEL: Record<ESignRequest['role'], string> = {
+    Contractor: t('documentsPage.roleContractor'), Customer: t('documentsPage.roleCustomer'),
+    Employee: t('documentsPage.roleEmployee'), Witness: t('documentsPage.roleWitness'),
+  };
+
   const { rows: liveDocs, loading } = useCycomList<CycomDocument, DocFile>(
     'documents.document', [], ['name', 'type', 'owner_id', 'folder_id', 'create_date'],
     mapDocument,
@@ -105,7 +120,7 @@ export default function DocumentsPage() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     // Clear drawing pad instruction text on first click/drag
     ctx.beginPath();
     const rect = canvas.getBoundingClientRect();
@@ -179,7 +194,7 @@ export default function DocumentsPage() {
     setFiles(files.filter(f => f.id !== id));
   };
 
-  const filteredFiles = files.filter(f => 
+  const filteredFiles = files.filter(f =>
     f.workspace === selectedWorkspace &&
     (tagFilter === 'All' || f.tag === tagFilter) &&
     f.name.toLowerCase().includes(search.toLowerCase())
@@ -214,7 +229,7 @@ export default function DocumentsPage() {
     if (!selectedRequest) return;
 
     const randomHash = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-    
+
     setESignRequests(prev => prev.map(req => {
       if (req.id === selectedRequest.id) {
         return {
@@ -236,17 +251,17 @@ export default function DocumentsPage() {
     }, 1500);
   };
 
-  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>Loading...</div>;
+  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>{t('attendanceMain.loading')}</div>;
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="page-header flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="page-title text-white">Documents DMS & eSign</h1>
-          <p className="page-subtitle">Categorize files, manage secure document lockers, and request/simulate legally-binding signatures.</p>
+          <h1 className="page-title text-white">{t('documentsPage.title')}</h1>
+          <p className="page-subtitle">{t('documentsPage.subtitle')}</p>
         </div>
-        
+
         {/* Module Switcher Tabs */}
         <div className="flex bg-black/25 p-1 border border-white/5 rounded-xl text-xs font-semibold text-slate-400">
           <button
@@ -256,7 +271,7 @@ export default function DocumentsPage() {
             }`}
           >
             <FolderOpen className="w-3.5 h-3.5" />
-            DMS Explorer
+            {t('documentsPage.tabDms')}
           </button>
           <button
             onClick={() => setActiveTab('esign')}
@@ -265,7 +280,7 @@ export default function DocumentsPage() {
             }`}
           >
             <FileSignature className="w-3.5 h-3.5" />
-            eSign Workflows
+            {t('documentsPage.tabEsign')}
           </button>
         </div>
       </div>
@@ -277,7 +292,7 @@ export default function DocumentsPage() {
           <div className="space-y-4">
             <div className="glass-card p-5 space-y-3">
               <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-2.5 flex items-center gap-1.5">
-                <FolderOpen className="w-4 h-4 text-cyan-400" /> DMS Workspaces
+                <FolderOpen className="w-4 h-4 text-cyan-400" /> {t('documentsPage.workspacesHeading')}
               </h2>
               <div className="space-y-1">
                 {WORKSPACES.map(ws => (
@@ -285,14 +300,14 @@ export default function DocumentsPage() {
                     key={ws}
                     onClick={() => { setSelectedWorkspace(ws); setTagFilter('All'); }}
                     className={`p-3 rounded-xl flex items-center gap-3 cursor-pointer border transition-all ${
-                      selectedWorkspace === ws 
-                        ? 'bg-gradient-to-br from-orange-500/12 to-blue-500/8 border-orange-500/25 text-white' 
+                      selectedWorkspace === ws
+                        ? 'bg-gradient-to-br from-orange-500/12 to-blue-500/8 border-orange-500/25 text-white'
                         : 'border-transparent hover:bg-white/3 text-slate-400'
                     }`}
                   >
                     <Folder className={`w-4 h-4 ${selectedWorkspace === ws ? 'text-[#E67E22]' : 'text-slate-500'}`} />
-                    <span className="text-xs font-bold">{ws} Workspace</span>
-                    <span className="ml-auto text-[9px] bg-white/5 px-1.5 py-0.2 rounded font-bold font-mono">
+                    <span className="text-xs font-bold">{WS_LABEL[ws]} {t('documentsPage.workspaceSuffix')}</span>
+                    <span className="ms-auto text-[9px] bg-white/5 px-1.5 py-0.2 rounded font-bold font-mono">
                       {files.filter(f => f.workspace === ws).length}
                     </span>
                   </div>
@@ -302,21 +317,21 @@ export default function DocumentsPage() {
 
             {/* Add file in workspace */}
             <div className="glass-card p-5 space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-2">Upload to {selectedWorkspace}</h3>
-              
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-2">{t('documentsPage.uploadTo', { workspace: WS_LABEL[selectedWorkspace] })}</h3>
+
               {fileSuccess ? (
                 <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-center text-xs space-y-2">
                   <CheckCircle className="w-8 h-8 mx-auto animate-bounce" />
-                  <p className="font-bold">File Uploaded successfully</p>
+                  <p className="font-bold">{t('documentsPage.fileUploadedSuccess')}</p>
                 </div>
               ) : (
                 <form onSubmit={handleUploadFile} className="space-y-3 text-xs">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">File Name</label>
-                    <input 
-                      type="text" 
-                      required 
-                      placeholder="e.g. Agreement_draft" 
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">{t('documentsPage.fileName')}</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder={t('documentsPage.fileNamePh')}
                       value={fileName}
                       onChange={e => setFileName(e.target.value)}
                       className="input-field py-1"
@@ -324,28 +339,28 @@ export default function DocumentsPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Doc Tag</label>
-                      <select 
-                        value={fileTag} 
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{t('documentsPage.docTag')}</label>
+                      <select
+                        value={fileTag}
                         onChange={e => setFileTag(e.target.value as any)}
                         className="input-field py-1"
                       >
-                        {TAGS.map(t => <option key={t} value={t}>{t}</option>)}
+                        {TAGS.map(tg => <option key={tg} value={tg}>{TAG_LABEL[tg]}</option>)}
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Sim. Size</label>
-                      <input 
-                        type="text" 
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{t('documentsPage.simSize')}</label>
+                      <input
+                        type="text"
                         value={fileSize}
                         onChange={e => setFileSize(e.target.value)}
-                        placeholder="e.g. 1.2 MB" 
+                        placeholder={t('documentsPage.simSizePh')}
                         className="input-field py-1 font-mono"
                       />
                     </div>
                   </div>
                   <button type="submit" className="btn-primary w-full py-1.5 mt-2">
-                    Upload Simulator
+                    {t('documentsPage.uploadSimulator')}
                   </button>
                 </form>
               )}
@@ -355,15 +370,15 @@ export default function DocumentsPage() {
           {/* Right Column - Files Grid & Filters */}
           <div className="lg:col-span-3 glass-card p-5 space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-white/5 pb-3 gap-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{selectedWorkspace} Folder Contents</h2>
-              
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('documentsPage.folderContents', { workspace: WS_LABEL[selectedWorkspace] })}</h2>
+
               <div className="flex items-center gap-3 text-xs">
                 {/* Search */}
                 <div className="flex items-center gap-2 bg-white/3 border border-white/8 rounded-xl px-2.5 py-1">
                   <Search className="w-3.5 h-3.5 text-slate-500" />
-                  <input 
-                    type="text" 
-                    placeholder="Filter name..." 
+                  <input
+                    type="text"
+                    placeholder={t('documentsPage.searchFilterPh')}
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     className="bg-transparent border-none outline-none text-[11px] text-white placeholder-slate-500 w-[120px]"
@@ -372,17 +387,17 @@ export default function DocumentsPage() {
 
                 {/* Tag filters */}
                 <div className="flex gap-1">
-                  {['All', ...TAGS].map(t => (
+                  {(['All', ...TAGS] as const).map(tg => (
                     <button
-                      key={t}
-                      onClick={() => setTagFilter(t)}
+                      key={tg}
+                      onClick={() => setTagFilter(tg)}
                       className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors ${
-                        tagFilter === t 
-                          ? 'bg-[#E67E22]/20 border-[#E67E22]/40 text-[#E67E22]' 
+                        tagFilter === tg
+                          ? 'bg-[#E67E22]/20 border-[#E67E22]/40 text-[#E67E22]'
                           : 'border-transparent text-slate-400 hover:text-white'
                       }`}
                     >
-                      {t}
+                      {tg === 'All' ? t('documentsPage.tagAll') : TAG_LABEL[tg]}
                     </button>
                   ))}
                 </div>
@@ -391,18 +406,18 @@ export default function DocumentsPage() {
 
             <div className="overflow-x-auto">
               {filteredFiles.length === 0 ? (
-                <p className="text-xs text-slate-500 italic py-10 text-center">No documents matching this filter in {selectedWorkspace} Workspace.</p>
+                <p className="text-xs text-slate-500 italic py-10 text-center">{t('documentsPage.noDocsFilter', { workspace: WS_LABEL[selectedWorkspace] })}</p>
               ) : (
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Doc ID</th>
-                      <th>Document Name</th>
-                      <th>Tag category</th>
-                      <th>Workspace</th>
-                      <th>File Size</th>
-                      <th>Upload Date</th>
-                      <th className="text-right">Actions</th>
+                      <th>{t('documentsPage.colDocId')}</th>
+                      <th>{t('documentsPage.colDocumentName')}</th>
+                      <th>{t('documentsPage.colTagCategory')}</th>
+                      <th>{t('documentsPage.colWorkspace')}</th>
+                      <th>{t('documentsPage.colFileSize')}</th>
+                      <th>{t('documentsPage.colUploadDate')}</th>
+                      <th className="text-end">{t('documentsPage.colActions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -420,17 +435,17 @@ export default function DocumentsPage() {
                             file.tag === 'Invoice' ? 'badge-orange' :
                             file.tag === 'Contract' ? 'badge-cyan' :
                             file.tag === 'ID' ? 'badge-purple' : 'badge-green'
-                          }`}>{file.tag}</span>
+                          }`}>{TAG_LABEL[file.tag]}</span>
                         </td>
-                        <td className="text-xs text-slate-500">{file.workspace}</td>
+                        <td className="text-xs text-slate-500">{WS_LABEL[file.workspace]}</td>
                         <td className="font-mono">{file.size}</td>
                         <td className="font-mono text-slate-400">{file.dateUploaded}</td>
-                        <td className="text-right">
+                        <td className="text-end">
                           <div className="flex gap-1 justify-end">
                             <button className="p-1 rounded hover:bg-white/5 text-slate-400 hover:text-white">
                               <Download className="w-3.5 h-3.5" />
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDeleteFile(file.id)}
                               className="p-1 rounded hover:bg-red-500/20 text-[#EF4444]"
                             >
@@ -454,34 +469,34 @@ export default function DocumentsPage() {
           {/* Stats Bar */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="glass-card p-4 space-y-1">
-              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Total Sent Requests</span>
-              <p className="text-xl font-black text-white">{esignRequests.length} files</p>
-              <span className="text-[10px] text-slate-400">Authorized eSign ledger entries</span>
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">{t('documentsPage.totalSentRequests')}</span>
+              <p className="text-xl font-black text-white">{t('documentsPage.filesN', { n: esignRequests.length })}</p>
+              <span className="text-[10px] text-slate-400">{t('documentsPage.authorizedLedgerEntries')}</span>
             </div>
             <div className="glass-card p-4 space-y-1">
-              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Signed & Secured</span>
-              <p className="text-xl font-black text-emerald-400">{esignRequests.filter(r => r.status === 'Fully Signed').length} files</p>
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">{t('documentsPage.signedSecured')}</span>
+              <p className="text-xl font-black text-emerald-400">{t('documentsPage.filesN', { n: esignRequests.filter(r => r.status === 'Fully Signed').length })}</p>
               <span className="text-[10px] text-emerald-500 font-bold inline-flex items-center gap-0.5">
-                <ShieldCheck className="w-3.5 h-3.5" /> 100% Audit Traceable
+                <ShieldCheck className="w-3.5 h-3.5" /> {t('documentsPage.auditTraceable')}
               </span>
             </div>
             <div className="glass-card p-4 space-y-1">
-              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Awaiting Action</span>
-              <p className="text-xl font-black text-amber-400">{esignRequests.filter(r => r.status === 'Pending Signature').length} files</p>
-              <span className="text-[10px] text-amber-500">Requires recipient signoff</span>
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">{t('documentsPage.awaitingAction')}</span>
+              <p className="text-xl font-black text-amber-400">{t('documentsPage.filesN', { n: esignRequests.filter(r => r.status === 'Pending Signature').length })}</p>
+              <span className="text-[10px] text-amber-500">{t('documentsPage.requiresSignoff')}</span>
             </div>
           </div>
 
           {/* eSign ledger panel */}
           <div className="glass-card p-5 space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-white/5 pb-3.5">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-white">eSign Signature Requests Ledger</h2>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-white">{t('documentsPage.ledgerHeading')}</h2>
               <button
                 onClick={() => setIsRequestModalOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E67E22] hover:bg-orange-600 text-white text-xs font-semibold transition-all shadow-md shadow-orange-500/10"
               >
                 <Send className="w-3.5 h-3.5" />
-                Request Signature
+                {t('documentsPage.requestSignature')}
               </button>
             </div>
 
@@ -489,14 +504,14 @@ export default function DocumentsPage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Request Ref</th>
-                    <th>Document Name</th>
-                    <th>Recipient</th>
-                    <th>Role</th>
-                    <th>Date Sent</th>
-                    <th>Completion Date</th>
-                    <th>Status</th>
-                    <th className="text-right">Actions</th>
+                    <th>{t('documentsPage.colRequestRef')}</th>
+                    <th>{t('documentsPage.colDocumentName')}</th>
+                    <th>{t('documentsPage.colRecipient')}</th>
+                    <th>{t('documentsPage.colRole')}</th>
+                    <th>{t('documentsPage.colDateSent')}</th>
+                    <th>{t('documentsPage.colCompletionDate')}</th>
+                    <th>{t('documentsPage.colStatus')}</th>
+                    <th className="text-end">{t('documentsPage.colActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -515,31 +530,31 @@ export default function DocumentsPage() {
                           <p className="text-[9px] text-slate-500 font-mono">{req.signerEmail}</p>
                         </div>
                       </td>
-                      <td className="text-xs text-slate-400">{req.role}</td>
+                      <td className="text-xs text-slate-400">{ROLE_LABEL[req.role]}</td>
                       <td className="font-mono text-slate-400">{req.dateRequested}</td>
                       <td className="font-mono text-slate-400">{req.dateSigned || '—'}</td>
                       <td>
                         <span className={`badge text-[9px] ${
-                          req.status === 'Fully Signed' 
-                            ? 'badge-green' 
+                          req.status === 'Fully Signed'
+                            ? 'badge-green'
                             : 'badge-orange'
-                        }`}>{req.status}</span>
+                        }`}>{req.status === 'Fully Signed' ? t('documentsPage.stFullySigned') : t('documentsPage.stPendingSignature')}</span>
                       </td>
-                      <td className="text-right">
+                      <td className="text-end">
                         <div className="flex gap-2 justify-end">
                           {req.status === 'Pending Signature' ? (
                             <button
                               onClick={() => { setSelectedRequest(req); setIsSignModalOpen(true); }}
                               className="px-2 py-1 bg-[#E67E22]/10 border border-[#E67E22]/20 text-[#E67E22] hover:bg-[#E67E22]/20 rounded text-[10px] font-bold transition-all"
                             >
-                              Sign Now
+                              {t('documentsPage.signNow')}
                             </button>
                           ) : (
                             <button
                               onClick={() => { setSelectedRequest(req); setIsCertificateModalOpen(true); }}
                               className="px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 rounded text-[10px] font-bold transition-all flex items-center gap-1"
                             >
-                              <ShieldCheck className="w-3 h-3" /> Audit Log
+                              <ShieldCheck className="w-3 h-3" /> {t('documentsPage.auditLog')}
                             </button>
                           )}
                         </div>
@@ -565,26 +580,26 @@ export default function DocumentsPage() {
             >
               <button
                 onClick={() => setIsRequestModalOpen(false)}
-                className="absolute top-4 right-4 text-slate-500 hover:text-white"
+                className="absolute top-4 end-4 text-slate-500 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
 
               <div className="space-y-1">
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Send Signature Request</h2>
-                <p className="text-[10px] text-slate-500">Dispatch an eSign contract request via the Cycom Secure Signoff module.</p>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('documentsPage.sendReqModalTitle')}</h2>
+                <p className="text-[10px] text-slate-500">{t('documentsPage.sendReqModalSubtitle')}</p>
               </div>
 
               <form onSubmit={handleRequestSign} className="space-y-3 text-xs">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Select Document</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">{t('documentsPage.selectDocument')}</label>
                   <select
                     required
                     value={reqFileName}
                     onChange={(e) => setReqFileName(e.target.value)}
                     className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-orange-500/50"
                   >
-                    <option value="" className="bg-[#0a0f1e]">-- Choose File --</option>
+                    <option value="" className="bg-[#0a0f1e]">{t('documentsPage.chooseFile')}</option>
                     {files.map(f => (
                       <option key={f.id} value={f.name} className="bg-[#0a0f1e]">{f.name} ({f.size})</option>
                     ))}
@@ -592,11 +607,11 @@ export default function DocumentsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Recipient Full Name</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">{t('documentsPage.recipientFullName')}</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Zaid Al-Fayegh"
+                    placeholder={t('documentsPage.recipientFullNamePh')}
                     value={reqSignerName}
                     onChange={(e) => setReqSignerName(e.target.value)}
                     className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-orange-500/50"
@@ -604,28 +619,29 @@ export default function DocumentsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Recipient Email Address</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">{t('documentsPage.recipientEmail')}</label>
                   <input
                     type="email"
                     required
-                    placeholder="e.g. client@domain.jo"
+                    placeholder={t('documentsPage.recipientEmailPh')}
                     value={reqSignerEmail}
                     onChange={(e) => setReqSignerEmail(e.target.value)}
                     className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-orange-500/50"
+                    dir="ltr"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Signer Role</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">{t('documentsPage.signerRole')}</label>
                   <select
                     value={reqRole}
                     onChange={(e) => setReqRole(e.target.value as any)}
                     className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-orange-500/50"
                   >
-                    <option value="Customer" className="bg-[#0a0f1e]">Customer / Client</option>
-                    <option value="Contractor" className="bg-[#0a0f1e]">Contractor / Partner</option>
-                    <option value="Employee" className="bg-[#0a0f1e]">Employee</option>
-                    <option value="Witness" className="bg-[#0a0f1e]">Authorized Witness</option>
+                    <option value="Customer" className="bg-[#0a0f1e]">{t('documentsPage.roleCustomerFull')}</option>
+                    <option value="Contractor" className="bg-[#0a0f1e]">{t('documentsPage.roleContractorFull')}</option>
+                    <option value="Employee" className="bg-[#0a0f1e]">{t('documentsPage.roleEmployee')}</option>
+                    <option value="Witness" className="bg-[#0a0f1e]">{t('documentsPage.roleWitnessFull')}</option>
                   </select>
                 </div>
 
@@ -635,13 +651,13 @@ export default function DocumentsPage() {
                     onClick={() => setIsRequestModalOpen(false)}
                     className="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors border border-white/10"
                   >
-                    Cancel
+                    {t('documentsPage.cancel')}
                   </button>
                   <button
                     type="submit"
                     className="flex-1 py-2 rounded-xl bg-[#E67E22] hover:bg-orange-600 text-white text-xs font-semibold transition-colors shadow-md shadow-orange-500/10"
                   >
-                    Send Request
+                    {t('documentsPage.sendRequest')}
                   </button>
                 </div>
               </form>
@@ -662,7 +678,7 @@ export default function DocumentsPage() {
             >
               <button
                 onClick={() => setIsSignModalOpen(false)}
-                className="absolute top-4 right-4 text-slate-500 hover:text-white"
+                className="absolute top-4 end-4 text-slate-500 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -670,10 +686,10 @@ export default function DocumentsPage() {
               <div className="space-y-1 border-b border-white/5 pb-2">
                 <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-orange-500/10 text-[#E67E22] text-[9px] font-bold border border-orange-500/25">
                   <PenTool className="w-3 h-3" />
-                  ESIGN SECURE PROTOCOL
+                  {t('documentsPage.secureProtocolBadge')}
                 </div>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Sign Document: {selectedRequest.fileName}</h2>
-                <p className="text-[10px] text-slate-400">Signing as recipient: <strong className="text-white">{selectedRequest.signerName}</strong> ({selectedRequest.signerEmail})</p>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('documentsPage.signDocumentTitle', { name: selectedRequest.fileName })}</h2>
+                <p className="text-[10px] text-slate-400">{t('documentsPage.signingAs', { name: selectedRequest.signerName, email: selectedRequest.signerEmail })}</p>
               </div>
 
               {signCompleted ? (
@@ -685,24 +701,24 @@ export default function DocumentsPage() {
                   >
                     <CheckCircle className="w-10 h-10 animate-pulse" />
                   </motion.div>
-                  <p className="text-xs font-bold text-emerald-400">Document Signed & Cryptographically Locked</p>
-                  <p className="text-[9px] text-slate-500 font-mono">Syncing verification codes with ZK Ledger...</p>
+                  <p className="text-xs font-bold text-emerald-400">{t('documentsPage.signedLocked')}</p>
+                  <p className="text-[9px] text-slate-500 font-mono">{t('documentsPage.syncingVerification')}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {/* Visual Document Mockup Sheet */}
                   <div className="p-4 rounded-xl bg-white/2 border border-white/5 text-[9px] text-slate-400 leading-relaxed font-serif relative min-h-[120px] select-none">
-                    <p className="font-bold text-[10px] text-slate-200 mb-2">AGREEMENT & SERVICE ACCEPTANCE DEED</p>
-                    <p>This legally binding deed is entered between CYCOM ERP CO. (Cycom ERP Operations) and the undersigned recipient. The signer agrees to the general terms, digital logs, and transaction audit records.</p>
-                    
+                    <p className="font-bold text-[10px] text-slate-200 mb-2">{t('documentsPage.agreementDeedTitle')}</p>
+                    <p>{t('documentsPage.agreementDeedBody')}</p>
+
                     {/* Golden Signature Placeholder Target Box */}
                     <div className="mt-4 border border-dashed border-[#E67E22]/50 bg-[#E67E22]/5 p-2 rounded flex items-center justify-between">
                       <div>
-                        <span className="text-[8px] text-slate-500 uppercase block font-sans">Authorized Signatory</span>
-                        <span className="text-[#E67E22] font-semibold font-sans">{selectedRequest.signerName} ({selectedRequest.role})</span>
+                        <span className="text-[8px] text-slate-500 uppercase block font-sans">{t('documentsPage.authorizedSignatory')}</span>
+                        <span className="text-[#E67E22] font-semibold font-sans">{selectedRequest.signerName} ({ROLE_LABEL[selectedRequest.role]})</span>
                       </div>
                       <div className="w-20 h-6 border-b border-orange-400 flex items-center justify-center font-cursive text-cyan-400 text-xs italic">
-                        {signMethod === 'type' && typedName ? typedName : 'Draw Pad Active'}
+                        {signMethod === 'type' && typedName ? typedName : t('documentsPage.drawPadActive')}
                       </div>
                     </div>
                   </div>
@@ -713,13 +729,13 @@ export default function DocumentsPage() {
                       onClick={() => setSignMethod('draw')}
                       className={`px-3 py-1 rounded-lg ${signMethod === 'draw' ? 'bg-[#E67E22] text-white' : 'text-slate-400 hover:text-white'}`}
                     >
-                      Draw Signature
+                      {t('documentsPage.drawSignature')}
                     </button>
                     <button
                       onClick={() => setSignMethod('type')}
                       className={`px-3 py-1 rounded-lg ${signMethod === 'type' ? 'bg-[#E67E22] text-white' : 'text-slate-400 hover:text-white'}`}
                     >
-                      Type Signature
+                      {t('documentsPage.typeSignature')}
                     </button>
                   </div>
 
@@ -727,12 +743,12 @@ export default function DocumentsPage() {
                   {signMethod === 'draw' ? (
                     <div className="space-y-1">
                       <div className="flex justify-between items-center text-[10px]">
-                        <span className="text-slate-400">Draw with mouse or touchpad:</span>
+                        <span className="text-slate-400">{t('documentsPage.drawWithMouse')}</span>
                         <button
                           onClick={clearCanvas}
                           className="text-[#EF4444] hover:text-red-400 text-[9px] font-bold"
                         >
-                          Clear Board
+                          {t('documentsPage.clearBoard')}
                         </button>
                       </div>
                       <div className="relative border border-white/10 rounded-xl overflow-hidden bg-black/40">
@@ -750,17 +766,17 @@ export default function DocumentsPage() {
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase">Type Signature Name</label>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{t('documentsPage.typeSignatureName')}</label>
                       <input
                         type="text"
-                        placeholder="Type full name for script conversion"
+                        placeholder={t('documentsPage.typeSignatureNamePh')}
                         value={typedName}
                         onChange={(e) => setTypedName(e.target.value)}
                         className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-orange-500/50"
                       />
                       {typedName && (
                         <div className="p-3 rounded-xl bg-white/3 border border-white/5 text-center">
-                          <span className="text-xs text-slate-400 block mb-1">Cursive Signature Preview:</span>
+                          <span className="text-xs text-slate-400 block mb-1">{t('documentsPage.cursivePreview')}</span>
                           <span className="font-cursive text-lg text-cyan-400 italic font-medium leading-none tracking-wide">
                             {typedName}
                           </span>
@@ -774,13 +790,13 @@ export default function DocumentsPage() {
                       onClick={() => setIsSignModalOpen(false)}
                       className="flex-1 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors border border-white/10"
                     >
-                      Cancel
+                      {t('documentsPage.cancel')}
                     </button>
                     <button
                       onClick={handleSubmitSignature}
                       className="flex-1 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold transition-colors shadow-md shadow-emerald-500/10"
                     >
-                      Apply Signature
+                      {t('documentsPage.applySignature')}
                     </button>
                   </div>
                 </div>
@@ -802,59 +818,59 @@ export default function DocumentsPage() {
             >
               <button
                 onClick={() => setIsCertificateModalOpen(false)}
-                className="absolute top-4 right-4 text-slate-500 hover:text-white"
+                className="absolute top-4 end-4 text-slate-500 hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
 
               <div className="space-y-1 text-center border-b border-white/5 pb-3">
                 <Award className="w-10 h-10 text-emerald-400 mx-auto animate-pulse" />
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">Cycom Secure Sign Certificate</h2>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-emerald-400">Status: Legally Verified & Audited</p>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider">{t('documentsPage.certTitle')}</h2>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-emerald-400">{t('documentsPage.certStatusVerified')}</p>
               </div>
 
               <div className="space-y-3 text-xs">
                 <div className="p-3.5 rounded-xl bg-white/3 border border-white/5 space-y-2.5">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Document Ref:</span>
+                    <span className="text-slate-500">{t('documentsPage.documentRef')}</span>
                     <span className="font-bold text-slate-300">{selectedRequest.id}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">File Name:</span>
+                    <span className="text-slate-500">{t('documentsPage.fileNameLabel')}</span>
                     <span className="font-bold text-slate-300 font-mono">{selectedRequest.fileName}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Signed By:</span>
+                    <span className="text-slate-500">{t('documentsPage.signedBy')}</span>
                     <span className="font-bold text-slate-300">{selectedRequest.signerName}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Signer Email:</span>
-                    <span className="font-bold text-[#5DADE2] font-mono">{selectedRequest.signerEmail}</span>
+                    <span className="text-slate-500">{t('documentsPage.signerEmailLabel')}</span>
+                    <span className="font-bold text-[#5DADE2] font-mono" dir="ltr">{selectedRequest.signerEmail}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Signer Role:</span>
-                    <span className="font-bold text-slate-300">{selectedRequest.role}</span>
+                    <span className="text-slate-500">{t('documentsPage.signerRoleLabel')}</span>
+                    <span className="font-bold text-slate-300">{ROLE_LABEL[selectedRequest.role]}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Sent Date:</span>
+                    <span className="text-slate-500">{t('documentsPage.sentDate')}</span>
                     <span className="font-bold text-slate-300 font-mono">{selectedRequest.dateRequested}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Signing Date:</span>
+                    <span className="text-slate-500">{t('documentsPage.signingDate')}</span>
                     <span className="font-bold text-emerald-400 font-mono">{selectedRequest.dateSigned}</span>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">SHA-256 Ledger Integrity Stamp</label>
-                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 text-[9px] font-mono text-emerald-400 break-all leading-normal">
+                  <label className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{t('documentsPage.shaLabel')}</label>
+                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 text-[9px] font-mono text-emerald-400 break-all leading-normal" dir="ltr">
                     {selectedRequest.sha256}
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-[#10B981]/5 border border-[#10B981]/20 text-[10px] text-slate-400 leading-normal flex items-start gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <p>This signature is authenticated via **Cycom ZK cryptographic logs**. Any alteration to the original document invalidates this hash.</p>
+                  <p>{t('documentsPage.integrityNote')}</p>
                 </div>
               </div>
 
@@ -862,7 +878,7 @@ export default function DocumentsPage() {
                 onClick={() => setIsCertificateModalOpen(false)}
                 className="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors border border-white/10"
               >
-                Close Certificate
+                {t('documentsPage.closeCertificate')}
               </button>
             </motion.div>
           </div>
