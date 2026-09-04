@@ -37,6 +37,8 @@ class ResultNotificationSerializer(serializers.ModelSerializer):
 
 
 class ResultAcknowledgementSerializer(serializers.ModelSerializer):
+    question_asked = _phi_text()
+
     class Meta:
         model = ResultAcknowledgement
         fields = "__all__"

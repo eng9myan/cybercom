@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.core.patients.models import Patient
 
@@ -43,7 +44,7 @@ class Referral(BaseModel):
         ],
         default="active",
     )
-    notes = models.TextField(blank=True)
+    notes = EncryptedText(classification="phi")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

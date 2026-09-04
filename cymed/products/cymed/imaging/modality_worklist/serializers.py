@@ -3,6 +3,11 @@ from rest_framework import serializers
 from .models import Modality, ModalityWorklist, StudyQueue, WorklistEntry
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class ModalitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Modality
@@ -27,6 +32,8 @@ class ModalityWorklistSerializer(serializers.ModelSerializer):
 
 
 class StudyQueueSerializer(serializers.ModelSerializer):
+    ai_findings_summary = _phi_text()
+
     class Meta:
         model = StudyQueue
         fields = "__all__"

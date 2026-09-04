@@ -8,6 +8,7 @@ from decimal import Decimal
 from django.db import models
 from django.utils import timezone
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 
 
@@ -193,9 +194,9 @@ class TeleReport(BaseModel):
     kind = models.CharField(
         max_length=32, choices=Kind.choices, default=Kind.PRELIMINARY
     )
-    text = models.TextField(blank=True)
+    text = EncryptedText(classification="phi")
     findings = models.JSONField(default=dict, blank=True)
-    impressions = models.TextField(blank=True)
+    impressions = EncryptedText(classification="phi")
     submitted_by_provider = models.ForeignKey(
         RadiologistProvider,
         null=True,

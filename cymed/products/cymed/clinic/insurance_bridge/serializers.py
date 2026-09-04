@@ -13,6 +13,11 @@ from products.cymed.clinic.insurance_bridge.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class PayerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payer
@@ -74,6 +79,8 @@ class EligibilityCheckSerializer(serializers.ModelSerializer):
 
 
 class AuthorizationResponseSerializer(serializers.ModelSerializer):
+    denial_reason = _phi_text()
+
     class Meta:
         model = AuthorizationResponse
         fields = "__all__"
@@ -81,6 +88,7 @@ class AuthorizationResponseSerializer(serializers.ModelSerializer):
 
 class AuthorizationRequestSerializer(serializers.ModelSerializer):
     response = AuthorizationResponseSerializer(read_only=True)
+    clinical_justification = _phi_text()
 
     class Meta:
         model = AuthorizationRequest

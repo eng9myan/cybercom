@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.core.patients.models import Patient
 
@@ -44,7 +45,7 @@ class AuthorizationRequest(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
     plan = models.ForeignKey(InsurancePlan, on_delete=models.CASCADE)
     requested_service = models.CharField(max_length=255)
-    clinical_justification = models.TextField()
+    clinical_justification = EncryptedText(classification="phi")
     status = models.CharField(
         max_length=50,
         choices=[("pending", "Pending"), ("approved", "Approved"), ("denied", "Denied")],
@@ -61,7 +62,7 @@ class AuthorizationResponse(BaseModel):
     )
     decision_date = models.DateTimeField(auto_now_add=True)
     authorization_number = models.CharField(max_length=100, blank=True)
-    denial_reason = models.TextField(blank=True)
+    denial_reason = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_clinic_insurance_auth_responses"

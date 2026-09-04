@@ -9,6 +9,11 @@ from products.cymed.clinic.referrals.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class ReferralReasonSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReferralReason
@@ -29,6 +34,7 @@ class ReferralAttachmentSerializer(serializers.ModelSerializer):
 
 class ReferralSerializer(serializers.ModelSerializer):
     attachments = ReferralAttachmentSerializer(many=True, required=False)
+    notes = _phi_text()
 
     class Meta:
         model = Referral

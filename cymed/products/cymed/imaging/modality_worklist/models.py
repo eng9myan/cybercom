@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 
 
@@ -118,7 +119,7 @@ class StudyQueue(BaseModel):
     assigned_to = models.UUIDField(null=True, blank=True)
     position = models.PositiveIntegerField(default=0, db_index=True)
     ai_priority_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    ai_findings_summary = models.TextField(blank=True)
+    ai_findings_summary = EncryptedText(classification="phi")
     status = models.CharField(max_length=20, default="queued", db_index=True)
 
     def __str__(self):

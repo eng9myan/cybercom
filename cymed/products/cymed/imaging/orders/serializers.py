@@ -9,6 +9,11 @@ from .models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class ImagingProtocolSerializer(serializers.ModelSerializer):
     class Meta:
         model = ImagingProtocol
@@ -38,6 +43,7 @@ class ImagingOrderStatusHistorySerializer(serializers.ModelSerializer):
 
 
 class ImagingOrderSerializer(serializers.ModelSerializer):
+    clinical_indication = _phi_text()
     items = ImagingOrderItemSerializer(many=True, read_only=True)
     status_history = ImagingOrderStatusHistorySerializer(many=True, read_only=True)
 

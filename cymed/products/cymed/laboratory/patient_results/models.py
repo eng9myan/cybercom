@@ -98,7 +98,7 @@ class ResultAcknowledgement(BaseModel):
     release = models.ForeignKey(ResultRelease, on_delete=models.CASCADE, related_name="acknowledgements")
     patient_profile_id = models.UUIDField(db_index=True)
     acknowledged_at = models.DateTimeField(default=timezone.now)
-    question_asked = models.TextField(blank=True)
+    question_asked = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_lab_patient_results_result_acknowledgement"

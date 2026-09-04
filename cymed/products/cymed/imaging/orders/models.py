@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 
 
@@ -99,7 +100,7 @@ class ImagingOrder(BaseModel):
         max_length=20, choices=ImagingPriority.choices, default=ImagingPriority.ROUTINE
     )
     order_type = models.CharField(max_length=30, choices=ORDER_TYPES, default="outpatient")
-    clinical_indication = models.TextField(blank=True)
+    clinical_indication = EncryptedText(classification="phi")
     icd11_codes = models.JSONField(default=list)
     fhir_service_request_id = models.CharField(max_length=255, blank=True)
     hl7_placer_order_number = models.CharField(max_length=100, blank=True)
