@@ -186,6 +186,56 @@ const en = {
     partner: "Partner",
     totalValue: "Total Value",
   },
+  invReports: {
+    title: "Inventory Audit Reports",
+    subtitle:
+      "Examine branch stock restrictions, download transfer discrepancy outputs, and view whitelist audits.",
+    exportCsv: "Export Audit CSV",
+    whitelistHeading: "Branch Product Whitelist Rules",
+    securityChecks: "Security Checks",
+    whitelistBody:
+      "Store branches are restricted from listing or checking out products not whitelisted for their regional customer segment. Prevents cross-branch pricing conflicts.",
+    tier: "Tier",
+    audited: "Audited",
+    auditPending: "Audit Pending",
+    discrepancyHeading: "Transfer Discrepancy Reporting",
+    rulesConfig: "Rules config",
+    discrepancyBody:
+      "When internal pickings are dispatched, the destination warehouse runs a secondary physical audit. A mismatch generates a discrepancy report linked to financial write-offs.",
+    autoThreshold: "Auto discrepancy reporting threshold:",
+  },
+  schedule: {
+    title: "Schedule Normalization",
+    subtitle:
+      "Configure company work shifts, weekend eligibility, and automatic clock-rounding rules.",
+    shiftSettings: "Shift Settings",
+    whyHeading: "Why normalization?",
+    whyBody:
+      "Minor clock-in variations are handled automatically. An employee clocking in at 07:53 is normalized to 08:00 so no irregular overtime or lateness deduction is raised.",
+    shiftStart: "Shift Start",
+    shiftEnd: "Shift End",
+    graceLimit: "Deduction Grace Limit",
+  },
+  payslips: {
+    title: "Payslip Batches",
+    subtitle:
+      "Compile individual employee payslips into bulk cycles and generate spreadsheets.",
+    createBatch: "Create Batch",
+    loading: "Loading payroll batches…",
+    empty: "No payroll batches yet. Create one to begin.",
+    payDate: "Pay Date: {date}",
+    employeesIncluded: "{n} employees included",
+    grossRollup: "Gross Rollup",
+    exportXlsx: "Export XLSX",
+    mappingHeading: "Cycom Excel Mapping Standard",
+    mappingBody:
+      "Generated sheets map all salary items dynamically: base salary, allowances (transport, housing), overtime hours & valuations, lateness deductions, health copays, and net payable.",
+    bankOutput: "Bank Output",
+    fileFormat: "File Format",
+    deductionHooks: "Deduction Hooks",
+    workflowStage: "Workflow Stage",
+    automatic: "Automatic",
+  },
   projectBoard: {
     title: "Project Kanban",
     subtitle: "Tasks across all your projects, with stage transitions and effort tracking.",
