@@ -38,6 +38,7 @@ THIRD_PARTY_APPS = [
 # Every platform app that carries models and/or a test suite.
 PLATFORM_APPS = [
     "platform.common",
+    "platform.canonical",
     "platform.tenant",
     "platform.audit",
     "platform.cyidentity",

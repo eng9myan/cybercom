@@ -77,11 +77,57 @@ class SoftDeleteMixin(models.Model):
         abstract = True
 
 
-class BaseModel(UUIDPrimaryKeyMixin, TimestampMixin, TenantScopedMixin):
+class AttributesMixin(models.Model):
+    """
+    Flavor-specific / extension fields (canonical-data-model-v1.md §1.1, §3).
+    A vertical flavor declares which keys are valid; the payload is validated
+    against the registered profile at the service layer, not by the DB.
+    """
+
+    attributes = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        abstract = True
+
+
+class OptimisticLockMixin(models.Model):
+    """
+    `row_version` is bumped on every write. A caller that wants a compare-and-set
+    update does `Model.objects.filter(pk=..., row_version=expected).update(...)`
+    and checks the affected-row count (canonical-data-model-v1.md §1.2).
+    """
+
+    row_version = models.PositiveBigIntegerField(default=0, editable=False)
+
+    class Meta:
+        abstract = True
+
+    def save(self, *args, **kwargs):
+        self.row_version = (self.row_version or 0) + 1
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            uf = set(update_fields)
+            if uf:  # a targeted save() must still persist the bump
+                uf.add("row_version")
+                kwargs["update_fields"] = uf
+        super().save(*args, **kwargs)
+
+
+class BaseModel(
+    UUIDPrimaryKeyMixin,
+    TimestampMixin,
+    TenantScopedMixin,
+    AttributesMixin,
+    OptimisticLockMixin,
+):
     """
     Standard base model for all tenant-scoped CyberCom entities.
-    Inherits: UUID pk, timestamps, tenant isolation.
+    Inherits: UUID pk, timestamps, tenant isolation, extension `attributes`,
+    optimistic `row_version`, and actor columns (canonical-data-model-v1.md §1.1).
     """
+
+    created_by = models.UUIDField(null=True, editable=False)
+    updated_by = models.UUIDField(null=True, editable=False)
 
     class Meta:
         abstract = True

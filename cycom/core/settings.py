@@ -53,6 +53,7 @@ THIRD_PARTY_APPS = [
 
 PLATFORM_APPS = [
     "platform.common",
+    "platform.canonical",
     "platform.tenant",
     "platform.audit",
     "platform.cyidentity",

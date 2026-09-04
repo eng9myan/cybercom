@@ -113,6 +113,18 @@ class Tenant(PlatformModel):
     identity_realm_id = models.UUIDField(null=True, blank=True)
     keycloak_realm_name = models.CharField(max_length=100, blank=True)
 
+    # ── canonical-data-model-v1.md §6.1 (M1 additive) ─────────────────────
+    # Data-residency region the tenant's rows must stay in (RLS + storage
+    # policy read this). Distinct from home_region, which is the deploy hint.
+    residency_region = models.CharField(max_length=50, blank=True)
+    # Vertical flavors enabled for this tenant (registry keys, §3).
+    flavor_set = models.JSONField(default=list, blank=True)
+    # Reference (not the key) to this tenant's field-encryption DEK material —
+    # a KMS/Vault path. Empty = derive from the global master key + tenant_id.
+    encryption_key_ref = models.CharField(max_length=500, blank=True)
+    # Active compliance obligations, e.g. {"pdpl": true, "hipaa": false}.
+    compliance_flags = models.JSONField(default=dict, blank=True)
+
     activated_at = models.DateTimeField(null=True, blank=True)
     suspended_at = models.DateTimeField(null=True, blank=True)
     archived_at = models.DateTimeField(null=True, blank=True)

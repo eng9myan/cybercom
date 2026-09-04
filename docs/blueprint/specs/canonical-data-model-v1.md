@@ -467,14 +467,25 @@ Resource, `diagnoses` (jsonb, ICD-11), `procedures` (jsonb), `notes` (**encrypte
 
 ## 6. Migration mechanics
 
-### 6.1 M1 additive migrations (Phase 1, no data move)
+### 6.1 M1 additive migrations (Phase 1, no data move) — **shipped 2026-09-04**
 
-On the current `platform_tenant.Tenant`:
-`+ residency_region`, `+ flavor_set`, `+ encryption_key_ref`, `+ compliance_flags`.
-On `BaseModel` subclasses (data migration to backfill, then non-null):
-`+ created_by`, `+ updated_by`, `+ row_version`, `+ attributes` (already on some).
-New tables: `core_consent_grants`, `core_domain_events` (if not present), `platform_vertical_flavors`, `platform_layout_templates`, `platform_fx_rates`.
-On `Invoice`: the `einvoice_*` columns (all nullable at M1).
+- `platform.common.models`: `AttributesMixin` (`attributes` jsonb), `OptimisticLockMixin`
+  (`row_version` bigint, bumped in `save()`), and `created_by` / `updated_by` (uuid null)
+  on `BaseModel`. Generated ~157 additive `AddField` migrations across cycom + cymed +
+  platform (one per app; `column already present` cases are no-ops). All nullable / with
+  a default — **no backfill needed at M1**; `created_by`/`updated_by` stay nullable per §1.2
+  (the "then non-null" is a later contract step once the write path populates them).
+- `platform_tenant.Tenant`: `+ residency_region`, `+ flavor_set` (jsonb list),
+  `+ encryption_key_ref`, `+ compliance_flags` (jsonb).
+- New app `platform.canonical` (label `platform_canonical`), registered in all three
+  projects: `platform_vertical_flavors`, `platform_layout_templates`, `platform_fx_rates`
+  (P), `core_consent_grants`, `core_domain_events` (T). Empty at M1; RLS DDL picks up the
+  two tenant-scoped tables automatically.
+- `Invoice.einvoice_*` columns: already shipped (2026-09-04 e-invoicing engine, all nullable).
+
+**Deferred to a follow-up (behaviour change, needs per-callsite review):** the
+`TenantScopedManager` / `all_tenants` split and the `SoftDeleteManager` default from §1.1
+— those change read scoping across ~1000 models and aren't "additive".
 
 ### 6.2 Expand/contract (ADR-0013)
 
