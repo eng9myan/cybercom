@@ -15,6 +15,9 @@ class EncounterParticipantSerializer(serializers.ModelSerializer):
 
 
 class EncounterDiagnosisSerializer(serializers.ModelSerializer):
+    # display is EncryptedText (BinaryField storage) — keep it plain text.
+    display = serializers.CharField(allow_blank=True)
+
     class Meta:
         model = EncounterDiagnosis
         fields = ["id", "condition_code", "display", "use"]

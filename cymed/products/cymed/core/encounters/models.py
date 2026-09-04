@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.core.facilities.models import Bed, Facility, Room
 from products.cymed.core.organizations.models import Organization
@@ -83,7 +84,7 @@ class EncounterParticipant(BaseModel):
 class EncounterReason(BaseModel):
     encounter = models.ForeignKey(Encounter, on_delete=models.CASCADE, related_name="reasons")
     reason_code = models.CharField(max_length=100)  # SNOMED or ICD-11
-    reason_text = models.TextField()
+    reason_text = EncryptedText(classification="phi")  # patient-linked clinical narrative
 
     class Meta:
         db_table = "cymed_encounter_reasons"
@@ -92,7 +93,7 @@ class EncounterReason(BaseModel):
 class EncounterDiagnosis(BaseModel):
     encounter = models.ForeignKey(Encounter, on_delete=models.CASCADE, related_name="diagnoses")
     condition_code = models.CharField(max_length=100)  # ICD-11 or SNOMED
-    display = models.CharField(max_length=255)
+    display = EncryptedText(classification="phi")  # diagnosis text, patient-linked
     use = models.CharField(
         max_length=50,
         choices=[
@@ -134,7 +135,7 @@ class EncounterStatusHistory(BaseModel):
 
 class EncounterNote(BaseModel):
     encounter = models.ForeignKey(Encounter, on_delete=models.CASCADE, related_name="notes")
-    note_text = models.TextField()
+    note_text = EncryptedText(classification="phi")
     recorded_by = models.CharField(max_length=255)
     recorded_at = models.DateTimeField(default=timezone.now)
 
