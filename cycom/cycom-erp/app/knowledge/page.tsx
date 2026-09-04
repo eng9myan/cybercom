@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCycomList, m2oName, fmtDate, type Many2One } from '@/lib/cycomModels';
+import { useT } from '@/lib/i18n';
 import { 
   BookOpen, Folder, FileText, ChevronRight, ChevronDown, 
   Edit3, Save, Eye, Plus, Trash2, Check, Sparkles 
@@ -35,6 +36,7 @@ const mapKnowledgeArticle = (r: CycomKnowledgeArticle): Article => ({
 });
 
 export default function KnowledgePage() {
+  const t = useT();
   const { rows: liveArticles, loading } = useCycomList<CycomKnowledgeArticle, Article>(
     'knowledge.article', [], ['name', 'parent_id', 'last_edition_date', 'write_uid'],
     mapKnowledgeArticle,
@@ -90,15 +92,15 @@ export default function KnowledgePage() {
 
   const categories = Array.from(new Set(articles.map(a => a.category)));
 
-  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>Loading...</div>;
+  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>{t('common.loading')}</div>;
 
   return (
     <div className="space-y-6 max-w-[1200px] mx-auto">
       {/* Page Header */}
       <div className="page-header flex justify-between items-center">
         <div>
-          <h1 className="page-title text-white">Knowledge Base & Wiki</h1>
-          <p className="page-subtitle">Standard operating procedures, policies, and system administration manuals.</p>
+          <h1 className="page-title text-white">{t('knowledge.title')}</h1>
+          <p className="page-subtitle">{t('knowledge.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           {saveStatus && (
@@ -109,7 +111,7 @@ export default function KnowledgePage() {
               className="flex items-center gap-1.5 px-3 py-1 rounded bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold"
             >
               <Check className="w-3.5 h-3.5" />
-              Article Saved Successfully
+              {t("knowledge.savedOk")}
             </motion.div>
           )}
         </div>
@@ -121,7 +123,7 @@ export default function KnowledgePage() {
         {/* Directory Sidebar */}
         <div className="glass-card p-4 md:col-span-1 space-y-4 flex flex-col h-full">
           <div className="flex items-center justify-between pb-2 border-b border-white/5">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">DOCUMENTS DIR</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{t('knowledge.documentsDir')}</span>
             <button className="p-1 rounded hover:bg-white/5 text-slate-400 hover:text-white transition-colors">
               <Plus className="w-3.5 h-3.5" />
             </button>
@@ -197,7 +199,7 @@ export default function KnowledgePage() {
                 <h2 className="text-lg font-bold text-white">{activeArticle.title}</h2>
               )}
               <p className="text-[10px] text-slate-500">
-                Last modified: <span className="text-slate-400 font-semibold">{activeArticle.lastUpdated}</span> by <span className="text-[#5DADE2] font-semibold">{activeArticle.updatedBy}</span>
+                {t('knowledge.lastModifiedBy', { date: activeArticle.lastUpdated, user: activeArticle.updatedBy })}
               </p>
             </div>
 
@@ -209,14 +211,14 @@ export default function KnowledgePage() {
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors border border-white/10"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    Cancel
+                    {t('knowledge.cancel')}
                   </button>
                   <button
                     onClick={handleSaveClick}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#E67E22] hover:bg-orange-600 text-white text-xs font-semibold transition-all shadow-md shadow-orange-500/10"
                   >
                     <Save className="w-3.5 h-3.5" />
-                    Save Changes
+                    {t('knowledge.saveChanges')}
                   </button>
                 </>
               ) : (
@@ -225,7 +227,7 @@ export default function KnowledgePage() {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold transition-colors border border-white/10"
                 >
                   <Edit3 className="w-3.5 h-3.5 text-[#E67E22]" />
-                  Edit Page
+                  {t('knowledge.editPage')}
                 </button>
               )}
             </div>
@@ -238,7 +240,7 @@ export default function KnowledgePage() {
                 value={editedContent}
                 onChange={(e) => setEditedContent(e.target.value)}
                 className="w-full h-full bg-white/3 border border-white/8 rounded-xl p-4 text-xs font-mono text-slate-300 outline-none focus:border-orange-500/40 resize-none min-h-[300px]"
-                placeholder="Write article content in Markdown format..."
+                placeholder={t('knowledge.contentPlaceholder')}
               />
             ) : (
               <div className="prose prose-invert prose-xs max-w-none text-slate-300 space-y-4 select-text">
@@ -264,10 +266,10 @@ export default function KnowledgePage() {
 
           {/* Editor Footer Advice */}
           <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-500">
-            <span>Knowledge system integrated with Cycom ERP document store.</span>
+            <span>{t('knowledge.footerNote')}</span>
             <div className="flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-[#E67E22] animate-bounce" />
-              <span>Auto-save locks enabled</span>
+              <span>{t('knowledge.autosaveNote')}</span>
             </div>
           </div>
 
