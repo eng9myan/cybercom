@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, Fuel, Wrench, Calendar, Plus, Clock, 
+import {
+  ArrowLeft, Fuel, Wrench, Calendar, Plus, Clock,
   MapPin, DollarSign, X, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 import { call } from '@/lib/cycom';
 import { LoadingCard } from '@/components/CycomEmptyStates';
+import { useT } from '@/lib/i18n';
 
 interface VehicleDetails {
   id: number;
@@ -47,6 +48,7 @@ interface FuelLog {
 }
 
 export default function VehicleLogsDetail() {
+  const t = useT();
   const router = useRouter();
   const params = useParams();
   const idStr = params?.id as string;
@@ -109,7 +111,7 @@ export default function VehicleLogsDetail() {
         setFuel(fLogs || []);
       }
     } catch (err: any) {
-      alert('Error fetching logs: ' + err.message);
+      alert(t('fleetVehicleDetail.fetchError', { msg: err.message }));
     } finally {
       setLoading(false);
     }
@@ -124,9 +126,9 @@ export default function VehicleLogsDetail() {
     e.preventDefault();
     if (!vehicle) return;
     const odoVal = parseFloat(maintOdo);
-    
+
     if (odoVal < vehicle.odometer_km) {
-      alert(`Invalid mileage: Odometer entry (${odoVal} km) cannot be lower than the vehicle's current odometer (${vehicle.odometer_km} km).`);
+      alert(t('fleetVehicleDetail.invalidMileage', { entered: odoVal, current: vehicle.odometer_km }));
       return;
     }
 
@@ -156,11 +158,11 @@ export default function VehicleLogsDetail() {
         args: [vehicleId, { odometer_km: odoVal, odometer: odoVal }]
       });
 
-      alert('Maintenance log recorded successfully!');
+      alert(t('fleetVehicleDetail.maintSuccess'));
       setShowMaintModal(false);
       fetchLogs();
     } catch (err: any) {
-      alert('Error: ' + err.message);
+      alert(t('fleetVehicleDetail.genericError', { msg: err.message }));
     } finally {
       setSaving(false);
     }
@@ -171,9 +173,9 @@ export default function VehicleLogsDetail() {
     e.preventDefault();
     if (!vehicle) return;
     const odoVal = parseFloat(fuelOdo);
-    
+
     if (odoVal < vehicle.odometer_km) {
-      alert(`Invalid mileage: Odometer entry (${odoVal} km) cannot be lower than the vehicle's current odometer (${vehicle.odometer_km} km).`);
+      alert(t('fleetVehicleDetail.invalidMileage', { entered: odoVal, current: vehicle.odometer_km }));
       return;
     }
 
@@ -203,51 +205,56 @@ export default function VehicleLogsDetail() {
         args: [vehicleId, { odometer_km: odoVal, odometer: odoVal }]
       });
 
-      alert('Fuel log recorded successfully!');
+      alert(t('fleetVehicleDetail.fuelSuccess'));
       setShowFuelModal(false);
       fetchLogs();
     } catch (err: any) {
-      alert('Error: ' + err.message);
+      alert(t('fleetVehicleDetail.genericError', { msg: err.message }));
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-slate-950 text-slate-100 p-8"><LoadingCard label="Loading vehicle logs…" /></div>;
-  if (!vehicle) return <div className="min-h-screen bg-slate-950 text-slate-100 p-8 text-center text-slate-400">Vehicle not found.</div>;
+  if (loading) return <div className="min-h-screen bg-slate-950 text-slate-100 p-8"><LoadingCard label={t('fleetVehicleDetail.loading')} /></div>;
+  if (!vehicle) return <div className="min-h-screen bg-slate-950 text-slate-100 p-8 text-center text-slate-400">{t('fleetVehicleDetail.notFound')}</div>;
+
+  const TABS = [
+    { id: 'maintenance', label: t('fleetVehicleDetail.tabMaintenance'), icon: <Wrench className="w-4 h-4" /> },
+    { id: 'fuel', label: t('fleetVehicleDetail.tabFuel'), icon: <Fuel className="w-4 h-4" /> }
+  ];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 text-xs md:text-sm">
       {/* Header */}
       <div className="max-w-5xl mx-auto flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => router.push('/fleet')}
             className="p-2 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 transition"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-400" />
+            <ArrowLeft className="w-5 h-5 text-slate-400 rtl:-scale-x-100" />
           </button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
               {vehicle.make} {vehicle.model}
               <span className="text-sm font-normal text-slate-500 font-mono">({vehicle.license_plate})</span>
             </h1>
-            <p className="text-xs text-slate-400 mt-1">Current Mileage: <span className="text-cyan-400 font-bold font-mono">{vehicle.odometer_km.toLocaleString()} km</span></p>
+            <p className="text-xs text-slate-400 mt-1">{t('fleetVehicleDetail.currentMileage')} <span className="text-cyan-400 font-bold font-mono">{t('fleetVehicleDetail.kmVal', { n: vehicle.odometer_km.toLocaleString() })}</span></p>
           </div>
         </div>
 
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => setShowFuelModal(true)}
             className="btn-secondary flex items-center gap-1.5"
           >
-            <Fuel className="w-4 h-4 text-emerald-400" /> Log Fuel Log
+            <Fuel className="w-4 h-4 text-emerald-400" /> {t('fleetVehicleDetail.logFuel')}
           </button>
-          <button 
+          <button
             onClick={() => setShowMaintModal(true)}
             className="btn-primary flex items-center gap-1.5"
           >
-            <Wrench className="w-4 h-4" /> Log Maintenance
+            <Wrench className="w-4 h-4" /> {t('fleetVehicleDetail.logMaintenance')}
           </button>
         </div>
       </div>
@@ -255,23 +262,23 @@ export default function VehicleLogsDetail() {
       <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Card */}
         <div className="lg:col-span-1 glass-card p-6 space-y-4 h-fit">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-white/5 pb-2">Vehicle Specifications</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-white/5 pb-2">{t('fleetVehicleDetail.specsHeading')}</h3>
           <div className="space-y-3">
             <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Manufacturer / Brand</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('fleetVehicleDetail.manufacturer')}</span>
               <div className="text-slate-200 font-medium mt-0.5">{vehicle.make || '—'}</div>
             </div>
             <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Model Year</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('fleetVehicleDetail.modelYear')}</span>
               <div className="text-slate-200 font-medium mt-0.5">{vehicle.year || '—'}</div>
             </div>
             <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Fuel Type</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('fleetVehicleDetail.fuelType')}</span>
               <div className="text-slate-200 capitalize mt-0.5">{vehicle.fuel_type}</div>
             </div>
             <div>
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Odometer reading</span>
-              <div className="text-slate-200 font-mono mt-0.5">{vehicle.odometer_km.toLocaleString()} km</div>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('fleetVehicleDetail.odometerReading')}</span>
+              <div className="text-slate-200 font-mono mt-0.5">{t('fleetVehicleDetail.kmVal', { n: vehicle.odometer_km.toLocaleString() })}</div>
             </div>
           </div>
         </div>
@@ -279,20 +286,17 @@ export default function VehicleLogsDetail() {
         {/* Logs Log Panel */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex gap-2 border-b border-white/5 pb-3">
-            {[
-              { id: 'maintenance', label: 'Maintenance History', icon: <Wrench className="w-4 h-4" /> },
-              { id: 'fuel', label: 'Fuel Logs', icon: <Fuel className="w-4 h-4" /> }
-            ].map(t => (
+            {TABS.map(tab => (
               <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id as any)}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
                 className={`px-4 py-2 rounded-lg flex items-center gap-2 font-semibold transition ${
-                  activeTab === t.id 
-                    ? 'bg-slate-900 border border-slate-800 text-cyan-400 shadow-inner' 
+                  activeTab === tab.id
+                    ? 'bg-slate-900 border border-slate-800 text-cyan-400 shadow-inner'
                     : 'text-slate-500 hover:text-slate-300'
                 }`}
               >
-                {t.icon} {t.label}
+                {tab.icon} {tab.label}
               </button>
             ))}
           </div>
@@ -300,7 +304,7 @@ export default function VehicleLogsDetail() {
           {activeTab === 'maintenance' && (
             <div className="glass-card p-6">
               {maintenance.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">No maintenance events recorded for this vehicle.</div>
+                <div className="text-center py-8 text-slate-500">{t('fleetVehicleDetail.noMaintenance')}</div>
               ) : (
                 <div className="space-y-4">
                   {maintenance.map((m) => (
@@ -309,15 +313,15 @@ export default function VehicleLogsDetail() {
                         <div className="flex items-center gap-2">
                           <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
                             m.maintenance_type === 'preventative' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
-                          }`}>{m.maintenance_type}</span>
-                          <span className="font-semibold text-slate-200">{m.service_provider || 'External Service'}</span>
+                          }`}>{m.maintenance_type === 'preventative' ? t('fleetVehicleDetail.typePreventative') : t('fleetVehicleDetail.typeCorrective')}</span>
+                          <span className="font-semibold text-slate-200">{m.service_provider || t('fleetVehicleDetail.externalService')}</span>
                         </div>
-                        <div className="text-[10px] text-slate-500">Odometer: {m.odometer_km.toLocaleString()} km • Date: {m.maintenance_date}</div>
+                        <div className="text-[10px] text-slate-500">{t('fleetVehicleDetail.odometerDate', { km: m.odometer_km.toLocaleString(), date: m.maintenance_date })}</div>
                         {m.notes && <p className="text-slate-400 text-xs mt-1 italic">"{m.notes}"</p>}
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-bold text-white">{m.cost.toLocaleString()} JOD</div>
-                        {m.next_service_km && <div className="text-[10px] text-slate-500 mt-1">Next Service: {m.next_service_km.toLocaleString()} km</div>}
+                        {m.next_service_km && <div className="text-[10px] text-slate-500 mt-1">{t('fleetVehicleDetail.nextService', { km: m.next_service_km.toLocaleString() })}</div>}
                       </div>
                     </div>
                   ))}
@@ -329,15 +333,15 @@ export default function VehicleLogsDetail() {
           {activeTab === 'fuel' && (
             <div className="glass-card p-6">
               {fuel.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">No fuel fill logs found for this vehicle.</div>
+                <div className="text-center py-8 text-slate-500">{t('fleetVehicleDetail.noFuel')}</div>
               ) : (
                 <div className="space-y-4">
                   {fuel.map((f) => (
                     <div key={f.id} className="p-4 bg-slate-950/40 border border-slate-850 rounded-xl flex justify-between gap-4">
                       <div className="space-y-1">
-                        <div className="font-semibold text-slate-200">{f.fuel_station || 'Gas Station'}</div>
-                        <div className="text-[10px] text-slate-500">Odometer: {f.odometer_km.toLocaleString()} km • Date: {f.log_date}</div>
-                        <div className="text-[10px] text-slate-400 mt-1">{f.liters} Liters @ {f.price_per_liter} JOD/L</div>
+                        <div className="font-semibold text-slate-200">{f.fuel_station || t('fleetVehicleDetail.gasStation')}</div>
+                        <div className="text-[10px] text-slate-500">{t('fleetVehicleDetail.odometerDate', { km: f.odometer_km.toLocaleString(), date: f.log_date })}</div>
+                        <div className="text-[10px] text-slate-400 mt-1">{t('fleetVehicleDetail.litersAt', { liters: f.liters, price: f.price_per_liter })}</div>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-bold text-emerald-400">{f.total_cost.toLocaleString()} JOD</div>
@@ -355,14 +359,14 @@ export default function VehicleLogsDetail() {
       <AnimatePresence>
         {showMaintModal && (
           <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4"
             >
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                <h3 className="font-bold text-slate-200">Log Vehicle Maintenance</h3>
+                <h3 className="font-bold text-slate-200">{t('fleetVehicleDetail.modalMaintTitle')}</h3>
                 <button onClick={() => setShowMaintModal(false)} className="p-1 hover:bg-slate-800 rounded-lg transition">
                   <X className="w-4 h-4" />
                 </button>
@@ -371,36 +375,36 @@ export default function VehicleLogsDetail() {
               <form onSubmit={handleSaveMaintenance} className="space-y-4 text-xs">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-slate-400">Date</label>
-                    <input 
+                    <label className="text-slate-400">{t('fleetVehicleDetail.date')}</label>
+                    <input
                       type="date" required value={maintDate} onChange={e => setMaintDate(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-slate-400">Type</label>
-                    <select 
+                    <label className="text-slate-400">{t('fleetVehicleDetail.type')}</label>
+                    <select
                       value={maintType} onChange={e => setMaintType(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
                     >
-                      <option value="preventative">Preventative</option>
-                      <option value="corrective">Corrective</option>
+                      <option value="preventative">{t('fleetVehicleDetail.optPreventative')}</option>
+                      <option value="corrective">{t('fleetVehicleDetail.optCorrective')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-slate-400">Cost (JOD)</label>
-                    <input 
+                    <label className="text-slate-400">{t('fleetVehicleDetail.cost')}</label>
+                    <input
                       type="number" step="0.01" required placeholder="50.00"
                       value={maintCost} onChange={e => setMaintCost(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-slate-400">Odometer (km)</label>
-                    <input 
+                    <label className="text-slate-400">{t('fleetVehicleDetail.odometerKm')}</label>
+                    <input
                       type="number" required placeholder={vehicle.odometer_km.toString()}
                       value={maintOdo} onChange={e => setMaintOdo(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
@@ -410,17 +414,17 @@ export default function VehicleLogsDetail() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1 col-span-2">
-                    <label className="text-slate-400">Service Provider</label>
-                    <input 
-                      type="text" placeholder="Gargour Auto Services"
+                    <label className="text-slate-400">{t('fleetVehicleDetail.serviceProvider')}</label>
+                    <input
+                      type="text" placeholder={t('fleetVehicleDetail.serviceProviderPh')}
                       value={maintProvider} onChange={e => setMaintProvider(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
                     />
                   </div>
                   <div className="space-y-1 col-span-2">
-                    <label className="text-slate-400">Next Service Odometer Limit (km)</label>
-                    <input 
-                      type="number" placeholder="Odometer + 10000 km"
+                    <label className="text-slate-400">{t('fleetVehicleDetail.nextServiceLimit')}</label>
+                    <input
+                      type="number" placeholder={t('fleetVehicleDetail.nextServiceLimitPh')}
                       value={maintNextOdo} onChange={e => setMaintNextOdo(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
                     />
@@ -428,26 +432,26 @@ export default function VehicleLogsDetail() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-400">Notes / Remarks</label>
-                  <textarea 
-                    rows={3} placeholder="Describe the maintenance done..."
+                  <label className="text-slate-400">{t('fleetVehicleDetail.notesRemarks')}</label>
+                  <textarea
+                    rows={3} placeholder={t('fleetVehicleDetail.notesRemarksPh')}
                     value={maintNotes} onChange={e => setMaintNotes(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-850 rounded-lg p-3 text-slate-200 outline-none"
                   />
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-                  <button 
+                  <button
                     type="button" onClick={() => setShowMaintModal(false)}
                     className="px-4 py-2 border border-slate-800 hover:bg-slate-800 rounded-lg transition font-semibold"
                   >
-                    Cancel
+                    {t('fleetVehicleDetail.cancel')}
                   </button>
-                  <button 
+                  <button
                     type="submit" disabled={saving}
                     className="px-5 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-semibold shadow-lg shadow-blue-600/15 transition"
                   >
-                    Save Log
+                    {t('fleetVehicleDetail.saveLog')}
                   </button>
                 </div>
               </form>
@@ -460,14 +464,14 @@ export default function VehicleLogsDetail() {
       <AnimatePresence>
         {showFuelModal && (
           <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4"
             >
               <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                <h3 className="font-bold text-slate-200">Log Vehicle Fueling</h3>
+                <h3 className="font-bold text-slate-200">{t('fleetVehicleDetail.modalFuelTitle')}</h3>
                 <button onClick={() => setShowFuelModal(false)} className="p-1 hover:bg-slate-800 rounded-lg transition">
                   <X className="w-4 h-4" />
                 </button>
@@ -476,15 +480,15 @@ export default function VehicleLogsDetail() {
               <form onSubmit={handleSaveFuel} className="space-y-4 text-xs">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-slate-400">Date</label>
-                    <input 
+                    <label className="text-slate-400">{t('fleetVehicleDetail.date')}</label>
+                    <input
                       type="date" required value={fuelDate} onChange={e => setFuelDate(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-slate-400">Odometer (km)</label>
-                    <input 
+                    <label className="text-slate-400">{t('fleetVehicleDetail.odometerKm')}</label>
+                    <input
                       type="number" required placeholder={vehicle.odometer_km.toString()}
                       value={fuelOdo} onChange={e => setFuelOdo(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
@@ -494,16 +498,16 @@ export default function VehicleLogsDetail() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-slate-400">Liters</label>
-                    <input 
+                    <label className="text-slate-400">{t('fleetVehicleDetail.liters')}</label>
+                    <input
                       type="number" step="0.01" required placeholder="45.5"
                       value={fuelLiters} onChange={e => setFuelLiters(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-slate-400">Price per Liter (JOD)</label>
-                    <input 
+                    <label className="text-slate-400">{t('fleetVehicleDetail.pricePerLiter')}</label>
+                    <input
                       type="number" step="0.001" required placeholder="0.950"
                       value={fuelPrice} onChange={e => setFuelPrice(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
@@ -512,26 +516,26 @@ export default function VehicleLogsDetail() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-400">Gas Station Name</label>
-                  <input 
-                    type="text" placeholder="Manaseer Gas Station"
+                  <label className="text-slate-400">{t('fleetVehicleDetail.gasStationName')}</label>
+                  <input
+                    type="text" placeholder={t('fleetVehicleDetail.gasStationNamePh')}
                     value={fuelStation} onChange={e => setFuelStation(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
                   />
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-white/5">
-                  <button 
+                  <button
                     type="button" onClick={() => setShowFuelModal(false)}
                     className="px-4 py-2 border border-slate-800 hover:bg-slate-800 rounded-lg transition font-semibold"
                   >
-                    Cancel
+                    {t('fleetVehicleDetail.cancel')}
                   </button>
-                  <button 
+                  <button
                     type="submit" disabled={saving}
                     className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white font-semibold shadow-lg shadow-emerald-600/15 transition"
                   >
-                    Save Fuel Log
+                    {t('fleetVehicleDetail.saveFuelLog')}
                   </button>
                 </div>
               </form>
