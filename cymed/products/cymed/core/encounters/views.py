@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 from products.cymed.core.encounters.models import Encounter, EpisodeOfCare
 from products.cymed.core.encounters.serializers import EncounterSerializer, EpisodeOfCareSerializer
 
@@ -28,11 +28,12 @@ class EncounterViewSet(viewsets.ModelViewSet):
         enc.start_time = timezone.now()
         enc.save()
 
-        # Publish outbox event
-        OutboxEvent.objects.create(
-            tenant_id=enc.tenant_id,
-            topic="cymed.encounter.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.encounter.started",
+            aggregate_type="Encounter",
+            aggregate_id=enc.id,
+            tenant_id=enc.tenant_id,
             payload={"encounter_id": str(enc.id), "started_at": enc.start_time.isoformat()},
         )
 
@@ -46,11 +47,12 @@ class EncounterViewSet(viewsets.ModelViewSet):
         enc.end_time = timezone.now()
         enc.save()
 
-        # Publish outbox event
-        OutboxEvent.objects.create(
-            tenant_id=enc.tenant_id,
-            topic="cymed.encounter.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.encounter.closed",
+            aggregate_type="Encounter",
+            aggregate_id=enc.id,
+            tenant_id=enc.tenant_id,
             payload={"encounter_id": str(enc.id), "closed_at": enc.end_time.isoformat()},
         )
 

@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 from products.cymed.commercial.licensing.models import (
     License,
     LicenseActivation,
@@ -78,11 +78,12 @@ class LicenseViewSet(CommercialModelViewSet):
             metadata={"key": key_string, "ip": str(request.META.get("REMOTE_ADDR"))},
         )
 
-        # OutboxEvent
-        OutboxEvent.objects.create(
-            tenant_id=license_obj.tenant_id,
-            topic="cymed.commercial.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.license.activated",
+            aggregate_type="License",
+            aggregate_id=license_obj.id,
+            tenant_id=license_obj.tenant_id,
             payload={
                 "license_number": license_obj.license_number,
                 "product_code": license_obj.product_code,
@@ -143,10 +144,12 @@ class LicenseViewSet(CommercialModelViewSet):
             metadata={"reason": request.data.get("reason", "")},
         )
 
-        OutboxEvent.objects.create(
-            tenant_id=license_obj.tenant_id,
-            topic="cymed.commercial.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.license.revoked",
+            aggregate_type="License",
+            aggregate_id=license_obj.id,
+            tenant_id=license_obj.tenant_id,
             payload={"license_number": license_obj.license_number},
         )
 

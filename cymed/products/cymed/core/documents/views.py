@@ -34,13 +34,14 @@ class ClinicalDocumentViewSet(viewsets.ModelViewSet):
         doc.signed_at = timezone.now()
         doc.save()
 
-        # Publish outbox event (CyData / analytics)
-        from platform.events.models import OutboxEvent
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
 
-        OutboxEvent.objects.create(
-            tenant_id=doc.tenant_id,
-            topic="cymed.document.events",
+        canonical_events.emit(
             event_type="cymed.document.signed",
+            aggregate_type="ClinicalDocument",
+            aggregate_id=doc.id,
+            tenant_id=doc.tenant_id,
             payload={
                 "document_id": str(doc.id),
                 "patient_id": str(doc.patient.id),

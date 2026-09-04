@@ -6,7 +6,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from platform.events.models import OutboxEvent
 from products.cymed.core.clinical.models import (
     Allergy,
     ClinicalFlag,
@@ -137,11 +136,14 @@ class BreakGlassView(APIView):
             # Fallback if cyidentity models are not registered or mock environment
             pass
 
-        # 2. Publish Break Glass Outbox Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.security.events",
+        # 2. Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.breakglass.used",
+            aggregate_type="Patient",
+            aggregate_id=patient_id,
+            tenant_id=tenant_id,
             payload={
                 "user": str(request.user),
                 "patient_id": patient_id,

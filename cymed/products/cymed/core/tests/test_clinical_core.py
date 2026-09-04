@@ -4,7 +4,6 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from platform.events.models import OutboxEvent
 from products.cymed.core.encounters.models import Encounter
 from products.cymed.core.facilities.models import Bed, Department, Facility, Room, Ward
 from products.cymed.core.organizations.models import Organization
@@ -287,7 +286,7 @@ class TestEncountersModule:
         assert response_start.status_code == 200
         assert response_start.data["status"] == "in_progress"
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.encounter.started"
             ).count()
             == 1
@@ -298,7 +297,7 @@ class TestEncountersModule:
         assert response_close.status_code == 200
         assert response_close.data["status"] == "finished"
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.encounter.closed"
             ).count()
             == 1
@@ -444,9 +443,11 @@ class TestClinicalDocumentation:
         assert response_sign.data["status"] == "final"
         assert response_sign.data["signed_by"] is not None
 
-        # Verify event
+        # Verify event — canonical DomainEvent (M9 cutover).
+        from platform.canonical.models import DomainEvent
+
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.document.signed"
             ).count()
             == 1
@@ -469,9 +470,11 @@ class TestBreakGlassSecurity:
         assert response.status_code == 200
         assert "session_expiry" in response.data
 
-        # Verify event published
+        # Verify event published — canonical DomainEvent (M9 cutover).
+        from platform.canonical.models import DomainEvent
+
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.breakglass.used"
             ).count()
             == 1

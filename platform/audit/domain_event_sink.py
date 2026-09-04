@@ -30,6 +30,8 @@ _CATEGORY_BY_PREFIX = {
     "cymed.appointment": "clinical",
     "cymed.consultation": "clinical",
     "cymed.clinic": "clinical",
+    "cymed.breakglass": "security",
+    "cymed.license": "erp",
     "cycom.invoice": "financial",
     "cycom.journal": "financial",
     "cycom.payment": "financial",
