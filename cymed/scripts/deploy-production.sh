@@ -74,6 +74,10 @@ fi
 echo "==> Running database migrations"
 $compose run --rm backend python manage.py migrate --noinput
 
+# M3 audit-column backfill (canonical-data-model-v1.md §6.1b) — idempotent.
+echo "==> Backfilling audit columns"
+$compose run --rm backend python manage.py backfill_audit_columns
+
 echo "==> Collecting static files"
 $compose run --rm backend python manage.py collectstatic --noinput --clear || true
 

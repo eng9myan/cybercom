@@ -499,9 +499,22 @@ Resource, `diagnoses` (jsonb, ICD-11), `procedures` (jsonb), `notes` (**encrypte
   ambient actor — best-effort, nullable, an explicit `created_by=` / unset context both win;
   a targeted `save(update_fields=[...])` still persists the bump.
 
-Columns stay **nullable** — the "then non-null" contract migration waits until every
-write path has been through a release with the population code (backfill the historical
-nulls first).
+### 6.1c M3 backfill + optimistic-lock CAS — **shipped 2026-09-04**
+
+- `manage.py backfill_audit_columns [--dry-run] [--app]` (`platform.canonical`): on every
+  existing `BaseModel` row, `row_version` 0 → 1 (a persisted row has been written once) and
+  `updated_by` ← `created_by` where the row has a creator but no distinct updater. Idempotent;
+  wired into both products' `deploy-production.sh` after `migrate`.
+- `Tenant.residency_region` backfilled from `home_region` (migration
+  `platform_tenant.0005`) — it is required + immutable per §5.1.
+- `OptimisticLockMixin.save_if_unchanged(fields=[...])` + `OptimisticLockError` — the
+  compare-and-set write (`UPDATE ... WHERE row_version = :loaded`); raises on a lost update.
+  `save()` alone stays last-write-wins.
+
+**`created_by` / `updated_by` stay nullable permanently** (§1.2) — a system-path or
+pre-population row legitimately has no actor. There is *no* contract-to-non-null for them;
+M3 only tightens what we *can* attribute. `attributes` (default `{}`) and `row_version`
+(default `0`, normalised to ≥ 1 by the backfill) are already `NOT NULL` with defaults.
 
 ### 6.2 Expand/contract (ADR-0013)
 

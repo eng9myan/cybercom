@@ -72,6 +72,12 @@ fi
 echo "==> Running database migrations"
 $compose run --rm backend python manage.py migrate --noinput
 
+# M3 audit-column backfill (canonical-data-model-v1.md §6.1b): row_version 0->1
+# and updated_by<-created_by on rows that predate the actor-population code.
+# Idempotent — a no-op once every row has been through it.
+echo "==> Backfilling audit columns"
+$compose run --rm backend python manage.py backfill_audit_columns
+
 # Row-level-security: apply the policies, then prove tenant isolation before the
 # new release goes live. Gated on CYCOM_RLS_ENFORCED=1 in the deploy env.
 if [[ "${CYCOM_RLS_ENFORCED:-0}" == "1" ]]; then

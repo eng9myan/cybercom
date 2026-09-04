@@ -134,3 +134,62 @@ def test_actor_context_coerces_and_isolates():
     with actor_context(str(u)):
         assert get_current_actor() == u
     assert get_current_actor() is None  # reset on exit
+
+
+@pytest.mark.django_db
+def test_save_if_unchanged_compare_and_set():
+    from platform.common.models import OptimisticLockError
+
+    tid = uuid.uuid4()
+    with tenant_context(tid):
+        e = DomainEvent.objects.create(
+            tenant_id=tid, event_type="x", aggregate_type="X", aggregate_id=uuid.uuid4(),
+        )
+        rv0 = e.row_version
+
+        # a concurrent writer bumps the row out from under us
+        other = DomainEvent.objects.get(pk=e.pk)
+        other.attempts = 99
+        other.save(update_fields=["attempts"])
+
+        e.attempts = 1
+        with pytest.raises(OptimisticLockError):
+            e.save_if_unchanged(fields=["attempts"])
+
+        # reload, retry, succeeds and advances the local row_version
+        e.refresh_from_db()
+        e.attempts = 2
+        e.save_if_unchanged(fields=["attempts"])
+        assert e.row_version > rv0
+        e.refresh_from_db()
+        assert e.attempts == 2
+
+
+@pytest.mark.django_db
+def test_backfill_audit_columns_command():
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    tid, creator = uuid.uuid4(), uuid.uuid4()
+    with tenant_context(tid):
+        # a row created by someone, never updated by a distinct actor, row_version 0
+        e = DomainEvent.objects.create(
+            tenant_id=tid, event_type="x", aggregate_type="X", aggregate_id=uuid.uuid4(),
+        )
+        DomainEvent.objects.filter(pk=e.pk).update(
+            row_version=0, created_by=creator, updated_by=None,
+        )
+
+    out = StringIO()
+    call_command("backfill_audit_columns", "--dry-run", stdout=out)
+    assert "would set" in out.getvalue()
+
+    e.refresh_from_db()
+    assert e.row_version == 0  # dry run changed nothing
+
+    call_command("backfill_audit_columns", stdout=StringIO())
+    e.refresh_from_db()
+    assert e.row_version == 1          # 0 -> 1
+    assert e.updated_by == creator     # NULL -> created_by
+    assert e.created_by == creator     # untouched

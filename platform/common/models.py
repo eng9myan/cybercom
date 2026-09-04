@@ -78,6 +78,11 @@ class SoftDeleteMixin(models.Model):
         abstract = True
 
 
+class OptimisticLockError(RuntimeError):
+    """Raised by `OptimisticLockMixin.save_if_unchanged()` when the row changed
+    under the caller."""
+
+
 class AttributesMixin(models.Model):
     """
     Flavor-specific / extension fields (canonical-data-model-v1.md §1.1, §3).
@@ -93,9 +98,11 @@ class AttributesMixin(models.Model):
 
 class OptimisticLockMixin(models.Model):
     """
-    `row_version` is bumped on every write. A caller that wants a compare-and-set
-    update does `Model.objects.filter(pk=..., row_version=expected).update(...)`
-    and checks the affected-row count (canonical-data-model-v1.md §1.2).
+    `row_version` is bumped on every write. `save()` alone is last-write-wins;
+    for a lost-update-safe write use `save_if_unchanged()`, which does the
+    compare-and-set (`UPDATE ... WHERE row_version = :loaded`) and raises
+    `OptimisticLockError` if another writer got there first
+    (canonical-data-model-v1.md §1.2).
     """
 
     row_version = models.PositiveBigIntegerField(default=0, editable=False)
@@ -112,6 +119,34 @@ class OptimisticLockMixin(models.Model):
                 uf.add("row_version")
                 kwargs["update_fields"] = uf
         super().save(*args, **kwargs)
+
+    def save_if_unchanged(self, *, fields):
+        """Persist `fields` (an iterable of attribute names) only if the row's
+        `row_version` in the DB still matches the one this instance was loaded
+        with. Raises `OptimisticLockError` on a conflict. On success the
+        instance's `row_version` is advanced to match."""
+        expected = self.row_version
+        new_version = (expected or 0) + 1
+        actor = get_current_actor()
+        payload = {name: getattr(self, name) for name in fields}
+        payload["row_version"] = new_version
+        payload["updated_at"] = timezone.now()
+        if actor is not None:
+            payload["updated_by"] = actor
+
+        updated = (
+            type(self)
+            ._base_manager.filter(pk=self.pk, row_version=expected)
+            .update(**payload)
+        )
+        if not updated:
+            raise OptimisticLockError(
+                f"{type(self).__name__} {self.pk} was modified by another writer "
+                f"(expected row_version {expected})."
+            )
+        self.row_version = new_version
+        for name, value in payload.items():
+            setattr(self, name, value)
 
 
 class BaseModel(

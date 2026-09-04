@@ -63,3 +63,6 @@ jobs:
               and not test_gateway_providers"
       - run: cd platform && python manage.py apply_rls --dry-run | head -20
       - run: cd platform && python manage.py dump_pii_map
+      # backfill_audit_columns queries the DB, and platform's settings use an
+      # in-memory sqlite that doesn't survive between manage.py calls — its
+      # behaviour is covered by canonical/tests/test_canonical.py instead.
