@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useCompany } from '@/context/CompanyContext';
 import { useCycomList, fmtDate, m2oName, type Many2One } from '@/lib/cycomModels';
+import { useT } from '@/lib/i18n';
 
 // ── Product Catalog ──
 interface Product {
@@ -114,6 +115,7 @@ const mapSession = (r: CyPosSession): PosOrder => ({
 });
 
 export default function PosDashboard() {
+  const t = useT();
   const { activeCompany, activeBranch } = useCompany();
   
   // Session state
@@ -305,7 +307,7 @@ export default function PosDashboard() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-bold text-white">POS SESSION ACTIVE</span>
+              <span className="text-xs font-bold text-white">{t('pos.sessionActive')}</span>
             </div>
             <span className="text-[10px] text-slate-500 font-mono">• {storeName}</span>
           </div>
@@ -327,7 +329,7 @@ export default function PosDashboard() {
               <div className="flex items-center gap-2 bg-white/3 border border-white/8 rounded-xl px-3 py-1.5 flex-1">
                 <Search className="w-4 h-4 text-slate-500" />
                 <input 
-                  type="text" placeholder="Search products..." 
+                  type="text" placeholder={t('pos.searchProducts')}
                   value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                   className="bg-transparent border-none outline-none text-xs text-white placeholder-slate-500 w-full"
                 />
@@ -335,7 +337,7 @@ export default function PosDashboard() {
               <div className="flex items-center gap-2 bg-white/3 border border-white/8 rounded-xl px-3 py-1.5 w-[200px]">
                 <ScanBarcode className="w-4 h-4 text-[#E67E22]" />
                 <input 
-                  type="text" placeholder="Scan barcode..." 
+                  type="text" placeholder={t('pos.scanBarcode')}
                   value={barcodeInput} onChange={e => setBarcodeInput(e.target.value)}
                   onKeyDown={handleBarcodeScan}
                   className="bg-transparent border-none outline-none text-xs text-white placeholder-slate-500 w-full font-mono"
@@ -390,7 +392,7 @@ export default function PosDashboard() {
               <input 
                 type="text" value={customerName} onChange={e => setCustomerName(e.target.value)}
                 className="bg-white/3 border border-white/8 rounded-lg px-3 py-1.5 text-xs text-white w-full outline-none focus:border-[#E67E22]/50"
-                placeholder="Customer name..."
+                placeholder={t('pos.customerName')}
               />
             </div>
 
@@ -399,8 +401,8 @@ export default function PosDashboard() {
               {orderLines.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-slate-500">
                   <ShoppingCart className="w-10 h-10 mb-3 opacity-30" />
-                  <p className="text-xs font-medium">No items in order</p>
-                  <p className="text-[10px] mt-1">Click products or scan barcode to add</p>
+                  <p className="text-xs font-medium">{t('pos.noItems')}</p>
+                  <p className="text-[10px] mt-1">{t('pos.addHint')}</p>
                 </div>
               ) : (
                 orderLines.map(line => {
@@ -434,7 +436,7 @@ export default function PosDashboard() {
                             value={line.discount} onChange={e => setDiscount(line.product.id, parseInt(e.target.value))}
                             className="bg-transparent text-[10px] text-slate-400 outline-none border-none"
                           >
-                            <option value={0}>No discount</option>
+                            <option value={0}>{t('pos.noDiscount')}</option>
                             <option value={5}>5% off</option>
                             <option value={10}>10% off</option>
                             <option value={15}>15% off</option>
@@ -453,7 +455,7 @@ export default function PosDashboard() {
             {/* Order Totals & Payment */}
             <div className="border-t border-white/5 px-4 py-3 space-y-2 flex-shrink-0 bg-[#0a0d17]">
               <div className="flex justify-between text-[11px] text-slate-400">
-                <span>Subtotal</span>
+                <span>{t('pos.subtotal')}</span>
                 <span className="font-mono">JOD {subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-[11px] text-slate-400">
@@ -467,7 +469,7 @@ export default function PosDashboard() {
                 </div>
               )}
               <div className="flex justify-between text-sm font-black text-white border-t border-white/10 pt-2">
-                <span>TOTAL</span>
+                <span>{t('pos.grandTotal')}</span>
                 <span className="text-[#E67E22]">JOD {roundedTotal.toFixed(2)}</span>
               </div>
 
@@ -476,7 +478,7 @@ export default function PosDashboard() {
                   onClick={() => setShowPayment(true)}
                   className="w-full py-3 rounded-xl bg-gradient-to-r from-[#E67E22] to-[#F59E0B] text-white font-bold text-sm hover:opacity-90 transition-opacity mt-2"
                 >
-                  💳 Process Payment — JOD {roundedTotal.toFixed(2)}
+                  💳 {t('pos.processPayment')} — JOD {roundedTotal.toFixed(2)}
                 </button>
               )}
             </div>
@@ -494,12 +496,12 @@ export default function PosDashboard() {
                 className="bg-[#0b0f19] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-5"
               >
                 <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                  <h3 className="text-base font-black text-white">Process Payment</h3>
+                  <h3 className="text-base font-black text-white">{t('pos.processPayment')}</h3>
                   <button onClick={() => setShowPayment(false)} className="text-slate-500 hover:text-white"><X className="w-5 h-5" /></button>
                 </div>
 
                 <div className="text-center py-3">
-                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Total Due</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{t('pos.totalDue')}</p>
                   <p className="text-4xl font-black text-[#E67E22] mt-1">JOD {roundedTotal.toFixed(2)}</p>
                   <p className="text-[10px] text-slate-500 mt-1">{customerName} · {orderLines.length} items</p>
                 </div>
@@ -537,7 +539,7 @@ export default function PosDashboard() {
                     </div>
                     {parseFloat(cashTendered) >= roundedTotal && (
                       <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
-                        <p className="text-[10px] text-emerald-400 uppercase font-bold">Change Due</p>
+                        <p className="text-[10px] text-emerald-400 uppercase font-bold">{t('pos.changeDue')}</p>
                         <p className="text-2xl font-black text-emerald-400">JOD {(parseFloat(cashTendered) - roundedTotal).toFixed(2)}</p>
                       </div>
                     )}
@@ -559,7 +561,7 @@ export default function PosDashboard() {
                 {paymentMethod === 'card' && (
                   <div className="text-center py-6 space-y-2">
                     <Smartphone className="w-10 h-10 mx-auto text-[#3B82F6] animate-pulse" />
-                    <p className="text-xs text-slate-400">Waiting for card terminal...</p>
+                    <p className="text-xs text-slate-400">{t('pos.waitingCard')}</p>
                     <p className="text-[10px] text-slate-500">Tap, insert, or swipe card on terminal device</p>
                   </div>
                 )}
@@ -619,16 +621,16 @@ export default function PosDashboard() {
                 <span className="font-mono">JOD {lastReceipt.tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm font-black text-white">
-                <span>TOTAL</span>
+                <span>{t('pos.grandTotal')}</span>
                 <span className="text-[#E67E22]">JOD {lastReceipt.total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-xs text-slate-400">
-                <span>Payment</span>
+                <span>{t('pos.payment')}</span>
                 <span>{lastReceipt.payment}</span>
               </div>
               {lastReceipt.change > 0 && (
                 <div className="flex justify-between text-xs text-emerald-400 font-bold">
-                  <span>Change</span>
+                  <span>{t('pos.change')}</span>
                   <span>JOD {lastReceipt.change.toFixed(2)}</span>
                 </div>
               )}
@@ -675,7 +677,7 @@ export default function PosDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Register Status</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('pos.registerStatus')}</span>
             <p className="text-xl font-black text-white flex items-center gap-2 mt-1">
               <span className={`w-2.5 h-2.5 rounded-full ${sessionOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
               {sessionOpen ? 'OPEN' : 'LOCKED'}
@@ -685,34 +687,34 @@ export default function PosDashboard() {
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Cash Float</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('pos.cashFloat')}</span>
             <p className="text-2xl font-black text-[#10B981]">JOD {cashFloat.toFixed(2)}</p>
           </div>
           <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400"><Banknote className="w-5 h-5" /></div>
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Advance Deposits</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('pos.advanceDeposits')}</span>
             <p className="text-2xl font-black text-[#5DADE2]">JOD {orders.filter(o => o.type === 'Advance Order' && o.status === 'Pending').reduce((acc, c) => acc + c.deposit, 0)}</p>
           </div>
           <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400"><Calendar className="w-5 h-5" /></div>
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Products in Catalog</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('pos.productsInCatalog')}</span>
             <p className="text-2xl font-black text-[#F59E0B]">{PRODUCTS.length}</p>
           </div>
           <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400"><Package className="w-5 h-5" /></div>
         </div>
       </div>
 
-      {sessionsLoading && <div style={{ padding: '2rem', color: '#ccc' }}>Loading...</div>}
+      {sessionsLoading && <div style={{ padding: '2rem', color: '#ccc' }}>{t('common.loading')}</div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Cash Drawer */}
         <div className="glass-card p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-white/5 pb-3">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Cash Drawer Log</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('pos.cashDrawerLog')}</h2>
           </div>
           {sessionOpen ? (
             <div className="space-y-4">
@@ -741,18 +743,18 @@ export default function PosDashboard() {
                   <input type="number" required placeholder="Amount" value={moveAmt} onChange={e => setMoveAmt(e.target.value)} className="input-field py-1 font-mono col-span-2" />
                 </div>
                 <input type="text" required placeholder="Reason..." value={moveReason} onChange={e => setMoveReason(e.target.value)} className="input-field py-1" />
-                <button type="submit" className="btn-secondary w-full py-1.5">Record Cash Move</button>
+                <button type="submit" className="btn-secondary w-full py-1.5">{t('pos.recordCashMove')}</button>
               </form>
             </div>
           ) : (
-            <div className="py-10 text-center text-slate-500 italic text-xs">Session locked. Open session to manage cash.</div>
+            <div className="py-10 text-center text-slate-500 italic text-xs">{t('pos.sessionLocked')}</div>
           )}
         </div>
 
         {/* Orders */}
         <div className="lg:col-span-2 space-y-6">
           <div className="glass-card p-5 space-y-4">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-3">Advance & Pledge Registry</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-3">{t('pos.advancePledgeRegistry')}</h2>
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead><tr><th>ID</th><th>Customer</th><th>Type</th><th>Total</th><th>Deposit</th><th>Deadline</th><th>Status</th><th className="text-right">Action</th></tr></thead>
@@ -777,10 +779,10 @@ export default function PosDashboard() {
           </div>
 
           <div className="glass-card p-5 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-2">New Advance / Pledge</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-2">{t('pos.newAdvancePledge')}</h3>
             <form onSubmit={handleCreateOrder} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div className="space-y-3">
-                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase">Customer</label><input type="text" required placeholder="Customer name" value={orderCust} onChange={e => setOrderCust(e.target.value)} className="input-field" /></div>
+                <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase">{t('common.customer')}</label><input type="text" required placeholder={t('pos.customerName')} value={orderCust} onChange={e => setOrderCust(e.target.value)} className="input-field" /></div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase">Type</label><select value={orderType} onChange={e => setOrderType(e.target.value as any)} className="input-field"><option value="Advance Order">Advance</option><option value="Pledge Order">Pledge</option></select></div>
                   <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase">Total (JOD)</label><input type="number" required placeholder="500" value={orderTotal} onChange={e => setOrderTotal(e.target.value)} className="input-field font-mono" /></div>
@@ -791,7 +793,7 @@ export default function PosDashboard() {
                   <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase">Deposit</label><input type="number" disabled={orderType === 'Pledge Order'} placeholder={orderType === 'Pledge Order' ? '0' : '150'} value={orderType === 'Pledge Order' ? '' : orderDeposit} onChange={e => setOrderDeposit(e.target.value)} className="input-field disabled:opacity-50 font-mono" /></div>
                   <div className="space-y-1"><label className="text-[10px] font-bold text-slate-500 uppercase">Due Date</label><input type="date" required value={orderDeadline} onChange={e => setOrderDeadline(e.target.value)} className="input-field" /></div>
                 </div>
-                <button type="submit" className="btn-primary w-full py-2 mt-1">Create POS Record</button>
+                <button type="submit" className="btn-primary w-full py-2 mt-1">{t('pos.createPosRecord')}</button>
               </div>
             </form>
           </div>

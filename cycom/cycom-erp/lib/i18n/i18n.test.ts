@@ -31,7 +31,8 @@ describe("i18n catalogs", () => {
 
 describe("t()", () => {
   it("resolves a dotted key", () => {
-    expect(t("pos.checkout")).toBe("Checkout"); // no localStorage in node -> en
+    expect(t("pos.processPayment")).toBe("Process Payment"); // jsdom localStorage empty -> en
+    expect(t("common.total")).toBe("Total");
   });
 
   it("returns the key unchanged when missing", () => {
