@@ -22,6 +22,8 @@ class TriageVitalSignsSerializer(serializers.ModelSerializer):
 
 
 class TriageRiskScoreSerializer(serializers.ModelSerializer):
+    ai_risk_assessment = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = TriageRiskScore
         fields = ["mews_score", "abnormal_flag", "risk_level", "ai_risk_assessment"]
@@ -31,6 +33,7 @@ class TriageAssessmentSerializer(serializers.ModelSerializer):
     vital_signs = TriageVitalSignsSerializer(required=False)
     risk_score = TriageRiskScoreSerializer(read_only=True)
     assessed_by = serializers.CharField(required=False, default="Unknown")
+    chief_complaint = serializers.CharField(allow_blank=True)
 
     class Meta:
         model = TriageAssessment

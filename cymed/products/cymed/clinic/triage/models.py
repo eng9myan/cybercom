@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.clinic.reception.models import CheckIn
 
@@ -10,7 +11,7 @@ class TriageAssessment(BaseModel):
     )
     assessed_at = models.DateTimeField(auto_now_add=True)
     assessed_by = models.CharField(max_length=255)
-    chief_complaint = models.TextField()
+    chief_complaint = EncryptedText(classification="phi")
     triage_category = models.CharField(
         max_length=50,
         choices=[
@@ -53,7 +54,7 @@ class TriageRiskScore(BaseModel):
     mews_score = models.PositiveIntegerField(default=0)  # Modified Early Warning Score
     abnormal_flag = models.BooleanField(default=False)
     risk_level = models.CharField(max_length=50, default="low")  # low, medium, high
-    ai_risk_assessment = models.TextField(blank=True)  # suggestions via CyAI
+    ai_risk_assessment = EncryptedText(classification="phi")  # suggestions via CyAI
 
     class Meta:
         db_table = "cymed_clinic_triage_risk_scores"
