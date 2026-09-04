@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import {
-  DollarSign, Clock, Download, Plus, CheckCircle,
-  XCircle, Calculator, FileSpreadsheet, Eye, RefreshCw
+  DollarSign, Clock, CheckCircle,
+  XCircle, Calculator, FileSpreadsheet
 } from 'lucide-react';
 import { useCycomList, fmtCode, fmtDate, m2oName, type Many2One } from '@/lib/cycomModels';
+import { useT } from '@/lib/i18n';
 
 // --- Backend raw types ---
 type CycomOvertimeRaw = {
@@ -79,7 +79,20 @@ const mapPayslip = (r: CycomPayslipRaw): GeneratedPayslip => ({
   status: r.state === 'done' ? 'Paid' : r.state === 'verify' ? 'Approved' : 'Draft',
 });
 
+const OT_STATUS_KEY: Record<OvertimeClaim['status'], string> = {
+  pending: 'status.pendingApproval',
+  approved: 'status.approved',
+  rejected: 'status.declined',
+};
+
+const SLIP_STATUS_KEY: Record<GeneratedPayslip['status'], string> = {
+  Draft: 'status.draft',
+  Approved: 'status.approved',
+  Paid: 'status.paid',
+};
+
 export default function PayrollDashboard() {
+  const t = useT();
   const { rows: otClaims, loading: loadingOT } = useCycomList<CycomOvertimeRaw, OvertimeClaim>(
     'hr.attendance.overtime',
     [],
@@ -118,6 +131,12 @@ export default function PayrollDashboard() {
   const otPaidValue = otHours * hourlyRate * 1.5;
   const calculatedNet = baseSalary + otPaidValue + customAllowances - latenessDeduction;
 
+  const penaltyLabel =
+    latenessMins <= 15 ? t('payrollDash.penaltyGrace') :
+    latenessMins <= 30 ? t('payrollDash.penaltyHalf') :
+    latenessMins <= 60 ? t('payrollDash.penaltyOne') :
+    t('payrollDash.penaltyTwo');
+
   const handleGeneratePayslip = (e: React.FormEvent) => {
     e.preventDefault();
     // Payslip creation requires a backend write; local addition disabled after live data wiring.
@@ -151,28 +170,28 @@ export default function PayrollDashboard() {
     document.body.removeChild(link);
   };
 
-  if (loading) return <div style={{ padding: '2rem', color: '#ccc' }}>Loading...</div>;
+  if (loading) return <div style={{ padding: '2rem', color: '#ccc' }}>{t('payrollDash.loading')}</div>;
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Payroll & Compensation Command</h1>
-          <p className="page-subtitle">Process monthly wages, calculate lateness deductions, manage overtime approvals, and export financial summaries.</p>
+          <h1 className="page-title text-white">{t('payrollDash.title')}</h1>
+          <p className="page-subtitle">{t('payrollDash.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={exportToExcel}
             className="btn-secondary flex items-center gap-2"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> Export XLSX Summary
+            <FileSpreadsheet className="w-4 h-4 text-emerald-400" /> {t('payrollDash.exportXlsx')}
           </button>
           <button
             onClick={handleBulkApprovePayslips}
             className="btn-primary flex items-center gap-2"
           >
-            <CheckCircle className="w-4 h-4" /> Bulk Approve Drafts
+            <CheckCircle className="w-4 h-4" /> {t('payrollDash.bulkApprove')}
           </button>
         </div>
       </div>
@@ -181,7 +200,7 @@ export default function PayrollDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Monthly Net</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('payrollDash.totalMonthlyNet')}</span>
             <p className="text-2xl font-black text-white">JOD {payslips.reduce((acc, curr) => acc + curr.netSalary, 0).toLocaleString(undefined, {maximumFractionDigits: 2})}</p>
           </div>
           <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
@@ -190,9 +209,9 @@ export default function PayrollDashboard() {
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Pending OT approvals</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('payrollDash.pendingOt')}</span>
             <p className="text-2xl font-black text-[#F59E0B]">
-              {otClaims.filter(c => c.status === 'pending').length} requests
+              {t('payrollDash.requestsN', { n: otClaims.filter(c => c.status === 'pending').length })}
             </p>
           </div>
           <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400">
@@ -201,7 +220,7 @@ export default function PayrollDashboard() {
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Lateness Deducted</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('payrollDash.latenessDeducted')}</span>
             <p className="text-2xl font-black text-[#EF4444]">
               JOD {payslips.reduce((acc, curr) => acc + curr.latenessDeductions, 0).toFixed(2)}
             </p>
@@ -212,7 +231,7 @@ export default function PayrollDashboard() {
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Processed Slips</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('payrollDash.processedSlips')}</span>
             <p className="text-2xl font-black text-[#10B981]">{payslips.length}</p>
           </div>
           <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
@@ -226,13 +245,13 @@ export default function PayrollDashboard() {
         {/* Left Column - Payslip Calculator Form */}
         <div className="glass-card p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-white/5 pb-3">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Payslip Generator Engine</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('payrollDash.generatorHeading')}</h2>
             <Calculator className="w-4 h-4 text-[#E67E22]" />
           </div>
 
           <form onSubmit={handleGeneratePayslip} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase">Employee</label>
+              <label className="text-[10px] font-bold text-slate-500 uppercase">{t('payrollDash.employee')}</label>
               <select
                 value={selectedEmp}
                 onChange={e => {
@@ -249,7 +268,7 @@ export default function PayrollDashboard() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Base Salary (JOD)</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">{t('payrollDash.baseSalary')}</label>
                 <input
                   type="number"
                   value={baseSalary}
@@ -258,7 +277,7 @@ export default function PayrollDashboard() {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Pay Period</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">{t('payrollDash.payPeriod')}</label>
                 <input
                   type="text"
                   value={slipPeriod}
@@ -270,22 +289,22 @@ export default function PayrollDashboard() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">OT Hours</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">{t('payrollDash.otHours')}</label>
                 <input
                   type="number"
                   value={otHours}
                   onChange={e => setOtHours(parseFloat(e.target.value) || 0)}
-                  placeholder="e.g. 5"
+                  placeholder={t('payrollDash.otHoursPh')}
                   className="input-field"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Allowances (JOD)</label>
+                <label className="text-[10px] font-bold text-slate-500 uppercase">{t('payrollDash.allowances')}</label>
                 <input
                   type="number"
                   value={customAllowances}
                   onChange={e => setCustomAllowances(parseFloat(e.target.value) || 0)}
-                  placeholder="e.g. 100"
+                  placeholder={t('payrollDash.allowancesPh')}
                   className="input-field"
                 />
               </div>
@@ -294,21 +313,21 @@ export default function PayrollDashboard() {
             {/* Lateness settings */}
             <div className="p-4 rounded-xl bg-white/3 border border-white/5 space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Lateness Deduction</span>
-                <span className="text-[9px] bg-red-500/20 text-[#EF4444] px-1.5 py-0.2 rounded font-bold">Cycom Rules</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{t('payrollDash.latenessHeading')}</span>
+                <span className="text-[9px] bg-red-500/20 text-[#EF4444] px-1.5 py-0.2 rounded font-bold">{t('payrollDash.latenessRules')}</span>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-500">Lateness Minutes this month:</label>
+                <label className="text-[10px] text-slate-500">{t('payrollDash.latenessMinutes')}</label>
                 <input
                   type="number"
                   value={latenessMins}
                   onChange={e => setLatenessMins(parseInt(e.target.value) || 0)}
-                  placeholder="e.g. 45 min"
+                  placeholder={t('payrollDash.latenessMinutesPh')}
                   className="input-field py-1"
                 />
                 <div className="text-[10px] text-slate-400 leading-relaxed pt-1 flex flex-col gap-0.5">
-                  <span>Calculated Hourly Rate: <strong>JOD {hourlyRate.toFixed(2)}/hr</strong></span>
-                  <span>Penalty Action: <strong>{latenessMins <= 15 ? 'Grace Period (0 hrs)' : latenessMins <= 30 ? 'Deduct 0.5 hrs' : latenessMins <= 60 ? 'Deduct 1.0 hrs' : 'Deduct 2.0 hrs'}</strong></span>
+                  <span>{t('payrollDash.hourlyRate', { rate: `JOD ${hourlyRate.toFixed(2)}` })}</span>
+                  <span>{t('payrollDash.penaltyAction', { action: penaltyLabel })}</span>
                 </div>
               </div>
             </div>
@@ -316,29 +335,29 @@ export default function PayrollDashboard() {
             {/* Real-time Calculation Breakdown */}
             <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2 text-xs">
               <div className="flex justify-between border-b border-white/5 pb-1">
-                <span className="text-slate-500">Base Wage:</span>
+                <span className="text-slate-500">{t('payrollDash.baseWage')}</span>
                 <span className="font-semibold text-slate-300">JOD {baseSalary.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-b border-white/5 pb-1">
-                <span className="text-slate-500">OT Pay (1.5x):</span>
+                <span className="text-slate-500">{t('payrollDash.otPay')}</span>
                 <span className="font-semibold text-emerald-400">+JOD {otPaidValue.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-b border-white/5 pb-1">
-                <span className="text-slate-500">Allowances:</span>
+                <span className="text-slate-500">{t('payrollDash.allowancesLine')}</span>
                 <span className="font-semibold text-emerald-400">+JOD {customAllowances.toFixed(2)}</span>
               </div>
               <div className="flex justify-between border-b border-white/5 pb-1">
-                <span className="text-slate-500">Lateness Penalty:</span>
+                <span className="text-slate-500">{t('payrollDash.latenessPenalty')}</span>
                 <span className="font-semibold text-red-400">-JOD {latenessDeduction.toFixed(2)}</span>
               </div>
               <div className="flex justify-between pt-1 font-bold text-sm">
-                <span className="text-white">Est. Net Net:</span>
+                <span className="text-white">{t('payrollDash.estNet')}</span>
                 <span className="text-[#E67E22]">JOD {calculatedNet.toFixed(2)}</span>
               </div>
             </div>
 
             <button type="submit" className="btn-primary w-full py-2">
-              Generate & Record Payslip
+              {t('payrollDash.generateBtn')}
             </button>
           </form>
         </div>
@@ -349,7 +368,7 @@ export default function PayrollDashboard() {
           {/* Overtime Wallet approvals */}
           <div className="glass-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Overtime Wallet Approval Queue</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('payrollDash.otQueueHeading')}</h2>
               <span className="text-[10px] bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30 px-2 py-0.5 rounded font-bold">
                 cycom_payroll_overtime
               </span>
@@ -359,15 +378,15 @@ export default function PayrollDashboard() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Employee</th>
-                    <th>Date</th>
-                    <th>Hours</th>
-                    <th>Rate</th>
-                    <th>Multiplier</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th className="text-right">Actions</th>
+                    <th>{t('payrollDash.colId')}</th>
+                    <th>{t('payrollDash.colEmployee')}</th>
+                    <th>{t('payrollDash.colDate')}</th>
+                    <th>{t('payrollDash.colHours')}</th>
+                    <th>{t('payrollDash.colRate')}</th>
+                    <th>{t('payrollDash.colMultiplier')}</th>
+                    <th>{t('payrollDash.colTotal')}</th>
+                    <th>{t('payrollDash.colStatus')}</th>
+                    <th className="text-end">{t('payrollDash.colActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -378,7 +397,7 @@ export default function PayrollDashboard() {
                         <td className="font-mono text-xs">{claim.id}</td>
                         <td className="font-semibold text-slate-300">{claim.employeeName}</td>
                         <td>{claim.date}</td>
-                        <td>{claim.hours} hrs</td>
+                        <td>{t('payrollDash.hoursN', { n: claim.hours })}</td>
                         <td>JOD {claim.ratePerHour.toFixed(2)}</td>
                         <td>{claim.multiplier}x</td>
                         <td className="font-bold text-white">JOD {totalVal.toFixed(2)}</td>
@@ -386,9 +405,9 @@ export default function PayrollDashboard() {
                           <span className={`badge text-[9px] ${
                             claim.status === 'approved' ? 'badge-green' :
                             claim.status === 'rejected' ? 'badge-red' : 'badge-yellow'
-                          }`}>{claim.status}</span>
+                          }`}>{t(OT_STATUS_KEY[claim.status])}</span>
                         </td>
-                        <td className="text-right">
+                        <td className="text-end">
                           {claim.status === 'pending' && (
                             <div className="flex gap-1 justify-end">
                               <button
@@ -417,7 +436,7 @@ export default function PayrollDashboard() {
           {/* Payslip Records */}
           <div className="glass-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Processed Payslips Ledger</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('payrollDash.payslipLedgerHeading')}</h2>
               <span className="text-[10px] bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30 px-2 py-0.5 rounded font-bold">
                 cycom_payslip_xlsx
               </span>
@@ -427,15 +446,15 @@ export default function PayrollDashboard() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Slip ID</th>
-                    <th>Employee Name</th>
-                    <th>Base</th>
-                    <th>OT Paid</th>
-                    <th>Lateness Ded.</th>
-                    <th>Allowances</th>
-                    <th>Net Salary</th>
-                    <th>Period</th>
-                    <th>Status</th>
+                    <th>{t('payrollDash.slipId')}</th>
+                    <th>{t('payrollDash.employeeName')}</th>
+                    <th>{t('payrollDash.base')}</th>
+                    <th>{t('payrollDash.otPaid')}</th>
+                    <th>{t('payrollDash.latenessDed')}</th>
+                    <th>{t('payrollDash.allowances')}</th>
+                    <th>{t('payrollDash.netSalary')}</th>
+                    <th>{t('payrollDash.period')}</th>
+                    <th>{t('payrollDash.colStatus')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -453,7 +472,7 @@ export default function PayrollDashboard() {
                         <span className={`badge text-[9px] ${
                           ps.status === 'Paid' ? 'badge-green' :
                           ps.status === 'Approved' ? 'badge-blue' : 'badge-yellow'
-                        }`}>{ps.status}</span>
+                        }`}>{t(SLIP_STATUS_KEY[ps.status])}</span>
                       </td>
                     </tr>
                   ))}

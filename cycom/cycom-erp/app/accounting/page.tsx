@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FileText, CheckCircle2, ArrowRight, AlertTriangle, RefreshCw,
-  HelpCircle, Trash2, ShieldAlert, CheckCircle, Calculator, FileSpreadsheet
+  FileText, CheckCircle2, RefreshCw,
+  ShieldAlert, CheckCircle, Calculator, FileSpreadsheet
 } from 'lucide-react';
 import { useCycomList, m2oName, fmtCode, Many2One } from '@/lib/cycomModels';
+import { useT } from '@/lib/i18n';
 
 interface JournalEntry {
   id: string;
@@ -52,7 +52,13 @@ function resolveJournal(name: string): 'Bank' | 'Cash' | 'General' {
   return 'General';
 }
 
+const JOURNAL_STATUS_KEY: Record<JournalEntry['status'], string> = {
+  Posted: 'status.posted',
+  Draft: 'status.draft',
+};
+
 export default function AccountingDashboard() {
+  const t = useT();
   const { rows: liveEntries, loading } = useCycomList<BackendMove, JournalEntry>(
     'account.move',
     [['move_type', '=', 'entry']],
@@ -196,35 +202,35 @@ export default function AccountingDashboard() {
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Accounting & Finance Ledger</h1>
-          <p className="page-subtitle">Reconcile bank accounts, track journal drafts, post vendor payments, and configure bulk ledger states.</p>
+          <h1 className="page-title text-white">{t('acctDash.title')}</h1>
+          <p className="page-subtitle">{t('acctDash.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <Link href="/accounting/reconciliation" className="btn-primary flex items-center gap-2">
-            <RefreshCw className="w-4 h-4 text-indigo-400" /> AI Reconciler
+            <RefreshCw className="w-4 h-4 text-indigo-400" /> {t('acctDash.aiReconciler')}
           </Link>
           <Link href="/accounting/import" className="btn-secondary flex items-center gap-2">
-            <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> Import Entries
+            <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> {t('acctDash.importEntries')}
           </Link>
           <button
             onClick={handleAutoReconcile}
             className="btn-secondary flex items-center gap-2"
           >
-            <RefreshCw className="w-4 h-4 text-cyan-400" /> Run Mass Auto-Reconcile
+            <RefreshCw className="w-4 h-4 text-cyan-400" /> {t('acctDash.runAutoReconcile')}
           </button>
           <button
             onClick={handleBulkDraft}
             disabled={selectedIds.length === 0}
             className="btn-secondary flex items-center gap-2 disabled:opacity-50"
           >
-            <CheckCircle className="w-4 h-4" /> Set Selected to Draft ({selectedIds.length})
+            <CheckCircle className="w-4 h-4" /> {t('acctDash.setDraftN', { n: selectedIds.length })}
           </button>
         </div>
       </div>
 
       {loading && (
         <div className="glass-card p-8 text-center text-slate-400 text-sm">
-          Loading journal entries from backend…
+          {t('acctDash.loading')}
         </div>
       )}
 
@@ -232,7 +238,7 @@ export default function AccountingDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Journal Balance</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('acctDash.journalBalance')}</span>
             <p className="text-2xl font-black text-[#10B981]">JOD 4,200.00</p>
           </div>
           <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
@@ -241,9 +247,9 @@ export default function AccountingDashboard() {
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Unreconciled lines</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('acctDash.unreconciledLines')}</span>
             <p className="text-2xl font-black text-[#F59E0B]">
-              {bankLines.filter(l => !l.matchedEntryId).length} transactions
+              {t('acctDash.transactionsN', { n: bankLines.filter(l => !l.matchedEntryId).length })}
             </p>
           </div>
           <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400">
@@ -252,7 +258,7 @@ export default function AccountingDashboard() {
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Bulk Draft Control</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('acctDash.bulkDraftControl')}</span>
             <span className="badge badge-cyan text-[8px] mt-1.5">account_move_bulk_set_draft</span>
           </div>
           <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
@@ -261,7 +267,7 @@ export default function AccountingDashboard() {
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Post Protection</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('acctDash.postProtection')}</span>
             <span className="badge badge-orange text-[8px] mt-1.5">payment_non_zero_confirm</span>
           </div>
           <div className="p-3 rounded-xl bg-orange-500/10 text-[#E67E22]">
@@ -278,7 +284,7 @@ export default function AccountingDashboard() {
           {/* Post Payment */}
           <div className="glass-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Post Vendor Payment</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('acctDash.postPaymentHeading')}</h2>
               <span className="text-[10px] bg-orange-500/20 text-[#E67E22] border border-[#E67E22]/30 px-2 py-0.5 rounded font-bold">
                 payment_non_zero_confirm
               </span>
@@ -288,18 +294,18 @@ export default function AccountingDashboard() {
               <div className="h-[180px] flex flex-col items-center justify-center text-center space-y-3 text-xs text-emerald-400">
                 <CheckCircle2 className="w-10 h-10 animate-bounce" />
                 <div>
-                  <p className="font-bold">Payment Posted Successfully</p>
-                  <p className="text-[10px] text-slate-500 mt-1">Journal entry recorded. Check ledger history.</p>
+                  <p className="font-bold">{t('acctDash.paymentPostedSuccess')}</p>
+                  <p className="text-[10px] text-slate-500 mt-1">{t('acctDash.paymentPostedNote')}</p>
                 </div>
               </div>
             ) : (
               <form onSubmit={handlePostPayment} className="space-y-4 text-xs">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Vendor Partner</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('acctDash.vendorPartner')}</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Samer Wholesale Est."
+                    placeholder={t('acctDash.vendorPartnerPh')}
                     value={payPartner}
                     onChange={e => setPayPartner(e.target.value)}
                     className="input-field"
@@ -307,21 +313,21 @@ export default function AccountingDashboard() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Journal Mode</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">{t('acctDash.journalMode')}</label>
                     <select
                       value={payJournal}
                       onChange={e => setPayJournal(e.target.value as any)}
                       className="input-field"
                     >
-                      <option value="Bank">Bank Account</option>
-                      <option value="Cash">Cash Drawer</option>
+                      <option value="Bank">{t('acctDash.bankAccount')}</option>
+                      <option value="Cash">{t('acctDash.cashDrawer')}</option>
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Amount (JOD)</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase">{t('acctDash.amount')}</label>
                     <input
                       type="number"
-                      placeholder="e.g. 1500"
+                      placeholder={t('acctDash.amountPh')}
                       value={payAmount}
                       onChange={e => setPayAmount(e.target.value)}
                       className="input-field font-mono"
@@ -329,10 +335,10 @@ export default function AccountingDashboard() {
                   </div>
                 </div>
                 <p className="text-[9px] text-slate-500">
-                  Validation Check: Cycom rules prevent recording entries with negative or zero payments. Submit zero to test block.
+                  {t('acctDash.validationNote')}
                 </p>
                 <button type="submit" className="btn-primary w-full py-2">
-                  Post Payment Journal
+                  {t('acctDash.postPaymentBtn')}
                 </button>
               </form>
             )}
@@ -342,16 +348,16 @@ export default function AccountingDashboard() {
           {reconcileSelectBankId && (
             <div className="glass-card p-5 bg-[#E67E22]/5 border-[#E67E22]/20 space-y-3 text-xs animate-slide-up">
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="font-bold text-[#E67E22]">Manual Match Lock</span>
-                <button onClick={() => { setReconcileSelectBankId(null); setReconcileSelectEntryId(null); }} className="text-slate-500">Cancel</button>
+                <span className="font-bold text-[#E67E22]">{t('acctDash.manualMatchLock')}</span>
+                <button onClick={() => { setReconcileSelectBankId(null); setReconcileSelectEntryId(null); }} className="text-slate-500">{t('acctDash.cancel')}</button>
               </div>
-              <p className="text-slate-400">Match Statement line <strong>{reconcileSelectBankId}</strong> to draft ledger entry:</p>
+              <p className="text-slate-400">{t('acctDash.matchStatementLine', { id: reconcileSelectBankId })}</p>
               <select
                 value={reconcileSelectEntryId || ''}
                 onChange={e => setReconcileSelectEntryId(e.target.value)}
                 className="input-field"
               >
-                <option value="">-- Select Matching Ledger Entry --</option>
+                <option value="">{t('acctDash.selectMatchingEntry')}</option>
                 {entries.filter(e => !e.reconciled).map(e => (
                   <option key={e.id} value={e.id}>
                     {e.id} - {e.partner} (JOD {e.debit || e.credit})
@@ -363,7 +369,7 @@ export default function AccountingDashboard() {
                 disabled={!reconcileSelectEntryId}
                 className="btn-primary w-full py-1.5 disabled:opacity-50"
               >
-                Confirm Match
+                {t('acctDash.confirmMatch')}
               </button>
             </div>
           )}
@@ -376,7 +382,7 @@ export default function AccountingDashboard() {
           {/* Statement Reconciliation Panel */}
           <div className="glass-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Bank Statement Reconciliation</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('acctDash.statementHeading')}</h2>
               <span className="text-[10px] bg-cyan-500/20 text-[#00F0FF] border border-[#00F0FF]/30 px-2 py-0.5 rounded font-bold">
                 mass_reconciliation
               </span>
@@ -389,13 +395,13 @@ export default function AccountingDashboard() {
                     <p className="text-xs font-bold text-white">{line.label}</p>
                     <p className="text-[10px] text-slate-500">{line.date} · <span className="font-mono">{line.id}</span></p>
                   </div>
-                  <div className="text-right flex items-center gap-4">
+                  <div className="text-end flex items-center gap-4">
                     <div>
                       <p className={`text-xs font-mono font-bold ${line.amount > 0 ? 'text-emerald-400' : 'text-slate-300'}`}>
                         {line.amount > 0 ? '+' : ''}JOD {line.amount}
                       </p>
                       {line.matchedEntryId && (
-                        <p className="text-[9px] text-emerald-500 font-bold font-mono">Matched: {line.matchedEntryId.split('/').pop()}</p>
+                        <p className="text-[9px] text-emerald-500 font-bold font-mono">{t('acctDash.matched', { ref: line.matchedEntryId.split('/').pop() ?? '' })}</p>
                       )}
                     </div>
                     {!line.matchedEntryId ? (
@@ -403,7 +409,7 @@ export default function AccountingDashboard() {
                         onClick={() => setReconcileSelectBankId(line.id)}
                         className="p-1 px-2 text-[10px] font-bold rounded bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/25 text-[#00F0FF]"
                       >
-                        Match
+                        {t('acctDash.match')}
                       </button>
                     ) : (
                       <span className="text-emerald-400"><CheckCircle2 className="w-5 h-5" /></span>
@@ -417,7 +423,7 @@ export default function AccountingDashboard() {
           {/* Journal Entries List */}
           <div className="glass-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Ledger Journal Entries</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('acctDash.ledgerHeading')}</h2>
               <span className="text-[10px] bg-red-500/20 text-[#EF4444] border border-red-500/30 px-2 py-0.5 rounded font-bold">
                 account_move_bulk_set_draft
               </span>
@@ -441,14 +447,14 @@ export default function AccountingDashboard() {
                         className="rounded bg-white/5 border-white/10 accent-[#E67E22]"
                       />
                     </th>
-                    <th>ID Move</th>
-                    <th>Ref</th>
-                    <th>Partner</th>
-                    <th>Journal</th>
-                    <th>Debit</th>
-                    <th>Credit</th>
-                    <th>Status</th>
-                    <th>Recon.</th>
+                    <th>{t('acctDash.colIdMove')}</th>
+                    <th>{t('acctDash.colRef')}</th>
+                    <th>{t('acctDash.colPartner')}</th>
+                    <th>{t('acctDash.colJournal')}</th>
+                    <th>{t('acctDash.colDebit')}</th>
+                    <th>{t('acctDash.colCredit')}</th>
+                    <th>{t('acctDash.colStatus')}</th>
+                    <th>{t('acctDash.colRecon')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -475,7 +481,7 @@ export default function AccountingDashboard() {
                       <td className="font-mono">{ent.credit > 0 ? `JOD ${ent.credit}` : '-'}</td>
                       <td>
                         <span className={`badge text-[9px] ${ent.status === 'Posted' ? 'badge-green' : 'badge-yellow'}`}>
-                          {ent.status}
+                          {t(JOURNAL_STATUS_KEY[ent.status])}
                         </span>
                       </td>
                       <td>
