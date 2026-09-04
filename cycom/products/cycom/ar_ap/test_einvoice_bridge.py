@@ -75,6 +75,30 @@ def test_non_jo_tenant_is_left_untouched(db, invoice_factory):
 
 
 @pytest.mark.django_db
+def test_sa_tenant_routes_to_zatca(monkeypatch, db, invoice_factory):
+    t = Tenant.objects.create(name="Riyadh Co", slug="riyadh-co", country_code="SA")
+    TenantProfile.objects.create(tenant=t, legal_name="Riyadh Co LLC", vat_number="311111111100003")
+
+    seen = {}
+
+    class _FakeZatca:
+        def submit(self, *, is_simplified, invoice_hash_b64, uuid, invoice_b64):
+            seen["is_simplified"] = is_simplified
+            return {"status": "reported" if is_simplified else "cleared",
+                    "reference": "OK", "qr": "", "raw": {}}
+
+    monkeypatch.setattr("platform.einvoicing.sa.client.ZatcaClient", lambda *a, **k: _FakeZatca())
+
+    inv = invoice_factory(t.id)          # partner tax_id "" -> simplified B2C
+    bridge.run_einvoice_clearance(inv)
+    inv.refresh_from_db()
+    assert inv.einvoice_mode == "sa_zatca"
+    assert inv.einvoice_status == "reported"          # B2C simplified -> ZATCA reporting
+    assert seen["is_simplified"] is True
+    assert inv.einvoice_qr                            # TLV QR embedded
+
+
+@pytest.mark.django_db
 def test_engine_failure_marks_rejected_not_raise(monkeypatch, jo_tenant, invoice_factory):
     class _BadClient:
         def submit_invoice(self, xml, uuid):

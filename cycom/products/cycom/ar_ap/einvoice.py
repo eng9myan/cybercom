@@ -34,10 +34,15 @@ def _seller_for(tenant_id) -> tuple[SellerProfile, str]:
 
 def run_einvoice_clearance(invoice) -> None:
     seller, country = _seller_for(invoice.tenant_id)
-    if mode_for_country(country) != "jo_jofotara":
-        # Only JO is wired today; SA/AE raise NotImplementedError in the engine.
-        # Leave einvoice_status="none" for everything else.
+    mode = mode_for_country(country)
+    if mode not in ("jo_jofotara", "sa_zatca"):
+        # AE (Peppol) raises NotImplementedError in the engine; everything else
+        # has no e-invoicing mandate. Leave einvoice_status="none".
         return
+
+    # SA: a customer invoice with a buyer VAT number is a standard (B2B) invoice
+    # -> ZATCA clearance (blocking); without one it's simplified (B2C) -> reporting.
+    is_simplified = mode == "sa_zatca" and not (invoice.partner.tax_id or "").strip()
 
     issue_dt = datetime.combine(invoice.date, time(12, 0))
     lines = [
@@ -63,6 +68,7 @@ def run_einvoice_clearance(invoice) -> None:
             buyer_name=invoice.partner.name,
             buyer_city=getattr(invoice.partner, "city", ""),
             lines=lines,
+            is_simplified=is_simplified,
         )
     except Exception:
         logger.exception("e-invoice clearance failed for %s", invoice.number)
@@ -76,7 +82,9 @@ def run_einvoice_clearance(invoice) -> None:
     invoice.einvoice_pih = result.pih
     invoice.einvoice_hash = result.invoice_hash
     invoice.einvoice_qr = result.qr
-    invoice.einvoice_status = "cleared" if result.ok else "rejected"
+    # persist the authority's own outcome (cleared | reported | submitted); a
+    # non-ok status (e.g. ZATCA "INVALID", transport error) reads as "rejected"
+    invoice.einvoice_status = result.status if result.ok else "rejected"
     invoice.einvoice_reference = result.provider_reference
     invoice.einvoice_response = {"error": result.error} if result.error else {}
     invoice.einvoice_cleared_at = timezone.now() if result.ok else None

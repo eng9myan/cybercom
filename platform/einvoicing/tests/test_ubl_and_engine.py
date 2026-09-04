@@ -119,11 +119,21 @@ def test_engine_failure_does_not_advance_sequence():
 
 
 def test_unimplemented_modes_raise():
-    assert mode_for_country("SA") == "sa_zatca"
+    assert mode_for_country("AE") == "ae_peppol"
     with pytest.raises(NotImplementedError):
         clear_invoice(
-            tenant_id=T, scope="default", country_code="SA", currency="SAR", number="INV-SA",
+            tenant_id=T, scope="default", country_code="AE", currency="AED", number="INV-AE",
             issue_dt=datetime(2026, 7, 5, 12, 0),
             seller=SellerProfile(tin="1", name="X"), buyer_tin="", buyer_name="Y", buyer_city="",
-            lines=[{"name": "Z", "quantity": 1, "unit_price": "1", "tax_percent": 15}],
+            lines=[{"name": "Z", "quantity": 1, "unit_price": "1", "tax_percent": 5}],
+        )
+
+
+def test_unknown_country_raises_valueerror():
+    with pytest.raises(ValueError):
+        clear_invoice(
+            tenant_id=T, scope="default", country_code="ZZ", currency="X", number="INV-ZZ",
+            issue_dt=datetime(2026, 7, 5, 12, 0),
+            seller=SellerProfile(tin="1", name="X"), buyer_tin="", buyer_name="Y", buyer_city="",
+            lines=[{"name": "Z", "quantity": 1, "unit_price": "1", "tax_percent": 0}],
         )
