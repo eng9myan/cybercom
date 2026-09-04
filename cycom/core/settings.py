@@ -197,6 +197,14 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "UTC"
 CELERY_TASK_TRACK_STARTED = True
 
+CELERY_BEAT_SCHEDULE = {
+    # Drain the canonical domain-event outbox (core_domain_events) to the broker.
+    "canonical-relay-domain-events": {
+        "task": "canonical.relay_domain_events",
+        "schedule": 30.0,
+    },
+}
+
 # ---------------------------------------------------------------------------
 # IDENTITY — CyIdentity / Keycloak, shared realm from Phase A
 # ---------------------------------------------------------------------------

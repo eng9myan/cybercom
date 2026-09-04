@@ -535,6 +535,18 @@ M3 only tightens what we *can* attribute. `attributes` (default `{}`) and `row_v
 - Migration path: new consumers read `core_domain_events`; the `OutboxEvent` dual-write
   is removed per event type once its last legacy consumer moves.
 
+### 6.1e M5 relay scheduling + routing consent — **shipped 2026-09-04**
+
+- `platform.canonical.events.relay(limit, dry_run)` — the shared drain loop, used by
+  `manage.py relay_domain_events` and the `canonical.relay_domain_events` celery task
+  (`platform/canonical/tasks.py`). Registered on a 30 s beat in all three projects'
+  `CELERY_BEAT_SCHEDULE`.
+- `cymed.ecosystem.referral_routing` — `route_referral` / `decline` (re-route) /
+  `manual_override` record a 90-day `ConsentGrant` (grantor = source tenant) and emit
+  `cymed.network_referral.routed`; the target tenant's `acknowledge` / `decline` are
+  `require_consent`-gated. New 3-test suite. The referral events are canonical-only
+  (no legacy `OutboxEvent`) — the target state for the migration.
+
 ### 6.2 Expand/contract (ADR-0013)
 
 Never a breaking migration + the code that needs it in one deploy. Sequence per change:

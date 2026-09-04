@@ -194,6 +194,22 @@ def test_emit_domain_event_and_relay():
 
 
 @pytest.mark.django_db
+def test_relay_domain_events_celery_task():
+    from platform.canonical.events import emit, unpublished
+    from platform.canonical.tasks import relay_domain_events
+
+    tid = uuid.uuid4()
+    with tenant_context(tid):
+        emit(event_type="x", aggregate_type="X", aggregate_id=uuid.uuid4(),
+             tenant_id=tid)
+        emit(event_type="y", aggregate_type="Y", aggregate_id=uuid.uuid4(),
+             tenant_id=tid)
+    sent = relay_domain_events.apply().get()  # eager
+    assert sent == 2
+    assert not unpublished().exists()
+
+
+@pytest.mark.django_db
 def test_consent_grant_gates_cross_tenant_access():
     from platform.canonical.consent import ConsentDenied, has_consent, require_consent
 

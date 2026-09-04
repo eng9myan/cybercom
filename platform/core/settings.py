@@ -110,6 +110,12 @@ CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 CELERY_BROKER_URL = "memory://"
 CELERY_RESULT_BACKEND = "cache+memory://"
+CELERY_BEAT_SCHEDULE = {
+    "canonical-relay-domain-events": {
+        "task": "canonical.relay_domain_events",
+        "schedule": 30.0,
+    },
+}
 
 KEYCLOAK_ENABLED = False
 PLATFORM_RATE_LIMIT_ENABLED = False

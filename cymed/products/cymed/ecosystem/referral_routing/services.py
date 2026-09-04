@@ -1,6 +1,7 @@
 """Domain services powering cross-provider referral routing decisions."""
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any, Iterable, Optional
 from uuid import UUID
 
@@ -8,7 +9,41 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
+from platform.canonical import events
+from platform.canonical.consent import require_consent
+from platform.canonical.models import ConsentGrant
+
 from .models import NetworkReferral, RoutingLog, RoutingRule
+
+_CONSENT_TTL = timedelta(days=90)
+_CONSENT_SCOPE = {"entities": ["Referral"], "purpose": "care_coordination"}
+
+
+def _grant_consent(*, grantor, grantee, granted_by=None) -> None:
+    """A source tenant routing a referral to a target tenant is consenting to
+    share it (canonical-data-model-v1.md §5.1)."""
+    ConsentGrant.objects.update_or_create(
+        tenant_id=grantor,
+        grantee_tenant_id=grantee,
+        scope=_CONSENT_SCOPE,
+        defaults={
+            "granted_by": granted_by,
+            "expires_at": timezone.now() + _CONSENT_TTL,
+            "status": "active",
+            "revoked_at": None,
+        },
+    )
+
+
+def _guard(referral: NetworkReferral) -> None:
+    """The target tenant may only act on a referral it has consent for."""
+    if referral.target_tenant_id:
+        require_consent(
+            referral.source_tenant_id,
+            grantee_tenant_id=referral.target_tenant_id,
+            entity="Referral",
+            purpose="care_coordination",
+        )
 
 
 def _coerce_list(value: Optional[Iterable[Any]]) -> list:
@@ -140,7 +175,25 @@ def route_referral(
                 rule_id=rule.id if rule is not None else None,
                 reason="Fallback candidate selected" if used_fallback else "Preferred candidate selected",
             )
+            _grant_consent(
+                grantor=source_tenant_id, grantee=chosen_tenant,
+                granted_by=source_provider_id,
+            )
         referral.save()
+
+        if referral.target_tenant_id:
+            events.emit(
+                event_type="cymed.network_referral.routed",
+                aggregate_type="NetworkReferral",
+                aggregate_id=referral.id,
+                tenant_id=source_tenant_id,
+                payload={
+                    "referral_id": str(referral.id),
+                    "target_tenant_id": str(referral.target_tenant_id),
+                    "target_kind": target_kind,
+                    "used_fallback": used_fallback,
+                },
+            )
     return referral
 
 
@@ -151,6 +204,7 @@ def acknowledge(
 ) -> NetworkReferral:
     with transaction.atomic():
         referral = NetworkReferral.objects.select_for_update().get(pk=referral_id)
+        _guard(referral)
         referral.target_provider_id = target_provider_id
         referral.status = NetworkReferral.Status.ACKNOWLEDGED
         referral.acknowledged_at = timezone.now()
@@ -165,6 +219,7 @@ def decline(
 ) -> NetworkReferral:
     with transaction.atomic():
         referral = NetworkReferral.objects.select_for_update().get(pk=referral_id)
+        _guard(referral)
         prior_tenant = referral.target_tenant_id
         RoutingLog.objects.create(
             referral=referral,
@@ -203,6 +258,7 @@ def decline(
                 rule_id=rule.id if rule is not None else None,
                 reason="Re-routed after decline",
             )
+            _grant_consent(grantor=referral.source_tenant_id, grantee=next_tenant)
         else:
             referral.status = NetworkReferral.Status.DECLINED
         referral.save()
@@ -222,6 +278,7 @@ def manual_override(
         referral.target_provider_id = target_provider_id
         referral.status = NetworkReferral.Status.ROUTED
         referral.routed_at = timezone.now()
+        _grant_consent(grantor=referral.source_tenant_id, grantee=target_tenant_id)
         RoutingLog.objects.create(
             referral=referral,
             kind=RoutingLog.Kind.MANUAL_OVERRIDE,

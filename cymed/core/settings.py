@@ -324,6 +324,11 @@ CELERY_BEAT_SCHEDULE: dict = {
         "task": "tenant.expire_demo_tenants",
         "schedule": 900.0,
     },
+    # Drain the canonical domain-event outbox (core_domain_events) to the broker.
+    "canonical-relay-domain-events": {
+        "task": "canonical.relay_domain_events",
+        "schedule": 30.0,
+    },
 }
 
 # ---------------------------------------------------------------------------
