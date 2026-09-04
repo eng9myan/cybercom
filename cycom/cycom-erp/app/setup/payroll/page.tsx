@@ -15,11 +15,14 @@ import { WizardFooter } from '@/components/setup/WizardFooter';
 import { AdvisorPanel } from '@/components/setup/AdvisorPanel';
 import { ReviewRow } from '@/components/setup/ReviewRow';
 import { ResultBanner } from '@/components/setup/ResultBanner';
+import { ToggleRow } from '@/components/setup/ToggleRow';
+import { useT } from '@/lib/i18n';
 
-const STEPS = ['Frequency & hours', 'OT & lateness', 'Review'] as const;
 type StepIdx = 0 | 1 | 2;
 
 export default function PayrollWizard() {
+  const t = useT();
+  const STEPS = [t('setupPayroll.stepFrequency'), t('setupPayroll.stepOtLateness'), t('setupWizard.stepReview')] as const;
   const [step, setStep] = useState<StepIdx>(0);
   const [industry, setIndustry] = useState<string | undefined>();
   const [frequency, setFrequency] = useState<PayFrequency>('monthly');
@@ -59,17 +62,19 @@ export default function PayrollWizard() {
     return true;
   }, [step, weeklyHours, otMultiplier, latenessGraceMinutes]);
 
+  const onOff = (v: boolean) => v ? t('setupPayroll.enabled') : t('setupWizard.off');
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="page-header">
         <div>
           <h1 className="page-title text-white flex items-center gap-3">
-            <DollarSign className="w-7 h-7 text-[#E67E22]" /> Payroll Structure
+            <DollarSign className="w-7 h-7 text-[#E67E22]" /> {t('setupPayroll.title')}
           </h1>
-          <p className="page-subtitle">Pay frequency, working hours, overtime, lateness. Cycom builds the rules so you don't open salary-rule XML.</p>
+          <p className="page-subtitle">{t('setupPayroll.subtitle')}</p>
         </div>
         <a href="/cycom/cycom/action-hr_payroll.action_hr_payroll_structure_type_list_view" target="_blank" rel="noreferrer" className="btn-secondary flex items-center gap-2 text-xs">
-          <Wrench className="w-3.5 h-3.5" /> Configure manually
+          <Wrench className="w-3.5 h-3.5" /> {t('setupWizard.configureManually')}
         </a>
       </div>
 
@@ -80,7 +85,7 @@ export default function PayrollWizard() {
           <>
             <div className="glass-card p-6 space-y-5">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-cyan-400" /> Pay cycle
+                <Clock className="w-4 h-4 text-cyan-400" /> {t('setupPayroll.payCycleHeading')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {(Object.keys(FREQUENCY_LABEL) as PayFrequency[]).map((f) => (
@@ -89,7 +94,7 @@ export default function PayrollWizard() {
                     type="button"
                     onClick={() => setFrequency(f)}
                     className={
-                      'text-left p-4 rounded-xl border transition-all ' +
+                      'text-start p-4 rounded-xl border transition-all ' +
                       (f === frequency
                         ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white'
                         : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20')
@@ -102,7 +107,7 @@ export default function PayrollWizard() {
 
               <div>
                 <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                  Working hours per week
+                  {t('setupPayroll.weeklyHoursLabel')}
                 </label>
                 <input
                   type="number" min={1} max={84}
@@ -111,15 +116,15 @@ export default function PayrollWizard() {
                   onChange={(e) => setWeeklyHours(parseFloat(e.target.value) || 0)}
                 />
                 <p className="text-[10px] text-slate-500 mt-1">
-                  Common values: 40 (services), 45 (wholesale), 48 (retail / manufacturing), 54 (hospitality).
+                  {t('setupPayroll.weeklyHoursNote')}
                 </p>
               </div>
             </div>
 
             <AdvisorPanel
               lines={[
-                industry ? `Cycom pre-filled values typical for "${industry}" tenants.` : 'Run Company Setup first so Cycom can tailor these defaults to your industry.',
-                'Pay frequency drives the work-entry generation cadence and the payslip date range.',
+                industry ? t('setupPayroll.freqAdvisor', { industry }) : t('setupPayroll.freqAdvisorFallback'),
+                t('setupPayroll.freqAdvisorNote'),
               ]}
             />
           </>
@@ -128,29 +133,29 @@ export default function PayrollWizard() {
         {step === 1 && (
           <>
             <div className="glass-card p-6 space-y-5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Overtime & lateness</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('setupPayroll.otLatenessHeading')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">Overtime multiplier</label>
+                  <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">{t('setupPayroll.otMultiplierLabel')}</label>
                   <input type="number" step="0.1" min={1} max={3} className="input-field py-2.5" value={otMultiplier} onChange={(e) => setOtMultiplier(parseFloat(e.target.value) || 1)} />
-                  <p className="text-[10px] text-slate-500 mt-1">Most jurisdictions: 1.5× weekday, 2× weekend/holiday.</p>
+                  <p className="text-[10px] text-slate-500 mt-1">{t('setupPayroll.otMultiplierNote')}</p>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">Lateness grace minutes</label>
+                  <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">{t('setupPayroll.latenessGraceLabel')}</label>
                   <input type="number" min={0} max={120} className="input-field py-2.5" value={latenessGraceMinutes} onChange={(e) => setLatenessGraceMinutes(parseInt(e.target.value, 10) || 0)} />
                 </div>
               </div>
 
               <div className="space-y-3 pt-1">
                 <ToggleRow
-                  label="Cycom overtime engine"
-                  description="cycom_payroll_overtime + extra_hours_enhancement — pays OT from payslip inputs."
+                  label={t('setupPayroll.cycomOtLabel')}
+                  description={t('setupPayroll.cycomOtDesc')}
                   on={enableCycomOvertime}
                   setOn={setEnableCycomOvertime}
                 />
                 <ToggleRow
-                  label="Mass reconciliation (OT-first lateness cover)"
-                  description="mass_reconciliation + latness_deduction — covers lateness via OT bucket then annual leave."
+                  label={t('setupPayroll.massReconLabel')}
+                  description={t('setupPayroll.massReconDesc')}
                   on={enableMassReconciliation}
                   setOn={setEnableMassReconciliation}
                 />
@@ -159,8 +164,8 @@ export default function PayrollWizard() {
 
             <AdvisorPanel
               lines={[
-                'The Cycom modules are battle-tested in Cycom payroll operations. Leave them on unless you have a hard reason to opt out.',
-                'Disable only if you already have a third-party OT/lateness engine and want to avoid two systems calculating the same numbers.',
+                t('setupPayroll.otAdvisor'),
+                t('setupPayroll.otAdvisorNote'),
               ]}
             />
           </>
@@ -170,15 +175,15 @@ export default function PayrollWizard() {
           <>
             <div className="glass-card p-6 space-y-4">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#E67E22]" /> Review
+                <Layers className="w-4 h-4 text-[#E67E22]" /> {t('setupWizard.stepReview')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <ReviewRow label="Pay frequency" value={FREQUENCY_LABEL[frequency]} />
-                <ReviewRow label="Weekly hours" value={`${weeklyHours} h`} />
-                <ReviewRow label="OT multiplier" value={`×${otMultiplier}`} />
-                <ReviewRow label="Lateness grace" value={`${latenessGraceMinutes} min`} />
-                <ReviewRow label="Cycom OT engine" value={enableCycomOvertime ? 'Enabled' : 'Off'} />
-                <ReviewRow label="Mass reconciliation" value={enableMassReconciliation ? 'Enabled' : 'Off'} />
+                <ReviewRow label={t('setupPayroll.reviewFrequency')} value={FREQUENCY_LABEL[frequency]} />
+                <ReviewRow label={t('setupPayroll.reviewWeeklyHours')} value={t('setupPayroll.hoursVal', { n: weeklyHours })} />
+                <ReviewRow label={t('setupPayroll.reviewOtMultiplier')} value={t('setupPayroll.multiplierVal', { n: otMultiplier })} />
+                <ReviewRow label={t('setupPayroll.reviewLatenessGrace')} value={t('setupPayroll.minutesVal', { n: latenessGraceMinutes })} />
+                <ReviewRow label={t('setupPayroll.reviewCycomOt')} value={onOff(enableCycomOvertime)} />
+                <ReviewRow label={t('setupPayroll.reviewMassRecon')} value={onOff(enableMassReconciliation)} />
               </div>
             </div>
             {result && <ResultBanner result={result} />}
@@ -192,31 +197,8 @@ export default function PayrollWizard() {
         onBack={() => setStep((s) => (Math.max(0, s - 1) as StepIdx))}
         onNext={() => setStep((s) => (Math.min(STEPS.length - 1, s + 1) as StepIdx))}
         onApply={submit}
-        applyLabel="Configure payroll"
+        applyLabel={t('setupPayroll.applyLabel')}
       />
     </div>
-  );
-}
-
-function ToggleRow({ label, description, on, setOn }: { label: string; description: string; on: boolean; setOn: (v: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      onClick={() => setOn(!on)}
-      className={
-        'w-full text-left flex items-center gap-3 p-3 rounded-xl border transition-all ' +
-        (on
-          ? 'bg-gradient-to-br from-emerald-500/10 to-cyan-500/5 border-emerald-500/30'
-          : 'bg-white/5 border-white/10 hover:bg-white/10')
-      }
-    >
-      <div className={'w-9 h-5 rounded-full relative transition-colors ' + (on ? 'bg-emerald-500/60' : 'bg-white/10')}>
-        <div className={'absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ' + (on ? 'left-4' : 'left-0.5')} />
-      </div>
-      <div className="flex-1">
-        <div className="text-sm font-bold text-white">{label}</div>
-        <div className="text-[11px] text-slate-400">{description}</div>
-      </div>
-    </button>
   );
 }
