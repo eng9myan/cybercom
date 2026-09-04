@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileText, AlertTriangle, CheckCircle, Clock, Bell, Search, Filter } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, Bell } from 'lucide-react';
 import { useCycomList, m2oName, fmtDate, fmtCode, Many2One } from '@/lib/cycomModels';
+import { useT } from '@/lib/i18n';
 
 type BackendDocument = {
   id: number;
@@ -13,6 +14,8 @@ type BackendDocument = {
   state?: string;
 };
 
+type DocStatus = 'Critical' | 'Warning' | 'Attention' | 'Active';
+
 type DocumentRow = {
   id: string;
   employee: string;
@@ -20,7 +23,7 @@ type DocumentRow = {
   number: string;
   expiry: string;
   daysLeft: number;
-  status: string;
+  status: DocStatus;
   dept: string;
 };
 
@@ -32,15 +35,32 @@ function computeDaysLeft(expiry_date?: string | false): number {
   return Math.max(0, Math.ceil((exp.getTime() - today.getTime()) / 86400000));
 }
 
-function deriveDocStatus(daysLeft: number): string {
+function deriveDocStatus(daysLeft: number): DocStatus {
   if (daysLeft <= 7) return 'Critical';
   if (daysLeft <= 14) return 'Warning';
   if (daysLeft <= 30) return 'Attention';
   return 'Active';
 }
 
+const STATUS_KEY: Record<DocStatus, string> = {
+  Critical: 'hrDocs.stCritical',
+  Warning: 'hrDocs.stWarning',
+  Attention: 'hrDocs.stAttention',
+  Active: 'hrDocs.stActive',
+};
+
+type FilterKey = 'All' | 'Critical' | 'Warning' | 'Active';
+
+const FILTER_KEY: Record<FilterKey, string> = {
+  All: 'hrDocs.filterAll',
+  Critical: 'hrDocs.filterCritical',
+  Warning: 'hrDocs.filterWarnings',
+  Active: 'hrDocs.filterActive',
+};
+
 export default function DocumentExpiry() {
-  const [filterStatus, setFilterStatus] = useState<'All' | 'Critical' | 'Warning' | 'Active'>('All');
+  const t = useT();
+  const [filterStatus, setFilterStatus] = useState<FilterKey>('All');
 
   const { rows, loading } = useCycomList<BackendDocument, DocumentRow>(
     'hr.document',
@@ -78,17 +98,17 @@ export default function DocumentExpiry() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Document Expiry Tracking</h1>
-          <p className="page-subtitle">Monitor employee IDs, passports, residencies, and work permits with proactive warnings (employee_document_expiry).</p>
+          <h1 className="page-title text-white">{t('hrDocs.title')}</h1>
+          <p className="page-subtitle">{t('hrDocs.subtitle')}</p>
         </div>
         <button className="btn-primary flex items-center gap-2">
-          <Bell className="w-4 h-4" /> Trigger Alerts
+          <Bell className="w-4 h-4" /> {t('hrDocs.triggerAlerts')}
         </button>
       </div>
 
       {loading && (
         <div className="glass-card p-8 text-center text-slate-400 text-sm">
-          Loading documents from backend…
+          {t('hrDocs.loading')}
         </div>
       )}
 
@@ -104,7 +124,7 @@ export default function DocumentExpiry() {
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            {tab === 'Warning' ? 'Warnings' : tab}
+            {t(FILTER_KEY[tab])}
           </button>
         ))}
       </div>
@@ -114,25 +134,25 @@ export default function DocumentExpiry() {
         <div className="glass-card p-5 border-red-500/20 bg-red-500/5 flex items-start gap-4">
           <AlertTriangle className="w-8 h-8 text-red-500 flex-shrink-0" />
           <div>
-            <h3 className="text-sm font-bold text-white">Critical Expirations</h3>
+            <h3 className="text-sm font-bold text-white">{t('hrDocs.criticalExpirations')}</h3>
             <p className="text-2xl font-black text-white mt-1">{criticalCount}</p>
-            <p className="text-xs text-slate-400 mt-1">Documents expiring within 7 days. Urgent action is needed.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('hrDocs.criticalNote')}</p>
           </div>
         </div>
         <div className="glass-card p-5 border-amber-500/20 bg-amber-500/5 flex items-start gap-4">
           <Clock className="w-8 h-8 text-amber-500 flex-shrink-0" />
           <div>
-            <h3 className="text-sm font-bold text-white">Pending Warning</h3>
+            <h3 className="text-sm font-bold text-white">{t('hrDocs.pendingWarning')}</h3>
             <p className="text-2xl font-black text-white mt-1">{warningCount}</p>
-            <p className="text-xs text-slate-400 mt-1">Documents expiring within 30 days. Renewal process should start.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('hrDocs.warningNote')}</p>
           </div>
         </div>
         <div className="glass-card p-5 border-emerald-500/20 bg-emerald-500/5 flex items-start gap-4">
           <CheckCircle className="w-8 h-8 text-emerald-500 flex-shrink-0" />
           <div>
-            <h3 className="text-sm font-bold text-white">Valid & Verified</h3>
+            <h3 className="text-sm font-bold text-white">{t('hrDocs.validVerified')}</h3>
             <p className="text-2xl font-black text-white mt-1">{activeCount}</p>
-            <p className="text-xs text-slate-400 mt-1">All other documents are valid with no upcoming expiration.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('hrDocs.validNote')}</p>
           </div>
         </div>
       </div>
@@ -143,12 +163,12 @@ export default function DocumentExpiry() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Employee</th>
-                <th>Doc Type</th>
-                <th>Doc Number</th>
-                <th>Expiration Date</th>
-                <th>Days Remaining</th>
-                <th>Status</th>
+                <th>{t('hrDocs.employee')}</th>
+                <th>{t('hrDocs.docType')}</th>
+                <th>{t('hrDocs.docNumber')}</th>
+                <th>{t('hrDocs.expirationDate')}</th>
+                <th>{t('hrDocs.daysRemaining')}</th>
+                <th>{t('hrDocs.statusCol')}</th>
               </tr>
             </thead>
             <tbody>
@@ -162,7 +182,7 @@ export default function DocumentExpiry() {
                   <td className="font-mono text-xs text-slate-300">{doc.number}</td>
                   <td>{doc.expiry}</td>
                   <td>
-                    <span className="font-bold text-slate-200">{doc.daysLeft} days</span>
+                    <span className="font-bold text-slate-200">{t('hrDocs.daysN', { n: doc.daysLeft })}</span>
                   </td>
                   <td>
                     <span className={`badge ${
@@ -170,7 +190,7 @@ export default function DocumentExpiry() {
                       doc.status === 'Warning' ? 'badge-orange' :
                       doc.status === 'Attention' ? 'badge-yellow' :
                       'badge-green'
-                    }`}>{doc.status}</span>
+                    }`}>{t(STATUS_KEY[doc.status])}</span>
                   </td>
                 </tr>
               ))}

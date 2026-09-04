@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Shield, CheckCircle2, XCircle, Clock, Calendar, Plus, MessageSquare } from 'lucide-react';
+import { Clock, Plus, MessageSquare } from 'lucide-react';
 import { useCycomList, m2oName, fmtDate, fmtCode, Many2One } from '@/lib/cycomModels';
+import { useT } from '@/lib/i18n';
 
 type BackendLeave = {
   id: number;
@@ -14,24 +15,33 @@ type BackendLeave = {
   state?: string;
 };
 
+type ReqStatus = 'Pending' | 'Approved' | 'Rejected';
+
 type RequestRow = {
   id: string;
   employee: string;
   type: string;
   details: string;
   submitted: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  status: ReqStatus;
   fallbackApplied: boolean;
   notes: string;
 };
 
-function mapLeaveState(state?: string): 'Pending' | 'Approved' | 'Rejected' {
+function mapLeaveState(state?: string): ReqStatus {
   if (state === 'validate') return 'Approved';
   if (state === 'refuse') return 'Rejected';
   return 'Pending';
 }
 
+const STATUS_KEY: Record<ReqStatus, string> = {
+  Pending: 'status.pendingApproval',
+  Approved: 'status.approved',
+  Rejected: 'status.declined',
+};
+
 export default function EmployeeRequests() {
+  const t = useT();
   const { rows, loading } = useCycomList<BackendLeave, RequestRow>(
     'hr.leave',
     [['state', 'in', ['confirm', 'validate1', 'validate', 'refuse']]],
@@ -40,7 +50,11 @@ export default function EmployeeRequests() {
       id: fmtCode('REQ', r.id),
       employee: m2oName(r.employee_id),
       type: m2oName(r.holiday_status_id),
-      details: `${r.number_of_days ?? 0} days (${fmtDate(r.date_from)} – ${fmtDate(r.date_to)})`,
+      details: t('hrRequests.daysRange', {
+        n: r.number_of_days ?? 0,
+        from: fmtDate(r.date_from),
+        to: fmtDate(r.date_to),
+      }),
       submitted: fmtDate(r.date_from),
       status: mapLeaveState(r.state),
       fallbackApplied: false,
@@ -72,17 +86,17 @@ export default function EmployeeRequests() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Employee Requests</h1>
-          <p className="page-subtitle">Track, approve, or reject employee requests for leaves, salary letters, and insurance upgrades (employee_request & hr_leave_fallback).</p>
+          <h1 className="page-title text-white">{t('hrRequests.title')}</h1>
+          <p className="page-subtitle">{t('hrRequests.subtitle')}</p>
         </div>
         <button className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> New Request
+          <Plus className="w-4 h-4" /> {t('hrRequests.newRequest')}
         </button>
       </div>
 
       {loading && (
         <div className="glass-card p-8 text-center text-slate-400 text-sm">
-          Loading requests from backend…
+          {t('hrRequests.loading')}
         </div>
       )}
 
@@ -90,7 +104,7 @@ export default function EmployeeRequests() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main List */}
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Incoming Requests Queue</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('hrRequests.queue')}</h2>
           <div className="space-y-4">
             {list.map((req) => (
               <div key={req.id} className="glass-card p-5 space-y-4">
@@ -108,21 +122,21 @@ export default function EmployeeRequests() {
                       req.status === 'Rejected' ? 'badge-red' :
                       'badge-yellow'
                     }`}>
-                      {req.status === 'Pending' ? 'Pending Review' : req.status}
+                      {t(STATUS_KEY[req.status])}
                     </span>
-                    <span className="text-[10px] text-slate-500">Submitted {req.submitted}</span>
+                    <span className="text-[10px] text-slate-500">{t('hrRequests.submitted', { date: req.submitted })}</span>
                   </div>
                 </div>
 
                 <div className="bg-black/35 p-3 rounded-lg border border-white/5 space-y-2">
                   <div className="text-xs text-slate-300">
-                    <span className="text-slate-500 block text-[10px] uppercase font-bold">Details</span>
+                    <span className="text-slate-500 block text-[10px] uppercase font-bold">{t('hrRequests.details')}</span>
                     {req.details}
                   </div>
                   {req.notes && (
                     <div className="text-xs text-slate-400 italic flex items-start gap-1">
                       <MessageSquare className="w-3.5 h-3.5 text-slate-500 mt-0.5 flex-shrink-0" />
-                      <span>"{req.notes}"</span>
+                      <span>&quot;{req.notes}&quot;</span>
                     </div>
                   )}
                 </div>
@@ -130,7 +144,7 @@ export default function EmployeeRequests() {
                 {req.fallbackApplied && (
                   <div className="flex items-center gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400">
                     <Clock className="w-4 h-4" />
-                    <span><strong>HR Fallback Active:</strong> System automatically reverted this request to unpaid/fallback balances.</span>
+                    <span>{t('hrRequests.fallbackActive')}</span>
                   </div>
                 )}
 
@@ -140,13 +154,13 @@ export default function EmployeeRequests() {
                       onClick={() => handleAction(req.id, 'Rejected')}
                       className="px-3 py-1.5 text-xs font-bold border border-red-500/20 text-red-400 bg-red-500/5 hover:bg-red-500/10 rounded-md transition-colors"
                     >
-                      Reject Request
+                      {t('hrRequests.rejectRequest')}
                     </button>
                     <button
                       onClick={() => handleAction(req.id, 'Approved')}
                       className="px-3 py-1.5 text-xs font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 rounded-md transition-colors"
                     >
-                      Approve Request
+                      {t('hrRequests.approveRequest')}
                     </button>
                   </div>
                 )}
@@ -158,24 +172,21 @@ export default function EmployeeRequests() {
         {/* Info & Settings Panel */}
         <div className="space-y-6">
           <div className="glass-card p-6">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Fallback Rules</h2>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">{t('hrRequests.fallbackRules')}</h2>
             <div className="space-y-4 text-xs text-slate-400 leading-relaxed">
-              <p>
-                <strong>hr_leave_fallback:</strong> When an employee requests a leave but has insufficient balance,
-                the system falls back to secondary leave accounts (e.g. sick leave falls back to unpaid leave) according to company settings.
-              </p>
+              <p>{t('hrRequests.fallbackBody')}</p>
               <div className="p-3 bg-white/5 rounded-lg border border-white/5 text-[11px] space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-slate-300">Annual Leave Fallback</span>
-                  <span className="font-mono text-cyan-400 font-bold">Unpaid Leave</span>
+                  <span className="text-slate-300">{t('hrRequests.annualFallback')}</span>
+                  <span className="font-mono text-cyan-400 font-bold">{t('hrRequests.unpaidLeave')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-300">Sick Leave Fallback</span>
-                  <span className="font-mono text-cyan-400 font-bold">Unpaid Leave</span>
+                  <span className="text-slate-300">{t('hrRequests.sickFallback')}</span>
+                  <span className="font-mono text-cyan-400 font-bold">{t('hrRequests.unpaidLeave')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-300">Compassionate Leave Fallback</span>
-                  <span className="font-mono text-cyan-400 font-bold">Annual Balance</span>
+                  <span className="text-slate-300">{t('hrRequests.compassionateFallback')}</span>
+                  <span className="font-mono text-cyan-400 font-bold">{t('hrRequests.annualBalance')}</span>
                 </div>
               </div>
             </div>
