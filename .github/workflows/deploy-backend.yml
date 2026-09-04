@@ -59,23 +59,25 @@ jobs:
       - run: pip install -r cymed/requirements.txt
       - run: python cymed/manage.py check
       - run: python cymed/manage.py migrate --noinput
-      # Scoped deliberately to platform.tenant + platform.cyidentity — the
-      # actual code path this deploy exists to fix (public demo-provision
-      # endpoint). The full cymed suite includes clinic/hospital/patients
-      # modules with 33 pre-existing, unrelated test failures (a real 403-
-      # instead-of-201 permission bug, not something introduced by this
-      # deploy) that would block every future deploy of this endpoint over
-      # a problem this pipeline has no way to fix. Worth its own dedicated
-      # investigation later — flagged, not silently ignored.
+      # The cymed product suite (clinic/hospital/patients/pharmacy/rcm/...) plus
+      # the shared platform pieces cymed hosts. The clinic/hospital/patients
+      # failures noted in earlier revisions of this file were fixed in the
+      # 2026-09-04 hardening pass (suite is green locally).
       # test_register_and_rotate / test_provision_user_then_assign_role /
-      # test_provision_then_activate_then_decommission are 3 pre-existing
-      # failures unrelated to this endpoint — real-HTTP-shaped errors even
-      # under settings_test's Keycloak fake mode, and proven order-dependent
-      # (all 3 pass locally in isolation but fail intermittently as part of
-      # this full suite, in both real and CI environments) — a test-
-      # isolation issue predating this deploy, documented, not chased down.
+      # test_provision_then_activate_then_decommission remain deselected —
+      # real-HTTP-shaped errors even under settings_test's Keycloak fake mode,
+      # proven order-dependent (pass in isolation, fail intermittently in the
+      # full suite) — a test-isolation issue predating this pipeline.
+      # run_tests.py is the sanctioned wrapper — it grafts the local platform/
+      # package onto stdlib `platform` BEFORE pytest/plugins import anything,
+      # which conftest.py alone can't guarantee under `python -m pytest` (stale
+      # sys.modules['platform'] state breaks `import platform.common.fields` in
+      # the EncryptedText migrations). Two invocations: products/ has rootdir
+      # cymed (--strict-markers); ../platform/*/tests has older unregistered
+      # markers — separate rootdirs keep both clean.
+      - run: cd cymed && python run_tests.py products/ -q --no-cov
       - run: >-
-          cd cymed && python -m pytest ../platform/tenant/tests ../platform/cyidentity/tests
+          cd cymed && python run_tests.py ../platform/tenant/tests ../platform/cyidentity/tests
           -q --no-cov
           -k "not test_register_and_rotate and not test_provision_user_then_assign_role and not test_provision_then_activate_then_decommission"
 
