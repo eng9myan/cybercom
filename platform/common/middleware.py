@@ -6,12 +6,15 @@ both isolation layers for the duration of the request, and unbinds them after:
      `TenantScopedMixin.save()` to fill `tenant_id` when a caller forgets it;
   2. the PostgreSQL session GUC (`app.current_tenant_id`), read by the RLS
      policies (`platform.security.rls_ddl`) — only touched when RLS is enforced
-     and the backend is PostgreSQL.
+     and the backend is PostgreSQL;
+  3. the ambient actor context (`platform.common.actor_context`), read by
+     `BaseModel.save()` to fill `created_by` / `updated_by` — from the JWT
+     `user_session["user_id"]` (the `sub` claim).
 
-Must run AFTER whatever sets `request.tenant_id` (the product's
-TenantIsolationMiddleware). The reset in `finally` matters: WSGI reuses worker
-threads and pooled DB connections, so a value left set would leak to the next
-request on the same thread/connection.
+Must run AFTER whatever sets `request.tenant_id` and `request.user_session`
+(CyIdentityAuthMiddleware + the product's TenantIsolationMiddleware). The reset
+in `finally` matters: WSGI reuses worker threads and pooled DB connections, so a
+value left set would leak to the next request on the same thread/connection.
 """
 from __future__ import annotations
 
@@ -19,6 +22,7 @@ import logging
 
 from django.conf import settings
 
+from platform.common.actor_context import _current_actor, _coerce
 from platform.common.tenant_context import _current_tenant
 
 logger = logging.getLogger("platform.common.tenant_ctx")
@@ -31,13 +35,16 @@ class TenantContextMiddleware:
 
     def __call__(self, request):
         tid = getattr(request, "tenant_id", None)
-        token = _current_tenant.set(tid)
+        actor = _coerce(getattr(request, "user_session", {}).get("user_id"))
+        tenant_token = _current_tenant.set(tid)
+        actor_token = _current_actor.set(actor)
         if self._rls and tid:
             self._set_guc(str(tid))
         try:
             return self.get_response(request)
         finally:
-            _current_tenant.reset(token)
+            _current_tenant.reset(tenant_token)
+            _current_actor.reset(actor_token)
             if self._rls and tid:
                 self._set_guc("")
 

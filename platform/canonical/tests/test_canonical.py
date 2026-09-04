@@ -12,6 +12,7 @@ from platform.canonical.models import (
     LayoutTemplate,
     VerticalFlavor,
 )
+from platform.common.actor_context import actor_context, get_current_actor
 from platform.common.tenant_context import tenant_context
 
 
@@ -88,5 +89,48 @@ def test_basemodel_has_attributes_and_actor_columns():
         )
         e.refresh_from_db()
         assert e.attributes == {"k": "v"}
+        # explicit created_by= wins over the (unset) actor context
         assert e.created_by is not None
+
+
+@pytest.mark.django_db
+def test_actor_context_fills_created_by_and_updated_by():
+    tid, actor = uuid.uuid4(), uuid.uuid4()
+    with tenant_context(tid), actor_context(actor):
+        e = DomainEvent.objects.create(
+            tenant_id=tid, event_type="x", aggregate_type="X", aggregate_id=uuid.uuid4(),
+        )
+        e.refresh_from_db()
+        assert e.created_by == actor
+        assert e.updated_by == actor
+
+    # a second actor updating the row: created_by stays, updated_by moves
+    actor2 = uuid.uuid4()
+    with tenant_context(tid), actor_context(actor2):
+        e.attempts = 5
+        e.save(update_fields=["attempts"])
+    e.refresh_from_db()
+    assert e.created_by == actor
+    assert e.updated_by == actor2  # persisted despite the targeted update_fields
+
+
+@pytest.mark.django_db
+def test_no_actor_context_leaves_columns_null():
+    tid = uuid.uuid4()
+    with tenant_context(tid):
+        e = DomainEvent.objects.create(
+            tenant_id=tid, event_type="x", aggregate_type="X", aggregate_id=uuid.uuid4(),
+        )
+        e.refresh_from_db()
+        assert e.created_by is None
         assert e.updated_by is None
+
+
+def test_actor_context_coerces_and_isolates():
+    assert get_current_actor() is None
+    with actor_context("not-a-uuid"):
+        assert get_current_actor() is None  # malformed sub -> None, never raises
+    u = uuid.uuid4()
+    with actor_context(str(u)):
+        assert get_current_actor() == u
+    assert get_current_actor() is None  # reset on exit

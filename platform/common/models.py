@@ -8,6 +8,7 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+from platform.common.actor_context import get_current_actor
 from platform.common.tenant_context import TenantContextMissing, get_current_tenant
 
 
@@ -131,6 +132,30 @@ class BaseModel(
 
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs):
+        """Fill the audit-actor columns from the ambient actor context
+        (canonical-data-model-v1.md §1.2). Best-effort — an unset context or
+        an explicit `created_by=`/`updated_by=` on the instance both win."""
+        actor = get_current_actor()
+        if actor is not None:
+            adding = self._state.adding
+            touched = []
+            if adding and self.created_by is None:
+                self.created_by = actor
+                touched.append("created_by")
+            if self.updated_by != actor:
+                self.updated_by = actor
+                touched.append("updated_by")
+
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None and touched:
+                uf = set(update_fields)
+                if uf:
+                    uf.update(touched)
+                    kwargs["update_fields"] = uf
+
+        super().save(*args, **kwargs)
 
 
 class PlatformModel(UUIDPrimaryKeyMixin, TimestampMixin):

@@ -487,6 +487,22 @@ Resource, `diagnoses` (jsonb, ICD-11), `procedures` (jsonb), `notes` (**encrypte
 `TenantScopedManager` / `all_tenants` split and the `SoftDeleteManager` default from §1.1
 — those change read scoping across ~1000 models and aren't "additive".
 
+### 6.1b M2 write-path actor population — **shipped 2026-09-04**
+
+`platform.common.actor_context` (a `ContextVar`, mirrors `tenant_context`):
+- `TenantContextMiddleware` sets it from the JWT `user_session["user_id"]` (the `sub`
+  claim), resets in `finally` alongside the tenant context / RLS GUC.
+- `@tenant_task` pops an optional `actor_id=` dispatch kwarg and sets it for the task body
+  (the task never sees the kwarg); a system task with no `actor_id` gets a null actor,
+  which is the correct "system" marker.
+- `BaseModel.save()` fills `created_by` on insert and `updated_by` on every write from the
+  ambient actor — best-effort, nullable, an explicit `created_by=` / unset context both win;
+  a targeted `save(update_fields=[...])` still persists the bump.
+
+Columns stay **nullable** — the "then non-null" contract migration waits until every
+write path has been through a release with the population code (backfill the historical
+nulls first).
+
 ### 6.2 Expand/contract (ADR-0013)
 
 Never a breaking migration + the code that needs it in one deploy. Sequence per change:
