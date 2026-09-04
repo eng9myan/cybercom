@@ -59,6 +59,7 @@ urlpatterns = [
     # payments/simulate/ is a DEBUG-only fake-gateway completion.
     path("pricing/", views.pricing_config, name="tenant-pricing-config"),
     path("payments/webhook/<str:provider>/", views.payment_webhook, name="tenant-payment-webhook"),
+    path("payments/verify/<str:provider>/", views.payment_verify, name="tenant-payment-verify"),
     path("payments/simulate/", views.payment_simulate, name="tenant-payment-simulate"),
     path("", include(router.urls)),
 ]

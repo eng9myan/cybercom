@@ -219,3 +219,50 @@ class HyperPayTests(SimpleTestCase):
 class _FakeInvoice:
     def __init__(self, **kw):
         self.__dict__.update(kw)
+
+
+class PaymentVerifyViewTests(TestCase):
+    """POST /api/v1/tenants/payments/verify/<provider>/ — the redirect-return
+    path. A verified 'paid' result must activate the tenant; anything else
+    must not."""
+
+    def _url(self):
+        from django.urls import reverse
+        return reverse("tenant-payment-verify", args=["hyperpay"])
+
+    @override_settings(**_HP)
+    def test_paid_result_activates_tenant(self):
+        from platform.tenant.payments import HyperPayProvider, PaymentEvent
+
+        tenant, _, inv = _make_invoice(provider="hyperpay")
+
+        def _paid(self, checkout_id):
+            return PaymentEvent(provider="hyperpay", invoice_number=inv.invoice_number,
+                                paid=True, provider_ref="8ac_ok")
+
+        with mock.patch.object(HyperPayProvider, "verify_payment", _paid):
+            resp = self.client.post(self._url(), {"checkout_id": "chk_1"})
+
+        assert resp.status_code == 200, resp.content
+        assert resp.json()["status"] == "active"
+        tenant.refresh_from_db()
+        assert tenant.status == TenantStatus.ACTIVE
+        inv.refresh_from_db()
+        assert inv.status == InvoiceStatus.PAID
+
+    @override_settings(**_HP)
+    def test_unpaid_result_does_not_activate(self):
+        from platform.tenant.payments import HyperPayProvider, PaymentEvent
+
+        tenant, _, inv = _make_invoice(provider="hyperpay")
+
+        def _pending(self, checkout_id):
+            return PaymentEvent(provider="hyperpay", invoice_number=inv.invoice_number, paid=False)
+
+        with mock.patch.object(HyperPayProvider, "verify_payment", _pending):
+            resp = self.client.post(self._url(), {"checkout_id": "chk_1"})
+
+        assert resp.status_code == 200
+        assert resp.json()["status"] == "pending"
+        tenant.refresh_from_db()
+        assert tenant.status != TenantStatus.ACTIVE

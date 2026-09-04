@@ -314,6 +314,52 @@ def payment_webhook(request, provider: str):
     )
 
 
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([SubscriptionRequestThrottle])
+def payment_verify(request, provider: str):
+    """Redirect-return path for gateways that hand the browser back with a
+    checkout id (HyperPay COPYandPAY). Verifies the result server-side and,
+    on a confirmed payment, activates the subscription through the single
+    activation path. Idempotent."""
+    try:
+        prov = get_payment_provider(provider)
+    except PaymentError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    verify = getattr(prov, "verify_payment", None)
+    if verify is None:
+        return Response(
+            {"detail": f"provider '{provider}' has no redirect-return verification"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    checkout_id = request.data.get("checkout_id") or request.GET.get("id") or ""
+    try:
+        event = verify(checkout_id)
+    except (PaymentError, WebhookVerificationError) as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not event.paid:
+        return Response({"detail": "payment not completed", "status": "pending"},
+                        status=status.HTTP_200_OK)
+
+    try:
+        invoice = TenantSubscriptionInvoice.objects.get(invoice_number=event.invoice_number)
+    except TenantSubscriptionInvoice.DoesNotExist:
+        return Response({"detail": "unknown invoice"}, status=status.HTTP_404_NOT_FOUND)
+
+    if event.provider_ref and invoice.provider_ref != event.provider_ref:
+        invoice.provider_ref = event.provider_ref
+        invoice.save(update_fields=["provider_ref", "updated_at"])
+
+    tenant = activate_paid_subscription(invoice, approved_by=f"gateway:{provider}:verify")
+    return Response(
+        {"tenant_slug": tenant.slug, "invoice_number": invoice.invoice_number, "status": "active"},
+        status=status.HTTP_200_OK,
+    )
+
+
 @api_view(["GET", "POST"])
 @permission_classes([AllowAny])
 def payment_simulate(request):
