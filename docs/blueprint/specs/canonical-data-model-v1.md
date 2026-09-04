@@ -87,34 +87,28 @@ separate role + `all_tenants` manager + an audit-logged reason.
 Migration `M1`: a management command generates the `ENABLE RLS` + `CREATE POLICY` DDL for
 every `TenantScopedMixin` model; rolled out table-by-table behind `settings.RLS_ENFORCED`.
 
-### 2.2 Layer 2 — app-layer manager + context
+### 2.2 Layer 2 — app-layer context + save() auto-fill — **IMPLEMENTED 2026-09-04**
 
-```python
-# platform/common/tenant_context.py
-_current_tenant: ContextVar[uuid | None] = ContextVar("current_tenant", default=None)
+Shipped (`platform/common/`):
 
-def set_current_tenant(tid): _current_tenant.set(tid)
-def get_current_tenant(): return _current_tenant.get()
+- `tenant_context.py` — a `ContextVar` with `set_/get_/clear_current_tenant()`, a
+  `tenant_context(tid)` context manager, and `TenantContextMissing`.
+- `models.py` `TenantScopedMixin.save()` — fills `tenant_id` from the ambient context
+  when not passed explicitly; raises `TenantContextMissing` (not a bare `IntegrityError`)
+  when there's no context. **Pure Python, no migration; works with every custom manager.**
+- `middleware.py` `TenantContextMiddleware` — publishes `request.tenant_id` for the request,
+  resets in `finally`. Wired into cycom + cymed after their `TenantIsolationMiddleware`.
 
-class TenantScopedManager(models.Manager):
-    def get_queryset(self):
-        tid = get_current_tenant()
-        qs = super().get_queryset()
-        return qs.filter(tenant_id=tid) if tid else qs.none()   # fail closed
+> Chosen over the `TenantScopedManager.create()` override in the original draft: `save()`
+> is inherited unconditionally, so it can't be bypassed by a model defining its own manager,
+> and it also covers `Model(...).save()`, `obj.save()` in a signal, etc. — not just
+> `.objects.create()`. The `get_queryset()` filtering from the draft was **deliberately not
+> shipped** (too risky to change read scoping across ~1000 models at once; RLS + explicit
+> `TenantScopedModelViewSet` scoping stays the read guard).
 
-    def create(self, **kw):
-        kw.setdefault("tenant_id", get_current_tenant())
-        if kw["tenant_id"] is None:
-            raise TenantContextMissing(f"{self.model.__name__}.create() with no tenant context")
-        return super().create(**kw)
-```
-
-- `TenantIsolationMiddleware` resolves the tenant (header → token claim → single-tenant
-  fallback) and calls `set_current_tenant()` **and** issues `SET LOCAL app.current_tenant_id`.
-- Celery tasks get a `@tenant_task` decorator that restores context from the message header.
-- **This closes the class of bug found in CyMed** (`pay_bill` created `PaymentTransaction`
-  with no `tenant_id`). After v1, a service that forgets `tenant_id` gets it from context,
-  or a loud `TenantContextMissing`, never a silent `IntegrityError` at insert.
+- Celery: a `@tenant_task` decorator that restores context from a message header — **still to build** (Phase 1).
+- **Closed the class of bug found in CyMed** (`pay_bill`, the NPHIES client, etc. creating a
+  `BaseModel` row with no `tenant_id`). CyMed suite went 510/5 → **515/0** as a result.
 
 ### 2.3 Layer 3 — per-tenant encryption
 

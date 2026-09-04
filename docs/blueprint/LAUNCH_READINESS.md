@@ -115,7 +115,7 @@ start on internal invoices while it lands.
 | No live PSP wired | manual invoicing only | Tier 2 |
 | e-invoicing: JoFotara **engine built + tested**; XAdES signing + XSD validation + ISTD onboarding remain | JO tax invoices need the onboarding done; KSA needs `sa_zatca` too | Tier 2, `specs/einvoicing-clearance-engine.md` §6 |
 | RTL/Arabic greenfield | SA/UAE credibility | funded workstream |
-| CyMed 5 nphies tests failing | CyMed only, not launch product | tied to canonical `TenantScopedManager` (`specs/canonical-data-model-v1.md` §2.2) |
+| ~~CyMed 5 nphies tests failing~~ | ~~CyMed~~ | **fixed** — `TenantScopedMixin.save()` auto-fill (§2.2 implemented). **CyMed suite 515/0.** |
 
 ---
 
