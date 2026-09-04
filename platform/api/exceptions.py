@@ -5,12 +5,31 @@ All API errors return consistent JSON structure.
 
 from typing import Any
 
+from rest_framework import status as http_status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
+
+from platform.common.models import OptimisticLockError
 
 
 def cybercom_exception_handler(exc: Any, context: Any) -> Response | None:
     response = exception_handler(exc, context)
+
+    # A lost-update conflict from OptimisticLockMixin.save_if_unchanged() — DRF
+    # doesn't know this type, so map it to 409 before the None fall-through.
+    if response is None and isinstance(exc, OptimisticLockError):
+        request = context.get("request")
+        return Response(
+            {
+                "type": "https://cybercom.io/errors/conflict",
+                "title": "Conflict",
+                "status": http_status.HTTP_409_CONFLICT,
+                "detail": str(exc),
+                "instance": request.path if request else None,
+                "code": "row_version_conflict",
+            },
+            status=http_status.HTTP_409_CONFLICT,
+        )
 
     if response is not None:
         request = context.get("request")

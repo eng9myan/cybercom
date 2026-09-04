@@ -149,9 +149,9 @@ class TestPatientsModule:
         assert p1.is_active is True
         assert p1.merged_into is None
 
-        # Verify unmerge event
+        # Verify unmerge event — canonical DomainEvent (M7 cutover)
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.patient.unmerged"
             ).count()
             == 1

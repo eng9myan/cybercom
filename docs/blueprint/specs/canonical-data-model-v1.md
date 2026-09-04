@@ -559,8 +559,19 @@ M3 only tightens what we *can* attribute. `attributes` (default `{}`) and `row_v
   financial / system category by event-type prefix.
 - **First legacy cutover:** `cymed.core.patients.merge_patients` now emits **only** the
   canonical `DomainEvent` — its audit footprint comes from the sink. The
-  `OutboxEvent` dual-write is gone for `cymed.patient.merged`. (`unmerge` still uses
-  `OutboxEvent` — next to cut over.)
+  `OutboxEvent` dual-write is gone for `cymed.patient.merged`.
+
+### 6.1g M7 — more cutovers + optimistic-lock adoption — **shipped 2026-09-04**
+
+- `cymed.core.patients.unmerge_patients` cut over to canonical-only
+  (`cymed.patient.unmerged`); the `platform.events.OutboxEvent` import is gone from
+  `patients/services.py`.
+- `platform.api.exceptions.cybercom_exception_handler` maps `OptimisticLockError` →
+  **HTTP 409** (`code: row_version_conflict`) before the None fall-through, so every
+  DRF endpoint returns a clean conflict instead of a 500.
+- `cycom.pos.services` — `submit_discount_for_approval` / `approve_discount` /
+  `reject_discount` use `order.save_if_unchanged(fields=[...])`: two managers racing
+  the same pending order — the loser gets a 409, not a silent overwrite. +2 tests.
 
 ### 6.2 Expand/contract (ADR-0013)
 

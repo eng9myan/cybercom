@@ -23,7 +23,8 @@ def submit_discount_for_approval(order):
         )
     order.discount_approval_status = "pending"
     order.discount_rejection_reason = ""
-    order.save(update_fields=["discount_approval_status", "discount_rejection_reason"])
+    # compare-and-set: two approvers racing this order must not both win
+    order.save_if_unchanged(fields=["discount_approval_status", "discount_rejection_reason"])
     return order
 
 
@@ -32,7 +33,7 @@ def approve_discount(order, approved_by):
         raise ValidationError(f"Discount is not pending approval (status: '{order.discount_approval_status}').")
     order.discount_approval_status = "approved"
     order.discount_approved_by = approved_by
-    order.save(update_fields=["discount_approval_status", "discount_approved_by"])
+    order.save_if_unchanged(fields=["discount_approval_status", "discount_approved_by"])
     return order
 
 
@@ -41,7 +42,7 @@ def reject_discount(order, reason=""):
         raise ValidationError(f"Discount is not pending approval (status: '{order.discount_approval_status}').")
     order.discount_approval_status = "rejected"
     order.discount_rejection_reason = reason
-    order.save(update_fields=["discount_approval_status", "discount_rejection_reason"])
+    order.save_if_unchanged(fields=["discount_approval_status", "discount_rejection_reason"])
     return order
 
 

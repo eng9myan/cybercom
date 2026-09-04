@@ -3,7 +3,6 @@ import random
 from django.db import transaction
 from django.utils import timezone
 
-from platform.events.models import OutboxEvent
 from products.cymed.core.patients.models import Patient, PatientMergeHistory
 
 
@@ -126,11 +125,15 @@ class PatientService:
             history.unmerged_by = unmerged_by
             history.save()
 
-            # Publish event
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.patient.events",
+            # Canonical domain event (M7 cutover — audit footprint via the
+            # platform.audit domain-event sink, no legacy OutboxEvent).
+            from platform.canonical import events as canonical_events
+
+            canonical_events.emit(
                 event_type="cymed.patient.unmerged",
+                aggregate_type="Patient",
+                aggregate_id=source.id,
+                tenant_id=tenant_id,
                 payload={
                     "source_patient_id": str(source.id),
                     "target_patient_id": str(history.target_patient.id),

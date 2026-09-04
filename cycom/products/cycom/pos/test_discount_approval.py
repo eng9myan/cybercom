@@ -175,3 +175,43 @@ def test_non_admin_cannot_approve_discount(mint_token, mock_jwks, tenant_id, pos
     client.post(f"/api/v1/pos/orders/{order.id}/submit-discount/")
     resp = client.post(f"/api/v1/pos/orders/{order.id}/approve-discount/")
     assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_concurrent_discount_approval_is_a_lost_update_conflict(platform_admin_client, pos_fixtures):
+    """Two managers each hold a copy of the same pending order. Both pass the
+    status guard; the second save_if_unchanged() is a lost update and raises
+    OptimisticLockError -> the DRF handler turns it into 409."""
+    from products.cycom.pos.models import POSOrder
+    from products.cycom.pos.services import approve_discount, submit_discount_for_approval
+    from platform.common.models import OptimisticLockError
+
+    _, tenant_id = platform_admin_client
+    order = _make_order(tenant_id, pos_fixtures, discount_percent=30)
+    submit_discount_for_approval(POSOrder.objects.get(pk=order.pk))
+
+    copy_a = POSOrder.objects.get(pk=order.pk)
+    copy_b = POSOrder.objects.get(pk=order.pk)  # same row_version as copy_a
+
+    approve_discount(copy_a, approved_by="mgr-a")
+
+    with pytest.raises(OptimisticLockError):
+        approve_discount(copy_b, approved_by="mgr-b")
+
+    order.refresh_from_db()
+    assert order.discount_approval_status == "approved"
+    assert str(order.discount_approved_by) == "mgr-a"
+
+
+@pytest.mark.django_db
+def test_optimistic_lock_conflict_maps_to_409(platform_admin_client):
+    """The cybercom exception handler turns OptimisticLockError into a 409."""
+    from unittest.mock import Mock
+
+    from platform.api.exceptions import cybercom_exception_handler
+    from platform.common.models import OptimisticLockError
+
+    req = Mock(path="/api/v1/pos/orders/x/approve-discount/")
+    resp = cybercom_exception_handler(OptimisticLockError("stale"), {"request": req})
+    assert resp is not None and resp.status_code == 409
+    assert resp.data["code"] == "row_version_conflict"
