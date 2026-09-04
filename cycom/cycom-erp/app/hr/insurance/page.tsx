@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Award, ShieldCheck, Heart, Users, Search, Plus, TrendingUp } from 'lucide-react';
+import React from 'react';
+import { Award, ShieldCheck, Heart, Plus } from 'lucide-react';
 import { useCycomList, m2oName, fmtCode, Many2One } from '@/lib/cycomModels';
+import { useT } from '@/lib/i18n';
 
 // TODO: verify model name — may be hr.insurance in some backend versions
 type BackendInsurance = {
@@ -28,6 +29,7 @@ type ContractRow = {
 };
 
 export default function HealthInsurance() {
+  const t = useT();
   const { rows, loading } = useCycomList<BackendInsurance, ContractRow>(
     'hr.employee.insurance', // TODO: verify model name
     [],
@@ -49,17 +51,17 @@ export default function HealthInsurance() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Health Insurance Grades</h1>
-          <p className="page-subtitle">Manage group health insurance schemes, coverage tiers, provider accounts, and monthly payroll integrations (hr_health_insurance).</p>
+          <h1 className="page-title text-white">{t('hrInsurance.title')}</h1>
+          <p className="page-subtitle">{t('hrInsurance.subtitle')}</p>
         </div>
         <button className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add Contract
+          <Plus className="w-4 h-4" /> {t('hrInsurance.addContract')}
         </button>
       </div>
 
       {loading && (
         <div className="glass-card p-8 text-center text-slate-400 text-sm">
-          Loading insurance data from backend…
+          {t('hrInsurance.loading')}
         </div>
       )}
 
@@ -70,15 +72,15 @@ export default function HealthInsurance() {
             <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl">
               <Award className="w-6 h-6" />
             </div>
-            <span className="badge badge-cyan">Tier 1</span>
+            <span className="badge badge-cyan">{t('hrInsurance.tier1')}</span>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">Grade A - Premium</h3>
-            <p className="text-xs text-slate-400 mt-1">Full medical & dental network coverage. 75% company copay. Unlimited hospital network access.</p>
+            <h3 className="text-lg font-bold text-white">{t('hrInsurance.gradeATitle')}</h3>
+            <p className="text-xs text-slate-400 mt-1">{t('hrInsurance.gradeADesc')}</p>
           </div>
           <div className="pt-2 flex justify-between text-xs border-t border-white/5 text-slate-400">
-            <span>Active Enrollees:</span>
-            <span className="font-bold text-white">45 Employees</span>
+            <span>{t('hrInsurance.activeEnrollees')}</span>
+            <span className="font-bold text-white">{t('hrInsurance.employeesN', { n: 45 })}</span>
           </div>
         </div>
 
@@ -87,15 +89,15 @@ export default function HealthInsurance() {
             <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl">
               <ShieldCheck className="w-6 h-6" />
             </div>
-            <span className="badge badge-purple">Tier 2</span>
+            <span className="badge badge-purple">{t('hrInsurance.tier2')}</span>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">Grade B - Standard</h3>
-            <p className="text-xs text-slate-400 mt-1">Primary network coverage, core dental. 85% company copay. Standard network hospital tier.</p>
+            <h3 className="text-lg font-bold text-white">{t('hrInsurance.gradeBTitle')}</h3>
+            <p className="text-xs text-slate-400 mt-1">{t('hrInsurance.gradeBDesc')}</p>
           </div>
           <div className="pt-2 flex justify-between text-xs border-t border-white/5 text-slate-400">
-            <span>Active Enrollees:</span>
-            <span className="font-bold text-white">188 Employees</span>
+            <span>{t('hrInsurance.activeEnrollees')}</span>
+            <span className="font-bold text-white">{t('hrInsurance.employeesN', { n: 188 })}</span>
           </div>
         </div>
 
@@ -104,33 +106,33 @@ export default function HealthInsurance() {
             <div className="p-3 bg-orange-500/10 text-orange-400 rounded-xl">
               <Heart className="w-6 h-6" />
             </div>
-            <span className="badge badge-orange">Tier 3</span>
+            <span className="badge badge-orange">{t('hrInsurance.tier3')}</span>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">Grade C - Basic</h3>
-            <p className="text-xs text-slate-400 mt-1">Emergency & basic clinic network. 90% company copay. Government & designated hospital tier.</p>
+            <h3 className="text-lg font-bold text-white">{t('hrInsurance.gradeCTitle')}</h3>
+            <p className="text-xs text-slate-400 mt-1">{t('hrInsurance.gradeCDesc')}</p>
           </div>
           <div className="pt-2 flex justify-between text-xs border-t border-white/5 text-slate-400">
-            <span>Active Enrollees:</span>
-            <span className="font-bold text-white">109 Employees</span>
+            <span>{t('hrInsurance.activeEnrollees')}</span>
+            <span className="font-bold text-white">{t('hrInsurance.employeesN', { n: 109 })}</span>
           </div>
         </div>
       </div>
 
       {/* Contracts Table */}
       <div className="glass-card p-6">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Employee Insurance Ledger</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">{t('hrInsurance.ledgerHeading')}</h2>
         <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Contract</th>
-                <th>Employee Name</th>
-                <th>Grade Tier</th>
-                <th>Dependents</th>
-                <th>Premium</th>
-                <th>Company Share</th>
-                <th>Deduction</th>
+                <th>{t('hrInsurance.colContract')}</th>
+                <th>{t('hrInsurance.colEmployeeName')}</th>
+                <th>{t('hrInsurance.colGradeTier')}</th>
+                <th>{t('hrInsurance.colDependents')}</th>
+                <th>{t('hrInsurance.colPremium')}</th>
+                <th>{t('hrInsurance.colCompanyShare')}</th>
+                <th>{t('hrInsurance.colDeduction')}</th>
               </tr>
             </thead>
             <tbody>

@@ -4,11 +4,12 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Users, Search, Filter, Plus, Shield, ShieldAlert,
-  MapPin, Phone, Mail, Award, CheckCircle, CreditCard, X,
+  Users, Search, Filter, Plus, ShieldAlert,
+  Phone, Mail, CheckCircle, CreditCard, X,
   FileSpreadsheet
 } from 'lucide-react';
 import { searchRead } from '@/lib/cycom';
+import { useT } from '@/lib/i18n';
 
 /**
  * Employee Directory
@@ -77,6 +78,7 @@ function cycomToEmployee(r: CycomEmployeeRecord): Employee {
 }
 
 export default function EmployeeDirectory() {
+  const t = useT();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -122,15 +124,15 @@ export default function EmployeeDirectory() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Employee Directory</h1>
-          <p className="page-subtitle">Search, view, and manage complete employee profiles, including Cycom bank fields, portal setup, and spouse details.</p>
+          <h1 className="page-title text-white">{t('hrEmployees.title')}</h1>
+          <p className="page-subtitle">{t('hrEmployees.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <Link href="/hr/employees/import" className="btn-secondary flex items-center gap-2">
-            <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> Import Employees
+            <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> {t('hrEmployees.importEmployees')}
           </Link>
           <button className="btn-primary flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Add Employee
+            <Plus className="w-4 h-4" /> {t('hrEmployees.addEmployee')}
           </button>
         </div>
       </div>
@@ -138,31 +140,31 @@ export default function EmployeeDirectory() {
       {/* Search and Filters */}
       <div className="flex gap-4">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <Search className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
-            placeholder="Search by name, employee code, department, or title..."
-            className="input-field !pl-10 !py-2.5"
+            placeholder={t('hrEmployees.searchPh')}
+            className="input-field !ps-10 !py-2.5"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <button className="btn-secondary flex items-center gap-2">
-          <Filter className="w-4 h-4" /> Filters
+          <Filter className="w-4 h-4" /> {t('hrEmployees.filters')}
         </button>
       </div>
 
       {loading && (
         <div className="glass-card p-8 text-center text-slate-400 text-sm">
-          Loading employees from Cycom…
+          {t('hrEmployees.loading')}
         </div>
       )}
 
       {error && (
         <div className="glass-card p-6 border border-rose-500/30 bg-rose-500/5 text-sm">
-          <p className="text-rose-300 font-semibold mb-1">Couldn't load employees</p>
+          <p className="text-rose-300 font-semibold mb-1">{t('hrEmployees.loadError')}</p>
           <p className="text-rose-400/80 text-xs">{error}</p>
-          <p className="text-slate-500 text-[10px] mt-2">Confirm the Cycom backend is running and you're logged in.</p>
+          <p className="text-slate-500 text-[10px] mt-2">{t('hrEmployees.loadErrorHint')}</p>
         </div>
       )}
 
@@ -211,12 +213,12 @@ export default function EmployeeDirectory() {
                 ) : (
                   <ShieldAlert className="w-4 h-4 text-amber-500" />
                 )}
-                <span className="text-slate-500">Portal:</span>
+                <span className="text-slate-500">{t('hrEmployees.portalLabel')}</span>
                 <span className={emp.portalAccess ? 'text-emerald-400 font-semibold' : 'text-amber-500 font-semibold'}>
-                  {emp.portalAccess ? 'Active' : 'Pending'}
+                  {emp.portalAccess ? t('hrEmployees.portalActive') : t('hrEmployees.portalPending')}
                 </span>
               </div>
-              <span className="text-slate-500">Joined {emp.joined}</span>
+              <span className="text-slate-500">{t('hrEmployees.joined', { date: emp.joined })}</span>
             </div>
           </motion.div>
         ))}
@@ -224,7 +226,7 @@ export default function EmployeeDirectory() {
 
       {!loading && !error && filteredEmployees.length === 0 && (
         <div className="glass-card p-8 text-center text-slate-500 text-sm">
-          No employees found.
+          {t('hrEmployees.noEmployees')}
         </div>
       )}
 
@@ -244,7 +246,7 @@ export default function EmployeeDirectory() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 bottom-0 w-full max-w-lg bg-[#0B0F19] border-l border-white/10 p-8 z-50 overflow-y-auto space-y-6"
+              className="fixed top-0 end-0 bottom-0 w-full max-w-lg bg-[#0B0F19] border-s border-white/10 p-8 z-50 overflow-y-auto space-y-6"
             >
               <div className="flex justify-between items-center pb-4 border-b border-white/5">
                 <div>
@@ -265,76 +267,76 @@ export default function EmployeeDirectory() {
               {/* Profile Details */}
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Employment Details</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">{t('hrEmployees.employmentDetails')}</h3>
                   <div className="grid grid-cols-2 gap-4 bg-white/5 p-4 rounded-xl border border-white/5 text-sm">
                     <div>
-                      <span className="text-xs text-slate-500 block">Department</span>
+                      <span className="text-xs text-slate-500 block">{t('hrEmployees.department')}</span>
                       <span className="text-slate-200 font-semibold">{selectedEmp.department}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-slate-500 block">Work Location</span>
+                      <span className="text-xs text-slate-500 block">{t('hrEmployees.workLocation')}</span>
                       <span className="text-slate-200 font-semibold">{selectedEmp.location}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-slate-500 block">Date Joined</span>
+                      <span className="text-xs text-slate-500 block">{t('hrEmployees.dateJoined')}</span>
                       <span className="text-slate-200 font-semibold">{selectedEmp.joined}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-slate-500 block">Health Grade</span>
+                      <span className="text-xs text-slate-500 block">{t('hrEmployees.healthGrade')}</span>
                       <span className="text-slate-200 font-semibold">{selectedEmp.grade}</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Family & Social</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">{t('hrEmployees.familySocial')}</h3>
                   <div className="grid grid-cols-2 gap-4 bg-white/5 p-4 rounded-xl border border-white/5 text-sm">
                     <div>
-                      <span className="text-xs text-slate-500 block">Spouse Name</span>
+                      <span className="text-xs text-slate-500 block">{t('hrEmployees.spouseName')}</span>
                       <span className="text-slate-200 font-semibold">{selectedEmp.spouse}</span>
                     </div>
                     <div>
-                      <span className="text-xs text-slate-500 block">Portal Status</span>
+                      <span className="text-xs text-slate-500 block">{t('hrEmployees.portalStatus')}</span>
                       <span className={selectedEmp.portalAccess ? 'text-emerald-400 font-semibold' : 'text-amber-500 font-semibold'}>
-                        {selectedEmp.portalAccess ? 'Auto-Created & Active' : 'Access Denied'}
+                        {selectedEmp.portalAccess ? t('hrEmployees.portalAutoActive') : t('hrEmployees.portalDenied')}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Security & Device Restrictions</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">{t('hrEmployees.securitySection')}</h3>
                   <div className="bg-white/5 p-4 rounded-xl border border-white/5 text-sm space-y-3">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-xs text-slate-500 block">Single Device Binding</span>
+                        <span className="text-xs text-slate-500 block">{t('hrEmployees.singleDeviceBinding')}</span>
                         <span className="text-slate-200 font-semibold">{selectedEmp.singleDevice}</span>
                       </div>
                       <span className={`badge ${selectedEmp.singleDevice !== 'N/A' ? 'badge-cyan' : 'badge-red'}`}>
-                        {selectedEmp.singleDevice !== 'N/A' ? 'Locked' : 'No Device'}
+                        {selectedEmp.singleDevice !== 'N/A' ? t('hrEmployees.locked') : t('hrEmployees.noDevice')}
                       </span>
                     </div>
                     <p className="text-[10px] text-slate-500">
-                      The portal check-in biometric app enforces a single-device hardware fingerprint binding for geofence validation.
+                      {t('hrEmployees.singleDeviceNote')}
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Bank Details (Cycom Integration)</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">{t('hrEmployees.bankSection')}</h3>
                   <div className="bg-white/5 p-4 rounded-xl border border-white/5 text-sm space-y-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 rounded bg-cyan-950/40 text-cyan-400 border border-cyan-800/30">
                         <CreditCard className="w-5 h-5" />
                       </div>
                       <div>
-                        <span className="text-xs text-slate-500 block">Bank Name</span>
+                        <span className="text-xs text-slate-500 block">{t('hrEmployees.bankName')}</span>
                         <span className="text-slate-200 font-semibold">{selectedEmp.bank}</span>
                       </div>
                     </div>
                     <div>
-                      <span className="text-xs text-slate-500 block">IBAN Number</span>
-                      <span className="text-slate-200 font-mono select-all text-xs font-semibold text-slate-300 block bg-black/40 p-2 rounded border border-white/5 mt-1">
+                      <span className="text-xs text-slate-500 block">{t('hrEmployees.ibanNumber')}</span>
+                      <span className="text-slate-200 font-mono select-all text-xs font-semibold text-slate-300 block bg-black/40 p-2 rounded border border-white/5 mt-1" dir="ltr">
                         {selectedEmp.iban}
                       </span>
                     </div>

@@ -5,67 +5,9 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   Users, Building2, Award, FileText, Shield, AlertTriangle,
-  Clock, ArrowUpRight, TrendingUp, ShieldCheck, UserCheck, FileWarning
+  ArrowUpRight, TrendingUp, ShieldCheck, UserCheck, FileWarning
 } from 'lucide-react';
-
-/* ─── Quick‐link cards that route into sub‐pages ─── */
-const QUICK_LINKS = [
-  {
-    title: 'Employee Directory',
-    desc: 'Search, view, and manage complete employee profiles, portal setup, bank details, and spouse records.',
-    href: '/hr/employees',
-    icon: Users,
-    accent: '#A855F7',
-    bg: 'from-purple-500/8 to-purple-500/3',
-    border: 'border-purple-500/15',
-    metric: '342',
-    metricLabel: 'Active Employees',
-  },
-  {
-    title: 'Department Hierarchy',
-    desc: 'Organizational tree with dynamic child headcount rollup across Executive, Logistics, and Retail branches.',
-    href: '/hr/departments',
-    icon: Building2,
-    accent: '#00F0FF',
-    bg: 'from-cyan-500/8 to-cyan-500/3',
-    border: 'border-cyan-500/15',
-    metric: '12',
-    metricLabel: 'Departments',
-  },
-  {
-    title: 'Health Insurance',
-    desc: 'Manage group health insurance schemes, coverage tiers (VIP, A, B, C), providers, and monthly deductions.',
-    href: '/hr/insurance',
-    icon: Award,
-    accent: '#E67E22',
-    bg: 'from-orange-500/8 to-orange-500/3',
-    border: 'border-orange-500/15',
-    metric: '3 Tiers',
-    metricLabel: 'Active Plans',
-  },
-  {
-    title: 'Document Expiry',
-    desc: 'Monitor passports, residency permits, work permits, and driving licenses with proactive deadline alerts.',
-    href: '/hr/documents',
-    icon: FileText,
-    accent: '#F59E0B',
-    bg: 'from-amber-500/8 to-amber-500/3',
-    border: 'border-amber-500/15',
-    metric: '1',
-    metricLabel: 'Critical Alerts',
-  },
-  {
-    title: 'Employee Requests',
-    desc: 'Review, approve, or reject leave requests, salary certificates, insurance upgrades, and fallback rules.',
-    href: '/hr/requests',
-    icon: Shield,
-    accent: '#EC4899',
-    bg: 'from-pink-500/8 to-pink-500/3',
-    border: 'border-pink-500/15',
-    metric: '2',
-    metricLabel: 'Pending Review',
-  },
-];
+import { useT } from '@/lib/i18n';
 
 /* ─── Recent activity feed (mock) ─── */
 const RECENT_ACTIVITY = [
@@ -78,13 +20,73 @@ const RECENT_ACTIVITY = [
 ];
 
 export default function HRDashboard() {
+  const t = useT();
+
+  const QUICK_LINKS = [
+    {
+      title: t('hrMain.linkEmployeesTitle'),
+      desc: t('hrMain.linkEmployeesDesc'),
+      href: '/hr/employees',
+      icon: Users,
+      accent: '#A855F7',
+      bg: 'from-purple-500/8 to-purple-500/3',
+      border: 'border-purple-500/15',
+      metric: '342',
+      metricLabel: t('hrMain.linkEmployeesMetricLabel'),
+    },
+    {
+      title: t('hrMain.linkDeptsTitle'),
+      desc: t('hrMain.linkDeptsDesc'),
+      href: '/hr/departments',
+      icon: Building2,
+      accent: '#00F0FF',
+      bg: 'from-cyan-500/8 to-cyan-500/3',
+      border: 'border-cyan-500/15',
+      metric: '12',
+      metricLabel: t('hrMain.linkDeptsMetricLabel'),
+    },
+    {
+      title: t('hrMain.linkInsuranceTitle'),
+      desc: t('hrMain.linkInsuranceDesc'),
+      href: '/hr/insurance',
+      icon: Award,
+      accent: '#E67E22',
+      bg: 'from-orange-500/8 to-orange-500/3',
+      border: 'border-orange-500/15',
+      metric: t('hrMain.linkInsuranceMetric'),
+      metricLabel: t('hrMain.linkInsuranceMetricLabel'),
+    },
+    {
+      title: t('hrMain.linkDocsTitle'),
+      desc: t('hrMain.linkDocsDesc'),
+      href: '/hr/documents',
+      icon: FileText,
+      accent: '#F59E0B',
+      bg: 'from-amber-500/8 to-amber-500/3',
+      border: 'border-amber-500/15',
+      metric: '1',
+      metricLabel: t('hrMain.linkDocsMetricLabel'),
+    },
+    {
+      title: t('hrMain.linkRequestsTitle'),
+      desc: t('hrMain.linkRequestsDesc'),
+      href: '/hr/requests',
+      icon: Shield,
+      accent: '#EC4899',
+      bg: 'from-pink-500/8 to-pink-500/3',
+      border: 'border-pink-500/15',
+      metric: '2',
+      metricLabel: t('hrMain.linkRequestsMetricLabel'),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">HR & People Command</h1>
-          <p className="page-subtitle">Cycom human capital overview — employee records, departments, insurance, and administrative requests.</p>
+          <h1 className="page-title text-white">{t('hrMain.title')}</h1>
+          <p className="page-subtitle">{t('hrMain.subtitle')}</p>
         </div>
       </div>
 
@@ -92,7 +94,7 @@ export default function HRDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Headcount</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('hrMain.totalHeadcount')}</span>
             <p className="text-2xl font-black text-white">342</p>
           </div>
           <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
@@ -101,7 +103,7 @@ export default function HRDashboard() {
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Warnings</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('hrMain.activeWarnings')}</span>
             <p className="text-2xl font-black text-[#EF4444]">3</p>
           </div>
           <div className="p-3 rounded-xl bg-red-500/10 text-red-400">
@@ -110,7 +112,7 @@ export default function HRDashboard() {
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Expiring Documents</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('hrMain.expiringDocs')}</span>
             <p className="text-2xl font-black text-[#F59E0B]">3</p>
           </div>
           <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400">
@@ -119,8 +121,8 @@ export default function HRDashboard() {
         </div>
         <div className="stat-card flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Biometric Devices</span>
-            <p className="text-2xl font-black text-[#10B981]">18 Online</p>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t('hrMain.biometricDevices')}</span>
+            <p className="text-2xl font-black text-[#10B981]">{t('hrMain.onlineN', { n: 18 })}</p>
           </div>
           <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
             <ShieldCheck className="w-5 h-5" />
@@ -133,7 +135,7 @@ export default function HRDashboard() {
 
         {/* Left 2 Columns — Module Quick Links */}
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">HR Modules</h2>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('hrMain.modulesHeading')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {QUICK_LINKS.map((card, i) => {
               const Icon = card.icon;
@@ -153,7 +155,7 @@ export default function HRDashboard() {
                         <Icon className="w-5 h-5" style={{ color: card.accent }} />
                       </div>
                       <div className="flex items-center gap-1 text-slate-500 group-hover:text-white transition-colors">
-                        <ArrowUpRight className="w-4 h-4" />
+                        <ArrowUpRight className="w-4 h-4 rtl:-scale-x-100" />
                       </div>
                     </div>
                     <h3 className="text-sm font-bold text-white mb-1 group-hover:text-[#E67E22] transition-colors">{card.title}</h3>
@@ -171,7 +173,7 @@ export default function HRDashboard() {
 
         {/* Right Column — Recent Activity */}
         <div className="space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Recent Activity</h2>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('hrMain.activityHeading')}</h2>
           <div className="glass-card p-5 space-y-1">
             {RECENT_ACTIVITY.map((item, i) => {
               const Icon = item.icon;
@@ -197,26 +199,26 @@ export default function HRDashboard() {
 
           {/* Org Quick Stats */}
           <div className="glass-card p-5 border-cyan-500/10 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Organization Snapshot</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('hrMain.snapshotHeading')}</h3>
             <div className="space-y-3 text-xs">
               <div className="flex justify-between items-center pb-2.5 border-b border-white/5">
-                <span className="text-slate-400">Departments</span>
+                <span className="text-slate-400">{t('hrMain.snapshotDepartments')}</span>
                 <span className="text-white font-bold">12</span>
               </div>
               <div className="flex justify-between items-center pb-2.5 border-b border-white/5">
-                <span className="text-slate-400">Insurance Enrollees</span>
+                <span className="text-slate-400">{t('hrMain.snapshotInsuranceEnrollees')}</span>
                 <span className="text-white font-bold">342 / 342</span>
               </div>
               <div className="flex justify-between items-center pb-2.5 border-b border-white/5">
-                <span className="text-slate-400">Portal Access Active</span>
-                <span className="text-white font-bold">289 users</span>
+                <span className="text-slate-400">{t('hrMain.snapshotPortalAccess')}</span>
+                <span className="text-white font-bold">{t('hrMain.usersN', { n: 289 })}</span>
               </div>
               <div className="flex justify-between items-center pb-2.5 border-b border-white/5">
-                <span className="text-slate-400">Pending Leave Requests</span>
-                <span className="text-[#F59E0B] font-bold">2 awaiting</span>
+                <span className="text-slate-400">{t('hrMain.snapshotPendingLeave')}</span>
+                <span className="text-[#F59E0B] font-bold">{t('hrMain.awaitingN', { n: 2 })}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-400">Retail Distribution</span>
+                <span className="text-slate-400">{t('hrMain.snapshotRetailDist')}</span>
                 <span className="text-white font-bold">58.2%</span>
               </div>
             </div>
