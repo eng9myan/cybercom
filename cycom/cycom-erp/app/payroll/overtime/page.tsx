@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Clock, CheckCircle2, ShieldAlert, Award, FileSpreadsheet, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useCycomList, fmtCode, fmtDate, m2oName, type Many2One } from '@/lib/cycomModels';
+import { useT } from '@/lib/i18n';
 
 // --- Backend raw type ---
 type CycomOvertimeRaw = {
@@ -24,7 +25,7 @@ interface OvertimeEntry {
   multiplierNormal: string;
   multiplierHoliday: string;
   totalCalculated: string;
-  status: string;
+  status: 'approved' | 'declined' | 'pendingApproval';
 }
 
 // --- Mapper ---
@@ -38,12 +39,13 @@ const mapOvertime = (r: CycomOvertimeRaw): OvertimeEntry => ({
   multiplierHoliday: '1.50x',
   totalCalculated: '—',
   status:
-    r.state === 'validated' ? 'Approved' :
-    r.state === 'refused' ? 'Rejected' :
-    'Pending Approval',
+    r.state === 'validated' ? 'approved' :
+    r.state === 'refused' ? 'declined' :
+    'pendingApproval',
 });
 
 export default function OvertimePayroll() {
+  const t = useT();
   const { rows: entries, loading } = useCycomList<CycomOvertimeRaw, OvertimeEntry>(
     'hr.attendance.overtime',
     [],
@@ -52,41 +54,41 @@ export default function OvertimePayroll() {
     { order: 'date desc' },
   );
 
-  if (loading) return <div style={{ padding: '2rem', color: '#ccc' }}>Loading...</div>;
+  if (loading) return <div style={{ padding: '2rem', color: '#ccc' }}>{t('attendanceMain.loading')}</div>;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Overtime Compensation</h1>
-          <p className="page-subtitle">Track overtime hours synched from attendance, calculate compensations using custom multipliers, and process approvals (cycom_payroll_overtime).</p>
+          <h1 className="page-title text-white">{t('payrollOvertime.title')}</h1>
+          <p className="page-subtitle">{t('payrollOvertime.subtitle')}</p>
         </div>
         <button className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Log Overtime
+          <Plus className="w-4 h-4" /> {t('payrollOvertime.logOvertime')}
         </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="glass-card p-5 space-y-2">
-          <span className="text-xs text-slate-500 font-bold uppercase">Total Overtime Hours</span>
-          <p className="text-3xl font-black text-white">19 Hours</p>
-          <span className="text-xs text-slate-400">Recorded this period</span>
+          <span className="text-xs text-slate-500 font-bold uppercase">{t('payrollOvertime.totalOtHours')}</span>
+          <p className="text-3xl font-black text-white">{t('payrollOvertime.hoursN', { n: 19 })}</p>
+          <span className="text-xs text-slate-400">{t('payrollOvertime.recordedPeriod')}</span>
         </div>
         <div className="glass-card p-5 space-y-2">
-          <span className="text-xs text-slate-500 font-bold uppercase">Calculated Outflow</span>
+          <span className="text-xs text-slate-500 font-bold uppercase">{t('payrollOvertime.calculatedOutflow')}</span>
           <p className="text-3xl font-black text-white">JOD 305.00</p>
-          <span className="text-xs text-slate-400">Total approved OT payout</span>
+          <span className="text-xs text-slate-400">{t('payrollOvertime.approvedPayout')}</span>
         </div>
         <div className="glass-card p-5 space-y-2">
-          <span className="text-xs text-slate-500 font-bold uppercase">Rate Config</span>
+          <span className="text-xs text-slate-500 font-bold uppercase">{t('payrollOvertime.rateConfig')}</span>
           <div className="flex justify-between items-center text-xs font-semibold text-slate-300 mt-2">
-            <span>Normal Rate:</span>
+            <span>{t('payrollOvertime.normalRate')}</span>
             <span className="text-cyan-400 font-mono">1.25x</span>
           </div>
           <div className="flex justify-between items-center text-xs font-semibold text-slate-300">
-            <span>Holiday Rate:</span>
+            <span>{t('payrollOvertime.holidayRate')}</span>
             <span className="text-purple-400 font-mono">1.50x</span>
           </div>
         </div>
@@ -94,19 +96,19 @@ export default function OvertimePayroll() {
 
       {/* Ledger Table */}
       <div className="glass-card p-6">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Overtime Ledger</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">{t('payrollOvertime.ledgerHeading')}</h2>
         <div className="overflow-x-auto">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Entry</th>
-                <th>Employee Name</th>
-                <th>Date</th>
-                <th>Normal Hours</th>
-                <th>Holiday Hours</th>
-                <th>Calculation</th>
-                <th>Total Value</th>
-                <th>Status</th>
+                <th>{t('payrollOvertime.colEntry')}</th>
+                <th>{t('payrollOvertime.colEmployeeName')}</th>
+                <th>{t('payrollOvertime.colDate')}</th>
+                <th>{t('payrollOvertime.colNormalHours')}</th>
+                <th>{t('payrollOvertime.colHolidayHours')}</th>
+                <th>{t('payrollOvertime.colCalculation')}</th>
+                <th>{t('payrollOvertime.colTotalValue')}</th>
+                <th>{t('payrollOvertime.colStatus')}</th>
               </tr>
             </thead>
             <tbody>
@@ -115,14 +117,14 @@ export default function OvertimePayroll() {
                   <td className="font-mono text-xs font-bold text-slate-400">{entry.id}</td>
                   <td className="font-semibold text-slate-200">{entry.employee}</td>
                   <td>{entry.date}</td>
-                  <td>{entry.normalHours} hr ({entry.multiplierNormal})</td>
-                  <td>{entry.holidayHours} hr ({entry.multiplierHoliday})</td>
-                  <td className="text-xs text-slate-400">Normal + Holiday multipliers</td>
+                  <td>{t('payrollOvertime.hrMultiplier', { n: entry.normalHours, mult: entry.multiplierNormal })}</td>
+                  <td>{t('payrollOvertime.hrMultiplier', { n: entry.holidayHours, mult: entry.multiplierHoliday })}</td>
+                  <td className="text-xs text-slate-400">{t('payrollOvertime.normalPlusHoliday')}</td>
                   <td className="font-bold text-cyan-400">{entry.totalCalculated}</td>
                   <td>
                     <span className={`badge ${
-                      entry.status === 'Approved' ? 'badge-green' : 'badge-yellow'
-                    }`}>{entry.status}</span>
+                      entry.status === 'approved' ? 'badge-green' : 'badge-yellow'
+                    }`}>{t(`status.${entry.status}`)}</span>
                   </td>
                 </tr>
               ))}

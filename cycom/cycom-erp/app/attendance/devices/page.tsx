@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Cpu, RefreshCw, Radio, MapPin, Plus, Play } from 'lucide-react';
+import { Cpu, RefreshCw, Radio, MapPin, Plus } from 'lucide-react';
 import { useCycomList, fmtCode, fmtDate } from '@/lib/cycomModels';
+import { useT } from '@/lib/i18n';
 
 type CycomZkMachine = {
   id: number;
@@ -35,6 +36,7 @@ const mapDevice = (r: CycomZkMachine): DeviceRow => ({
 });
 
 export default function BiometricDevices() {
+  const t = useT();
   const { rows: devices, loading, reload } = useCycomList<CycomZkMachine, DeviceRow>(
     'zk.machine', // TODO: verify model name
     [],
@@ -47,22 +49,22 @@ export default function BiometricDevices() {
     reload();
   };
 
-  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>Loading...</div>;
+  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>{t('attendanceMain.loading')}</div>;
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Biometric Devices</h1>
-          <p className="page-subtitle">Configure, ping, and trigger synchronization routines for local ZK network machines and Face Recognition portals (hs_zk_attendance).</p>
+          <h1 className="page-title text-white">{t('attendanceDevices.title')}</h1>
+          <p className="page-subtitle">{t('attendanceDevices.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <button className="btn-secondary flex items-center gap-2">
-            <Radio className="w-4 h-4 text-emerald-400" /> Ping All Devices
+            <Radio className="w-4 h-4 text-emerald-400" /> {t('attendanceDevices.pingAll')}
           </button>
           <button className="btn-primary flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Add Device
+            <Plus className="w-4 h-4" /> {t('attendanceDevices.addDevice')}
           </button>
         </div>
       </div>
@@ -75,29 +77,28 @@ export default function BiometricDevices() {
           </div>
           <div className="space-y-2 flex-1">
             <div className="flex justify-between items-center">
-              <h3 className="text-base font-bold text-white">Mobile Check-in Geofence Config</h3>
-              <span className="badge badge-cyan">Enabled</span>
+              <h3 className="text-base font-bold text-white">{t('attendanceDevices.geofenceConfigTitle')}</h3>
+              <span className="badge badge-cyan">{t('attendanceDevices.enabled')}</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed max-w-3xl">
-              <strong>hr_attendance_geofence_config:</strong> Configure physical latitude, longitude, and permitted radius (meters) 
-              for mobile portals. Employees are blocked from checking in if outside coordinates.
+              {t('attendanceDevices.geofenceDesc')}
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs pt-2">
               <div>
-                <span className="text-slate-500 block">Amman HQ Coordinates</span>
-                <span className="text-slate-200 font-mono">31.9522° N, 35.9106° E (100m radius)</span>
+                <span className="text-slate-500 block">{t('attendanceDevices.ammanCoords')}</span>
+                <span className="text-slate-200 font-mono" dir="ltr">31.9522° N, 35.9106° E (100m radius)</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Zarqa Warehouse Coordinates</span>
-                <span className="text-slate-200 font-mono">32.0608° N, 36.0942° E (150m radius)</span>
+                <span className="text-slate-500 block">{t('attendanceDevices.zarqaCoords')}</span>
+                <span className="text-slate-200 font-mono" dir="ltr">32.0608° N, 36.0942° E (150m radius)</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Irbid Warehouse Coordinates</span>
-                <span className="text-slate-200 font-mono">32.5568° N, 35.8469° E (120m radius)</span>
+                <span className="text-slate-500 block">{t('attendanceDevices.irbidCoords')}</span>
+                <span className="text-slate-200 font-mono" dir="ltr">32.5568° N, 35.8469° E (120m radius)</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Device Fingerprint Locks</span>
-                <span className="text-[#10B981] font-semibold">Single-Device Active</span>
+                <span className="text-slate-500 block">{t('attendanceDevices.fingerprintLocks')}</span>
+                <span className="text-[#10B981] font-semibold">{t('attendanceDevices.singleDeviceActive')}</span>
               </div>
             </div>
           </div>
@@ -111,8 +112,8 @@ export default function BiometricDevices() {
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-3">
                 <div className={`p-2.5 rounded-lg border ${
-                  d.status === 'Online' 
-                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                  d.status === 'Online'
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                     : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                 }`}>
                   <Cpu className="w-5 h-5" />
@@ -129,30 +130,30 @@ export default function BiometricDevices() {
 
             <div className="grid grid-cols-2 gap-4 text-xs bg-black/35 p-3 rounded-lg border border-white/5 font-mono">
               <div>
-                <span className="text-slate-500 block">IP Address</span>
-                <span className="text-slate-300">{d.ip}:{d.port}</span>
+                <span className="text-slate-500 block">{t('attendanceDevices.ipAddress')}</span>
+                <span className="text-slate-300" dir="ltr">{d.ip}:{d.port}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Record count</span>
+                <span className="text-slate-500 block">{t('attendanceDevices.recordCount')}</span>
                 <span className="text-slate-300">{d.recordsCount}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Last synchronized</span>
+                <span className="text-slate-500 block">{t('attendanceDevices.lastSynced')}</span>
                 <span className="text-slate-300">{d.lastSync}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Connection Protocol</span>
+                <span className="text-slate-500 block">{t('attendanceDevices.connectionProtocol')}</span>
                 <span className="text-slate-300">TCP/IP SDK</span>
               </div>
             </div>
 
             {d.status === 'Online' && (
               <div className="flex gap-2 justify-end pt-2 border-t border-white/5">
-                <button 
+                <button
                   onClick={() => syncDevice(d.id)}
                   className="btn-secondary py-1 px-3 text-xs flex items-center gap-1.5 hover:bg-cyan-500/10 hover:text-cyan-400 hover:border-cyan-500/30 transition-colors"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" /> Pull Records
+                  <RefreshCw className="w-3.5 h-3.5" /> {t('attendanceDevices.pullRecords')}
                 </button>
               </div>
             )}
