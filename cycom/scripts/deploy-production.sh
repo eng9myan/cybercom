@@ -72,6 +72,14 @@ fi
 echo "==> Running database migrations"
 $compose run --rm backend python manage.py migrate --noinput
 
+# Row-level-security: apply the policies, then prove tenant isolation before the
+# new release goes live. Gated on CYCOM_RLS_ENFORCED=1 in the deploy env.
+if [[ "${CYCOM_RLS_ENFORCED:-0}" == "1" ]]; then
+  echo "==> Applying + verifying PostgreSQL RLS policies"
+  $compose run --rm backend python manage.py apply_rls
+  $compose run --rm backend python manage.py verify_rls
+fi
+
 echo "==> Collecting static files"
 $compose run --rm backend python manage.py collectstatic --noinput --clear || true
 

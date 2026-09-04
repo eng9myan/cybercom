@@ -89,6 +89,11 @@ Shipped (`platform/security/`):
 - `management/commands/apply_rls.py` — `manage.py apply_rls [--dry-run] [--teardown] [--force]`.
   Idempotent; PostgreSQL-only (hard-errors on SQLite, never a silent no-op); refuses unless
   `RLS_ENFORCED` or `--force`.
+- `management/commands/verify_rls.py` — `manage.py verify_rls [--table <t>]`. Live isolation
+  check: in one rolled-back transaction it inserts a probe row for two throwaway tenant
+  UUIDs, then asserts each tenant sees only its own, an unset GUC sees none (fail-closed),
+  and a cross-tenant UPDATE affects 0 rows. Exit 0 = isolated; `CommandError` = broken or
+  the role has `BYPASSRLS`/superuser. Writes nothing. **Run right after `apply_rls` in staging.**
 - `TenantContextMiddleware` now also sets the GUC **session-scoped** (`set_config(guc, tid, false)`)
   when `RLS_ENFORCED` — Django autocommit discards a `SET LOCAL`, so `SET LOCAL` in the product
   middleware isn't enough on its own. Reset in `finally`.
@@ -99,10 +104,17 @@ Shipped (`platform/security/`):
 A migration / cross-tenant job that must bypass uses `set_session_replication_role('replica')`
 (superuser, audit-logged) or a dedicated unrestricted role.
 
-**Rollout:** flip `RLS_ENFORCED=1` in staging → `manage.py apply_rls` → run the cross-tenant
-access test suite (`H` SEC4) → promote. Table-by-table is possible by editing
-`tenant_scoped_models()` filter, but all-at-once is fine given the defence-in-depth already
-in place (queryset scoping + `save()` autofill).
+**Rollout:** on the staging box, as the **app DB role** (non-superuser, no `BYPASSRLS`):
+1. `export CYCOM_RLS_ENFORCED=1` (and `CYMED_RLS_ENFORCED=1`), restart the app.
+2. `python manage.py migrate --noinput`
+3. `python manage.py apply_rls` — applies ENABLE + FORCE + policy to every tenant-scoped table.
+4. `python manage.py verify_rls` — must print `RLS VERIFY OK`. If it errors, **stop** and
+   check the app role's privileges (`\du` — no `Superuser`, no `Bypass RLS`).
+5. Smoke: log in as tenant A, confirm the app works; confirm tenant B's data never appears.
+6. Promote the same steps to production.
+
+Table-by-table is possible by editing the `tenant_scoped_models()` filter, but all-at-once is
+fine given the defence-in-depth already in place (queryset scoping + `save()` autofill).
 
 ### 2.2 Layer 2 — app-layer context + save() auto-fill — **IMPLEMENTED 2026-09-04**
 
