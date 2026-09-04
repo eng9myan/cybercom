@@ -9,7 +9,11 @@ drf-spectacular>=0.27.0,<0.28.0
 
 # ── Identity / Auth ─────────────────────────────────────────────────────────
 PyJWT>=2.8.0,<3.0.0
-cryptography>=42.0.0,<43.0.0
+cryptography>=43.0.0,<51.0.0
+
+# ── E-invoicing (platform.einvoicing, shared) — UBL 2.1 + XAdES signing ─────
+lxml>=5.0.0,<7.0.0
+signxml>=4.0.0,<6.0.0
 
 # ── Database ────────────────────────────────────────────────────────────────
 psycopg[binary]>=3.1.0,<4.0.0

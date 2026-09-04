@@ -31,6 +31,7 @@ from django.utils import timezone
 from .clients.jofotara import JoFotaraClient
 from .hashing import invoice_hash
 from .models import EInvoiceInteraction, EInvoiceSequence
+from .signing import get_signer
 from .ubl import JoInvoiceData, UblLine, UblParty, build_jo_ubl
 
 logger = logging.getLogger("platform.einvoicing.engine")
@@ -126,7 +127,10 @@ def clear_invoice(
             ],
         )
         xml = build_jo_ubl(data)
+        # Hash the canonical UNSIGNED document for the PIH chain (stable across
+        # re-signing); submit the signed document.
         this_hash = invoice_hash(xml)
+        signed_xml = get_signer(mode).sign(xml)
 
         interaction = EInvoiceInteraction.objects.create(
             tenant_id=tenant_id, mode=mode, invoice_ref=number, invoice_uuid=uuid_val,
@@ -138,7 +142,7 @@ def clear_invoice(
                                 invoice_hash=this_hash, status="pending")
         cli = client or JoFotaraClient()
         try:
-            resp = cli.submit_invoice(xml, uuid_val)
+            resp = cli.submit_invoice(signed_xml, uuid_val)
             result.status = "cleared" if resp["status"] in ("cleared", "submitted") else resp["status"]
             result.provider_reference = resp["reference"]
             result.qr = resp.get("qr", "")
