@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.core.patients.models import Patient
 
@@ -54,7 +55,7 @@ class ProcedureConsent(BaseModel):
     surgical_case = models.OneToOneField(
         SurgicalCase, on_delete=models.CASCADE, related_name="consent"
     )
-    patient_signature_blob = models.TextField()
+    patient_signature_blob = EncryptedText(classification="phi")
     witness_name = models.CharField(max_length=255)
     signed_at = models.DateTimeField(auto_now_add=True)
 

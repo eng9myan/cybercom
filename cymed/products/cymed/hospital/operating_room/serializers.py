@@ -13,6 +13,11 @@ from products.cymed.hospital.operating_room.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class SurgicalCaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = SurgicalCase
@@ -117,6 +122,8 @@ class ProcedureBookingSerializer(serializers.ModelSerializer):
 
 
 class ProcedureConsentSerializer(serializers.ModelSerializer):
+    patient_signature_blob = _phi_text()
+
     class Meta:
         model = ProcedureConsent
         fields = "__all__"

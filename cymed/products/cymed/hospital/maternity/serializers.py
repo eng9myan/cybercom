@@ -11,6 +11,11 @@ from products.cymed.hospital.maternity.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class PregnancySerializer(serializers.ModelSerializer):
     class Meta:
         model = Pregnancy
@@ -18,6 +23,8 @@ class PregnancySerializer(serializers.ModelSerializer):
 
 
 class PrenatalEncounterSerializer(serializers.ModelSerializer):
+    notes = _phi_text()
+
     class Meta:
         model = PrenatalEncounter
         fields = "__all__"
@@ -103,6 +110,9 @@ class NewbornRecordSerializer(serializers.ModelSerializer):
 
 
 class PostpartumCareSerializer(serializers.ModelSerializer):
+    maternal_condition = _phi_text()
+    baby_condition = _phi_text()
+
     class Meta:
         model = PostpartumCare
         fields = "__all__"

@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.hospital.inpatient.models import HospitalStay
 
@@ -24,7 +25,7 @@ class DischargeMedication(BaseModel):
     stay = models.ForeignKey(HospitalStay, on_delete=models.CASCADE)
     medication_code = models.CharField(max_length=100)  # validated via Terminology
     reconciliation_action = models.CharField(max_length=100)  # continued, stopped, modified, new
-    notes = models.TextField(blank=True)
+    notes = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_discharge_medications"
@@ -42,9 +43,9 @@ class FollowUpAppointment(BaseModel):
 
 class DischargeInstruction(BaseModel):
     stay = models.OneToOneField(HospitalStay, on_delete=models.CASCADE, related_name="instructions")
-    dietary_instructions = models.TextField(blank=True)
-    activity_restrictions = models.TextField(blank=True)
-    warning_symptoms = models.TextField()
+    dietary_instructions = EncryptedText(classification="phi")
+    activity_restrictions = EncryptedText(classification="phi")
+    warning_symptoms = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_discharge_instructions"

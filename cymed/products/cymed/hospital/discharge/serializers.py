@@ -10,6 +10,11 @@ from products.cymed.hospital.discharge.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class DischargeChecklistSerializer(serializers.ModelSerializer):
     class Meta:
         model = DischargeChecklist
@@ -47,6 +52,8 @@ class DischargeChecklistSerializer(serializers.ModelSerializer):
 
 
 class DischargeMedicationSerializer(serializers.ModelSerializer):
+    notes = _phi_text()
+
     class Meta:
         model = DischargeMedication
         fields = ["id", "stay", "medication_code", "reconciliation_action", "notes"]
@@ -74,6 +81,10 @@ class FollowUpAppointmentSerializer(serializers.ModelSerializer):
 
 
 class DischargeInstructionSerializer(serializers.ModelSerializer):
+    dietary_instructions = _phi_text()
+    activity_restrictions = _phi_text()
+    warning_symptoms = _phi_text()
+
     class Meta:
         model = DischargeInstruction
         fields = "__all__"

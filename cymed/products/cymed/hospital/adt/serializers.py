@@ -13,6 +13,11 @@ from products.cymed.hospital.adt.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class AdmissionReasonSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdmissionReason
@@ -87,6 +92,8 @@ class AdmissionSerializer(serializers.ModelSerializer):
 
 
 class TransferRequestSerializer(serializers.ModelSerializer):
+    reason = _phi_text()
+
     class Meta:
         model = TransferRequest
         fields = [
@@ -104,6 +111,8 @@ class TransferRequestSerializer(serializers.ModelSerializer):
 
 
 class TransferApprovalSerializer(serializers.ModelSerializer):
+    notes = _phi_text()
+
     class Meta:
         model = TransferApproval
         fields = ["id", "transfer_request", "approved_by", "approved_at", "notes"]
@@ -152,6 +161,9 @@ class TransferApprovalSerializer(serializers.ModelSerializer):
 
 
 class DischargeSummarySerializer(serializers.ModelSerializer):
+    summary_text = _phi_text()
+    instructions = _phi_text()
+
     class Meta:
         model = DischargeSummary
         fields = [

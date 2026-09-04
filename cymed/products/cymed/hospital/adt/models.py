@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.core.encounters.models import Encounter
 from products.cymed.core.patients.models import Patient
@@ -73,7 +74,7 @@ class TransferRequest(BaseModel):
         choices=[("pending", "Pending"), ("approved", "Approved"), ("rejected", "Rejected")],
         default="pending",
     )
-    reason = models.TextField()
+    reason = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_transfer_requests"
@@ -85,7 +86,7 @@ class TransferApproval(BaseModel):
     )
     approved_by = models.UUIDField()
     approved_at = models.DateTimeField(auto_now_add=True)
-    notes = models.TextField(blank=True)
+    notes = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_transfer_approvals"
@@ -99,8 +100,8 @@ class DischargeSummary(BaseModel):
     discharged_by = models.UUIDField()
     disposition = models.ForeignKey(DischargeDisposition, on_delete=models.PROTECT)
     reason = models.ForeignKey(DischargeReason, on_delete=models.PROTECT)
-    summary_text = models.TextField()
-    instructions = models.TextField()
+    summary_text = EncryptedText(classification="phi")
+    instructions = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_discharge_summaries"

@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.core.patients.models import Patient
 
@@ -22,7 +23,7 @@ class PrenatalEncounter(BaseModel):
     fetal_heart_rate = models.PositiveIntegerField(null=True, blank=True)
     maternal_bp_sys = models.PositiveIntegerField()
     maternal_bp_dia = models.PositiveIntegerField()
-    notes = models.TextField(blank=True)
+    notes = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_maternity_prenatal_encounters"
@@ -70,8 +71,8 @@ class PostpartumCare(BaseModel):
     pregnancy = models.ForeignKey(Pregnancy, on_delete=models.CASCADE)
     checked_at = models.DateTimeField(auto_now_add=True)
     checked_by = models.UUIDField()
-    maternal_condition = models.CharField(max_length=255)
-    baby_condition = models.CharField(max_length=255)
+    maternal_condition = EncryptedText(classification="phi")
+    baby_condition = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_maternity_postpartum"
