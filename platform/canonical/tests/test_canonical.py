@@ -193,6 +193,60 @@ def test_emit_domain_event_and_relay():
         assert not unpublished().filter(pk=e.pk).exists()
 
 
+@pytest.fixture
+def _isolated_handlers():
+    from platform.canonical import events as ev
+
+    saved = list(ev._HANDLERS)
+    ev._HANDLERS.clear()
+    yield ev._HANDLERS
+    ev._HANDLERS[:] = saved
+
+
+@pytest.mark.django_db
+def test_relay_dispatches_to_in_process_handlers(_isolated_handlers):
+    from platform.canonical import events as ev
+
+    seen = []
+    _isolated_handlers.append(("cymed.patient.*", lambda e: seen.append(e.event_type)))
+    _isolated_handlers.append(("*", lambda e: seen.append("ALL:" + e.event_type)))
+
+    tid = uuid.uuid4()
+    with tenant_context(tid):
+        ev.emit(event_type="cymed.patient.merged", aggregate_type="Patient",
+                aggregate_id=uuid.uuid4(), tenant_id=tid)
+        ev.emit(event_type="cycom.invoice.posted", aggregate_type="Invoice",
+                aggregate_id=uuid.uuid4(), tenant_id=tid)
+    ev.relay()
+
+    assert "cymed.patient.merged" in seen            # prefix match
+    assert "ALL:cymed.patient.merged" in seen         # wildcard match
+    assert "ALL:cycom.invoice.posted" in seen
+    assert "cycom.invoice.posted" not in seen         # prefix must not over-match
+
+
+@pytest.mark.django_db
+def test_a_failing_handler_does_not_stall_the_relay(_isolated_handlers):
+    from platform.canonical import events as ev
+
+    def boom(e):
+        raise RuntimeError("nope")
+
+    hits = []
+    _isolated_handlers.append(("*", boom))
+    _isolated_handlers.append(("*", lambda e: hits.append(e.event_type)))
+
+    tid = uuid.uuid4()
+    with tenant_context(tid):
+        e = ev.emit(event_type="x", aggregate_type="X", aggregate_id=uuid.uuid4(),
+                    tenant_id=tid)
+    sent = ev.relay()
+    assert sent == 1
+    assert hits == ["x"]
+    e.refresh_from_db()
+    assert e.published_at is not None
+
+
 @pytest.mark.django_db
 def test_relay_domain_events_celery_task():
     from platform.canonical.events import emit, unpublished

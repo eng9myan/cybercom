@@ -547,6 +547,21 @@ M3 only tightens what we *can* attribute. `attributes` (default `{}`) and `row_v
   `require_consent`-gated. New 3-test suite. The referral events are canonical-only
   (no legacy `OutboxEvent`) — the target state for the migration.
 
+### 6.1f M6 in-process consumer + first legacy cutover — **shipped 2026-09-04**
+
+- `platform.canonical.events` — a handler registry: `@subscribe("cymed.patient.*" | "*")`
+  + `dispatch(event)`. `relay()` fans each event to the matching handlers when there is
+  no external `DOMAIN_EVENT_PUBLISHER`; a handler that raises is logged and skipped so
+  one bad projection can't stall the relay.
+- **First consumer:** `platform.audit.domain_event_sink.record_domain_event` (registered
+  from `AuditConfig.ready()`) — every `core_domain_events` row the relay drains is also
+  written to the tamper-evident audit chain via `AuditService`, with a clinical /
+  financial / system category by event-type prefix.
+- **First legacy cutover:** `cymed.core.patients.merge_patients` now emits **only** the
+  canonical `DomainEvent` — its audit footprint comes from the sink. The
+  `OutboxEvent` dual-write is gone for `cymed.patient.merged`. (`unmerge` still uses
+  `OutboxEvent` — next to cut over.)
+
 ### 6.2 Expand/contract (ADR-0013)
 
 Never a breaking migration + the code that needs it in one deploy. Sequence per change:

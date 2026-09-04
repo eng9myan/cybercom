@@ -86,22 +86,10 @@ class PatientService:
                 merged_at=timezone.now(),
             )
 
-            # Publish event — dual-write: the legacy relay + the canonical
-            # DomainEvent outbox (canonical-data-model-v1.md §5.1). New
-            # consumers read core_domain_events; the OutboxEvent write goes
-            # away once the last legacy consumer has migrated.
-            payload = {
-                "source_patient_id": str(source.id),
-                "target_patient_id": str(target.id),
-                "merged_by": merged_by,
-                "merged_at": history.merged_at.isoformat(),
-            }
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.patient.events",
-                event_type="cymed.patient.merged",
-                payload=payload,
-            )
+            # Canonical domain event (canonical-data-model-v1.md §5.1). The
+            # audit-trail footprint comes from the platform.audit domain-event
+            # sink consuming core_domain_events — no legacy OutboxEvent needed
+            # for this event type (M6).
             from platform.canonical import events as canonical_events
 
             canonical_events.emit(
@@ -109,7 +97,12 @@ class PatientService:
                 aggregate_type="Patient",
                 aggregate_id=target.id,
                 tenant_id=tenant_id,
-                payload=payload,
+                payload={
+                    "source_patient_id": str(source.id),
+                    "target_patient_id": str(target.id),
+                    "merged_by": merged_by,
+                    "merged_at": history.merged_at.isoformat(),
+                },
             )
 
             return history

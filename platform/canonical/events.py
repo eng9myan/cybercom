@@ -57,6 +57,41 @@ def _resolve_publisher():
     return import_string(path) if path else None
 
 
+# ── in-process handler registry ───────────────────────────────────────────
+# A handler is `(event: DomainEvent) -> None`. `pattern` is an exact event_type
+# or "prefix.*" or "*". Registered handlers run inside relay() when there is no
+# external DOMAIN_EVENT_PUBLISHER, so a projection / audit sink can live in the
+# same process without a broker.
+_HANDLERS: list[tuple[str, callable]] = []
+
+
+def subscribe(pattern: str = "*"):
+    def _register(fn):
+        _HANDLERS.append((pattern, fn))
+        return fn
+
+    return _register
+
+
+def _pattern_matches(pattern: str, event_type: str) -> bool:
+    if pattern == "*":
+        return True
+    if pattern.endswith(".*"):
+        return event_type == pattern[:-2] or event_type.startswith(pattern[:-1])
+    return pattern == event_type
+
+
+def dispatch(event) -> None:
+    """Fan `event` to every matching in-process handler. A handler that raises
+    is logged and skipped — one bad projection must not stall the relay."""
+    for pattern, fn in _HANDLERS:
+        if _pattern_matches(pattern, event.event_type):
+            try:
+                fn(event)
+            except Exception:  # pragma: no cover - defensive
+                logger.exception("domain-event handler %s failed for %s", fn, event.event_type)
+
+
 def relay(limit: int = 500, *, dry_run: bool = False) -> int:
     """Publish up to `limit` unpublished events and stamp `published_at`.
     Returns the number sent (0 on a dry run). Shared by the management command
@@ -73,7 +108,7 @@ def relay(limit: int = 500, *, dry_run: bool = False) -> int:
         if publisher:
             publisher(e)
         else:
-            logger.info("domain-event %s %s %s", e.event_type, e.aggregate_type, e.aggregate_id)
+            dispatch(e)
         e.published_at = timezone.now()
         e.save(update_fields=["published_at"])
         sent += 1

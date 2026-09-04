@@ -127,9 +127,12 @@ class TestPatientsModule:
         assert p1.is_active is False
         assert p1.merged_into == p2
 
-        # Verify merge event
+        # Verify merge event — canonical DomainEvent (M6: no legacy OutboxEvent
+        # for this type; its audit footprint comes from the audit domain-event sink)
+        from platform.canonical.models import DomainEvent
+
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.patient.merged"
             ).count()
             == 1

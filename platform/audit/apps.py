@@ -9,3 +9,4 @@ class AuditConfig(AppConfig):
 
     def ready(self):
         import platform.audit.signals  # noqa: F401
+        import platform.audit.domain_event_sink  # noqa: F401  (canonical-event -> audit bridge)
