@@ -4,6 +4,8 @@ import React from 'react';
 import { TrendingUp, DollarSign, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { useCycomList, fmtDate, fmtMoney, m2oName, type Many2One } from '@/lib/cycomModels';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/CycomEmptyStates';
+import { useT } from '@/lib/i18n';
+import { SALES_STATE, statusTone, type StatusKey } from '@/lib/status';
 
 type CycomSaleOrder = {
   id: number;
@@ -22,16 +24,8 @@ interface SalesOrderRow {
   date: string;
   total: number;
   totalFmt: string;
-  status: 'Draft' | 'Confirmed' | 'Pending Approval' | 'Done' | 'Cancelled';
+  statusKey: StatusKey;
 }
-
-const STATE_LABEL: Record<string, SalesOrderRow['status']> = {
-  draft: 'Draft',
-  sent: 'Pending Approval',
-  sale: 'Confirmed',
-  done: 'Done',
-  cancel: 'Cancelled',
-};
 
 const mapOrder = (o: CycomSaleOrder): SalesOrderRow => ({
   rawId: o.id,
@@ -40,10 +34,11 @@ const mapOrder = (o: CycomSaleOrder): SalesOrderRow => ({
   date: fmtDate(o.date_order),
   total: Number(o.amount_total ?? 0),
   totalFmt: fmtMoney(o.amount_total ?? 0, m2oName(o.currency_id, '')),
-  status: STATE_LABEL[o.state ?? ''] || 'Draft',
+  statusKey: SALES_STATE[o.state ?? ''] || 'draft',
 });
 
 export default function SalesDashboard() {
+  const t = useT();
   const { rows: salesOrders, loading, error } = useCycomList<CycomSaleOrder, SalesOrderRow>(
     'sale.order',
     [],
@@ -53,36 +48,42 @@ export default function SalesDashboard() {
   );
 
   const totalPipeline = salesOrders.reduce((acc, o) => acc + o.total, 0);
-  const pending = salesOrders.filter((o) => o.status === 'Pending Approval').length;
-  const confirmed = salesOrders.filter((o) => o.status === 'Confirmed').length;
+  const pending = salesOrders.filter((o) => o.statusKey === 'pendingApproval').length;
+  const confirmed = salesOrders.filter((o) => o.statusKey === 'confirmed').length;
 
   return (
     <div className="space-y-6">
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Sales &amp; Pricing Command</h1>
-          <p className="page-subtitle">Track wholesale contracts, audit cost-margins, enforce minimum pricing limits, and approve discount exceptions.</p>
+          <h1 className="page-title text-white">{t('sales.title')}</h1>
+          <p className="page-subtitle">{t('sales.subtitle')}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Kpi label="Total pipeline" value={fmtMoney(totalPipeline, '')} tone="cyan" icon={<TrendingUp className="w-5 h-5" />} />
-        <Kpi label="Pending approval" value={pending} tone="amber" icon={<AlertTriangle className="w-5 h-5" />} />
-        <Kpi label="Confirmed orders" value={confirmed} tone="emerald" icon={<DollarSign className="w-5 h-5" />} />
-        <Kpi label="Total orders" value={salesOrders.length} tone="purple" icon={<ShieldAlert className="w-5 h-5" />} />
+        <Kpi label={t('sales.totalPipeline')} value={fmtMoney(totalPipeline, '')} tone="cyan" icon={<TrendingUp className="w-5 h-5" />} />
+        <Kpi label={t('sales.pendingApproval')} value={pending} tone="amber" icon={<AlertTriangle className="w-5 h-5" />} />
+        <Kpi label={t('sales.confirmedOrders')} value={confirmed} tone="emerald" icon={<DollarSign className="w-5 h-5" />} />
+        <Kpi label={t('sales.totalOrders')} value={salesOrders.length} tone="purple" icon={<ShieldAlert className="w-5 h-5" />} />
       </div>
 
-      {loading && <LoadingCard label="Loading sales orders…" />}
+      {loading && <LoadingCard label={t('sales.loading')} />}
       {error && <ErrorCard error={error} />}
-      {!loading && !error && salesOrders.length === 0 && <EmptyCard label="No sales orders yet." />}
+      {!loading && !error && salesOrders.length === 0 && <EmptyCard label={t('sales.empty')} />}
 
       {!loading && !error && salesOrders.length > 0 && (
         <div className="glass-card p-6">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Sales Order Register</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">{t('sales.register')}</h2>
           <div className="overflow-x-auto">
             <table className="data-table">
               <thead>
-                <tr><th>Order</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th></tr>
+                <tr>
+                  <th>{t('sales.order')}</th>
+                  <th>{t('common.customer')}</th>
+                  <th>{t('common.date')}</th>
+                  <th>{t('common.total')}</th>
+                  <th>{t('common.status')}</th>
+                </tr>
               </thead>
               <tbody>
                 {salesOrders.map((o) => (
@@ -91,7 +92,7 @@ export default function SalesDashboard() {
                     <td className="font-semibold text-slate-200">{o.clientName}</td>
                     <td className="text-slate-400">{o.date}</td>
                     <td className="font-bold text-white">{o.totalFmt}</td>
-                    <td><span className={`badge ${o.status === 'Confirmed' || o.status === 'Done' ? 'badge-green' : o.status === 'Pending Approval' ? 'badge-yellow' : o.status === 'Cancelled' ? 'badge-red' : 'badge-cyan'}`}>{o.status}</span></td>
+                    <td><span className={`badge ${statusTone(o.statusKey)}`}>{t(`status.${o.statusKey}`)}</span></td>
                   </tr>
                 ))}
               </tbody>

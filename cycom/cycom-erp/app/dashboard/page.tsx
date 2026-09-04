@@ -7,6 +7,7 @@ import {
   ShoppingCart, RefreshCw, ArrowUpRight, CheckCircle2 
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
+import { useT } from '@/lib/i18n';
 
 const GRAPH_DATA = [
   { month: 'Jan', revenue: 1900000, cost: 1600000 },
@@ -25,16 +26,17 @@ const ALERTS = [
 ];
 
 export default function CommandCenter() {
+  const t = useT();
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Global Command Center</h1>
-          <p className="page-subtitle">Real-time enterprise metrics, sales margins, and operational alerts across all Cycom domains.</p>
+          <h1 className="page-title text-white">{t('dashboard.title')}</h1>
+          <p className="page-subtitle">{t('dashboard.subtitle')}</p>
         </div>
         <button className="btn-secondary flex items-center gap-2">
-          <RefreshCw className="w-4 h-4 text-cyan-400" /> Refresh telemetry
+          <RefreshCw className="w-4 h-4 text-cyan-400" /> {t('dashboard.refreshTelemetry')}
         </button>
       </div>
 
@@ -42,10 +44,10 @@ export default function CommandCenter() {
       <div className="glass-card p-6 space-y-4">
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Revenue & Operation Costs</h2>
-            <p className="text-2xl font-black text-white mt-1">JOD 2.48M <span className="text-xs text-emerald-400 font-semibold">+8.3% this month</span></p>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('dashboard.revenueVsCost')}</h2>
+            <p className="text-2xl font-black text-white mt-1">JOD 2.48M <span className="text-xs text-emerald-400 font-semibold">{t('dashboard.thisMonthDelta')}</span></p>
           </div>
-          <span className="badge badge-cyan font-mono text-[10px]">Real-time analytics</span>
+          <span className="badge badge-cyan font-mono text-[10px]">{t('dashboard.realtimeAnalytics')}</span>
         </div>
         <div className="h-[280px] w-full text-slate-300 text-xs">
           <ResponsiveContainer width="100%" height="100%">
@@ -77,8 +79,8 @@ export default function CommandCenter() {
         {/* Left 2 columns - Live alerts */}
         <div className="glass-card p-6 lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">System Telemetry Alerts</h2>
-            <span className="text-xs text-slate-500 font-mono">4 unresolved events</span>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('dashboard.telemetryAlerts')}</h2>
+            <span className="text-xs text-slate-500 font-mono">{t('dashboard.unresolvedEvents', { n: ALERTS.length })}</span>
           </div>
 
           <div className="space-y-3">
@@ -92,7 +94,7 @@ export default function CommandCenter() {
                   <p className="text-xs text-slate-400 mt-1">{alert.desc}</p>
                 </div>
                 <span className={`badge ${alert.urgency === 'High' ? 'badge-red' : 'badge-yellow'}`}>
-                  {alert.urgency}
+                  {alert.urgency === 'High' ? t('dashboard.urgencyHigh') : t('dashboard.urgencyMedium')}
                 </span>
               </div>
             ))}
@@ -101,7 +103,7 @@ export default function CommandCenter() {
 
         {/* Right column - Quick operational status */}
         <div className="glass-card p-6 space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Modules Pulse</h3>
+          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('dashboard.modulesPulse')}</h3>
           <div className="space-y-3 text-xs">
             <div className="flex justify-between items-center pb-2 border-b border-white/5">
               <span className="text-slate-400 flex items-center gap-2">

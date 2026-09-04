@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Briefcase, AlertCircle, ShoppingBag, Users } from 'lucide-react';
 import { useCycomList, fmtDate, fmtMoney, m2oName, type Many2One } from '@/lib/cycomModels';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/CycomEmptyStates';
+import { useT } from '@/lib/i18n';
+import { PURCHASE_STATE, statusTone, type StatusKey } from '@/lib/status';
 
 type CycomPO = {
   id: number;
@@ -22,17 +24,8 @@ interface PurchaseOrderRow {
   vendorName: string;
   date: string;
   total: string;
-  status: string;
+  statusKey: StatusKey;
 }
-
-const STATE_LABEL: Record<string, string> = {
-  draft: 'Draft',
-  sent: 'RFQ Sent',
-  to_approve: 'Waiting Approval',
-  purchase: 'Confirmed',
-  done: 'Done',
-  cancel: 'Cancelled',
-};
 
 const mapPO = (r: CycomPO): PurchaseOrderRow => ({
   rawId: r.id,
@@ -40,10 +33,11 @@ const mapPO = (r: CycomPO): PurchaseOrderRow => ({
   vendorName: m2oName(r.partner_id, '—'),
   date: fmtDate(r.date_order),
   total: fmtMoney(r.amount_total ?? 0, m2oName(r.currency_id, '')),
-  status: STATE_LABEL[r.state ?? ''] || r.state || '—',
+  statusKey: PURCHASE_STATE[r.state ?? ''] || 'unknown',
 });
 
 export default function PurchasePage() {
+  const t = useT();
   const { rows: orders, loading, error } = useCycomList<CycomPO, PurchaseOrderRow>(
     'purchase.order',
     [],
@@ -53,7 +47,7 @@ export default function PurchasePage() {
   );
 
   const counts = orders.reduce<Record<string, number>>((acc, o) => {
-    acc[o.status] = (acc[o.status] || 0) + 1;
+    acc[o.statusKey] = (acc[o.statusKey] || 0) + 1;
     return acc;
   }, {});
 
@@ -61,34 +55,40 @@ export default function PurchasePage() {
     <div className="space-y-6">
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Procurement Pipeline</h1>
-          <p className="page-subtitle">RFQs, purchase orders, vendor performance — wired to the Cycom procurement stack.</p>
+          <h1 className="page-title text-white">{t('purchase.title')}</h1>
+          <p className="page-subtitle">{t('purchase.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <Link href="/purchase/vendors" className="btn-primary flex items-center gap-2">
-            <Users className="w-4 h-4" /> Vendor Directory
+            <Users className="w-4 h-4" /> {t('purchase.vendorDirectory')}
           </Link>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard label="Total POs" value={orders.length} icon={<Briefcase className="w-5 h-5" />} tone="cyan" />
-        <KpiCard label="Awaiting approval" value={counts['Waiting Approval'] || 0} icon={<AlertCircle className="w-5 h-5" />} tone="amber" />
-        <KpiCard label="Confirmed" value={counts['Confirmed'] || 0} icon={<ShoppingBag className="w-5 h-5" />} tone="emerald" />
-        <KpiCard label="Cancelled" value={counts['Cancelled'] || 0} icon={<AlertCircle className="w-5 h-5" />} tone="red" />
+        <KpiCard label={t('purchase.totalPOs')} value={orders.length} icon={<Briefcase className="w-5 h-5" />} tone="cyan" />
+        <KpiCard label={t('purchase.awaitingApproval')} value={counts['waitingApproval'] || 0} icon={<AlertCircle className="w-5 h-5" />} tone="amber" />
+        <KpiCard label={t('purchase.confirmed')} value={counts['confirmed'] || 0} icon={<ShoppingBag className="w-5 h-5" />} tone="emerald" />
+        <KpiCard label={t('purchase.cancelled')} value={counts['cancelled'] || 0} icon={<AlertCircle className="w-5 h-5" />} tone="red" />
       </div>
 
-      {loading && <LoadingCard label="Loading purchase orders…" />}
+      {loading && <LoadingCard label={t('purchase.loading')} />}
       {error && <ErrorCard error={error} />}
-      {!loading && !error && orders.length === 0 && <EmptyCard label="No purchase orders yet." />}
+      {!loading && !error && orders.length === 0 && <EmptyCard label={t('purchase.empty')} />}
 
       {!loading && !error && orders.length > 0 && (
         <div className="glass-card p-6">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Purchase Order Register</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">{t('purchase.register')}</h2>
           <div className="overflow-x-auto">
             <table className="data-table">
               <thead>
-                <tr><th>PO</th><th>Vendor</th><th>Date</th><th>Total</th><th>Status</th></tr>
+                <tr>
+                  <th>{t('purchase.po')}</th>
+                  <th>{t('purchase.vendor')}</th>
+                  <th>{t('common.date')}</th>
+                  <th>{t('common.total')}</th>
+                  <th>{t('common.status')}</th>
+                </tr>
               </thead>
               <tbody>
                 {orders.map((o) => (
@@ -97,7 +97,7 @@ export default function PurchasePage() {
                     <td className="font-semibold text-slate-200">{o.vendorName}</td>
                     <td className="text-slate-400">{o.date}</td>
                     <td className="font-bold text-white">{o.total}</td>
-                    <td><span className={`badge ${o.status === 'Done' || o.status === 'Confirmed' ? 'badge-green' : o.status === 'Waiting Approval' ? 'badge-yellow' : o.status === 'Cancelled' ? 'badge-red' : 'badge-cyan'}`}>{o.status}</span></td>
+                    <td><span className={`badge ${statusTone(o.statusKey)}`}>{t(`status.${o.statusKey}`)}</span></td>
                   </tr>
                 ))}
               </tbody>

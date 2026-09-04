@@ -4,6 +4,8 @@ import React from 'react';
 import { FileSignature, DollarSign, CheckCircle2 } from 'lucide-react';
 import { useCycomList, fmtCode, fmtDate, fmtMoney, m2oName, type Many2One } from '@/lib/cycomModels';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/CycomEmptyStates';
+import { useT } from '@/lib/i18n';
+import { EXPENSE_STATE, statusTone, type StatusKey } from '@/lib/status';
 
 type CycomExpense = {
   id: number;
@@ -27,17 +29,8 @@ interface ExpenseClaim {
   amount: number;
   date: string;
   description: string;
-  status: string;
+  statusKey: StatusKey;
 }
-
-const STATE_LABEL: Record<string, string> = {
-  draft: 'Submitted',
-  reported: 'Submitted',
-  approved: 'Approved',
-  done: 'Reimbursed',
-  cancel: 'Declined',
-  refused: 'Declined',
-};
 
 const mapExpense = (e: CycomExpense): ExpenseClaim => ({
   rawId: e.id,
@@ -49,10 +42,11 @@ const mapExpense = (e: CycomExpense): ExpenseClaim => ({
   amountFmt: fmtMoney(e.total_amount ?? 0, m2oName(e.currency_id, '')),
   date: fmtDate(e.date),
   description: (e.description as string) || '—',
-  status: STATE_LABEL[e.state ?? ''] || (e.state || 'Submitted'),
+  statusKey: EXPENSE_STATE[e.state ?? ''] || 'submitted',
 });
 
 export default function ExpensesPage() {
+  const t = useT();
   const { rows: expenses, loading, error } = useCycomList<CycomExpense, ExpenseClaim>(
     'hr.expense',
     [],
@@ -61,36 +55,44 @@ export default function ExpensesPage() {
     { limit: 200, order: 'date desc' },
   );
 
-  const totalSubmitted = expenses.filter((e) => e.status === 'Submitted').reduce((acc, e) => acc + e.amount, 0);
-  const totalReimbursed = expenses.filter((e) => e.status === 'Reimbursed').reduce((acc, e) => acc + e.amount, 0);
-  const pendingCount = expenses.filter((e) => e.status === 'Submitted').length;
+  const totalSubmitted = expenses.filter((e) => e.statusKey === 'submitted').reduce((acc, e) => acc + e.amount, 0);
+  const totalReimbursed = expenses.filter((e) => e.statusKey === 'reimbursed').reduce((acc, e) => acc + e.amount, 0);
+  const pendingCount = expenses.filter((e) => e.statusKey === 'submitted').length;
 
   return (
     <div className="space-y-6">
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Expense Claims</h1>
-          <p className="page-subtitle">Employee expense submissions, approvals, and reimbursements.</p>
+          <h1 className="page-title text-white">{t('expenses.title')}</h1>
+          <p className="page-subtitle">{t('expenses.subtitle')}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Stat label="Pending approval" value={pendingCount} icon={<FileSignature className="w-5 h-5" />} tone="amber" />
-        <Stat label="Total submitted" value={fmtMoney(totalSubmitted, '')} icon={<DollarSign className="w-5 h-5" />} tone="cyan" />
-        <Stat label="Total reimbursed" value={fmtMoney(totalReimbursed, '')} icon={<CheckCircle2 className="w-5 h-5" />} tone="emerald" />
+        <Stat label={t('expenses.pendingApproval')} value={pendingCount} icon={<FileSignature className="w-5 h-5" />} tone="amber" />
+        <Stat label={t('expenses.totalSubmitted')} value={fmtMoney(totalSubmitted, '')} icon={<DollarSign className="w-5 h-5" />} tone="cyan" />
+        <Stat label={t('expenses.totalReimbursed')} value={fmtMoney(totalReimbursed, '')} icon={<CheckCircle2 className="w-5 h-5" />} tone="emerald" />
       </div>
 
-      {loading && <LoadingCard label="Loading expense claims…" />}
+      {loading && <LoadingCard label={t('expenses.loading')} />}
       {error && <ErrorCard error={error} />}
-      {!loading && !error && expenses.length === 0 && <EmptyCard label="No expense claims yet." />}
+      {!loading && !error && expenses.length === 0 && <EmptyCard label={t('expenses.empty')} />}
 
       {!loading && !error && expenses.length > 0 && (
         <div className="glass-card p-6">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Claims Register</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">{t('expenses.register')}</h2>
           <div className="overflow-x-auto">
             <table className="data-table">
               <thead>
-                <tr><th>Claim</th><th>Employee</th><th>Description</th><th>Category</th><th>Amount</th><th>Date</th><th>Status</th></tr>
+                <tr>
+                  <th>{t('expenses.claim')}</th>
+                  <th>{t('expenses.employee')}</th>
+                  <th>{t('expenses.description')}</th>
+                  <th>{t('expenses.category')}</th>
+                  <th>{t('common.amount')}</th>
+                  <th>{t('common.date')}</th>
+                  <th>{t('common.status')}</th>
+                </tr>
               </thead>
               <tbody>
                 {expenses.map((e) => (
@@ -101,7 +103,7 @@ export default function ExpensesPage() {
                     <td><span className="badge badge-purple">{e.category}</span></td>
                     <td className="font-bold text-white">{e.amountFmt}</td>
                     <td className="text-slate-400">{e.date}</td>
-                    <td><span className={`badge ${e.status === 'Reimbursed' || e.status === 'Approved' ? 'badge-green' : e.status === 'Declined' ? 'badge-red' : 'badge-yellow'}`}>{e.status}</span></td>
+                    <td><span className={`badge ${statusTone(e.statusKey)}`}>{t(`status.${e.statusKey}`)}</span></td>
                   </tr>
                 ))}
               </tbody>
