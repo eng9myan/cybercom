@@ -267,6 +267,17 @@ class TestEncountersModule:
         assert response.status_code == 201
         enc_id = response.data["id"]
 
+        # Canonical outbox cutover (M8) — encounter creation emits a
+        # DomainEvent, not the legacy OutboxEvent.
+        from platform.canonical.models import DomainEvent
+
+        assert (
+            DomainEvent.objects.filter(
+                tenant_id=test_tenant_id, event_type="cymed.encounter.created", aggregate_id=enc_id
+            ).count()
+            == 1
+        )
+
         # Start encounter
         response_start = auth_client.post(f"/api/v1/encounters/{enc_id}/start/", format="json")
         assert response_start.status_code == 200
@@ -553,8 +564,10 @@ class TestRemainingClinicalFoundations:
             format="json",
         )
         assert consent_response.status_code == 201
+        from platform.canonical.models import DomainEvent
+
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.consent.created"
             ).count()
             == 1

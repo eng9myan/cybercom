@@ -7,7 +7,7 @@ ADR-0005: IAM integration via CyIdentity realm mapping.
 from django.db import models
 from django.utils import timezone
 
-from platform.common.models import PlatformModel
+from platform.common.models import OptimisticLockMixin, PlatformModel
 
 # ---------------------------------------------------------------------------
 # Enumerations
@@ -88,10 +88,14 @@ class ComplianceFramework(models.TextChoices):
 # ---------------------------------------------------------------------------
 
 
-class Tenant(PlatformModel):
+class Tenant(PlatformModel, OptimisticLockMixin):
     """
     Central registry of all tenants. One row per organization.
     ADR-0002: source of truth for tenant identity and isolation tier.
+
+    Carries `row_version` (OptimisticLockMixin) so lifecycle transitions use
+    a compare-and-set — two admins can't concurrently drive the same tenant
+    into conflicting states (canonical-data-model-v1.md §1.2).
     """
 
     name = models.CharField(max_length=200, unique=True)
@@ -148,35 +152,35 @@ class Tenant(PlatformModel):
     def activate(self) -> None:
         self.status = TenantStatus.ACTIVE
         self.activated_at = timezone.now()
-        self.save(update_fields=["status", "activated_at", "updated_at"])
+        self.save_if_unchanged(fields=["status", "activated_at"])
 
     def suspend(self) -> None:
         self.status = TenantStatus.SUSPENDED
         self.suspended_at = timezone.now()
-        self.save(update_fields=["status", "suspended_at", "updated_at"])
+        self.save_if_unchanged(fields=["status", "suspended_at"])
 
     def archive(self) -> None:
         self.status = TenantStatus.ARCHIVED
         self.archived_at = timezone.now()
-        self.save(update_fields=["status", "archived_at", "updated_at"])
+        self.save_if_unchanged(fields=["status", "archived_at"])
 
     def restore(self) -> None:
         if self.status not in (TenantStatus.ARCHIVED, TenantStatus.SUSPENDED):
             raise ValueError(f"Cannot restore tenant in status {self.status}")
         self.status = TenantStatus.ACTIVE
-        self.save(update_fields=["status", "updated_at"])
+        self.save_if_unchanged(fields=["status"])
 
     def terminate(self) -> None:
         self.status = TenantStatus.TERMINATED
         self.terminated_at = timezone.now()
-        self.save(update_fields=["status", "terminated_at", "updated_at"])
+        self.save_if_unchanged(fields=["status", "terminated_at"])
 
     def decommission(self) -> None:
         if self.status != TenantStatus.TERMINATED:
             raise ValueError("Must terminate before decommissioning")
         self.status = TenantStatus.DECOMMISSIONED
         self.decommissioned_at = timezone.now()
-        self.save(update_fields=["status", "decommissioned_at", "updated_at"])
+        self.save_if_unchanged(fields=["status", "decommissioned_at"])
 
 
 # ---------------------------------------------------------------------------

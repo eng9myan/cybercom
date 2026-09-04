@@ -138,7 +138,10 @@ def apply_stock_move(move):
 
     move.status = "done"
     move.journal_entry = entry
-    move.save(update_fields=["status", "journal_entry"])
+    # Compare-and-set on row_version: if a concurrent apply_stock_move() already
+    # took this move to 'done', the CAS matches no rows and raises
+    # OptimisticLockError, rolling back this txn (and its duplicate GL entry).
+    move.save_if_unchanged(fields=["status", "journal_entry"])
     return move
 
 

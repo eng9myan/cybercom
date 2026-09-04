@@ -54,13 +54,14 @@ class ConsentSerializer(serializers.ModelSerializer):
                 performed_by=performed_by,
             )
 
-        # Publish outbox event
-        from platform.events.models import OutboxEvent
+        # Canonical outbox (M8 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
 
-        OutboxEvent.objects.create(
-            tenant_id=consent.tenant_id,
-            topic="cymed.consent.events",
+        canonical_events.emit(
             event_type="cymed.consent.created",
+            aggregate_type="Consent",
+            aggregate_id=consent.id,
+            tenant_id=consent.tenant_id,
             payload={
                 "consent_id": str(consent.id),
                 "patient_id": str(consent.patient.id),

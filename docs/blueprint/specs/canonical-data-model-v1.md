@@ -573,6 +573,34 @@ M3 only tightens what we *can* attribute. `attributes` (default `{}`) and `row_v
   `reject_discount` use `order.save_if_unchanged(fields=[...])`: two managers racing
   the same pending order — the loser gets a 409, not a silent overwrite. +2 tests.
 
+### 6.1h M8 — CAS on more posting races + 2 more cutovers — **shipped 2026-09-04**
+
+- `OptimisticLockMixin.save_if_unchanged()` no longer assumes `updated_by` exists —
+  it's guarded behind a field-existence check on `self._meta.fields`, so any model
+  carrying `row_version` can use it, not only `BaseModel` (§1.1's `updated_by` is a
+  `BaseModel`-only column; `PlatformModel` doesn't carry it).
+- **`Tenant`** (`platform.tenant.models`) now inherits `OptimisticLockMixin` too
+  (`platform_tenant.0006`, additive). All six lifecycle transitions —
+  `activate/suspend/archive/restore/terminate/decommission` — use
+  `save_if_unchanged`: two admins racing the same tenant get one winner and one
+  `OptimisticLockError` → 409, never a silently-overwritten status.
+- `cycom.inventory.apply_stock_move` — the terminal `status="done"` flip is now
+  `save_if_unchanged`; a concurrent apply of the same move loses the CAS and its
+  GL entry rolls back with it (was: two applies could both post and double-count
+  the ledger).
+- `cycom.ar_ap.InvoiceViewSet.post_invoice` / `PaymentViewSet.post_payment` —
+  the GL post + status flip (+ the invoice's running `amount_paid`) is now one
+  `transaction.atomic()` block gated by `save_if_unchanged`; a losing concurrent
+  post rolls back its journal entry instead of leaving an orphan GL line.
+- `cycom.payroll.PayrollRunViewSet.post_run` — same shape: JE + run flip +
+  bulk payslip flip, one atomic unit gated by the run's `row_version`.
+- **2 more legacy cutovers** — `cymed.core.encounters.serializers.EncounterSerializer.create`
+  (`cymed.encounter.created`) and `cymed.core.consents.serializers.ConsentSerializer.create`
+  (`cymed.consent.created`) emit only the canonical `DomainEvent`; the
+  `platform.events.OutboxEvent` dual-write is gone from both. `domain_event_sink`
+  gets a `cymed.consent` → `clinical` audit-category mapping.
+- +2 tenant-lifecycle tests, +2 test assertions swapped `OutboxEvent` → `DomainEvent`.
+
 ### 6.2 Expand/contract (ADR-0013)
 
 Never a breaking migration + the code that needs it in one deploy. Sequence per change:

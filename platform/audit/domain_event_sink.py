@@ -20,6 +20,7 @@ log = logging.getLogger("platform.audit.domain_event_sink")
 _CATEGORY_BY_PREFIX = {
     "cymed.patient": "clinical",
     "cymed.encounter": "clinical",
+    "cymed.consent": "clinical",
     "cymed.referral": "clinical",
     "cymed.network_referral": "clinical",
     "cymed.document": "clinical",

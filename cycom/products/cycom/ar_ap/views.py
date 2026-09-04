@@ -1,6 +1,7 @@
 import logging
 from decimal import Decimal
 
+from django.db import transaction
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
@@ -95,26 +96,30 @@ class InvoiceViewSet(TenantScopedModelViewSet):
                 gl_lines.append({"account": invoice.tax_account, "debit": tax_total, "credit": 0})
             gl_lines.append({"account": invoice.control_account, "debit": 0, "credit": total})
 
+        # GL entry + invoice flip are one unit: a concurrent post that also
+        # passed the draft guard loses the row_version CAS below, and its
+        # journal entry rolls back with it (no double-posting).
         try:
-            entry = post_journal_entry(
-                tenant_id=invoice.tenant_id,
-                date=invoice.date,
-                reference=invoice.number,
-                lines=gl_lines,
-                currency=invoice.currency,
-                narration=f"Auto-posted from invoice {invoice.number}",
-            )
+            with transaction.atomic():
+                entry = post_journal_entry(
+                    tenant_id=invoice.tenant_id,
+                    date=invoice.date,
+                    reference=invoice.number,
+                    lines=gl_lines,
+                    currency=invoice.currency,
+                    narration=f"Auto-posted from invoice {invoice.number}",
+                )
+
+                invoice.amount_subtotal = subtotal
+                invoice.amount_tax = tax_total
+                invoice.amount_total = total
+                invoice.status = "posted"
+                invoice.journal_entry = entry
+                invoice.save_if_unchanged(
+                    fields=["amount_subtotal", "amount_tax", "amount_total", "status", "journal_entry"]
+                )
         except UnbalancedEntryError as exc:
             raise ValidationError(f"Journal entry would be unbalanced: {exc}")
-
-        invoice.amount_subtotal = subtotal
-        invoice.amount_tax = tax_total
-        invoice.amount_total = total
-        invoice.status = "posted"
-        invoice.journal_entry = entry
-        invoice.save(
-            update_fields=["amount_subtotal", "amount_tax", "amount_total", "status", "journal_entry"]
-        )
 
         # CyID ecosystem, Phase 6 — real per-country e-invoicing routing,
         # derived from the tenant's own country_code (platform.tenant),
@@ -176,24 +181,29 @@ class PaymentViewSet(TenantScopedModelViewSet):
                 {"account": payment.cash_account, "debit": 0, "credit": payment.amount},
             ]
 
+        # One unit: JE, the payment flip, and the invoice running balance. A
+        # concurrent post of this same payment loses the payment CAS; two
+        # different payments racing the same invoice serialize on the invoice
+        # CAS (the loser gets a 409 and retries against the fresh balance).
         try:
-            entry = post_journal_entry(
-                tenant_id=payment.tenant_id,
-                date=payment.date,
-                reference=f"PMT-{invoice.number}",
-                lines=gl_lines,
-                currency=invoice.currency,
-                narration=f"Payment against invoice {invoice.number}",
-            )
+            with transaction.atomic():
+                entry = post_journal_entry(
+                    tenant_id=payment.tenant_id,
+                    date=payment.date,
+                    reference=f"PMT-{invoice.number}",
+                    lines=gl_lines,
+                    currency=invoice.currency,
+                    narration=f"Payment against invoice {invoice.number}",
+                )
+
+                payment.status = "posted"
+                payment.journal_entry = entry
+                payment.save_if_unchanged(fields=["status", "journal_entry"])
+
+                invoice.amount_paid = invoice.amount_paid + payment.amount
+                invoice.status = "paid" if invoice.amount_paid >= invoice.amount_total else "partial"
+                invoice.save_if_unchanged(fields=["amount_paid", "status"])
         except UnbalancedEntryError as exc:
             raise ValidationError(f"Journal entry would be unbalanced: {exc}")
-
-        payment.status = "posted"
-        payment.journal_entry = entry
-        payment.save(update_fields=["status", "journal_entry"])
-
-        invoice.amount_paid = invoice.amount_paid + payment.amount
-        invoice.status = "paid" if invoice.amount_paid >= invoice.amount_total else "partial"
-        invoice.save(update_fields=["amount_paid", "status"])
 
         return Response(PaymentSerializer(payment).data)

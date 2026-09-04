@@ -131,7 +131,9 @@ class OptimisticLockMixin(models.Model):
         payload = {name: getattr(self, name) for name in fields}
         payload["row_version"] = new_version
         payload["updated_at"] = timezone.now()
-        if actor is not None:
+        # `updated_by` only exists on BaseModel; PlatformModel + OptimisticLockMixin
+        # (e.g. Tenant) carries row_version without the actor columns.
+        if actor is not None and any(f.name == "updated_by" for f in self._meta.fields):
             payload["updated_by"] = actor
 
         updated = (

@@ -144,6 +144,31 @@ class TestTenant:
         with pytest.raises(ValueError):
             tenant.decommission()
 
+    def test_lifecycle_transition_bumps_row_version(self, db):
+        t = Tenant.objects.create(name="RV", slug="rv", status=TenantStatus.PENDING)
+        v0 = t.row_version
+        t.activate()
+        assert t.row_version == v0 + 1
+        t.refresh_from_db()
+        assert t.row_version == v0 + 1
+
+    def test_concurrent_lifecycle_transition_is_a_conflict(self, db):
+        """Two admins each hold a copy of the same tenant. The first transition
+        wins; the second is a lost update and raises OptimisticLockError."""
+        from platform.common.models import OptimisticLockError
+
+        Tenant.objects.create(name="Race", slug="race", status=TenantStatus.ACTIVE)
+        copy_a = Tenant.objects.get(slug="race")
+        copy_b = Tenant.objects.get(slug="race")  # same row_version as copy_a
+
+        copy_a.suspend()
+
+        with pytest.raises(OptimisticLockError):
+            copy_b.archive()
+
+        fresh = Tenant.objects.get(slug="race")
+        assert fresh.status == TenantStatus.SUSPENDED
+
     def test_unique_name(self, tenant, db):
         with pytest.raises(Exception):
             Tenant.objects.create(name="Test Hospital", slug="other")

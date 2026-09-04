@@ -61,13 +61,14 @@ class EncounterSerializer(serializers.ModelSerializer):
         for d_data in diagnoses_data:
             EncounterDiagnosis.objects.create(encounter=enc, tenant_id=enc.tenant_id, **d_data)
 
-        # Publish outbox event
-        from platform.events.models import OutboxEvent
+        # Canonical outbox (M8 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
 
-        OutboxEvent.objects.create(
-            tenant_id=enc.tenant_id,
-            topic="cymed.encounter.events",
+        canonical_events.emit(
             event_type="cymed.encounter.created",
+            aggregate_type="Encounter",
+            aggregate_id=enc.id,
+            tenant_id=enc.tenant_id,
             payload={
                 "encounter_id": str(enc.id),
                 "patient_id": str(enc.patient.id),

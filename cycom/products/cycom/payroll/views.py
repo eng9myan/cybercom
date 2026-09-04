@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.db import transaction
 from django.db.models import Q
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -121,22 +122,26 @@ class PayrollRunViewSet(TenantScopedModelViewSet):
                 {"account": run.deduction_recovery_account, "debit": 0, "credit": total_late_deduction}
             )
 
+        # JE + run flip + payslip flip are one unit: a concurrent post_run that
+        # also passed the draft guard loses the row_version CAS and its journal
+        # entry rolls back with it — no double payroll posting.
         try:
-            entry = post_journal_entry(
-                tenant_id=run.tenant_id,
-                date=run.period_end,
-                reference=f"PAYROLL-{run.period_start}-{run.period_end}",
-                lines=gl_lines,
-                currency=run.currency,
-                narration=f"Payroll run {run.period_start} to {run.period_end}",
-            )
+            with transaction.atomic():
+                entry = post_journal_entry(
+                    tenant_id=run.tenant_id,
+                    date=run.period_end,
+                    reference=f"PAYROLL-{run.period_start}-{run.period_end}",
+                    lines=gl_lines,
+                    currency=run.currency,
+                    narration=f"Payroll run {run.period_start} to {run.period_end}",
+                )
+
+                run.status = "posted"
+                run.journal_entry = entry
+                run.save_if_unchanged(fields=["status", "journal_entry"])
+                Payslip.objects.filter(payroll_run=run).update(status="posted")
         except UnbalancedEntryError as exc:
             raise ValidationError(f"Journal entry would be unbalanced: {exc}")
-
-        run.status = "posted"
-        run.journal_entry = entry
-        run.save(update_fields=["status", "journal_entry"])
-        Payslip.objects.filter(payroll_run=run).update(status="posted")
 
         # run.payslips was prefetched by get_object()'s queryset before the
         # update above — re-fetch so the response reflects posted status,
