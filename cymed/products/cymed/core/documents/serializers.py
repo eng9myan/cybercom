@@ -3,19 +3,33 @@ from rest_framework import serializers
 from products.cymed.core.documents.models import ClinicalDocument, ProgressNote, SOAPNote
 
 
+def _note_text():
+    # EncryptedText (BinaryField storage) — declare as plain-text so DRF neither
+    # base64-encodes nor rejects the field.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class SOAPNoteSerializer(serializers.ModelSerializer):
+    subjective = _note_text()
+    objective = _note_text()
+    assessment = _note_text()
+    plan = _note_text()
+
     class Meta:
         model = SOAPNote
         fields = ["id", "subjective", "objective", "assessment", "plan"]
 
 
 class ProgressNoteSerializer(serializers.ModelSerializer):
+    narrative = _note_text()
+
     class Meta:
         model = ProgressNote
         fields = ["id", "narrative"]
 
 
 class ClinicalDocumentSerializer(serializers.ModelSerializer):
+    content = _note_text()
     soap_note = SOAPNoteSerializer(required=False)
     progress_note = ProgressNoteSerializer(required=False)
 

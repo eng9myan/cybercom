@@ -1,8 +1,13 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.core.encounters.models import Encounter
 from products.cymed.core.patients.models import Patient
+
+# Clinical free-text is PHI — encrypted per-tenant at rest. No blind index
+# (narrative text, no exact-match lookups); full-text search, if added later,
+# runs in-tenant over decrypted rows or a separate search index.
 
 
 class DocumentType(models.TextChoices):
@@ -29,7 +34,7 @@ class ClinicalDocument(BaseModel):
     status = models.CharField(
         max_length=20, choices=DocumentStatus.choices, default=DocumentStatus.DRAFT
     )
-    content = models.TextField(blank=True)
+    content = EncryptedText(classification="phi")
     version = models.PositiveIntegerField(default=1)
     parent_document = models.ForeignKey(
         "self", on_delete=models.SET_NULL, null=True, blank=True, related_name="amendments"
@@ -50,7 +55,7 @@ class DocumentSection(BaseModel):
         ClinicalDocument, on_delete=models.CASCADE, related_name="sections"
     )
     title = models.CharField(max_length=255)
-    content = models.TextField()
+    content = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_document_sections"
@@ -60,10 +65,10 @@ class SOAPNote(BaseModel):
     clinical_document = models.OneToOneField(
         ClinicalDocument, on_delete=models.CASCADE, related_name="soap_note"
     )
-    subjective = models.TextField(blank=True)
-    objective = models.TextField(blank=True)
-    assessment = models.TextField(blank=True)
-    plan = models.TextField(blank=True)
+    subjective = EncryptedText(classification="phi")
+    objective = EncryptedText(classification="phi")
+    assessment = EncryptedText(classification="phi")
+    plan = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_soap_notes"
@@ -73,7 +78,7 @@ class ProgressNote(BaseModel):
     clinical_document = models.OneToOneField(
         ClinicalDocument, on_delete=models.CASCADE, related_name="progress_note"
     )
-    narrative = models.TextField()
+    narrative = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_progress_notes"
@@ -84,7 +89,7 @@ class ProcedureNote(BaseModel):
         ClinicalDocument, on_delete=models.CASCADE, related_name="procedure_note"
     )
     procedure_name = models.CharField(max_length=255)
-    description = models.TextField()
+    description = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_procedure_notes"
@@ -94,8 +99,8 @@ class ConsultationNote(BaseModel):
     clinical_document = models.OneToOneField(
         ClinicalDocument, on_delete=models.CASCADE, related_name="consultation_note"
     )
-    reason_for_consult = models.TextField()
-    recommendations = models.TextField()
+    reason_for_consult = EncryptedText(classification="phi")
+    recommendations = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_consultation_notes"
@@ -106,7 +111,7 @@ class DischargeNote(BaseModel):
         ClinicalDocument, on_delete=models.CASCADE, related_name="discharge_note"
     )
     discharge_status = models.CharField(max_length=100)
-    instructions = models.TextField()
+    instructions = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_discharge_notes"
