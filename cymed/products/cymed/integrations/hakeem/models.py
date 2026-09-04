@@ -1,6 +1,7 @@
 """Hakeem message audit."""
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 
 
@@ -12,7 +13,9 @@ class HakeemMessage(BaseModel):
     direction = models.CharField(max_length=10, choices=DIRECTIONS)
     transport = models.CharField(max_length=20, choices=TRANSPORTS)
     op = models.CharField(max_length=100, db_index=True)
-    subject_national_id = models.CharField(max_length=30, blank=True, db_index=True)
+    # National ID on an integration audit row — encrypted per-tenant; blind
+    # index keeps exact-match ops lookups (subject_national_id_bidx=...).
+    subject_national_id = EncryptedText(classification="national_id", blind_index=True)
     request_payload = models.TextField(blank=True)
     response_payload = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUSES, default="pending")
