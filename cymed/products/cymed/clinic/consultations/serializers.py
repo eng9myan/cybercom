@@ -12,7 +12,14 @@ from products.cymed.clinic.consultations.models import (
 )
 
 
+def _phi_text(required=False):
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=required, allow_blank=True)
+
+
 class ConsultationDiagnosisSerializer(serializers.ModelSerializer):
+    display = _phi_text(required=True)
+
     class Meta:
         model = ConsultationDiagnosis
         fields = ["id", "code", "system", "display", "status"]
@@ -41,18 +48,25 @@ class ConsultationDiagnosisSerializer(serializers.ModelSerializer):
 
 
 class ConsultationProcedureSerializer(serializers.ModelSerializer):
+    display = _phi_text(required=True)
+    notes = _phi_text()
+
     class Meta:
         model = ConsultationProcedure
         fields = ["id", "code", "system", "display", "notes"]
 
 
 class ConsultationPlanSerializer(serializers.ModelSerializer):
+    instructions = _phi_text()
+
     class Meta:
         model = ConsultationPlan
         fields = ["id", "instructions", "prescriptions"]
 
 
 class ConsultationFollowUpSerializer(serializers.ModelSerializer):
+    reason = _phi_text()
+
     class Meta:
         model = ConsultationFollowUp
         fields = ["id", "follow_up_date", "reason"]
@@ -65,6 +79,10 @@ class ConsultationAttachmentSerializer(serializers.ModelSerializer):
 
 
 class ConsultationSerializer(serializers.ModelSerializer):
+    subjective = _phi_text()
+    objective = _phi_text()
+    assessment = _phi_text()
+    plan = _phi_text()
     diagnoses = ConsultationDiagnosisSerializer(many=True, required=False)
     procedures = ConsultationProcedureSerializer(many=True, required=False)
     treatment_plan = ConsultationPlanSerializer(required=False)
