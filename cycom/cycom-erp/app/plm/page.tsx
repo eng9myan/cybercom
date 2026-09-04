@@ -1,13 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useCycomList, m2oName, fmtDate, type Many2One } from '@/lib/cycomModels';
 import { create } from '@/lib/cycom';
-import {
-  Layers, Plus, Trash2, CheckCircle, Calculator, 
-  Settings2, Activity, ShieldAlert, AlertTriangle, FileText
-} from 'lucide-react';
+import { Trash2 } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 interface BomComponent {
   name: string;
@@ -81,7 +78,14 @@ const mapEco = (r: CycomEco): EcoOrder => ({
   dateCreated: fmtDate(r.create_date),
 });
 
+const ECO_STATUS_KEY: Record<EcoOrder['state'], string> = {
+  Draft: 'status.draft',
+  'Under Review': 'status.waitingApproval',
+  Approved: 'status.approved',
+};
+
 export default function PLMPage() {
+  const t = useT();
   const { rows: liveEcos, loading } = useCycomList<CycomEco, EcoOrder>(
     'mrp.eco', [], ['name', 'product_tmpl_id', 'stage_id', 'user_id', 'create_date'],
     mapEco,
@@ -90,7 +94,7 @@ export default function PLMPage() {
   const [ecos, setEcos] = useState<EcoOrder[]>([]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!loading) setEcos(liveEcos); }, [loading]);
-  
+
   // Selected BOM for details
   const [selectedBomId, setSelectedBomId] = useState('BOM-001');
 
@@ -183,41 +187,41 @@ export default function PLMPage() {
     }));
   };
 
-  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>Loading...</div>;
+  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>{t('plmDash.loading')}</div>;
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">PLM & Manufacturing</h1>
-          <p className="page-subtitle">Cycom Product Lifecycle Management (PLM) and Manufacturing Bill of Materials (BOM) cost rollups.</p>
+          <h1 className="page-title text-white">{t('plmDash.title')}</h1>
+          <p className="page-subtitle">{t('plmDash.subtitle')}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Column - BOM Selector & Component Creator */}
         <div className="space-y-6">
-          
+
           {/* BOM Selector */}
           <div className="glass-card p-5 space-y-4">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-3">Bill of Materials Selector</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-3">{t('plmDash.bomSelectorHeading')}</h2>
             <div className="space-y-2">
               {boms.map(bom => (
                 <div
                   key={bom.id}
                   onClick={() => setSelectedBomId(bom.id)}
                   className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                    selectedBomId === bom.id 
-                      ? 'bg-gradient-to-br from-orange-500/12 to-blue-500/8 border-orange-500/25 text-white' 
+                    selectedBomId === bom.id
+                      ? 'bg-gradient-to-br from-orange-500/12 to-blue-500/8 border-orange-500/25 text-white'
                       : 'border-transparent hover:bg-white/3 text-slate-400'
                   }`}
                 >
                   <p className="text-xs font-bold">{bom.productName}</p>
                   <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                    <span>SKU: {bom.sku}</span>
-                    <span>{bom.components.length} components</span>
+                    <span>{t('plmDash.sku', { sku: bom.sku })}</span>
+                    <span>{t('plmDash.componentsN', { n: bom.components.length })}</span>
                   </div>
                 </div>
               ))}
@@ -226,14 +230,14 @@ export default function PLMPage() {
 
           {/* Add Component to BOM */}
           <div className="glass-card p-5 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-2">Add Component to BOM</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-2">{t('plmDash.addComponentHeading')}</h3>
             <form onSubmit={handleAddComponent} className="space-y-3 text-xs">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Component Name</label>
-                <input 
-                  type="text" 
-                  required 
-                  placeholder="e.g. Glass bottle 1L" 
+                <label className="text-[10px] font-bold text-slate-500 uppercase">{t('plmDash.componentName')}</label>
+                <input
+                  type="text"
+                  required
+                  placeholder={t('plmDash.componentNamePh')}
                   value={compName}
                   onChange={e => setCompName(e.target.value)}
                   className="input-field py-1"
@@ -241,24 +245,24 @@ export default function PLMPage() {
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Quantity Needed</label>
-                  <input 
-                    type="number" 
-                    step="0.01" 
-                    required 
-                    placeholder="e.g. 6" 
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('plmDash.qtyNeeded')}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder={t('plmDash.qtyNeededPh')}
                     value={compQty}
                     onChange={e => setCompQty(e.target.value)}
                     className="input-field py-1 font-mono"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Unit Cost (JOD)</label>
-                  <input 
-                    type="number" 
-                    step="0.01" 
-                    required 
-                    placeholder="e.g. 0.35" 
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('plmDash.unitCost')}</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder={t('plmDash.unitCostPh')}
                     value={compCost}
                     onChange={e => setCompCost(e.target.value)}
                     className="input-field py-1 font-mono"
@@ -266,7 +270,7 @@ export default function PLMPage() {
                 </div>
               </div>
               <button type="submit" className="btn-primary w-full py-1.5 mt-2">
-                Add Raw Material
+                {t('plmDash.addRawMaterial')}
               </button>
             </form>
           </div>
@@ -275,11 +279,11 @@ export default function PLMPage() {
 
         {/* Right Column - BOM cost rollups & ECO pipelines */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Cost Rollup Sheet */}
           <div className="glass-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">BOM Material Rollup & Cost Analysis</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('plmDash.rollupHeading')}</h2>
               <span className="text-[10px] bg-purple-500/20 text-[#A855F7] border border-[#A855F7]/30 px-2 py-0.5 rounded font-bold font-mono">
                 {selectedBOM.sku}
               </span>
@@ -289,11 +293,11 @@ export default function PLMPage() {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Component Name</th>
-                    <th>Qty Needed</th>
-                    <th>Unit Cost</th>
-                    <th>Total Material Cost</th>
-                    <th className="text-right">Action</th>
+                    <th>{t('plmDash.colComponentName')}</th>
+                    <th>{t('plmDash.colQtyNeeded')}</th>
+                    <th>{t('plmDash.colUnitCost')}</th>
+                    <th>{t('plmDash.colTotalCost')}</th>
+                    <th className="text-end">{t('plmDash.colAction')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -305,8 +309,8 @@ export default function PLMPage() {
                         <td className="font-mono">{c.qtyNeeded}</td>
                         <td className="font-mono">JOD {c.unitCost.toFixed(2)}</td>
                         <td className="font-mono font-bold text-white">JOD {totalCost.toFixed(2)}</td>
-                        <td className="text-right">
-                          <button 
+                        <td className="text-end">
+                          <button
                             onClick={() => handleDeleteComponent(c.name)}
                             className="p-1 rounded hover:bg-red-500/20 text-[#EF4444]"
                           >
@@ -318,7 +322,7 @@ export default function PLMPage() {
                   })}
                   {/* Total Rollup row */}
                   <tr className="border-t border-white/10 bg-white/2">
-                    <td colSpan={3} className="font-black text-right text-slate-400 uppercase tracking-wide">BOM Rollup Cost:</td>
+                    <td colSpan={3} className="font-black text-end text-slate-400 uppercase tracking-wide">{t('plmDash.rollupCostLabel')}</td>
                     <td colSpan={2} className="font-black text-emerald-400 text-sm">JOD {rollupCost.toFixed(2)}</td>
                   </tr>
                 </tbody>
@@ -329,8 +333,8 @@ export default function PLMPage() {
           {/* ECO Pipeline approvals */}
           <div className="glass-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Engineering Change Orders (ECO)</h2>
-              <span className="badge badge-cyan text-[8px]">Cycom PLM workflow</span>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('plmDash.ecoHeading')}</h2>
+              <span className="badge badge-cyan text-[8px]">{t('plmDash.ecoWorkflow')}</span>
             </div>
 
             <div className="space-y-3">
@@ -343,18 +347,18 @@ export default function PLMPage() {
                       <span className={`badge text-[9px] ${
                         eco.state === 'Approved' ? 'badge-green' :
                         eco.state === 'Under Review' ? 'badge-yellow' : 'badge-cyan'
-                      }`}>{eco.state}</span>
+                      }`}>{t(ECO_STATUS_KEY[eco.state])}</span>
                     </div>
                     <p className="text-xs text-slate-200 font-bold">{eco.title}</p>
-                    <p className="text-[11px] text-slate-400 font-medium">BOM: {eco.productName} · Cause: {eco.reason}</p>
+                    <p className="text-[11px] text-slate-400 font-medium">{t('plmDash.bomCause', { product: eco.productName, reason: eco.reason })}</p>
                   </div>
-                  
+
                   {eco.state !== 'Approved' && (
-                    <button 
+                    <button
                       onClick={() => advanceECO(eco.id)}
                       className="p-1.5 px-3 text-[10px] font-bold rounded bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/25 text-[#00F0FF] flex-shrink-0"
                     >
-                      {eco.state === 'Draft' ? 'Submit for Review ➔' : 'Confirm ECO Approval ➔'}
+                      {eco.state === 'Draft' ? t('plmDash.submitForReview') : t('plmDash.confirmApproval')}
                     </button>
                   )}
                 </div>
@@ -365,17 +369,17 @@ export default function PLMPage() {
             <form onSubmit={handleCreateECO} className="grid grid-cols-1 md:grid-cols-2 gap-3 border-t border-white/5 pt-4 text-xs items-end">
               <div className="space-y-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Target Product BOM</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('plmDash.targetBom')}</label>
                   <select value={ecoProd} onChange={e => setEcoProd(e.target.value)} className="input-field py-1">
                     {boms.map(bom => <option key={bom.id} value={bom.productName}>{bom.productName}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">ECO Title</label>
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="e.g. Switch from paper to plastic bags" 
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('plmDash.ecoTitle')}</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={t('plmDash.ecoTitlePh')}
                     value={ecoTitle}
                     onChange={e => setEcoTitle(e.target.value)}
                     className="input-field py-1"
@@ -384,18 +388,18 @@ export default function PLMPage() {
               </div>
               <div className="space-y-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">ECO Reason / Spec</label>
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="Provide details on engineering variance..." 
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('plmDash.ecoReason')}</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={t('plmDash.ecoReasonPh')}
                     value={ecoReason}
                     onChange={e => setEcoReason(e.target.value)}
                     className="input-field py-1"
                   />
                 </div>
                 <button type="submit" className="btn-primary w-full py-1.5">
-                  Launch Engineering ECO
+                  {t('plmDash.launchEco')}
                 </button>
               </div>
             </form>

@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCycomList, m2oName, type Many2One } from '@/lib/cycomModels';
+import { useCycomList, type Many2One } from '@/lib/cycomModels';
 import { searchRead, create } from '@/lib/cycom';
-import { MessageSquare, Send, Hash, Users, Search, Bell, Sparkles, Smile, ShieldAlert } from 'lucide-react';
+import { Send, Hash, Search, Sparkles, Smile } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 type CycomMessage = { id: number; author?: string; body?: string; create_date?: string };
 
@@ -74,15 +75,12 @@ const INITIAL_MESSAGES: Record<string, Message[]> = {
   ]
 };
 
-const BOT_REPLIES: string[] = [
-  "Noted. I am checking the current Cycom core bridge status on Cycom ERP.",
-  "Understood. The biometric logs are updating automatically.",
-  "Let me coordinate with the Finance team regarding the JOD rounding calculations.",
-  "Got it! I will check the inventory discrepancies dashboard.",
-  "Acknowledged. Let's schedule a review session for this."
-];
+const DM_STATUS_KEY: Record<DM['status'], string> = {
+  online: 'discussDash.stOnline', offline: 'discussDash.stOffline', away: 'discussDash.stAway',
+};
 
 export default function DiscussPage() {
+  const t = useT();
   const { rows: liveChannels, loading } = useCycomList<CycomMailChannel, Channel>(
     'mail.channel', [], ['name', 'channel_type', 'member_count', 'last_interest_dt'],
     mapMailChannel,
@@ -94,7 +92,7 @@ export default function DiscussPage() {
   const [messages, setMessages] = useState<Record<string, Message[]>>(INITIAL_MESSAGES);
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Seed channels from live Backend data
@@ -184,33 +182,33 @@ export default function DiscussPage() {
   const filteredChannels = channels.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredDms = dms.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>Loading...</div>;
+  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>{t('discussDash.loading')}</div>;
 
   return (
     <div className="space-y-6 max-w-[1200px] mx-auto">
       {/* Module Header */}
       <div className="page-header flex justify-between items-center">
         <div>
-          <h1 className="page-title text-white">Discuss & Communication Hub</h1>
-          <p className="page-subtitle">Internal channels, announcements, and direct messaging for Cycom operations.</p>
+          <h1 className="page-title text-white">{t('discussDash.title')}</h1>
+          <p className="page-subtitle">{t('discussDash.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-[#E67E22]">
           <Sparkles className="w-3.5 h-3.5 animate-pulse" />
-          <span className="text-[11px] font-bold">Cycom Sync Active</span>
+          <span className="text-[11px] font-bold">{t('discussDash.syncActive')}</span>
         </div>
       </div>
 
       {/* Main Grid Container */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-[600px] items-stretch">
-        
+
         {/* Left Sidebar (channels & direct messages list) */}
-        <div className="glass-card flex flex-col p-4 md:col-span-1 border-r border-white/5 space-y-4 h-full overflow-hidden">
+        <div className="glass-card flex flex-col p-4 md:col-span-1 border-e border-white/5 space-y-4 h-full overflow-hidden">
           {/* Search bar */}
           <div className="flex items-center gap-2 bg-white/3 border border-white/8 rounded-xl px-2.5 py-1.5 w-full">
             <Search className="w-3.5 h-3.5 text-slate-500" />
-            <input 
-              type="text" 
-              placeholder="Search chat or user..." 
+            <input
+              type="text"
+              placeholder={t('discussDash.searchPh')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-transparent border-none outline-none text-xs text-white placeholder-slate-500 w-full"
@@ -220,7 +218,7 @@ export default function DiscussPage() {
           <div className="flex-1 overflow-y-auto space-y-5 pr-1">
             {/* Channels Section */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase block px-2">CHANNELS</span>
+              <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase block px-2">{t('discussDash.channels')}</span>
               <div className="space-y-0.5">
                 {filteredChannels.map(ch => (
                   <button
@@ -246,7 +244,7 @@ export default function DiscussPage() {
 
             {/* Direct Messages Section */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase block px-2">DIRECT MESSAGES</span>
+              <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase block px-2">{t('discussDash.directMessages')}</span>
               <div className="space-y-0.5">
                 {filteredDms.map(dm => (
                   <button
@@ -263,11 +261,11 @@ export default function DiscussPage() {
                         <div className="w-5 h-5 rounded bg-white/10 flex items-center justify-center text-[9px] font-black text-slate-300">
                           {dm.name.split(' ').map(n => n[0]).join('')}
                         </div>
-                        <span className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-black ${
+                        <span className={`absolute -bottom-0.5 -end-0.5 w-2 h-2 rounded-full border border-black ${
                           dm.status === 'online' ? 'bg-[#10B981]' : dm.status === 'away' ? 'bg-[#F59E0B]' : 'bg-slate-600'
                         }`} />
                       </div>
-                      <div className="text-left truncate">
+                      <div className="text-start truncate">
                         <p className="font-semibold truncate">{dm.name}</p>
                         <p className="text-[8px] text-slate-500 truncate">{dm.role}</p>
                       </div>
@@ -281,7 +279,7 @@ export default function DiscussPage() {
 
         {/* Right Active Chat Pane */}
         <div className="glass-card md:col-span-3 flex flex-col p-4 h-full overflow-hidden relative">
-          
+
           {/* Active Header */}
           <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
             <div className="flex items-center gap-2.5">
@@ -302,15 +300,15 @@ export default function DiscussPage() {
                   </div>
                   <div>
                     <h2 className="text-sm font-bold text-white">{activeDm?.name}</h2>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{activeDm?.role} • Status: <span className="capitalize text-slate-300 font-semibold">{activeDm?.status}</span></p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{activeDm?.role} • {t('discussDash.statusLabel')} <span className="text-slate-300 font-semibold">{activeDm ? t(DM_STATUS_KEY[activeDm.status]) : ''}</span></p>
                   </div>
                 </>
               )}
             </div>
-            
+
             <div className="flex items-center gap-2">
               <span className="text-[10px] bg-white/5 px-2.5 py-1 rounded-full text-slate-400 border border-white/5 font-mono">
-                ZK Log Matcher Active
+                {t('discussDash.zkMatcher')}
               </span>
             </div>
           </div>
@@ -318,18 +316,18 @@ export default function DiscussPage() {
           {/* Message History */}
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 mb-4 select-text">
             <AnimatePresence initial={false}>
-              {currentMessages.map((msg, i) => (
+              {currentMessages.map((msg) => (
                 <motion.div
                   key={msg.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`flex gap-3 max-w-[80%] ${msg.isSelf ? 'ml-auto flex-row-reverse' : ''}`}
+                  className={`flex gap-3 max-w-[80%] ${msg.isSelf ? 'ms-auto flex-row-reverse' : ''}`}
                 >
                   <div className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-[10px] font-black text-white ${
-                    msg.isSelf 
-                      ? 'bg-gradient-to-br from-[#E67E22] to-orange-600' 
-                      : msg.sender === 'Cycom AI Bot' 
-                        ? 'bg-gradient-to-br from-purple-500 to-indigo-600' 
+                    msg.isSelf
+                      ? 'bg-gradient-to-br from-[#E67E22] to-orange-600'
+                      : msg.sender === 'Cycom AI Bot'
+                        ? 'bg-gradient-to-br from-purple-500 to-indigo-600'
                         : 'bg-white/10'
                   }`}>
                     {msg.avatar}
@@ -340,8 +338,8 @@ export default function DiscussPage() {
                       <span className="text-[8px] text-slate-500">{msg.time}</span>
                     </div>
                     <div className={`p-3 rounded-2xl text-xs leading-relaxed border ${
-                      msg.isSelf 
-                        ? 'bg-gradient-to-br from-orange-500/15 to-orange-500/5 border-orange-500/20 text-slate-200 rounded-tr-none' 
+                      msg.isSelf
+                        ? 'bg-gradient-to-br from-orange-500/15 to-orange-500/5 border-orange-500/20 text-slate-200 rounded-tr-none'
                         : msg.sender === 'Cycom AI Bot'
                           ? 'bg-gradient-to-br from-purple-500/15 to-indigo-500/5 border-purple-500/20 text-slate-200 rounded-tl-none'
                           : 'bg-white/3 border-white/5 text-slate-300 rounded-tl-none'
@@ -362,7 +360,7 @@ export default function DiscussPage() {
             </button>
             <input
               type="text"
-              placeholder={`Send message to ${activeTab === 'channel' ? '#' + activeChannel?.name : activeDm?.name}...`}
+              placeholder={t('discussDash.sendMessageTo', { target: activeTab === 'channel' ? '#' + (activeChannel?.name ?? '') : (activeDm?.name ?? '') })}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyPress}

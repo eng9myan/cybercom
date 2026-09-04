@@ -4,10 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCycomList, m2oName, type Many2One } from '@/lib/cycomModels';
 import { create, unlink } from '@/lib/cycom';
-import { 
-  Clock, Plus, Calendar, AlertTriangle, CheckCircle, 
-  Trash2, User, UserPlus, Info, CheckSquare
+import {
+  Clock, AlertTriangle, Trash2
 } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 interface ShiftSlot {
   id: string;
@@ -55,7 +55,17 @@ const DEPT_COLORS = {
   IT: 'bg-purple-500/10 text-purple-400 border-purple-500/25',
 };
 
+const DAY_KEY: Record<ShiftSlot['day'], string> = {
+  Mon: 'planningDash.dayMon', Tue: 'planningDash.dayTue', Wed: 'planningDash.dayWed',
+  Thu: 'planningDash.dayThu', Fri: 'planningDash.dayFri', Sat: 'planningDash.daySat', Sun: 'planningDash.daySun',
+};
+
 export default function PlanningPage() {
+  const t = useT();
+  const DEPT_LABEL: Record<ShiftSlot['department'], string> = {
+    Sales: t('planningDash.deptSales'), Warehouse: t('planningDash.deptWarehouse'),
+    Finance: t('planningDash.deptFinance'), IT: t('planningDash.deptIt'),
+  };
   const { rows: liveSlots, loading } = useCycomList<CycomPlanningSlot, ShiftSlot>(
     'planning.slot', [], ['resource_id', 'role_id', 'start_datetime', 'end_datetime', 'state'],
     mapPlanningSlot,
@@ -79,13 +89,17 @@ export default function PlanningPage() {
     // 1. Overlapping shift check (same employee, same day)
     const overlap = shifts.find(s => s.employeeName === newShift.employeeName && s.day === newShift.day);
     if (overlap) {
-      return `Conflict Alert: ${newShift.employeeName} is already scheduled for shift (${overlap.timeRange}) on ${newShift.day}. Overlapping slots detected.`;
+      return t('planningDash.conflictAlert', {
+        employee: newShift.employeeName, range: overlap.timeRange, day: t(DAY_KEY[newShift.day]),
+      });
     }
 
     // 2. Weekly Hour Limit Check (> 48 hours)
     const existingHours = shifts.filter(s => s.employeeName === newShift.employeeName).reduce((acc, curr) => acc + curr.hours, 0);
     if (existingHours + newShift.hours > 48) {
-      return `Warning: Scheduling this slot puts ${newShift.employeeName} at ${existingHours + newShift.hours} hours this week, exceeding standard 48 hours limit.`;
+      return t('planningDash.hoursWarning', {
+        employee: newShift.employeeName, hours: existingHours + newShift.hours,
+      });
     }
 
     return null;
@@ -145,33 +159,33 @@ export default function PlanningPage() {
 
   const DAYS: Array<'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun'> = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>Loading...</div>;
+  if (loading) return <div style={{padding:'2rem',color:'#ccc'}}>{t('planningDash.loading')}</div>;
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Planning & Shift Schedules</h1>
-          <p className="page-subtitle">Schedule staff roster shifts, audit overlapping hour conflicts, and track weekly work thresholds.</p>
+          <h1 className="page-title text-white">{t('planningDash.title')}</h1>
+          <p className="page-subtitle">{t('planningDash.subtitle')}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Column - Shift Creator */}
         <div className="space-y-6">
           <div className="glass-card p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Roster Planner Form</h2>
+              <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">{t('planningDash.formHeading')}</h2>
               <Clock className="w-4 h-4 text-[#EF4444]" />
             </div>
 
             <form onSubmit={handleCreateSlot} className="space-y-3 text-xs">
               <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase">Employee</label>
-                <select 
-                  value={empName} 
+                <label className="text-[10px] font-bold text-slate-500 uppercase">{t('planningDash.employee')}</label>
+                <select
+                  value={empName}
                   onChange={e => setEmpName(e.target.value)}
                   className="input-field"
                 >
@@ -184,24 +198,24 @@ export default function PlanningPage() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Category / Dept</label>
-                  <select 
-                    value={dept} 
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('planningDash.categoryDept')}</label>
+                  <select
+                    value={dept}
                     onChange={e => setDept(e.target.value as any)}
                     className="input-field"
                   >
-                    <option value="Sales">Sales Operations</option>
-                    <option value="Warehouse">Warehouse Supply</option>
-                    <option value="Finance">Finance Accounting</option>
-                    <option value="IT">IT Infrastructure</option>
+                    <option value="Sales">{t('planningDash.deptSales')}</option>
+                    <option value="Warehouse">{t('planningDash.deptWarehouse')}</option>
+                    <option value="Finance">{t('planningDash.deptFinance')}</option>
+                    <option value="IT">{t('planningDash.deptIt')}</option>
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Job Role Title</label>
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="e.g. Day Clerk" 
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('planningDash.jobRoleTitle')}</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={t('planningDash.jobRoleTitlePh')}
                     value={role}
                     onChange={e => setRole(e.target.value)}
                     className="input-field"
@@ -211,31 +225,31 @@ export default function PlanningPage() {
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Weekday</label>
-                  <select 
-                    value={day} 
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('planningDash.weekday')}</label>
+                  <select
+                    value={day}
                     onChange={e => setDay(e.target.value as any)}
                     className="input-field"
                   >
-                    {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
+                    {DAYS.map(d => <option key={d} value={d}>{t(DAY_KEY[d])}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Hours</label>
-                  <input 
-                    type="number" 
-                    required 
-                    value={hours} 
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('planningDash.hours')}</label>
+                  <input
+                    type="number"
+                    required
+                    value={hours}
                     onChange={e => setHours(e.target.value)}
                     className="input-field font-mono"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Time Range</label>
-                  <input 
-                    type="text" 
-                    required 
-                    placeholder="08:00-16:00" 
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">{t('planningDash.timeRange')}</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={t('planningDash.timeRangePh')}
                     value={timeRange}
                     onChange={e => setTimeRange(e.target.value)}
                     className="input-field font-mono"
@@ -246,7 +260,7 @@ export default function PlanningPage() {
               {/* Conflict Warnings Box */}
               <AnimatePresence>
                 {warningMsg && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 5 }}
@@ -259,7 +273,7 @@ export default function PlanningPage() {
               </AnimatePresence>
 
               <button type="submit" className="btn-primary w-full py-2">
-                Allocate Shift Slot
+                {t('planningDash.allocateBtn')}
               </button>
             </form>
           </div>
@@ -267,14 +281,14 @@ export default function PlanningPage() {
 
         {/* Right Column - Visual Shift Timeline Calendar */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Calendar timeline visual board */}
           <div className="glass-card p-5 space-y-4">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-3">Weekly Schedule Board</h2>
-            
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-3">{t('planningDash.boardHeading')}</h2>
+
             <div className="grid grid-cols-8 gap-2 text-center text-xs font-bold border-b border-white/5 pb-2">
-              <div className="text-left text-slate-500">Employee</div>
-              {DAYS.map(d => <div key={d} className="text-slate-400">{d}</div>)}
+              <div className="text-start text-slate-500">{t('planningDash.employeeCol')}</div>
+              {DAYS.map(d => <div key={d} className="text-slate-400">{t(DAY_KEY[d])}</div>)}
             </div>
 
             <div className="space-y-3 pt-2">
@@ -282,17 +296,17 @@ export default function PlanningPage() {
                 const empWeeklyHours = shifts.filter(s => s.employeeName === emp).reduce((acc, curr) => acc + curr.hours, 0);
                 return (
                   <div key={emp} className="grid grid-cols-8 gap-2 items-center min-h-[48px] py-1 border-b border-white/3 last:border-none">
-                    <div className="text-left">
+                    <div className="text-start">
                       <p className="text-xs font-bold text-white truncate">{emp.split(' ')[0]}</p>
-                      <p className="text-[9px] text-slate-500 font-mono font-bold mt-0.5">{empWeeklyHours} hrs total</p>
+                      <p className="text-[9px] text-slate-500 font-mono font-bold mt-0.5">{t('planningDash.hoursTotalN', { n: empWeeklyHours })}</p>
                     </div>
                     {DAYS.map(d => {
                       const dayShifts = shifts.filter(s => s.employeeName === emp && s.day === d);
                       return (
                         <div key={d} className="h-full flex flex-col gap-1 justify-center">
                           {dayShifts.map(s => (
-                            <div 
-                              key={s.id} 
+                            <div
+                              key={s.id}
                               className={`p-1.5 rounded text-[9px] border leading-tight flex flex-col text-center font-bold ${DEPT_COLORS[s.department]}`}
                               title={`${s.role} (${s.timeRange})`}
                             >
@@ -301,7 +315,7 @@ export default function PlanningPage() {
                             </div>
                           ))}
                           {dayShifts.length === 0 && (
-                            <div className="h-8 rounded bg-white/2 border border-dashed border-white/5 flex items-center justify-center text-[9px] text-slate-700 font-bold">OFF</div>
+                            <div className="h-8 rounded bg-white/2 border border-dashed border-white/5 flex items-center justify-center text-[9px] text-slate-700 font-bold">{t('planningDash.off')}</div>
                           )}
                         </div>
                       );
@@ -314,19 +328,19 @@ export default function PlanningPage() {
 
           {/* Slots List */}
           <div className="glass-card p-5 space-y-4">
-            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-3">Shift Registry Ledger</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-3">{t('planningDash.ledgerHeading')}</h2>
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Slot ID</th>
-                    <th>Employee Name</th>
-                    <th>Dept Category</th>
-                    <th>Role Title</th>
-                    <th>Day</th>
-                    <th>Hours</th>
-                    <th>Time Period</th>
-                    <th className="text-right">Actions</th>
+                    <th>{t('planningDash.colSlotId')}</th>
+                    <th>{t('planningDash.colEmployeeName')}</th>
+                    <th>{t('planningDash.colDeptCategory')}</th>
+                    <th>{t('planningDash.colRoleTitle')}</th>
+                    <th>{t('planningDash.colDay')}</th>
+                    <th>{t('planningDash.colHours')}</th>
+                    <th>{t('planningDash.colTimePeriod')}</th>
+                    <th className="text-end">{t('planningDash.colActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -339,14 +353,14 @@ export default function PlanningPage() {
                           s.department === 'Sales' ? 'badge-blue' :
                           s.department === 'Warehouse' ? 'badge-orange' :
                           s.department === 'Finance' ? 'badge-green' : 'badge-purple'
-                        }`}>{s.department}</span>
+                        }`}>{DEPT_LABEL[s.department]}</span>
                       </td>
                       <td>{s.role}</td>
-                      <td className="font-bold">{s.day}</td>
-                      <td className="font-mono font-bold">{s.hours} hrs</td>
+                      <td className="font-bold">{t(DAY_KEY[s.day])}</td>
+                      <td className="font-mono font-bold">{t('planningDash.hrsN', { n: s.hours })}</td>
                       <td className="font-mono text-slate-400">{s.timeRange}</td>
-                      <td className="text-right">
-                        <button 
+                      <td className="text-end">
+                        <button
                           onClick={() => handleDeleteShift(s.id)}
                           className="p-1 rounded hover:bg-red-500/20 text-[#EF4444]"
                         >
