@@ -2,15 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, Cpu, Cloud, Code, Play, RefreshCw, CheckCircle2, 
-  GitBranch, Terminal, ShieldAlert
+import {
+  ArrowLeft, Cloud, Code, Play, RefreshCw, CheckCircle2,
+  GitBranch
 } from 'lucide-react';
-import { call } from '@/lib/cycom';
+import { useT } from '@/lib/i18n';
 
 export default function ModuleManager() {
+  const t = useT();
   const router = useRouter();
-  
+
   // App Store Lists
   const [activeApps, setActiveApps] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +58,7 @@ export default function ModuleManager() {
         fetchStatus();
       }
     } catch {
-      alert('Installation failed.');
+      alert(t('settingsModules.installFailed'));
     } finally {
       setInstalling(false);
     }
@@ -68,17 +69,17 @@ export default function ModuleManager() {
       {/* Header */}
       <div className="max-w-5xl mx-auto flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => router.push('/settings')}
             className="p-2 bg-slate-900 border border-slate-800 rounded-lg hover:bg-slate-800 transition"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-400" />
+            <ArrowLeft className="w-5 h-5 text-slate-400 rtl:-scale-x-100" />
           </button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent flex items-center gap-2">
-              <Cloud className="w-6 h-6 text-blue-400" /> Cycom.sh Extension command center
+              <Cloud className="w-6 h-6 text-blue-400" /> {t('settingsModules.title')}
             </h1>
-            <p className="text-xs text-slate-400 mt-1">Hot-load custom applications, pull branch updates from Git repositories, and provision staging sandboxes.</p>
+            <p className="text-xs text-slate-400 mt-1">{t('settingsModules.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -87,38 +88,40 @@ export default function ModuleManager() {
         {/* Dynamic App Install form */}
         <div className="lg:col-span-1 glass-card p-6 space-y-4 h-fit">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2 border-b border-white/5 pb-2">
-            <Code className="w-4 h-4 text-blue-400" /> Hot-Load Module
+            <Code className="w-4 h-4 text-blue-400" /> {t('settingsModules.hotLoadHeading')}
           </h3>
           <form onSubmit={handleInstallModule} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-slate-400">Module Technical Name</label>
-              <input 
+              <label className="text-slate-400">{t('settingsModules.moduleTechName')}</label>
+              <input
                 type="text" required value={moduleName} onChange={e => setModuleName(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
               />
             </div>
-            
+
             <div className="space-y-1">
-              <label className="text-slate-400 flex items-center gap-1.5"><Code className="w-3.5 h-3.5" /> Git Repository URI</label>
-              <input 
+              <label className="text-slate-400 flex items-center gap-1.5"><Code className="w-3.5 h-3.5" /> {t('settingsModules.gitRepo')}</label>
+              <input
                 type="text" required value={repo} onChange={e => setRepo(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none font-mono"
+                dir="ltr"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-slate-400 flex items-center gap-1.5"><GitBranch className="w-3.5 h-3.5" /> Deployment Branch</label>
-              <input 
+              <label className="text-slate-400 flex items-center gap-1.5"><GitBranch className="w-3.5 h-3.5" /> {t('settingsModules.deployBranch')}</label>
+              <input
                 type="text" required value={branch} onChange={e => setBranch(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none font-mono"
+                dir="ltr"
               />
             </div>
 
-            <button 
+            <button
               type="submit" disabled={installing}
               className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-semibold shadow-lg shadow-blue-600/15 transition flex items-center justify-center gap-2"
             >
-              {installing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />} Build & Hot-Load App
+              {installing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />} {t('settingsModules.buildBtn')}
             </button>
           </form>
         </div>
@@ -129,16 +132,16 @@ export default function ModuleManager() {
             <div className="p-4 bg-emerald-950/40 border border-emerald-500/20 rounded-xl text-emerald-400 space-y-2 flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
               <div>
-                <h5 className="font-bold capitalize">Module Deploy Succeeded!</h5>
+                <h5 className="font-bold capitalize">{t('settingsModules.deploySucceeded')}</h5>
                 <p className="text-[10px] text-emerald-500/80 leading-relaxed mt-0.5">
-                  App `{installSuccess.module}` successfully integrated. Dynamic model schemas loaded, table schemas sync complete, and routes hot-loaded.
+                  {t('settingsModules.deploySucceededNote', { module: installSuccess.module })}
                 </p>
                 <div className="pt-2">
-                  <a 
+                  <a
                     href={installSuccess.sandbox_url} target="_blank" rel="noopener noreferrer"
                     className="inline-block px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold"
                   >
-                    Open Sandbox View
+                    {t('settingsModules.openSandbox')}
                   </a>
                 </div>
               </div>
@@ -148,18 +151,18 @@ export default function ModuleManager() {
           {/* Active app list */}
           <div className="glass-card p-6">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-white/5 pb-3 mb-4 flex justify-between items-center">
-              Active Module Register
-              <span className="text-[10px] bg-slate-850 px-2 py-0.5 rounded text-slate-400 font-normal">Dynamic reload</span>
+              {t('settingsModules.registerHeading')}
+              <span className="text-[10px] bg-slate-850 px-2 py-0.5 rounded text-slate-400 font-normal">{t('settingsModules.dynamicReload')}</span>
             </h3>
             {loading ? (
-              <div className="text-center py-6 text-slate-500">Querying status...</div>
+              <div className="text-center py-6 text-slate-500">{t('settingsModules.querying')}</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {activeApps.map((app) => (
                   <div key={app} className="p-3 bg-slate-950/40 border border-slate-850 rounded-xl flex items-center justify-between gap-4">
                     <div>
                       <h4 className="font-semibold text-slate-300 capitalize">{app.replace('_', ' ')}</h4>
-                      <p className="text-[10px] text-slate-500 mt-0.5">Status: hot-loaded</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">{t('settingsModules.statusHotLoaded')}</p>
                     </div>
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   </div>
