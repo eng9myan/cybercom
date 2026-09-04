@@ -221,6 +221,52 @@ const en = {
     urgencyHigh: "High",
     urgencyMedium: "Medium",
   },
+  priority: {
+    high: "High",
+    medium: "Medium",
+    low: "Low",
+  },
+  helpdesk: {
+    title: "Helpdesk",
+    subtitle: "Customer tickets with priority, agent assignment, and stage tracking.",
+    errorHint:
+      "Helpdesk requires the helpdesk module installed in Cycom. Run the Setup Hub → Helpdesk wizard (or install helpdesk from the Apps menu).",
+    empty: "No tickets yet. Receive support requests to populate this list.",
+    loading: "Loading tickets…",
+    openTickets: "Open Tickets",
+    ticket: "Ticket",
+    subject: "Subject",
+    priority: "Priority",
+    assigned: "Assigned",
+    statusNew: "New",
+    statusInProgress: "In Progress",
+    statusResolved: "Resolved",
+  },
+  fleet: {
+    title: "Fleet Management",
+    subtitle: "Vehicles, drivers, maintenance history, and fuel logging command center.",
+    errorHint: "Fleet requires the fleet module.",
+    empty: "No vehicles tracked yet.",
+    loading: "Loading fleet vehicles…",
+    plate: "Plate",
+    driver: "Driver",
+    odometer: "Odometer",
+    detailsLogs: "Details & Logs",
+    unassigned: "Unassigned",
+  },
+  recruitment: {
+    title: "Recruitment Pipeline",
+    subtitle: "Applicants from open positions to hire, with stage transitions.",
+    empty:
+      "No applicants yet — open a position in the Cycom backend to start receiving them.",
+    loading: "Loading candidates…",
+    appliedOn: "Applied {date}",
+    stageApplied: "Applied",
+    stagePhoneScreen: "Phone Screen",
+    stageInterview: "Interview",
+    stageOffer: "Offer",
+    stageHired: "Hired",
+  },
 } as const;
 
 export default en;

@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Star, Briefcase, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Star, Briefcase } from 'lucide-react';
 import { useCycomList, fmtCode, fmtDate, m2oName, type Many2One } from '@/lib/cycomModels';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/CycomEmptyStates';
+import { useT } from '@/lib/i18n';
 
 type CycomApplicant = {
   id: number;
@@ -17,6 +18,8 @@ type CycomApplicant = {
   create_date?: string;
 };
 
+type StageKey = 'applied' | 'phoneScreen' | 'interview' | 'offer' | 'hired';
+
 interface Candidate {
   rawId: number;
   id: string;
@@ -24,29 +27,27 @@ interface Candidate {
   email: string;
   position: string;
   rating: number;
-  stage: 'Applied' | 'Phone Screen' | 'Interview' | 'Offer' | 'Hired';
+  stage: StageKey;
   dateApplied: string;
 }
 
-const STAGES: Array<'Applied' | 'Phone Screen' | 'Interview' | 'Offer' | 'Hired'> = [
-  'Applied', 'Phone Screen', 'Interview', 'Offer', 'Hired',
-];
+const STAGES: StageKey[] = ['applied', 'phoneScreen', 'interview', 'offer', 'hired'];
 
-const STAGE_COLORS = {
-  Applied: 'border-slate-500/20 bg-slate-500/2',
-  'Phone Screen': 'border-cyan-500/20 bg-cyan-500/2',
-  Interview: 'border-purple-500/20 bg-purple-500/2',
-  Offer: 'border-amber-500/20 bg-amber-500/2',
-  Hired: 'border-emerald-500/20 bg-emerald-500/2',
+const STAGE_COLORS: Record<StageKey, string> = {
+  applied: 'border-slate-500/20 bg-slate-500/2',
+  phoneScreen: 'border-cyan-500/20 bg-cyan-500/2',
+  interview: 'border-purple-500/20 bg-purple-500/2',
+  offer: 'border-amber-500/20 bg-amber-500/2',
+  hired: 'border-emerald-500/20 bg-emerald-500/2',
 };
 
-function stageFromCycom(name: string): Candidate['stage'] {
+function stageFromCycom(name: string): StageKey {
   const s = (name || '').toLowerCase();
-  if (s.includes('hire')) return 'Hired';
-  if (s.includes('offer') || s.includes('contract')) return 'Offer';
-  if (s.includes('interview') || s.includes('second')) return 'Interview';
-  if (s.includes('phone') || s.includes('initial') || s.includes('first')) return 'Phone Screen';
-  return 'Applied';
+  if (s.includes('hire')) return 'hired';
+  if (s.includes('offer') || s.includes('contract')) return 'offer';
+  if (s.includes('interview') || s.includes('second')) return 'interview';
+  if (s.includes('phone') || s.includes('initial') || s.includes('first')) return 'phoneScreen';
+  return 'applied';
 }
 
 const mapApplicant = (a: CycomApplicant): Candidate => ({
@@ -56,11 +57,12 @@ const mapApplicant = (a: CycomApplicant): Candidate => ({
   email: (a.email_from as string) || '—',
   position: m2oName(a.job_id, 'Unspecified'),
   rating: Math.min(5, Math.max(0, parseInt(a.priority || '0', 10))),
-  stage: a.stage_id ? stageFromCycom(m2oName(a.stage_id)) : 'Applied',
+  stage: a.stage_id ? stageFromCycom(m2oName(a.stage_id)) : 'applied',
   dateApplied: fmtDate(a.create_date),
 });
 
 export default function RecruitmentPage() {
+  const t = useT();
   const { rows: candidates, loading, error } = useCycomList<CycomApplicant, Candidate>(
     'hr.applicant',
     [],
@@ -69,18 +71,26 @@ export default function RecruitmentPage() {
     { limit: 200, order: 'create_date desc' },
   );
 
+  const stageLabel: Record<StageKey, string> = {
+    applied: t('recruitment.stageApplied'),
+    phoneScreen: t('recruitment.stagePhoneScreen'),
+    interview: t('recruitment.stageInterview'),
+    offer: t('recruitment.stageOffer'),
+    hired: t('recruitment.stageHired'),
+  };
+
   return (
     <div className="space-y-6">
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Recruitment Pipeline</h1>
-          <p className="page-subtitle">Applicants from open positions to hire, with stage transitions.</p>
+          <h1 className="page-title text-white">{t('recruitment.title')}</h1>
+          <p className="page-subtitle">{t('recruitment.subtitle')}</p>
         </div>
       </div>
 
-      {loading && <LoadingCard label="Loading candidates…" />}
+      {loading && <LoadingCard label={t('recruitment.loading')} />}
       {error && <ErrorCard error={error} />}
-      {!loading && !error && candidates.length === 0 && <EmptyCard label="No applicants yet — open a position in the Cycom backend to start receiving them." />}
+      {!loading && !error && candidates.length === 0 && <EmptyCard label={t('recruitment.empty')} />}
 
       {!loading && !error && candidates.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3.5 items-start">
@@ -89,7 +99,7 @@ export default function RecruitmentPage() {
             return (
               <div key={stage} className={`p-3 rounded-2xl border ${STAGE_COLORS[stage]} space-y-3 min-h-[420px] flex flex-col`}>
                 <div className="border-b border-white/5 pb-2 flex justify-between items-center">
-                  <span className="text-[11px] font-bold text-white uppercase">{stage}</span>
+                  <span className="text-[11px] font-bold text-white uppercase">{stageLabel[stage]}</span>
                   <span className="text-[9px] bg-white/5 px-2 py-0.5 rounded font-mono font-bold text-slate-400">{stageCands.length}</span>
                 </div>
                 <div className="space-y-2 flex-1 overflow-y-auto pr-1">
@@ -107,7 +117,7 @@ export default function RecruitmentPage() {
                         <Briefcase className="w-3 h-3" /> {c.position}
                       </div>
                       <div className="text-[9px] text-slate-500 truncate">{c.email}</div>
-                      <div className="text-[9px] text-slate-600 border-t border-white/5 pt-1.5">Applied {c.dateApplied}</div>
+                      <div className="text-[9px] text-slate-600 border-t border-white/5 pt-1.5">{t('recruitment.appliedOn', { date: c.dateApplied })}</div>
                     </div>
                   ))}
                 </div>

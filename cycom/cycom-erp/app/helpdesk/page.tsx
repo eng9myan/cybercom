@@ -3,6 +3,7 @@
 import React from 'react';
 import { useCycomList, fmtCode, m2oName, type Many2One } from '@/lib/cycomModels';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/CycomEmptyStates';
+import { useT } from '@/lib/i18n';
 
 type CycomTicket = {
   id: number;
@@ -14,28 +15,34 @@ type CycomTicket = {
   team_id?: Many2One;
 };
 
+type PriorityKey = 'high' | 'medium' | 'low';
+type TicketStatusKey = 'new' | 'inProgress' | 'resolved';
+
 interface HelpTicket {
   rawId: number;
   id: string;
   customerName: string;
   subject: string;
-  priority: 'High' | 'Medium' | 'Low';
+  priority: PriorityKey;
   assignedAgent: string;
-  status: 'New' | 'In Progress' | 'Resolved';
+  status: TicketStatusKey;
 }
 
-function priorityFromCycom(p?: string): 'High' | 'Medium' | 'Low' {
-  if (p === '3' || p === '2') return 'High';
-  if (p === '1') return 'Medium';
-  return 'Low';
+function priorityFromCycom(p?: string): PriorityKey {
+  if (p === '3' || p === '2') return 'high';
+  if (p === '1') return 'medium';
+  return 'low';
 }
 
-function statusFromStage(stageName: string): 'New' | 'In Progress' | 'Resolved' {
+function statusFromStage(stageName: string): TicketStatusKey {
   const s = (stageName || '').toLowerCase();
-  if (s.includes('resolved') || s.includes('done') || s.includes('closed')) return 'Resolved';
-  if (s.includes('progress') || s.includes('working') || s.includes('open')) return 'In Progress';
-  return 'New';
+  if (s.includes('resolved') || s.includes('done') || s.includes('closed')) return 'resolved';
+  if (s.includes('progress') || s.includes('working') || s.includes('open')) return 'inProgress';
+  return 'new';
 }
+
+const PRIORITY_TONE: Record<PriorityKey, string> = { high: 'badge-red', medium: 'badge-yellow', low: 'badge-cyan' };
+const STATUS_TONE: Record<TicketStatusKey, string> = { resolved: 'badge-green', inProgress: 'badge-cyan', new: 'badge-yellow' };
 
 const mapTicket = (t: CycomTicket): HelpTicket => ({
   rawId: t.id,
@@ -44,10 +51,11 @@ const mapTicket = (t: CycomTicket): HelpTicket => ({
   subject: t.name || `Ticket ${t.id}`,
   priority: priorityFromCycom(t.priority),
   assignedAgent: m2oName(t.user_id, 'Unassigned'),
-  status: t.stage_id ? statusFromStage(m2oName(t.stage_id)) : 'New',
+  status: t.stage_id ? statusFromStage(m2oName(t.stage_id)) : 'new',
 });
 
 export default function HelpdeskPage() {
+  const t = useT();
   const { rows: tickets, loading, error } = useCycomList<CycomTicket, HelpTicket>(
     'helpdesk.ticket',
     [],
@@ -56,47 +64,49 @@ export default function HelpdeskPage() {
     { limit: 200, order: 'id desc' },
   );
 
+  const statusLabel: Record<TicketStatusKey, string> = {
+    new: t('helpdesk.statusNew'),
+    inProgress: t('helpdesk.statusInProgress'),
+    resolved: t('helpdesk.statusResolved'),
+  };
+
   return (
     <div className="space-y-6">
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Helpdesk</h1>
-          <p className="page-subtitle">Customer tickets with priority, agent assignment, and stage tracking.</p>
+          <h1 className="page-title text-white">{t('helpdesk.title')}</h1>
+          <p className="page-subtitle">{t('helpdesk.subtitle')}</p>
         </div>
       </div>
 
-      {loading && <LoadingCard label="Loading tickets…" />}
-      {error && <ErrorCard error={error} hint="Helpdesk requires the helpdesk module installed in Cycom. Run the Setup Hub → Helpdesk wizard (or install helpdesk from the Apps menu)." />}
-      {!loading && !error && tickets.length === 0 && <EmptyCard label="No tickets yet. Receive support requests to populate this list." />}
+      {loading && <LoadingCard label={t('helpdesk.loading')} />}
+      {error && <ErrorCard error={error} hint={t('helpdesk.errorHint')} />}
+      {!loading && !error && tickets.length === 0 && <EmptyCard label={t('helpdesk.empty')} />}
 
       {!loading && !error && tickets.length > 0 && (
         <div className="glass-card p-6">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Open Tickets</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">{t('helpdesk.openTickets')}</h2>
           <div className="overflow-x-auto">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Ticket</th>
-                  <th>Customer</th>
-                  <th>Subject</th>
-                  <th>Priority</th>
-                  <th>Assigned</th>
-                  <th>Status</th>
+                  <th>{t('helpdesk.ticket')}</th>
+                  <th>{t('common.customer')}</th>
+                  <th>{t('helpdesk.subject')}</th>
+                  <th>{t('helpdesk.priority')}</th>
+                  <th>{t('helpdesk.assigned')}</th>
+                  <th>{t('common.status')}</th>
                 </tr>
               </thead>
               <tbody>
-                {tickets.map((t) => (
-                  <tr key={t.rawId}>
-                    <td className="font-mono text-xs font-bold text-slate-400">{t.id}</td>
-                    <td className="font-semibold text-slate-200">{t.customerName}</td>
-                    <td>{t.subject}</td>
-                    <td>
-                      <span className={`badge ${t.priority === 'High' ? 'badge-red' : t.priority === 'Medium' ? 'badge-yellow' : 'badge-cyan'}`}>{t.priority}</span>
-                    </td>
-                    <td className="text-slate-400">{t.assignedAgent}</td>
-                    <td>
-                      <span className={`badge ${t.status === 'Resolved' ? 'badge-green' : t.status === 'In Progress' ? 'badge-cyan' : 'badge-yellow'}`}>{t.status}</span>
-                    </td>
+                {tickets.map((tk) => (
+                  <tr key={tk.rawId}>
+                    <td className="font-mono text-xs font-bold text-slate-400">{tk.id}</td>
+                    <td className="font-semibold text-slate-200">{tk.customerName}</td>
+                    <td>{tk.subject}</td>
+                    <td><span className={`badge ${PRIORITY_TONE[tk.priority]}`}>{t(`priority.${tk.priority}`)}</span></td>
+                    <td className="text-slate-400">{tk.assignedAgent}</td>
+                    <td><span className={`badge ${STATUS_TONE[tk.status]}`}>{statusLabel[tk.status]}</span></td>
                   </tr>
                 ))}
               </tbody>

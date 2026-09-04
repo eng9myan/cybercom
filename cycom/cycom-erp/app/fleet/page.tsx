@@ -2,9 +2,10 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Car, Fuel, Wrench, Settings } from 'lucide-react';
+import { Car, Settings } from 'lucide-react';
 import { useCycomList, m2oName, type Many2One } from '@/lib/cycomModels';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/CycomEmptyStates';
+import { useT } from '@/lib/i18n';
 
 type CycomVehicle = {
   id: number;
@@ -28,19 +29,25 @@ interface FleetVehicle {
   driver: string;
   odometer: number;
   status: string;
+  active: boolean;
 }
 
-const mapVehicle = (v: CycomVehicle): FleetVehicle => ({
-  rawId: v.id,
-  id: `VEH-${String(v.id).padStart(3, '0')}`,
-  plateNumber: (v.license_plate as string) || '—',
-  model: v.model || (v.model_id ? m2oName(v.model_id) : (v.name || '—')),
-  driver: v.driver_id ? m2oName(v.driver_id, 'Unassigned') : 'Unassigned',
-  odometer: Number(v.odometer_km ?? v.odometer ?? 0),
-  status: v.state || (v.state_id ? m2oName(v.state_id) : 'Active'),
-});
+const mapVehicle = (v: CycomVehicle): FleetVehicle => {
+  const status = v.state || (v.state_id ? m2oName(v.state_id) : 'Active');
+  return {
+    rawId: v.id,
+    id: `VEH-${String(v.id).padStart(3, '0')}`,
+    plateNumber: (v.license_plate as string) || '—',
+    model: v.model || (v.model_id ? m2oName(v.model_id) : (v.name || '—')),
+    driver: v.driver_id ? m2oName(v.driver_id, 'Unassigned') : 'Unassigned',
+    odometer: Number(v.odometer_km ?? v.odometer ?? 0),
+    status,
+    active: /^active$/i.test(status),
+  };
+};
 
 export default function FleetPage() {
+  const t = useT();
   const { rows: vehicles, loading, error } = useCycomList<CycomVehicle, FleetVehicle>(
     'fleet.vehicle',
     [],
@@ -53,14 +60,14 @@ export default function FleetPage() {
     <div className="space-y-6 text-xs md:text-sm">
       <div className="page-header">
         <div>
-          <h1 className="page-title text-white">Fleet Management</h1>
-          <p className="page-subtitle">Vehicles, drivers, maintenance history, and fuel logging command center.</p>
+          <h1 className="page-title text-white">{t('fleet.title')}</h1>
+          <p className="page-subtitle">{t('fleet.subtitle')}</p>
         </div>
       </div>
 
-      {loading && <LoadingCard label="Loading fleet vehicles…" />}
-      {error && <ErrorCard error={error} hint="Fleet requires the fleet module." />}
-      {!loading && !error && vehicles.length === 0 && <EmptyCard label="No vehicles tracked yet." />}
+      {loading && <LoadingCard label={t('fleet.loading')} />}
+      {error && <ErrorCard error={error} hint={t('fleet.errorHint')} />}
+      {!loading && !error && vehicles.length === 0 && <EmptyCard label={t('fleet.empty')} />}
 
       {!loading && !error && vehicles.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -80,24 +87,22 @@ export default function FleetPage() {
                 </div>
 
                 <div className="space-y-1.5 text-xs border-t border-white/5 pt-3">
-                  <div className="flex justify-between"><span className="text-slate-500">Plate</span><span className="text-slate-200 font-mono">{v.plateNumber}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500">Driver</span><span className="text-slate-200">{v.driver}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500">Odometer</span><span className="text-slate-200 font-mono">{v.odometer.toLocaleString()} km</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">{t('fleet.plate')}</span><span className="text-slate-200 font-mono">{v.plateNumber}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">{t('fleet.driver')}</span><span className="text-slate-200">{v.driver === 'Unassigned' ? t('fleet.unassigned') : v.driver}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500">{t('fleet.odometer')}</span><span className="text-slate-200 font-mono">{v.odometer.toLocaleString()} km</span></div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Status</span>
-                    <span className={`font-semibold capitalize ${
-                      v.status === 'active' || v.status === 'Active' ? 'text-emerald-400' : 'text-amber-400'
-                    }`}>{v.status}</span>
+                    <span className="text-slate-500">{t('common.status')}</span>
+                    <span className={`font-semibold capitalize ${v.active ? 'text-emerald-400' : 'text-amber-400'}`}>{v.status}</span>
                   </div>
                 </div>
               </div>
 
               <div className="border-t border-white/5 pt-3 mt-2 flex gap-2">
-                <Link 
+                <Link
                   href={`/fleet/vehicles/${v.rawId}`}
                   className="flex-1 text-center py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 transition rounded-lg text-xs font-semibold text-slate-300 flex items-center justify-center gap-1.5"
                 >
-                  <Settings className="w-3.5 h-3.5" /> Details & Logs
+                  <Settings className="w-3.5 h-3.5" /> {t('fleet.detailsLogs')}
                 </Link>
               </div>
             </div>
