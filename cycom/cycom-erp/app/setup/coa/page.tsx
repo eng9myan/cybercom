@@ -11,11 +11,13 @@ import { WizardFooter } from '@/components/setup/WizardFooter';
 import { AdvisorPanel } from '@/components/setup/AdvisorPanel';
 import { ReviewRow } from '@/components/setup/ReviewRow';
 import { ResultBanner } from '@/components/setup/ResultBanner';
+import { useT } from '@/lib/i18n';
 
-const STEPS = ['Localization', 'Taxes', 'Review'] as const;
 type StepIdx = 0 | 1 | 2;
 
 export default function CoaWizard() {
+  const t = useT();
+  const STEPS = [t('setupCoa.localizationHeading'), t('setupCoa.taxHeading'), t('setupWizard.stepReview')] as const;
   const [step, setStep] = useState<StepIdx>(0);
 
   const [countryCode, setCountryCode] = useState('JO');
@@ -37,10 +39,10 @@ export default function CoaWizard() {
       .then((prefs) => {
         if (prefs.countryCode) {
           setCountryCode(prefs.countryCode);
-          const t = getCoaTemplate(prefs.countryCode);
-          setL10nModule(t.l10nModule);
-          setSalesTaxPct(t.defaultSalesTaxPct);
-          setPurchaseTaxPct(t.defaultPurchaseTaxPct);
+          const tmpl = getCoaTemplate(prefs.countryCode);
+          setL10nModule(tmpl.l10nModule);
+          setSalesTaxPct(tmpl.defaultSalesTaxPct);
+          setPurchaseTaxPct(tmpl.defaultPurchaseTaxPct);
         }
       })
       .finally(() => setPrefsLoaded(true));
@@ -50,10 +52,10 @@ export default function CoaWizard() {
 
   const onCountryChange = (code: string) => {
     setCountryCode(code);
-    const t = getCoaTemplate(code);
-    setL10nModule(t.l10nModule);
-    setSalesTaxPct(t.defaultSalesTaxPct);
-    setPurchaseTaxPct(t.defaultPurchaseTaxPct);
+    const tmpl = getCoaTemplate(code);
+    setL10nModule(tmpl.l10nModule);
+    setSalesTaxPct(tmpl.defaultSalesTaxPct);
+    setPurchaseTaxPct(tmpl.defaultPurchaseTaxPct);
   };
 
   const submit = async () => {
@@ -80,10 +82,10 @@ export default function CoaWizard() {
         <div>
           <h1 className="page-title text-white flex items-center gap-3">
             <Calculator className="w-7 h-7 text-[#E67E22]" />
-            Chart of Accounts
+            {t('setupCoa.title')}
           </h1>
           <p className="page-subtitle">
-            Cycom picks the country-tuned chart and tax structure. Override if your CFO insists.
+            {t('setupCoa.subtitle')}
           </p>
         </div>
         <a
@@ -93,7 +95,7 @@ export default function CoaWizard() {
           className="btn-secondary flex items-center gap-2 text-xs"
           title="Drop into the raw Cycom Accounts configuration page"
         >
-          <Wrench className="w-3.5 h-3.5" /> Configure manually
+          <Wrench className="w-3.5 h-3.5" /> {t('setupWizard.configureManually')}
         </a>
       </div>
 
@@ -110,16 +112,16 @@ export default function CoaWizard() {
           <>
             <div className="glass-card p-6 space-y-5">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Globe className="w-4 h-4 text-cyan-400" /> Country localization
+                <Globe className="w-4 h-4 text-cyan-400" /> {t('setupCoa.localizationHeading')}
               </h2>
 
               {!prefsLoaded && (
-                <p className="text-[11px] text-slate-500">Reading your Company Setup defaults from Cycom…</p>
+                <p className="text-[11px] text-slate-500">{t('setupCoa.loadingPrefs')}</p>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">Country</label>
+                  <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">{t('setupCoa.country')}</label>
                   <select
                     className="input-field py-2.5"
                     value={countryCode}
@@ -127,23 +129,24 @@ export default function CoaWizard() {
                   >
                     {COUNTRIES.map((c) => (
                       <option key={c.code} value={c.code}>
-                        {c.name} {COA_COUNTRY_TEMPLATES[c.code] ? '— dedicated chart' : '— generic chart'}
+                        {c.name} {COA_COUNTRY_TEMPLATES[c.code] ? t('setupCoa.dedicatedChart') : t('setupCoa.genericChart')}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                    Cycom localization module
+                    {t('setupCoa.l10nModule')}
                   </label>
                   <input
                     type="text"
                     className="input-field py-2.5 font-mono"
                     value={l10nModule}
                     onChange={(e) => setL10nModule(e.target.value)}
+                    dir="ltr"
                   />
                   <p className="text-[10px] text-slate-500 mt-1">
-                    Cycom recommends the module above based on your country. Override only if you know what you're doing.
+                    {t('setupCoa.l10nModuleNote')}
                   </p>
                 </div>
               </div>
@@ -152,8 +155,8 @@ export default function CoaWizard() {
             <AdvisorPanel
               lines={[
                 template.advisor,
-                'Installing the localization auto-creates the standard chart of accounts, journals, and tax structure for your country — there is no manual setup after this.',
-                'If the country lacks a dedicated Cycom localization, Cycom falls back to l10n_generic_coa.',
+                t('setupCoa.localizationAdvisorNote1'),
+                t('setupCoa.localizationAdvisorNote2'),
               ]}
             />
           </>
@@ -163,13 +166,13 @@ export default function CoaWizard() {
           <>
             <div className="glass-card p-6 space-y-5">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Percent className="w-4 h-4 text-emerald-400" /> Default tax rates
+                <Percent className="w-4 h-4 text-emerald-400" /> {t('setupCoa.taxHeading')}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                    Sales VAT %
+                    {t('setupCoa.salesVat')}
                   </label>
                   <input
                     type="number"
@@ -183,7 +186,7 @@ export default function CoaWizard() {
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 block mb-1.5 font-bold uppercase tracking-wider">
-                    Purchase VAT %
+                    {t('setupCoa.purchaseVat')}
                   </label>
                   <input
                     type="number"
@@ -198,16 +201,16 @@ export default function CoaWizard() {
               </div>
 
               <p className="text-[11px] text-slate-500">
-                The localization installs a full tax matrix; Cycom adjusts the default sale and purchase tax to the rates above. You can add reduced/zero-rated taxes later under Accounting → Configuration → Taxes.
+                {t('setupCoa.taxMatrixNote')}
               </p>
             </div>
 
             <AdvisorPanel
               lines={[
-                `Cycom prefilled the headline rate for ${COUNTRIES.find((c) => c.code === countryCode)?.name ?? countryCode} (${template.defaultSalesTaxPct}%).`,
+                t('setupCoa.taxAdvisor', { country: COUNTRIES.find((c) => c.code === countryCode)?.name ?? countryCode, rate: template.defaultSalesTaxPct }),
                 salesTaxPct === 0 && purchaseTaxPct === 0
-                  ? 'Zero tax is correct for jurisdictions like Kuwait/Qatar where no VAT applies. You can add region-specific taxes later.'
-                  : 'If your business deals primarily in zero-rated exports, set 0 here and define export-specific taxes per customer.',
+                  ? t('setupCoa.zeroTaxNote')
+                  : t('setupCoa.exportTaxNote'),
               ]}
             />
           </>
@@ -217,18 +220,18 @@ export default function CoaWizard() {
           <>
             <div className="glass-card p-6 space-y-4">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#E67E22]" /> Review
+                <Layers className="w-4 h-4 text-[#E67E22]" /> {t('setupWizard.stepReview')}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <ReviewRow label="Country" value={COUNTRIES.find((c) => c.code === countryCode)?.name ?? countryCode} />
-                <ReviewRow label="Localization module" value={l10nModule} />
-                <ReviewRow label="Default sales VAT" value={`${salesTaxPct}%`} />
-                <ReviewRow label="Default purchase VAT" value={`${purchaseTaxPct}%`} />
+                <ReviewRow label={t('setupCoa.reviewCountry')} value={COUNTRIES.find((c) => c.code === countryCode)?.name ?? countryCode} />
+                <ReviewRow label={t('setupCoa.reviewL10nModule')} value={l10nModule} />
+                <ReviewRow label={t('setupCoa.reviewSalesVat')} value={`${salesTaxPct}%`} />
+                <ReviewRow label={t('setupCoa.reviewPurchaseVat')} value={`${purchaseTaxPct}%`} />
               </div>
 
               <p className="text-[11px] text-slate-500">
-                When you click Apply, Cycom will install the localization module in Cycom (this can take up to a minute), then update the default tax rates. Existing accounts will not be removed.
+                {t('setupCoa.applyNote')}
               </p>
             </div>
 
@@ -246,7 +249,7 @@ export default function CoaWizard() {
         onBack={() => setStep((s) => (Math.max(0, s - 1) as StepIdx))}
         onNext={() => setStep((s) => (Math.min(STEPS.length - 1, s + 1) as StepIdx))}
         onApply={submit}
-        applyLabel="Install chart"
+        applyLabel={t('setupCoa.applyLabel')}
       />
     </div>
   );
