@@ -231,6 +231,9 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "shared.auth.auth_middleware.CyIdentityAuthMiddleware",
     "core.middleware.tenant.TenantIsolationMiddleware",
+    # publishes request.tenant_id into the ambient tenant context so
+    # TenantScopedMixin.save() can fill tenant_id when a caller forgets it
+    "platform.common.middleware.TenantContextMiddleware",
     "core.middleware.branding.BrandingMiddleware",
     "core.middleware.feature_flags.FeatureFlagMiddleware",
     "core.middleware.audit.AuditMiddleware",

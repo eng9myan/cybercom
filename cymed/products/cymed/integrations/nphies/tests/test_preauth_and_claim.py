@@ -9,6 +9,7 @@ plus the submitter Organization, Patient, and Coverage.
 """
 from __future__ import annotations
 
+import uuid
 from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -16,12 +17,22 @@ from unittest.mock import MagicMock
 import pytest
 from django.core.cache import cache
 
+from platform.common.tenant_context import tenant_context
+
 
 @pytest.fixture(autouse=True)
 def _clear_cache():
     cache.delete("nphies:token")
     yield
     cache.delete("nphies:token")
+
+
+@pytest.fixture(autouse=True)
+def _tenant_ctx():
+    """NphiesInteraction is a tenant-scoped BaseModel written inside the client;
+    production sets the tenant context per request/task, so mirror that here."""
+    with tenant_context(uuid.uuid4()):
+        yield
 
 
 @pytest.fixture

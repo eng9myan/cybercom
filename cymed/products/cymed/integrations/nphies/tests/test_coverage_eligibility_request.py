@@ -16,11 +16,23 @@ real socket is opened.
 """
 from __future__ import annotations
 
+import uuid
 from unittest.mock import MagicMock
 
 import httpx
 import pytest
 from django.core.cache import cache
+
+from platform.common.tenant_context import tenant_context
+
+
+@pytest.fixture(autouse=True)
+def _tenant_ctx():
+    """NphiesInteraction (a tenant-scoped BaseModel) is written inside the
+    client; in production the request/task sets the tenant context, so mirror
+    that here rather than threading a tenant_id through the unit test."""
+    with tenant_context(uuid.uuid4()):
+        yield
 
 
 PROFILE_URI = (

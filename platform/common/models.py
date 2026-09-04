@@ -8,6 +8,8 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+from platform.common.tenant_context import TenantContextMissing, get_current_tenant
+
 
 class UUIDPrimaryKeyMixin(models.Model):
     """All platform entities use UUID primary keys."""
@@ -33,12 +35,31 @@ class TenantScopedMixin(models.Model):
     Adds tenant_id to every row. PostgreSQL RLS enforces row-level isolation
     using the `app.current_tenant_id` GUC set by TenantIsolationMiddleware.
     ADR-0002 T-Shared tier.
+
+    On save, if `tenant_id` was not set explicitly it is filled from the ambient
+    tenant context (set per request by the middleware, per task by the Celery
+    hook). This closes the class of bug where a service calls
+    `Model.objects.create(...)` and forgets `tenant_id=` — instead of a bare
+    `IntegrityError`, the row gets the right tenant, or a clear
+    `TenantContextMissing` if there genuinely is no context.
+    See docs/blueprint/specs/canonical-data-model-v1.md §2.2.
     """
 
     tenant_id = models.UUIDField(db_index=True, editable=False)
 
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs):
+        if not self.tenant_id:
+            tid = get_current_tenant()
+            if tid is None:
+                raise TenantContextMissing(
+                    f"{type(self).__name__}.save() with no tenant_id and no ambient "
+                    f"tenant context — pass tenant_id= or wrap in tenant_context(...)."
+                )
+            self.tenant_id = tid
+        super().save(*args, **kwargs)
 
 
 class SoftDeleteMixin(models.Model):
