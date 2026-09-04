@@ -12,11 +12,13 @@ import { AdvisorPanel } from '@/components/setup/AdvisorPanel';
 import { ReviewRow } from '@/components/setup/ReviewRow';
 import { ResultBanner } from '@/components/setup/ResultBanner';
 import { ToggleRow } from '@/components/setup/ToggleRow';
+import { useT } from '@/lib/i18n';
 
-const STEPS = ['Type', 'Modules', 'Review'] as const;
 type StepIdx = 0 | 1 | 2;
 
 export default function ManufacturingWizard() {
+  const t = useT();
+  const STEPS = [t('setupWizard.stepType'), t('setupWizard.stepModules'), t('setupWizard.stepReview')] as const;
   const [step, setStep] = useState<StepIdx>(0);
   const [industry, setIndustry] = useState<string | undefined>();
 
@@ -51,17 +53,19 @@ export default function ManufacturingWizard() {
     setApplying(false);
   };
 
+  const onOff = (v: boolean) => v ? t('setupWizard.on') : t('setupWizard.off');
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="page-header">
         <div>
           <h1 className="page-title text-white flex items-center gap-3">
-            <Factory className="w-7 h-7 text-[#E67E22]" /> Manufacturing
+            <Factory className="w-7 h-7 text-[#E67E22]" /> {t('setupMfg.title')}
           </h1>
-          <p className="page-subtitle">Choose the production model; Cycom installs the matching modules.</p>
+          <p className="page-subtitle">{t('setupMfg.subtitle')}</p>
         </div>
         <a href="/cycom/cycom/action-mrp.mrp_production_action" target="_blank" rel="noreferrer" className="btn-secondary flex items-center gap-2 text-xs">
-          <Wrench className="w-3.5 h-3.5" /> Configure manually
+          <Wrench className="w-3.5 h-3.5" /> {t('setupWizard.configureManually')}
         </a>
       </div>
 
@@ -71,18 +75,18 @@ export default function ManufacturingWizard() {
         {step === 0 && (
           <>
             <div className="glass-card p-6 space-y-5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Manufacturing type</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('setupMfg.typeHeading')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {(['none', 'discrete', 'process', 'food', 'pharma'] as ManufacturingType[]).map((m) => (
-                  <button key={m} type="button" onClick={() => setMfgType(m)} className={'text-left p-4 rounded-xl border transition-all ' + (m === mfgType ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10')}>
+                  <button key={m} type="button" onClick={() => setMfgType(m)} className={'text-start p-4 rounded-xl border transition-all ' + (m === mfgType ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10')}>
                     <div className="text-sm font-bold">{MFG_TYPE_LABEL[m]}</div>
                   </button>
                 ))}
               </div>
             </div>
             <AdvisorPanel lines={[
-              industry ? `"${industry}" tenants typically pick ${MFG_TYPE_LABEL[getManufacturingDefaults(industry).mfgType]}.` : 'Run Company Setup first.',
-              'Pick "No manufacturing" if you only buy and sell — the rest of this wizard becomes a no-op.',
+              industry ? t('setupMfg.typeAdvisor', { industry, type: MFG_TYPE_LABEL[getManufacturingDefaults(industry).mfgType] }) : t('setupWizard.runCompanyFirst'),
+              t('setupMfg.typeAdvisorNote'),
             ]} />
           </>
         )}
@@ -90,16 +94,16 @@ export default function ManufacturingWizard() {
         {step === 1 && (
           <>
             <div className="glass-card p-6 space-y-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Modules</h2>
-              <ToggleRow label="Material requirements planning" description="mrp — BOMs, manufacturing orders, components." on={enableMrp} setOn={setEnableMrp} />
-              <ToggleRow label="Work orders" description="mrp_workorder — operations, work centers, routings." on={enableWorkorders} setOn={setEnableWorkorders} />
-              <ToggleRow label="Maintenance" description="maintenance — preventive and corrective work orders." on={enableMaintenance} setOn={setEnableMaintenance} />
-              <ToggleRow label="Quality control" description="quality_control + quality_mrp — checks at receipt and during production." on={enableQuality} setOn={setEnableQuality} />
-              <ToggleRow label="Product lifecycle management" description="mrp_plm — engineering change orders, BOM revisions." on={enablePlm} setOn={setEnablePlm} />
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('setupMfg.modulesHeading')}</h2>
+              <ToggleRow label={t('setupMfg.mrpLabel')} description={t('setupMfg.mrpDesc')} on={enableMrp} setOn={setEnableMrp} />
+              <ToggleRow label={t('setupMfg.workordersLabel')} description={t('setupMfg.workordersDesc')} on={enableWorkorders} setOn={setEnableWorkorders} />
+              <ToggleRow label={t('setupMfg.maintenanceLabel')} description={t('setupMfg.maintenanceDesc')} on={enableMaintenance} setOn={setEnableMaintenance} />
+              <ToggleRow label={t('setupMfg.qualityLabel')} description={t('setupMfg.qualityDesc')} on={enableQuality} setOn={setEnableQuality} />
+              <ToggleRow label={t('setupMfg.plmLabel')} description={t('setupMfg.plmDesc')} on={enablePlm} setOn={setEnablePlm} />
             </div>
             <AdvisorPanel lines={[
-              'Discrete manufacturers usually enable all five. Process/food add MRP + Quality; PLM optional.',
-              'Hospitality "food production" typically uses MRP only — work orders and PLM are overkill.',
+              t('setupMfg.modulesAdvisor'),
+              t('setupMfg.modulesAdvisorNote'),
             ]} />
           </>
         )}
@@ -108,15 +112,15 @@ export default function ManufacturingWizard() {
           <>
             <div className="glass-card p-6 space-y-4">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#E67E22]" /> Review
+                <Layers className="w-4 h-4 text-[#E67E22]" /> {t('setupWizard.stepReview')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <ReviewRow label="Manufacturing type" value={MFG_TYPE_LABEL[mfgType]} />
-                <ReviewRow label="MRP" value={enableMrp ? 'On' : 'Off'} />
-                <ReviewRow label="Work orders" value={enableWorkorders ? 'On' : 'Off'} />
-                <ReviewRow label="Maintenance" value={enableMaintenance ? 'On' : 'Off'} />
-                <ReviewRow label="Quality control" value={enableQuality ? 'On' : 'Off'} />
-                <ReviewRow label="PLM" value={enablePlm ? 'On' : 'Off'} />
+                <ReviewRow label={t('setupMfg.reviewType')} value={MFG_TYPE_LABEL[mfgType]} />
+                <ReviewRow label={t('setupMfg.reviewMrp')} value={onOff(enableMrp)} />
+                <ReviewRow label={t('setupMfg.reviewWorkorders')} value={onOff(enableWorkorders)} />
+                <ReviewRow label={t('setupMfg.reviewMaintenance')} value={onOff(enableMaintenance)} />
+                <ReviewRow label={t('setupMfg.reviewQuality')} value={onOff(enableQuality)} />
+                <ReviewRow label={t('setupMfg.reviewPlm')} value={onOff(enablePlm)} />
               </div>
             </div>
             {result && <ResultBanner result={result} />}
@@ -128,7 +132,7 @@ export default function ManufacturingWizard() {
         applying={applying} applied={Boolean(result?.ok)}
         onBack={() => setStep((s) => (Math.max(0, s - 1) as StepIdx))}
         onNext={() => setStep((s) => (Math.min(STEPS.length - 1, s + 1) as StepIdx))}
-        onApply={submit} applyLabel="Configure manufacturing" />
+        onApply={submit} applyLabel={t('setupMfg.applyLabel')} />
     </div>
   );
 }

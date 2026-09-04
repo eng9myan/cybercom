@@ -12,11 +12,13 @@ import { AdvisorPanel } from '@/components/setup/AdvisorPanel';
 import { ReviewRow } from '@/components/setup/ReviewRow';
 import { ResultBanner } from '@/components/setup/ResultBanner';
 import { ToggleRow } from '@/components/setup/ToggleRow';
+import { useT } from '@/lib/i18n';
 
-const STEPS = ['Role template', 'Sensitivity', 'Review'] as const;
 type StepIdx = 0 | 1 | 2;
 
 export default function PermissionsWizard() {
+  const t = useT();
+  const STEPS = [t('setupPermissions.roleHeading'), t('setupPermissions.sensitivityHeading'), t('setupWizard.stepReview')] as const;
   const [step, setStep] = useState<StepIdx>(0);
   const [industry, setIndustry] = useState<string | undefined>();
 
@@ -56,12 +58,12 @@ export default function PermissionsWizard() {
       <div className="page-header">
         <div>
           <h1 className="page-title text-white flex items-center gap-3">
-            <Shield className="w-7 h-7 text-[#E67E22]" /> Permissions & Roles
+            <Shield className="w-7 h-7 text-[#E67E22]" /> {t('setupPermissions.title')}
           </h1>
-          <p className="page-subtitle">Role template + module sensitivity. Detailed per-user access stays available in Cycom.</p>
+          <p className="page-subtitle">{t('setupPermissions.subtitle')}</p>
         </div>
         <a href="/cycom/cycom/action-base.action_res_groups" target="_blank" rel="noreferrer" className="btn-secondary flex items-center gap-2 text-xs">
-          <Wrench className="w-3.5 h-3.5" /> Configure manually
+          <Wrench className="w-3.5 h-3.5" /> {t('setupWizard.configureManually')}
         </a>
       </div>
 
@@ -71,20 +73,20 @@ export default function PermissionsWizard() {
         {step === 0 && (
           <>
             <div className="glass-card p-6 space-y-5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Role template</h2>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('setupPermissions.roleHeading')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {(['strict', 'standard', 'open'] as RoleTemplate[]).map((m) => (
-                  <button key={m} type="button" onClick={() => setRoleTemplate(m)} className={'text-left p-4 rounded-xl border transition-all ' + (m === roleTemplate ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10')}>
+                  <button key={m} type="button" onClick={() => setRoleTemplate(m)} className={'text-start p-4 rounded-xl border transition-all ' + (m === roleTemplate ? 'bg-gradient-to-br from-orange-500/15 to-blue-500/10 border-orange-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10')}>
                     <div className="text-sm font-bold">{ROLE_TEMPLATE_LABEL[m]}</div>
                   </button>
                 ))}
               </div>
-              <ToggleRow label="Create a Cycom Manager group"
-                description="Adds a res.groups record you can assign to module managers. Doesn't auto-add anyone." on={createCycomManagerGroup} setOn={setCreateCycomManagerGroup} />
+              <ToggleRow label={t('setupPermissions.createGroupLabel')}
+                description={t('setupPermissions.createGroupDesc')} on={createCycomManagerGroup} setOn={setCreateCycomManagerGroup} />
             </div>
             <AdvisorPanel lines={[
-              industry ? `"${industry}" tenants typically run the "${ROLE_TEMPLATE_LABEL[getPermissionDefaults(industry).roleTemplate]}" template.` : 'Run Company Setup first.',
-              'Strict suits regulated manufacturing; open suits small services teams; standard is the right default for most.',
+              industry ? t('setupPermissions.roleAdvisor', { industry, template: ROLE_TEMPLATE_LABEL[getPermissionDefaults(industry).roleTemplate] }) : t('setupWizard.runCompanyFirst'),
+              t('setupPermissions.roleAdvisorNote'),
             ]} />
           </>
         )}
@@ -92,14 +94,14 @@ export default function PermissionsWizard() {
         {step === 1 && (
           <>
             <div className="glass-card p-6 space-y-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Module sensitivity</h2>
-              <ToggleRow label="Finance restricted" description="Only Finance team can see GL, AP, AR." on={financeRestricted} setOn={setFinanceRestricted} />
-              <ToggleRow label="Payroll restricted" description="Only Payroll team can see payslips, salary structures." on={payrollRestricted} setOn={setPayrollRestricted} />
-              <ToggleRow label="Inventory restricted (per warehouse)" description="warehouse_restriction_for_user — operators only see their warehouse." on={inventoryRestricted} setOn={setInventoryRestricted} />
-              <ToggleRow label="POS restricted (per terminal)" description="Cashiers only see their POS session and cash drawer." on={posRestricted} setOn={setPosRestricted} />
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('setupPermissions.sensitivityHeading')}</h2>
+              <ToggleRow label={t('setupPermissions.financeLabel')} description={t('setupPermissions.financeDesc')} on={financeRestricted} setOn={setFinanceRestricted} />
+              <ToggleRow label={t('setupPermissions.payrollLabel')} description={t('setupPermissions.payrollDesc')} on={payrollRestricted} setOn={setPayrollRestricted} />
+              <ToggleRow label={t('setupPermissions.inventoryLabel')} description={t('setupPermissions.inventoryDesc')} on={inventoryRestricted} setOn={setInventoryRestricted} />
+              <ToggleRow label={t('setupPermissions.posLabel')} description={t('setupPermissions.posDesc')} on={posRestricted} setOn={setPosRestricted} />
             </div>
             <AdvisorPanel lines={[
-              'These toggles persist as ir.config_parameter values for now; detailed access rules can be tightened per group later under Settings → Users & Companies → Groups.',
+              t('setupPermissions.sensitivityAdvisor'),
             ]} />
           </>
         )}
@@ -108,15 +110,15 @@ export default function PermissionsWizard() {
           <>
             <div className="glass-card p-6 space-y-4">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#E67E22]" /> Review
+                <Layers className="w-4 h-4 text-[#E67E22]" /> {t('setupWizard.stepReview')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <ReviewRow label="Role template" value={ROLE_TEMPLATE_LABEL[roleTemplate]} />
-                <ReviewRow label="Cycom Manager group" value={createCycomManagerGroup ? 'Created' : 'Skipped'} />
-                <ReviewRow label="Finance" value={financeRestricted ? 'Restricted' : 'Open'} />
-                <ReviewRow label="Payroll" value={payrollRestricted ? 'Restricted' : 'Open'} />
-                <ReviewRow label="Inventory" value={inventoryRestricted ? 'Restricted per warehouse' : 'Open'} />
-                <ReviewRow label="POS" value={posRestricted ? 'Restricted per terminal' : 'Open'} />
+                <ReviewRow label={t('setupPermissions.reviewRoleTemplate')} value={ROLE_TEMPLATE_LABEL[roleTemplate]} />
+                <ReviewRow label={t('setupPermissions.reviewManagerGroup')} value={createCycomManagerGroup ? t('setupWizard.created') : t('setupWizard.skipped')} />
+                <ReviewRow label={t('setupPermissions.reviewFinance')} value={financeRestricted ? t('setupPermissions.restricted') : t('setupPermissions.open')} />
+                <ReviewRow label={t('setupPermissions.reviewPayroll')} value={payrollRestricted ? t('setupPermissions.restricted') : t('setupPermissions.open')} />
+                <ReviewRow label={t('setupPermissions.reviewInventory')} value={inventoryRestricted ? t('setupPermissions.inventoryRestrictedVal') : t('setupPermissions.open')} />
+                <ReviewRow label={t('setupPermissions.reviewPos')} value={posRestricted ? t('setupPermissions.posRestrictedVal') : t('setupPermissions.open')} />
               </div>
             </div>
             {result && <ResultBanner result={result} />}
@@ -128,7 +130,7 @@ export default function PermissionsWizard() {
         applying={applying} applied={Boolean(result?.ok)}
         onBack={() => setStep((s) => (Math.max(0, s - 1) as StepIdx))}
         onNext={() => setStep((s) => (Math.min(STEPS.length - 1, s + 1) as StepIdx))}
-        onApply={submit} applyLabel="Configure permissions" />
+        onApply={submit} applyLabel={t('setupPermissions.applyLabel')} />
     </div>
   );
 }

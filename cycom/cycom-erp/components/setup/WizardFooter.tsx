@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle2, Sparkles } from 'lucide-react';
+import { useT } from '@/lib/i18n';
 
 type Props = {
   step: number;
@@ -16,8 +17,9 @@ type Props = {
 };
 
 export function WizardFooter({
-  step, totalSteps, canAdvance, applying, applied, onBack, onNext, onApply, applyLabel = 'Apply setup',
+  step, totalSteps, canAdvance, applying, applied, onBack, onNext, onApply, applyLabel,
 }: Props) {
+  const t = useT();
   const isLast = step === totalSteps - 1;
   return (
     <div className="flex items-center justify-between pt-2">
@@ -27,7 +29,7 @@ export function WizardFooter({
         onClick={onBack}
         className="btn-secondary flex items-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        <ChevronLeft className="w-4 h-4" /> Back
+        <ChevronLeft className="w-4 h-4 rtl:-scale-x-100" /> {t('setupWizard.back')}
       </button>
 
       {!isLast ? (
@@ -37,7 +39,7 @@ export function WizardFooter({
           onClick={onNext}
           className="btn-primary flex items-center gap-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Next <ChevronRight className="w-4 h-4" />
+          {t('setupWizard.next')} <ChevronRight className="w-4 h-4 rtl:-scale-x-100" />
         </button>
       ) : (
         <button
@@ -49,15 +51,15 @@ export function WizardFooter({
           {applying ? (
             <>
               <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              Applying…
+              {t('setupWizard.applying')}
             </>
           ) : applied ? (
             <>
-              <CheckCircle2 className="w-4 h-4" /> Applied
+              <CheckCircle2 className="w-4 h-4" /> {t('setupWizard.applied')}
             </>
           ) : (
             <>
-              <Sparkles className="w-4 h-4" /> {applyLabel}
+              <Sparkles className="w-4 h-4" /> {applyLabel ?? t('setupWizard.applySetup')}
             </>
           )}
         </button>
