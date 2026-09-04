@@ -1,7 +1,10 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.hospital.adt.models import Admission
+
+# Clinical narrative = PHI, encrypted per-tenant at rest (no blind index).
 
 
 class HospitalStay(BaseModel):
@@ -18,10 +21,10 @@ class DailyRound(BaseModel):
     stay = models.ForeignKey(HospitalStay, on_delete=models.CASCADE, related_name="rounds")
     clinician_id = models.UUIDField()
     round_time = models.DateTimeField(auto_now_add=True)
-    subjective_notes = models.TextField()
-    objective_notes = models.TextField()
-    assessment_notes = models.TextField()
-    plan_notes = models.TextField()
+    subjective_notes = EncryptedText(classification="phi")
+    objective_notes = EncryptedText(classification="phi")
+    assessment_notes = EncryptedText(classification="phi")
+    plan_notes = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_daily_rounds"
@@ -40,8 +43,8 @@ class ProgressReview(BaseModel):
 class InpatientCarePlan(BaseModel):
     stay = models.ForeignKey(HospitalStay, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
-    goals = models.TextField()
-    interventions = models.TextField()
+    goals = EncryptedText(classification="phi")
+    interventions = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_hospital_inpatient_careplans"
@@ -52,7 +55,7 @@ class DischargePlanning(BaseModel):
         HospitalStay, on_delete=models.CASCADE, related_name="discharge_plan"
     )
     target_discharge_date = models.DateField()
-    barriers_to_discharge = models.TextField(blank=True)
+    barriers_to_discharge = EncryptedText(classification="phi")
     is_cleared = models.BooleanField(default=False)
 
     class Meta:

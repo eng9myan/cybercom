@@ -10,6 +10,11 @@ from products.cymed.hospital.inpatient.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class HospitalStaySerializer(serializers.ModelSerializer):
     class Meta:
         model = HospitalStay
@@ -17,6 +22,11 @@ class HospitalStaySerializer(serializers.ModelSerializer):
 
 
 class DailyRoundSerializer(serializers.ModelSerializer):
+    subjective_notes = _phi_text()
+    objective_notes = _phi_text()
+    assessment_notes = _phi_text()
+    plan_notes = _phi_text()
+
     class Meta:
         model = DailyRound
         fields = [
@@ -59,12 +69,17 @@ class ProgressReviewSerializer(serializers.ModelSerializer):
 
 
 class InpatientCarePlanSerializer(serializers.ModelSerializer):
+    goals = _phi_text()
+    interventions = _phi_text()
+
     class Meta:
         model = InpatientCarePlan
         fields = "__all__"
 
 
 class DischargePlanningSerializer(serializers.ModelSerializer):
+    barriers_to_discharge = _phi_text()
+
     class Meta:
         model = DischargePlanning
         fields = "__all__"
