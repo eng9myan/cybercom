@@ -6,6 +6,7 @@ import io
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
+from django.db import models as djm
 
 from platform.security.rls_ddl import (
     POLICY_NAME,
@@ -15,12 +16,15 @@ from platform.security.rls_ddl import (
 )
 
 
-def test_tenant_scoped_models_includes_known_tables():
-    tables = {m._meta.db_table for m in tenant_scoped_models()}
-    # a few tenant-scoped tables that must be present in the cycom test project
-    assert "cycom_arap_invoices" in tables
-    assert "core_orders" not in tables  # canonical tables not built yet — sanity
-    assert "platform_einvoice_sequences" in tables
+def test_tenant_scoped_models_are_uuid_tenant_id_only():
+    scoped = tenant_scoped_models()
+    assert scoped, "no tenant-scoped models discovered"
+    for m in scoped:
+        f = m._meta.get_field("tenant_id")
+        assert isinstance(f, djm.UUIDField), f"{m._meta.db_table}.tenant_id is {type(f).__name__}"
+    # a table that is NOT tenant-scoped must be absent (sanity: no false positives)
+    assert "django_session" not in {m._meta.db_table for m in scoped}
+    assert "core_orders" not in {m._meta.db_table for m in scoped}  # canonical model not built yet
 
 
 def test_rls_statements_shape():
@@ -42,10 +46,10 @@ def test_rls_statements_shape():
 
 def test_rls_statements_honour_custom_guc(settings):
     settings.TENANT_GUC_SETTING = "app.tid"
-    policy = dict(rls_statements())[
-        f"cycom_arap_invoices: policy {POLICY_NAME}"
-    ]
+    a_table = tenant_scoped_models()[0]._meta.db_table
+    policy = dict(rls_statements())[f"{a_table}: policy {POLICY_NAME}"]
     assert "current_setting('app.tid', true)::uuid" in policy
+    assert "current_setting('app.current_tenant_id'" not in policy
 
 
 def test_teardown_is_the_inverse():

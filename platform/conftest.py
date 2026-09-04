@@ -20,6 +20,16 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
+# A few platform tests wire the tenant-context / task machinery to a concrete
+# product model (products.cycom.accounting.Account). Those only make sense in a
+# product project and already run there — the standalone platform project skips
+# them.
+collect_ignore = [
+    "common/tests/test_tenant_context.py",
+    "common/tests/test_tenant_task.py",
+    "provisioning/tests/test_provisioning.py",
+]
+
 
 @pytest.fixture(scope="session")
 def _rsa_keypair():
