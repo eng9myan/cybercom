@@ -27,8 +27,10 @@ class Partner(BaseModel):
 
     name = models.CharField(max_length=255)
     partner_type = models.CharField(max_length=20, choices=PARTNER_TYPES, default="customer")
-    email = models.EmailField(blank=True)
-    phone = models.CharField(max_length=50, blank=True)
+    # Contact PII — encrypted per-tenant. email is blind-indexed for exact match.
+    email = EncryptedText(classification="pii", blind_index=True)
+    phone = EncryptedText(classification="pii")
+    # Business tax ID — semi-public, used for e-invoicing buyer-VAT routing; left plain.
     tax_id = models.CharField(max_length=100, blank=True)
     is_active = models.BooleanField(default=True)
 
@@ -47,8 +49,8 @@ class Partner(BaseModel):
     swift_code = models.CharField(max_length=20, blank=True)
     credit_limit = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
     payment_terms_days = models.PositiveIntegerField(default=30)
-    contact_name = models.CharField(max_length=255, blank=True)
-    address = models.CharField(max_length=255, blank=True)
+    contact_name = EncryptedText(classification="pii")
+    address = EncryptedText(classification="pii")
     city = models.CharField(max_length=100, blank=True)
     approval_status = models.CharField(
         max_length=20, choices=APPROVAL_STATUS_CHOICES, default="draft"

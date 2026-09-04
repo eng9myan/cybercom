@@ -4,9 +4,23 @@ from products.cycom.ar_ap.models import Invoice, InvoiceLine, Partner, Payment
 
 
 class PartnerSerializer(serializers.ModelSerializer):
+    # Encrypted (BinaryField storage) — declare as plain text so DRF neither
+    # base64-encodes them nor exposes the companion *_bidx HMAC columns.
+    email = serializers.EmailField(required=False, allow_blank=True)
+    phone = serializers.CharField(required=False, allow_blank=True, max_length=50)
+    contact_name = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    address = serializers.CharField(required=False, allow_blank=True, max_length=255)
+    iban = serializers.CharField(required=False, allow_blank=True, max_length=64)
+
     class Meta:
         model = Partner
-        fields = "__all__"
+        fields = [
+            "id", "tenant_id", "name", "partner_type", "email", "phone", "tax_id",
+            "is_active", "legal_name_ar", "trade_name", "category", "cr_number",
+            "cr_expiry", "bank_name", "bank_branch", "iban", "swift_code",
+            "credit_limit", "payment_terms_days", "contact_name", "address", "city",
+            "approval_status", "rejection_reason", "created_at", "updated_at",
+        ]
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
 
 
