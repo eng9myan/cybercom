@@ -11,7 +11,7 @@ from products.cymed.hospital.discharge.models import (
 
 
 def _phi_text():
-    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    # EncryptedText (BinaryField storage) - keep it plain text through DRF.
     return serializers.CharField(required=False, allow_blank=True)
 
 
