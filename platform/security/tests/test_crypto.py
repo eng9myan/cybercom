@@ -134,6 +134,8 @@ def test_pre_save_encrypts_from_instance_tenant_id_without_ambient_context():
     assert is_encrypted(out)
     assert decrypt(tid, out) == "2001234567"
     assert inst.national_id_bidx == blind_index("2001234567")
+    # the instance attribute stays plaintext (readable right after save())
+    assert inst.national_id == "2001234567"
 
 
 def test_pre_save_prefers_instance_tenant_id_over_ambient():
@@ -141,8 +143,8 @@ def test_pre_save_prefers_instance_tenant_id_over_ambient():
     inst_tid, ambient_tid = uuid.uuid4(), uuid.uuid4()
     inst = _FakeInstance(national_id="99", tenant_id=inst_tid)
     with tenant_context(ambient_tid):
-        f.pre_save(inst, add=True)
-    assert decrypt(inst_tid, inst.national_id) == "99"
+        out = f.pre_save(inst, add=True)
+    assert decrypt(inst_tid, out) == "99"
 
 
 def test_pre_save_falls_back_to_ambient_context_when_instance_has_no_tenant():
@@ -150,8 +152,8 @@ def test_pre_save_falls_back_to_ambient_context_when_instance_has_no_tenant():
     tid = uuid.uuid4()
     inst = _FakeInstance(national_id="42", tenant_id=None)
     with tenant_context(tid):
-        f.pre_save(inst, add=True)
-    assert decrypt(tid, inst.national_id) == "42"
+        out = f.pre_save(inst, add=True)
+    assert decrypt(tid, out) == "42"
 
 
 def test_pre_save_raises_when_no_tenant_anywhere():
@@ -174,6 +176,13 @@ def test_pre_save_is_idempotent_on_an_already_encrypted_value():
     blob = encrypt(tid, "keep")
     inst = _FakeInstance(national_id=blob, tenant_id=tid)
     assert f.pre_save(inst, add=False) == blob  # not re-encrypted
+
+
+def test_pre_save_refuses_to_write_back_a_masked_value():
+    f = _field()
+    inst = _FakeInstance(national_id=MASK, tenant_id=uuid.uuid4())
+    with pytest.raises(TenantContextMissing):
+        f.pre_save(inst, add=False)
 
 
 @pytest.mark.django_db

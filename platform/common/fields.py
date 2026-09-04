@@ -107,19 +107,18 @@ class EncryptedText(models.BinaryField):
     # ── write ─────────────────────────────────────────────────────────────
     @staticmethod
     def _is_empty(value) -> bool:
-        return value in (None, "", b"", MASK)
+        return value in (None, "", b"")
 
     def get_prep_value(self, value):
-        # Encryption already happened in pre_save (which has the model instance,
-        # hence its tenant_id). Here we only serialise bytes for the DB.
+        # pre_save already turned an instance write into ciphertext bytes. This
+        # only runs on its own for a str reaching the DB with no instance —
+        # `.update(field=...)`, raw SQL, a QuerySet bulk update.
         if value is None:
             return None
         if isinstance(value, (bytes, bytearray)):
             return bytes(value)
         if value == "":
             return b""
-        # A value reaching the DB still as a str = it was set on an instance that
-        # was never pre_save'd (e.g. .update(), raw). Encrypt from context.
         tid = get_current_tenant()
         if tid is None:
             raise TenantContextMissing(
@@ -133,22 +132,40 @@ class EncryptedText(models.BinaryField):
         return getattr(model_instance, "tenant_id", None) or get_current_tenant()
 
     def pre_save(self, model_instance, add):
+        """Return the ciphertext to persist; keep the instance attribute in
+        plaintext so code can read the field right after ``save()`` without a
+        refresh. Only the companion ``<name>_bidx`` column is written back onto
+        the instance."""
         value = getattr(model_instance, self.attname)
         already_ct = isinstance(value, (bytes, bytearray)) and is_encrypted(bytes(value))
 
-        if not self._is_empty(value) and not already_ct:
-            plain = value.decode("utf-8", "replace") if isinstance(value, (bytes, bytearray)) else str(value)
-            tid = self._resolve_tid(model_instance)
-            if tid is None:
-                raise TenantContextMissing(
-                    f"encrypting '{self.attname}' needs a tenant — set the model's "
-                    f"tenant_id or wrap the save in tenant_context(...)."
-                )
-            ciphertext = encrypt(tid, plain)
-            setattr(model_instance, self.attname, ciphertext)
-            if self.blind_index:
-                setattr(model_instance, f"{self.attname}_bidx", blind_index(plain))
-        elif self._is_empty(value) and self.blind_index:
-            setattr(model_instance, f"{self.attname}_bidx", None)
+        if already_ct:
+            return bytes(value)
 
-        return super().pre_save(model_instance, add)
+        if value == MASK:
+            # re-saving a row that was read without tenant context — we never
+            # had the plaintext, so writing anything would corrupt or blank it.
+            raise TenantContextMissing(
+                f"re-saving '{self.attname}' that was read masked (no tenant "
+                f"context on the original read) — reload it inside tenant_context(...)."
+            )
+
+        if self._is_empty(value):
+            if self.blind_index:
+                setattr(model_instance, f"{self.attname}_bidx", None)
+            return b""
+
+        plain = (
+            value.decode("utf-8", "replace")
+            if isinstance(value, (bytes, bytearray))
+            else str(value)
+        )
+        tid = self._resolve_tid(model_instance)
+        if tid is None:
+            raise TenantContextMissing(
+                f"encrypting '{self.attname}' needs a tenant — set the model's "
+                f"tenant_id or wrap the save in tenant_context(...)."
+            )
+        if self.blind_index:
+            setattr(model_instance, f"{self.attname}_bidx", blind_index(plain))
+        return encrypt(tid, plain)
