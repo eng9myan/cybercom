@@ -7,6 +7,7 @@ from decimal import Decimal
 from django.db import models
 from django.utils import timezone
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 
 
@@ -34,7 +35,7 @@ class ResultRelease(BaseModel):
     hold_reason = models.TextField(blank=True)
     delivery_channels = models.JSONField(default=list, blank=True)
     requires_counselling = models.BooleanField(default=False)
-    counselling_note = models.TextField(blank=True)
+    counselling_note = EncryptedText(classification="phi")
 
     class Meta:
         db_table = "cymed_lab_patient_results_result_release"

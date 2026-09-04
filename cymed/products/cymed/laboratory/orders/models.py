@@ -7,6 +7,7 @@ Terminology: All test codes map to LOINC via TerminologyService (no local LOINC 
 
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 
 
@@ -116,7 +117,7 @@ class LabOrder(BaseModel):
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="submitted")
     ordered_by = models.UUIDField()  # provider_id from CyIdentity
     ordering_location = models.CharField(max_length=255, blank=True)
-    clinical_notes = models.TextField(blank=True)
+    clinical_notes = EncryptedText(classification="phi")
     collected_at = models.DateTimeField(null=True, blank=True)
     requested_at = models.DateTimeField(null=True, blank=True)
     fhir_service_request_id = models.CharField(max_length=255, blank=True)

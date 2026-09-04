@@ -11,6 +11,11 @@ from .models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class LabTestSerializer(serializers.ModelSerializer):
     class Meta:
         model = LabTest
@@ -34,6 +39,7 @@ class LabOrderItemSerializer(serializers.ModelSerializer):
 
 class LabOrderSerializer(serializers.ModelSerializer):
     items = LabOrderItemSerializer(many=True, read_only=True)
+    clinical_notes = _phi_text()
 
     class Meta:
         model = LabOrder

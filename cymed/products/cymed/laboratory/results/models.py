@@ -7,6 +7,7 @@ Full validation â†’ verification â†’ approval workflow with delta chec
 
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 
 
@@ -64,7 +65,7 @@ class LabResult(BaseModel):
     approved_at = models.DateTimeField(null=True, blank=True)
     method = models.CharField(max_length=100, blank=True)
     instrument_code = models.CharField(max_length=50, blank=True)
-    comments = models.TextField(blank=True)
+    comments = EncryptedText(classification="phi")
     fhir_diagnostic_report_id = models.CharField(max_length=255, blank=True)
 
     class Meta:
@@ -89,7 +90,7 @@ class ResultValue(BaseModel):
     loinc_code = models.CharField(max_length=20, blank=True)  # from TerminologyService
     value_type = models.CharField(max_length=20, choices=VALUE_TYPES, default="numeric")
     value_numeric = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True)
-    value_text = models.CharField(max_length=500, blank=True)
+    value_text = EncryptedText(classification="phi")
     value_coded = models.CharField(max_length=100, blank=True)
     unit = models.CharField(max_length=50, blank=True)
     interpretation = models.CharField(max_length=5, choices=InterpretationCode.choices, blank=True)
@@ -140,7 +141,7 @@ class ResultInterpretation(BaseModel):
     result_value = models.OneToOneField(
         ResultValue, on_delete=models.CASCADE, related_name="interpretation_note"
     )
-    interpretation_text = models.TextField()
+    interpretation_text = EncryptedText(classification="phi")
     interpretation_method = models.CharField(max_length=100, blank=True)
     generated_by = models.CharField(max_length=50, default="manual")  # manual, cyai, rule
     ai_confidence_score = models.DecimalField(max_digits=5, decimal_places=4, null=True, blank=True)

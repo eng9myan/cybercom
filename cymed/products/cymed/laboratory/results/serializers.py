@@ -11,7 +11,14 @@ from .models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class ResultValueSerializer(serializers.ModelSerializer):
+    value_text = _phi_text()
+
     class Meta:
         model = ResultValue
         fields = "__all__"
@@ -20,6 +27,7 @@ class ResultValueSerializer(serializers.ModelSerializer):
 
 class LabResultSerializer(serializers.ModelSerializer):
     values = ResultValueSerializer(many=True, read_only=True)
+    comments = _phi_text()
 
     class Meta:
         model = LabResult
@@ -35,6 +43,8 @@ class ReferenceRangeSerializer(serializers.ModelSerializer):
 
 
 class ResultInterpretationSerializer(serializers.ModelSerializer):
+    interpretation_text = _phi_text()
+
     class Meta:
         model = ResultInterpretation
         fields = "__all__"

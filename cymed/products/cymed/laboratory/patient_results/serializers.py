@@ -11,7 +11,14 @@ from .models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class ResultReleaseSerializer(serializers.ModelSerializer):
+    counselling_note = _phi_text()
+
     class Meta:
         model = ResultRelease
         fields = "__all__"
