@@ -84,13 +84,14 @@ class ProviderSerializer(serializers.ModelSerializer):
         for lic in licenses_data:
             ProviderLicense.objects.create(provider=provider, tenant_id=provider.tenant_id, **lic)
 
-        # Publish event
-        from platform.events.models import OutboxEvent
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
 
-        OutboxEvent.objects.create(
-            tenant_id=provider.tenant_id,
-            topic="cymed.provider.events",
+        canonical_events.emit(
             event_type="cymed.provider.created",
+            aggregate_type="Provider",
+            aggregate_id=provider.id,
+            tenant_id=provider.tenant_id,
             payload={
                 "provider_id": str(provider.id),
                 "npi": provider.npi,

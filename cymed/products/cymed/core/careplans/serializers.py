@@ -52,13 +52,14 @@ class CarePlanSerializer(serializers.ModelSerializer):
         for task in tasks_data:
             CareTask.objects.create(careplan=cp, tenant_id=cp.tenant_id, **task)
 
-        # Publish outbox event
-        from platform.events.models import OutboxEvent
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
 
-        OutboxEvent.objects.create(
-            tenant_id=cp.tenant_id,
-            topic="cymed.careplan.events",
+        canonical_events.emit(
             event_type="cymed.careplan.created",
+            aggregate_type="CarePlan",
+            aggregate_id=cp.id,
+            tenant_id=cp.tenant_id,
             payload={
                 "careplan_id": str(cp.id),
                 "patient_id": str(cp.patient.id),

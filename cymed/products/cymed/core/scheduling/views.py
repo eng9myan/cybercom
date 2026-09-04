@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 from products.cymed.core.scheduling.models import Appointment, ScheduleSlot
 from products.cymed.core.scheduling.serializers import AppointmentSerializer, ScheduleSlotSerializer
 
@@ -26,11 +26,12 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         appt.status = "cancelled"
         appt.save()
 
-        # Publish outbox event
-        OutboxEvent.objects.create(
-            tenant_id=appt.tenant_id,
-            topic="cymed.appointment.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.appointment.cancelled",
+            aggregate_type="Appointment",
+            aggregate_id=appt.id,
+            tenant_id=appt.tenant_id,
             payload={"appointment_id": str(appt.id), "cancelled_by": str(request.user)},
         )
 
@@ -43,11 +44,12 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         appt.status = "fulfilled"
         appt.save()
 
-        # Publish outbox event
-        OutboxEvent.objects.create(
-            tenant_id=appt.tenant_id,
-            topic="cymed.appointment.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.appointment.completed",
+            aggregate_type="Appointment",
+            aggregate_id=appt.id,
+            tenant_id=appt.tenant_id,
             payload={"appointment_id": str(appt.id)},
         )
 

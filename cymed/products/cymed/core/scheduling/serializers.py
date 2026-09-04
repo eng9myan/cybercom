@@ -42,13 +42,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 appointment=appt, tenant_id=appt.tenant_id, **p_data
             )
 
-        # Publish outbox event
-        from platform.events.models import OutboxEvent
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
 
-        OutboxEvent.objects.create(
-            tenant_id=appt.tenant_id,
-            topic="cymed.appointment.events",
+        canonical_events.emit(
             event_type="cymed.appointment.created",
+            aggregate_type="Appointment",
+            aggregate_id=appt.id,
+            tenant_id=appt.tenant_id,
             payload={
                 "appointment_id": str(appt.id),
                 "patient_id": str(appt.patient.id),

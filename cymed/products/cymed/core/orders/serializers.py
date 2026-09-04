@@ -53,13 +53,14 @@ class OrderSerializer(serializers.ModelSerializer):
         for res in results_data:
             OrderResult.objects.create(order=order, tenant_id=order.tenant_id, **res)
 
-        # Publish event
-        from platform.events.models import OutboxEvent
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
 
-        OutboxEvent.objects.create(
-            tenant_id=order.tenant_id,
-            topic="cymed.order.events",
+        canonical_events.emit(
             event_type="cymed.order.created",
+            aggregate_type="Order",
+            aggregate_id=order.id,
+            tenant_id=order.tenant_id,
             payload={
                 "order_id": str(order.id),
                 "patient_id": str(order.patient.id),

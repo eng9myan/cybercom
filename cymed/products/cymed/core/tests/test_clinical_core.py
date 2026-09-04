@@ -63,8 +63,10 @@ class TestPatientsModule:
         assert patient.tenant_id == test_tenant_id
         assert patient.mrn.startswith("MRN-")
 
-        # Verify created event in outbox
-        events = OutboxEvent.objects.filter(
+        # Verify created event — canonical DomainEvent (M9 cutover).
+        from platform.canonical.models import DomainEvent
+
+        events = DomainEvent.objects.filter(
             tenant_id=test_tenant_id, event_type="cymed.patient.created"
         )
         assert events.count() == 1
@@ -189,9 +191,11 @@ class TestProvidersModule:
         assert provider.specialties.count() == 1
         assert provider.licenses.count() == 1
 
-        # Verify event
+        # Verify event — canonical DomainEvent (M9 cutover).
+        from platform.canonical.models import DomainEvent
+
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.provider.created"
             ).count()
             == 1
@@ -498,8 +502,10 @@ class TestRemainingClinicalFoundations:
             format="json",
         )
         assert cp_response.status_code == 201
+        from platform.canonical.models import DomainEvent
+
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.careplan.created"
             ).count()
             == 1
@@ -520,7 +526,7 @@ class TestRemainingClinicalFoundations:
         )
         assert order_response.status_code == 201
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.order.created"
             ).count()
             == 1
@@ -546,7 +552,7 @@ class TestRemainingClinicalFoundations:
         cancel_resp = auth_client.post(f"/api/v1/scheduling/{appt_id}/cancel/", format="json")
         assert cancel_resp.status_code == 200
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.appointment.cancelled"
             ).count()
             == 1
