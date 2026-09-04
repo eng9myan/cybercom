@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel, SoftDeleteMixin
 from products.cymed.core.encounters.models import Encounter
 from products.cymed.core.patients.models import Patient
@@ -12,7 +13,7 @@ class Condition(BaseModel, SoftDeleteMixin):
         Encounter, on_delete=models.SET_NULL, null=True, blank=True, related_name="conditions"
     )
     code = models.CharField(max_length=100, db_index=True)  # ICD-11 stem/cluster or SNOMED-CT code
-    display = models.CharField(max_length=255)
+    display = EncryptedText(classification="phi")  # diagnosis text, patient-linked
     system = models.CharField(max_length=50, choices=[("icd11", "ICD-11"), ("snomed", "SNOMED-CT")])
     clinical_status = models.CharField(
         max_length=30,
@@ -57,7 +58,7 @@ class Allergy(BaseModel):
         ],
     )
     substance_code = models.CharField(max_length=100)  # SNOMED or RxNorm
-    substance_display = models.CharField(max_length=255)
+    substance_display = EncryptedText(classification="phi")
     clinical_status = models.CharField(
         max_length=30, choices=[("active", "Active"), ("inactive", "Inactive")], default="active"
     )
@@ -107,9 +108,9 @@ class Observation(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="observations")
     encounter = models.ForeignKey(Encounter, on_delete=models.CASCADE, related_name="observations")
     code = models.CharField(max_length=100, db_index=True)  # LOINC code
-    display = models.CharField(max_length=255)
+    display = EncryptedText(classification="phi")
     value_quantity = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
-    value_string = models.TextField(blank=True)
+    value_string = EncryptedText(classification="phi")
     unit = models.CharField(max_length=50, blank=True)
     reference_range = models.CharField(max_length=100, blank=True)
     status = models.CharField(
@@ -140,7 +141,7 @@ class Immunization(BaseModel):
 class RiskFactor(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="risk_factors")
     risk_code = models.CharField(max_length=100)
-    risk_display = models.CharField(max_length=255)
+    risk_display = EncryptedText(classification="phi")
     severity = models.CharField(
         max_length=20, choices=[("low", "Low"), ("medium", "Medium"), ("high", "High")]
     )
@@ -151,7 +152,7 @@ class RiskFactor(BaseModel):
 
 class ClinicalFlag(BaseModel):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="flags")
-    flag_text = models.CharField(max_length=255)
+    flag_text = EncryptedText(classification="phi")
     category = models.CharField(
         max_length=30,
         choices=[

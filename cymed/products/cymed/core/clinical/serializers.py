@@ -11,7 +11,14 @@ from products.cymed.core.clinical.models import (
 )
 
 
+def _phi_text():
+    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    return serializers.CharField(required=False, allow_blank=True)
+
+
 class ConditionSerializer(serializers.ModelSerializer):
+    display = _phi_text()
+
     class Meta:
         model = Condition
         fields = [
@@ -69,6 +76,7 @@ class AllergyReactionSerializer(serializers.ModelSerializer):
 
 class AllergySerializer(serializers.ModelSerializer):
     reactions = AllergyReactionSerializer(many=True, required=False)
+    substance_display = _phi_text()
 
     class Meta:
         model = Allergy
@@ -108,6 +116,9 @@ class VitalSignSerializer(serializers.ModelSerializer):
 
 
 class ObservationSerializer(serializers.ModelSerializer):
+    display = _phi_text()
+    value_string = _phi_text()
+
     class Meta:
         model = Observation
         fields = [
@@ -131,6 +142,8 @@ class ObservationSerializer(serializers.ModelSerializer):
 
 
 class ClinicalFlagSerializer(serializers.ModelSerializer):
+    flag_text = _phi_text()
+
     class Meta:
         model = ClinicalFlag
         fields = ["id", "patient", "flag_text", "category", "status"]
