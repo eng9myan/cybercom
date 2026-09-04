@@ -39,6 +39,7 @@ class BidSerializer(serializers.ModelSerializer):
 class TeleReportSerializer(serializers.ModelSerializer):
     text = _phi_text()
     impressions = _phi_text()
+    findings = serializers.JSONField(required=False)
 
     class Meta:
         model = TeleReport

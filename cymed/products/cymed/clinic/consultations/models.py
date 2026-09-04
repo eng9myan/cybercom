@@ -1,6 +1,6 @@
 from django.db import models
 
-from platform.common.fields import EncryptedText
+from platform.common.fields import EncryptedJSON, EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.core.encounters.models import Encounter
 
@@ -53,7 +53,7 @@ class ConsultationPlan(BaseModel):
         Consultation, on_delete=models.CASCADE, related_name="treatment_plan"
     )
     instructions = EncryptedText(classification="phi")
-    prescriptions = models.JSONField(default=list)  # list of drug directives (TODO: EncryptedJSON)
+    prescriptions = EncryptedJSON(classification="phi")  # list of drug directives
 
     class Meta:
         db_table = "cymed_clinic_consultation_plans"

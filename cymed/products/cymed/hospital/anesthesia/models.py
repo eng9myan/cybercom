@@ -1,6 +1,6 @@
 from django.db import models
 
-from platform.common.fields import EncryptedText
+from platform.common.fields import EncryptedJSON, EncryptedText
 from platform.common.models import BaseModel
 from products.cymed.hospital.operating_room.models import SurgicalCase
 
@@ -36,7 +36,7 @@ class AnesthesiaRecord(BaseModel):
     anesthesiologist_id = models.UUIDField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
-    agents_used = models.JSONField()  # e.g., Propofol, Sevoflurane, Fentanyl
+    agents_used = EncryptedJSON(classification="phi")  # e.g., Propofol, Sevoflurane, Fentanyl
     notes = EncryptedText(classification="phi")
 
     class Meta:

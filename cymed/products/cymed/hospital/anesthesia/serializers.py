@@ -10,7 +10,7 @@ from products.cymed.hospital.anesthesia.models import (
 
 
 def _phi_text():
-    # EncryptedText (BinaryField storage) — keep it plain text through DRF.
+    # EncryptedText (BinaryField storage) - keep it plain text through DRF.
     return serializers.CharField(required=False, allow_blank=True)
 
 
@@ -32,6 +32,7 @@ class AnesthesiaPlanSerializer(serializers.ModelSerializer):
 
 class AnesthesiaRecordSerializer(serializers.ModelSerializer):
     notes = _phi_text()
+    agents_used = serializers.JSONField(required=False)
 
     class Meta:
         model = AnesthesiaRecord

@@ -58,6 +58,7 @@ class ConsultationProcedureSerializer(serializers.ModelSerializer):
 
 class ConsultationPlanSerializer(serializers.ModelSerializer):
     instructions = _phi_text()
+    prescriptions = serializers.JSONField(required=False)
 
     class Meta:
         model = ConsultationPlan
