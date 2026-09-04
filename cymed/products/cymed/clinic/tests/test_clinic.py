@@ -4,7 +4,6 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from platform.events.models import OutboxEvent
 from products.cymed.clinic.appointments.models import (
     AppointmentRule,
 )
@@ -101,9 +100,11 @@ class TestClinicEdition:
         assert ticket.ticket_number.startswith("T-")
         assert ticket.status == "waiting"
 
-        # Verify Outbox Event Published
+        # Verify event published — canonical DomainEvent (M9 cutover).
+        from platform.canonical.models import DomainEvent
+
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.clinic.checkin.created"
             ).count()
             == 1
@@ -264,9 +265,11 @@ class TestClinicEdition:
         )
         assert response.status_code == 201
 
-        # Verify Consultation Event
+        # Verify Consultation Event — canonical DomainEvent (M9 cutover).
+        from platform.canonical.models import DomainEvent
+
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.clinic.consultation.created"
             ).count()
             == 1
@@ -378,8 +381,10 @@ class TestClinicEdition:
         )
         assert response_start.status_code == 200
         assert response_start.data["status"] == "in_progress"
+        from platform.canonical.models import DomainEvent
+
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.clinic.telemedicine.started"
             ).count()
             == 1
@@ -423,8 +428,10 @@ class TestClinicEdition:
             format="json",
         )
         assert response.status_code == 201
+        from platform.canonical.models import DomainEvent
+
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.clinic.referral.created"
             ).count()
             == 1

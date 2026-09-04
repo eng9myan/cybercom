@@ -2,7 +2,6 @@ import random
 
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.clinic.reception.models import (
     ArrivalMethod,
     CheckIn,
@@ -73,11 +72,14 @@ class CheckInSerializer(serializers.ModelSerializer):
             priority="routine",
         )
 
-        # Publish Event
-        OutboxEvent.objects.create(
-            tenant_id=checkin.tenant_id,
-            topic="cymed.clinic.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.clinic.checkin.created",
+            aggregate_type="CheckIn",
+            aggregate_id=checkin.id,
+            tenant_id=checkin.tenant_id,
             payload={
                 "checkin_id": str(checkin.id),
                 "patient_id": str(checkin.patient.id),

@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 from products.cymed.clinic.telemedicine.models import (
     VirtualConsent,
     VirtualRecording,
@@ -40,11 +40,12 @@ class VirtualVisitViewSet(ClinicModelViewSet):
         session.started_at = timezone.now()
         session.save()
 
-        # Publish Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.clinic.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.clinic.telemedicine.started",
+            aggregate_type="VirtualVisit",
+            aggregate_id=visit.id,
+            tenant_id=tenant_id,
             payload={
                 "visit_id": str(visit.id),
                 "patient_id": str(visit.patient.id),

@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.clinic.referrals.models import (
     Referral,
     ReferralAttachment,
@@ -62,11 +61,14 @@ class ReferralSerializer(serializers.ModelSerializer):
         for a in attachments_data:
             ReferralAttachment.objects.create(tenant_id=tenant_id, referral=referral, **a)
 
-        # Publish Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.clinic.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.clinic.referral.created",
+            aggregate_type="Referral",
+            aggregate_id=referral.id,
+            tenant_id=tenant_id,
             payload={
                 "referral_id": str(referral.id),
                 "patient_id": str(referral.patient.id),

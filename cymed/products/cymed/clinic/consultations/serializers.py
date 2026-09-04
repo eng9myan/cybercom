@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from platform.terminology.services import TerminologyService
 from products.cymed.clinic.consultations.models import (
     Consultation,
@@ -142,11 +141,14 @@ class ConsultationSerializer(serializers.ModelSerializer):
                 tenant_id=tenant_id, consultation=consultation, **a
             )
 
-        # Publish Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.clinic.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.clinic.consultation.created",
+            aggregate_type="Consultation",
+            aggregate_id=consultation.id,
+            tenant_id=tenant_id,
             payload={
                 "consultation_id": str(consultation.id),
                 "encounter_id": str(consultation.encounter.id),
