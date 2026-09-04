@@ -155,12 +155,22 @@ because its conformance bar is lower and it's the beachhead.
 
 ## 6. Immediate steps
 
-1. M1 migration: add the `einvoice_*` fields + `EInvoiceSequence` (additive, nullable).
-2. Promote `jofawtra` + `zakata` clients → `platform/einvoicing/clients/`; keep the aliases.
-3. Build `platform/einvoicing/ubl.py` — `jo_jofotara` profile first, golden-file tested.
-4. Build `engine.py` — submit via `JoFotaraClient` against sandbox, persist result.
-5. Wire `EInvoiceEngine.clear()` into the Invoice post-flow (replace the gateway `httpx.post`).
-6. Retire `cycom/compliance-gateway/` (or keep it as a thin proxy to the engine if a non-Django
-   consumer needs it — decide at step 5).
-7. Repeat 3–5 for `sa_zatca` (CSID onboarding is the long pole — start the ZATCA portal
-   registration on day 1).
+1. ~~M1 migration: `einvoice_*` fields + `EInvoiceSequence`~~ — **DONE** (`cycom/ar_ap` migration 0004, `platform_einvoicing` 0001).
+2. ~~JoFotara transport client → `platform/einvoicing/clients/`~~ — **DONE** (platform-owned copy; cymed's re-export deferred to M4).
+3. ~~`platform/einvoicing/ubl.py` — `jo_jofotara` profile~~ — **DONE** (PINT-JO builder, per-line + per-rate subtotals, ICV/PIH, tested).
+4. ~~`engine.py` — submit + persist + advance chain~~ — **DONE** (`clear_invoice`, sequence lock, chain advance only on acceptance, tested).
+5. ~~Wire into the Invoice post-flow~~ — **DONE** (`cycom/ar_ap/einvoice.py` bridge → `InvoiceViewSet.post_invoice`, non-blocking).
+
+**Remaining for JO production (regulator-cycle, not eng-blocked):**
+6. **XAdES signing** — `platform/einvoicing/signing.py`: wire `signxml`/`xmlsec` to sign
+   the UBL with the taxpayer cert. Client currently submits unsigned (sandbox-guarded).
+7. **XSD + Schematron validation** — ship the PINT-JO schemas, validate before submit;
+   a doc that fails never goes out.
+8. **ISTD sandbox onboarding** — taxpayer registration + credentials + conformance report
+   (see `L.3` / the `jofawtra` README). Then flip `JOFOTARA_BASE_URL` to production.
+9. Retire `cycom/compliance-gateway/`'s JO plugin (the engine supersedes it); keep the
+   gateway only if a non-Django consumer needs it.
+
+**Then for KSA:** `sa_zatca` mode — same `ubl.py`/`engine.py` structure, plus the ZATCA
+CSID onboarding (the long pole — start the ZATCA portal registration on day 1) and the
+TLV-QR + ECDSA stamp.

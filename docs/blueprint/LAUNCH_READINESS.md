@@ -91,7 +91,8 @@ start on internal invoices while it lands.
 | Deploy scripts (single-box, OCI, compose) | CyberCom | ✅ in repo (`infrastructure/`) |
 | Raise backend test coverage on money paths | CyberCom | ⏳ §5 — Phase-0/1 |
 | Wire HyperPay/PayTabs/Moyasar to the payment seam | CyberCom | ⏳ ~3–5 days once you pick one |
-| ZATCA + JoFotara clearance engine | CyberCom | ⏳ ~2–3 weeks (`L.3`) |
+| **JoFotara clearance engine** | CyberCom | 🟡 **engine built + wired + tested** (`platform/einvoicing/`, `cycom/ar_ap` migration 0004). Remaining = XAdES signing + XSD/Schematron + ISTD sandbox onboarding (regulator cycle, not eng). |
+| ZATCA clearance engine | CyberCom | ⏳ same structure, + ZATCA CSID onboarding (long pole) |
 | Arabic/RTL for POS + receipts | CyberCom | ⏳ workstream (`RTL_AUDIT.md`) |
 | **A host + DNS + TLS** | **You** | ⛔ blocks Tier 1 |
 | **Secrets** (DB, Django, Keycloak) | **You** | ⛔ blocks Tier 1 |
@@ -108,11 +109,11 @@ start on internal invoices while it lands.
 
 | Gap | Impact | Plan |
 |---|---|---|
-| Backend test coverage: 26 files / 39 apps; ~103 tests | risk on the money paths under change | Phase-0/1: raise finance/tax/payroll/POS to `H` Q1 targets before migrated data lands |
+| Backend test coverage: **126 tests** (was 103); money paths now covered (GL balance, POS checkout GL + stock, sales, JoFotara) | remaining apps thinner | keep raising toward `H` Q1 before migrated data lands |
 | `/api/schema/` generates but 104 non-fatal warnings (APIViews without serializers) | thin auto-docs on some endpoints | polish during dev-portal build |
 | Gap-fill apps (discuss, fleet, helpdesk, leave, marketing, planning, plm, project, recruitment) — little/no test coverage | shipped but unproven | smoke tests before any are exposed in a GA flavor |
 | No live PSP wired | manual invoicing only | Tier 2 |
-| e-invoicing not implemented | KSA/JO tax-invoice compliance | Tier 2, `L.3` |
+| e-invoicing: JoFotara **engine built + tested**; XAdES signing + XSD validation + ISTD onboarding remain | JO tax invoices need the onboarding done; KSA needs `sa_zatca` too | Tier 2, `specs/einvoicing-clearance-engine.md` §6 |
 | RTL/Arabic greenfield | SA/UAE credibility | funded workstream |
 | CyMed 5 nphies tests failing | CyMed only, not launch product | tied to canonical `TenantScopedManager` (`specs/canonical-data-model-v1.md` §2.2) |
 
