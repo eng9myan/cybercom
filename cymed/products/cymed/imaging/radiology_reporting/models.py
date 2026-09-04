@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 
 REPORT_STATUSES = [
@@ -47,13 +48,13 @@ class RadiologyReport(BaseModel):
     status = models.CharField(
         max_length=30, choices=REPORT_STATUSES, default="draft", db_index=True
     )
-    technique = models.TextField(blank=True)
-    clinical_indication = models.TextField(blank=True)
-    comparison_studies = models.TextField(blank=True)
-    findings = models.TextField(blank=True)
-    impression = models.TextField(blank=True)
-    recommendations = models.TextField(blank=True)
-    ai_summary = models.TextField(blank=True)
+    technique = EncryptedText(classification="phi")
+    clinical_indication = EncryptedText(classification="phi")
+    comparison_studies = EncryptedText(classification="phi")
+    findings = EncryptedText(classification="phi")
+    impression = EncryptedText(classification="phi")
+    recommendations = EncryptedText(classification="phi")
+    ai_summary = EncryptedText(classification="phi")
     ai_assistance_used = models.BooleanField(default=False)
     dictated_at = models.DateTimeField(null=True, blank=True)
     transcribed_at = models.DateTimeField(null=True, blank=True)
@@ -88,13 +89,13 @@ class RadiologyFinding(BaseModel):
     finding_code = models.CharField(max_length=100, blank=True)  # SNOMED via TerminologyService
     body_region = models.CharField(max_length=100, blank=True)
     laterality = models.CharField(max_length=20, blank=True)
-    description = models.TextField()
+    description = EncryptedText(classification="phi")
     severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES, blank=True)
     is_incidental = models.BooleanField(default=False)
     follow_up_recommended = models.BooleanField(default=False)
     follow_up_timeframe = models.CharField(max_length=100, blank=True)
     size_mm = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
-    location_detail = models.TextField(blank=True)
+    location_detail = EncryptedText(classification="phi")
 
     def __str__(self):
         return f"Finding {self.id} — {self.severity}"
@@ -107,7 +108,7 @@ class RadiologyImpression(BaseModel):
         related_name="structured_impressions",
     )
     impression_number = models.PositiveSmallIntegerField(default=1)
-    impression_text = models.TextField()
+    impression_text = EncryptedText(classification="phi")
     icd11_code = models.CharField(max_length=20, blank=True)  # via TerminologyService
     snomed_code = models.CharField(max_length=20, blank=True)  # via TerminologyService
     is_primary = models.BooleanField(default=False)
@@ -126,7 +127,7 @@ class CriticalFinding(BaseModel):
     report = models.ForeignKey(
         "img_reporting.RadiologyReport", on_delete=models.CASCADE, related_name="critical_findings"
     )
-    finding_description = models.TextField()
+    finding_description = EncryptedText(classification="phi")
     snomed_code = models.CharField(max_length=20, blank=True)
     severity = models.CharField(
         max_length=20, choices=[("urgent", "Urgent"), ("emergent", "Emergent")], default="urgent"
@@ -178,11 +179,11 @@ class ReportAmendment(BaseModel):
         "img_reporting.RadiologyReport", on_delete=models.CASCADE, related_name="amendments"
     )
     amended_by = models.UUIDField()
-    amendment_reason = models.TextField()
-    previous_findings = models.TextField()
-    previous_impression = models.TextField()
-    new_findings = models.TextField()
-    new_impression = models.TextField()
+    amendment_reason = EncryptedText(classification="phi")
+    previous_findings = EncryptedText(classification="phi")
+    previous_impression = EncryptedText(classification="phi")
+    new_findings = EncryptedText(classification="phi")
+    new_impression = EncryptedText(classification="phi")
     amendment_date = models.DateTimeField(auto_now_add=True)
     is_significant = models.BooleanField(default=False)
 

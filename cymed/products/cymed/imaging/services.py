@@ -135,12 +135,26 @@ class ReportingService:
         from products.cymed.imaging.radiology_reporting.models import RadiologyReport
         from products.cymed.imaging.results.models import ImagingResult
 
-        report = RadiologyReport.objects.get(pk=report_id)
-        report.status = "final"
-        report.finalized_at = tz.now()
-        report.finalized_by = finalized_by
-        report.word_count = len((report.findings + " " + report.impression).split())
-        report.save(update_fields=["status", "finalized_at", "finalized_by", "word_count"])
+        from platform.common.tenant_context import tenant_context
+
+        tid = (
+            RadiologyReport.objects.filter(pk=report_id)
+            .values_list("tenant_id", flat=True)
+            .first()
+        )
+        # tenant_context so the encrypted findings/impression decrypt for the
+        # word count.
+        with tenant_context(tid):
+            report = RadiologyReport.objects.get(pk=report_id)
+            report.status = "final"
+            report.finalized_at = tz.now()
+            report.finalized_by = finalized_by
+            report.word_count = len(
+                ((report.findings or "") + " " + (report.impression or "")).split()
+            )
+            report.save(
+                update_fields=["status", "finalized_at", "finalized_by", "word_count"]
+            )
 
         ImagingResult.objects.update_or_create(
             order_item=report.order_item,
