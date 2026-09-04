@@ -3,24 +3,28 @@
 import Link from 'next/link';
 import { Settings, Search, Bell, Activity, Sparkles, Building2 } from 'lucide-react';
 import { useCompany } from '@/context/CompanyContext';
+import LanguageToggle from '@/components/LanguageToggle';
+import { useT } from '@/lib/i18n';
 
 export default function CycomTopbar() {
   const { activeCompany } = useCompany();
+  const t = useT();
 
   return (
     <header className="h-[var(--topbar-height)] bg-[#0a0f1e]/80 border-b border-white/5 flex items-center px-6 justify-between backdrop-blur-md sticky top-0 z-40">
       {/* Search Input */}
       <div className="flex items-center gap-2 bg-white/3 border border-white/8 rounded-xl px-3 py-1.5 w-[280px]">
         <Search className="w-4 h-4 text-slate-500" />
-        <input 
-          type="text" 
-          placeholder="Search modules or ERP logs..." 
+        <input
+          type="text"
+          placeholder={t('common.search') + '…'}
           className="bg-transparent border-none outline-none text-xs text-white placeholder-slate-500 w-full"
         />
       </div>
 
       {/* Right Tools */}
       <div className="flex items-center gap-4">
+        <LanguageToggle />
         {/* Active Company Indicator */}
         <div 
           className="flex items-center gap-2 px-3 py-1.5 rounded-full border"

@@ -6,6 +6,7 @@ import { QueryProvider } from "@/context/QueryProvider";
 import CycomLayoutWrapper from "@/components/layout/CycomLayoutWrapper";
 import { CyCommandBar } from "@/components/CyCommandBar";
 import LocaleDirection from "@/components/LocaleDirection";
+import { I18nProvider } from "@/lib/i18n";
 
 export const metadata: Metadata = {
   title: "Cycom ERP — Enterprise Resource Planning",
@@ -22,16 +23,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-[#030712] text-white">
         <LocaleDirection />
-        <AuthProvider>
-          <QueryProvider>
-            <CompanyProvider>
-              <CycomLayoutWrapper>
-                {children}
-                <CyCommandBar />
-              </CycomLayoutWrapper>
-            </CompanyProvider>
-          </QueryProvider>
-        </AuthProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <QueryProvider>
+              <CompanyProvider>
+                <CycomLayoutWrapper>
+                  {children}
+                  <CyCommandBar />
+                </CycomLayoutWrapper>
+              </CompanyProvider>
+            </QueryProvider>
+          </AuthProvider>
+        </I18nProvider>
       </body>
     </html>
   );
