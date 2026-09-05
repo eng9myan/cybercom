@@ -6,7 +6,7 @@ import io
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.db import models as djm
+from django.db import connection, models as djm
 
 from platform.security.rls_ddl import (
     POLICY_NAME,
@@ -39,16 +39,18 @@ def test_rls_statements_shape():
         assert f"ALTER TABLE \"{t}\" FORCE ROW LEVEL SECURITY;" == sql_by_label[f"{t}: force RLS"]
         policy = sql_by_label[f"{t}: policy {POLICY_NAME}"]
         assert f"CREATE POLICY {POLICY_NAME} ON \"{t}\"" in policy
-        assert "current_setting('app.current_tenant_id', true)::uuid" in policy
+        assert "NULLIF(current_setting('app.current_tenant_id', true), '')::uuid" in policy
         assert "USING (" in policy and "WITH CHECK (" in policy
-        # missing_ok=true -> unset GUC = NULL = no rows (fail closed)
+        # missing_ok=true -> unset GUC = NULL; NULLIF(..., '') -> a *cleared*
+        # (empty-string) GUC is also NULL -> tenant_id = NULL -> no rows
+        # (fail closed), and neither case raises on the ::uuid cast.
 
 
 def test_rls_statements_honour_custom_guc(settings):
     settings.TENANT_GUC_SETTING = "app.tid"
     a_table = tenant_scoped_models()[0]._meta.db_table
     policy = dict(rls_statements())[f"{a_table}: policy {POLICY_NAME}"]
-    assert "current_setting('app.tid', true)::uuid" in policy
+    assert "NULLIF(current_setting('app.tid', true), '')::uuid" in policy
     assert "current_setting('app.current_tenant_id'" not in policy
 
 
@@ -68,6 +70,8 @@ def test_apply_rls_dry_run_prints_sql():
 
 
 def test_apply_rls_refuses_sqlite():
+    if connection.vendor == "postgresql":
+        pytest.skip("postgres backend — the refusal path is unreachable, covered by test_rls_verify.py")
     # backend is sqlite in tests -> hard error, never a silent no-op
     with pytest.raises(CommandError):
         call_command("apply_rls", "--force")

@@ -94,13 +94,14 @@ class Command(BaseCommand):
                 if not row[1]:
                     failures.append(f"{table}: FORCE ROW LEVEL SECURITY is off (owner bypasses)")
 
-                cols = _probe_columns(cur, table)
-
-                # 2 + 3: insert one probe row per tenant, each under its own GUC
+                # 2 + 3: insert one probe row per tenant, each under its own GUC.
+                # _probe_columns is called freshly per row (not shared) so a
+                # UNIQUE constraint on a probed column doesn't collide between
+                # the two rows.
                 set_tenant(cur, a)
-                _insert_probe(cur, table, cols, row_id=pa, tenant_id=a)
+                _insert_probe(cur, table, _probe_columns(cur, table), row_id=pa, tenant_id=a)
                 set_tenant(cur, b)
-                _insert_probe(cur, table, cols, row_id=pb, tenant_id=b)
+                _insert_probe(cur, table, _probe_columns(cur, table), row_id=pb, tenant_id=b)
 
                 probe_ids = (pa, pb)
 
@@ -138,6 +139,13 @@ class Command(BaseCommand):
                 raise _Rollback
         except _Rollback:
             pass
+        except CommandError:
+            raise
+        except Exception as exc:  # e.g. a probe value violating an unforeseen
+            # column constraint (see _probe_columns) — surface it as a clean
+            # CommandError instead of an unhandled traceback; the transaction
+            # rolls back either way, so no partial probe rows are left behind.
+            raise CommandError(f"verify_rls probe failed on '{table}': {exc}") from exc
 
         if failures:
             self.stderr.write(self.style.ERROR(f"RLS VERIFY FAILED on '{table}':"))
@@ -153,10 +161,13 @@ class Command(BaseCommand):
 
 def _probe_columns(cur, table) -> dict[str, str]:
     """NOT NULL columns without a default (besides id/tenant_id) that a probe
-    INSERT must supply, mapped to a safe literal for their type."""
+    INSERT must supply, mapped to a safe literal for their type. Called
+    separately for each probe row (never shared) — the string literal below
+    is randomized per call so a UNIQUE constraint on a probed column can't
+    collide between the two tenants' rows."""
     cur.execute(
         """
-        SELECT column_name, data_type
+        SELECT column_name, data_type, character_maximum_length
         FROM information_schema.columns
         WHERE table_name = %s
           AND is_nullable = 'NO'
@@ -166,9 +177,12 @@ def _probe_columns(cur, table) -> dict[str, str]:
         [table],
     )
     out: dict[str, str] = {}
-    for name, dtype in cur.fetchall():
+    for name, dtype, max_len in cur.fetchall():
         if dtype in ("character varying", "text", "character"):
-            out[name] = "__rls_probe__"
+            probe = f"rls_probe_{uuid.uuid4().hex}"
+            if max_len is not None and max_len < len(probe):
+                probe = probe[: max(max_len, 1)]
+            out[name] = f"'{probe}'"
         elif dtype in ("integer", "bigint", "smallint", "numeric", "double precision", "real"):
             out[name] = "0"
         elif dtype == "boolean":

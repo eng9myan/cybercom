@@ -7,10 +7,17 @@ on every tenant-scoped table.
   ALTER TABLE ... FORCE ROW LEVEL SECURITY        -- so the table owner is bound too
   CREATE POLICY tenant_isolation ... USING (...) WITH CHECK (...)
 
-The policy compares `tenant_id` against `current_setting('<guc>', true)::uuid`.
-The `, true` (missing_ok) means an un-set GUC yields NULL, and `tenant_id = NULL`
-is false — so a connection with no tenant context sees **no rows**, which is the
-fail-closed behaviour we want.
+The policy compares `tenant_id` against `NULLIF(current_setting('<guc>', true), '')::uuid`.
+The `, true` (missing_ok) means a GUC that was never touched this session yields
+NULL; `NULLIF(..., '')` additionally maps an *empty-string* value to NULL too —
+`clear_tenant_guc()` (platform.security.rls, called by TenantContextMiddleware
+after every tenant-scoped request) resets the GUC to `''` rather than unsetting
+it, and on a pooled connection reused by a platform-admin (tenant_id=None)
+request, `''` is exactly what the next request's queries see. Casting `''`
+straight to `::uuid` raises a hard Postgres error on *every* query in that
+request instead of returning zero rows — NULLIF closes that: either way,
+`tenant_id = NULL` is false, so a connection with no tenant context sees **no
+rows**, which is the fail-closed behaviour we want, without ever raising.
 
 Applied by `manage.py apply_rls` (idempotent). Enforced only when
 `settings.RLS_ENFORCED` is true AND the backend is PostgreSQL.
@@ -56,8 +63,8 @@ def rls_statements(guc: str | None = None) -> list[tuple[str, str]]:
             f"{t}: policy {POLICY_NAME}",
             f"DROP POLICY IF EXISTS {POLICY_NAME} ON {q};\n"
             f"CREATE POLICY {POLICY_NAME} ON {q}\n"
-            f"  USING (tenant_id = current_setting('{guc}', true)::uuid)\n"
-            f"  WITH CHECK (tenant_id = current_setting('{guc}', true)::uuid);",
+            f"  USING (tenant_id = NULLIF(current_setting('{guc}', true), '')::uuid)\n"
+            f"  WITH CHECK (tenant_id = NULLIF(current_setting('{guc}', true), '')::uuid);",
         ))
     return stmts
 
