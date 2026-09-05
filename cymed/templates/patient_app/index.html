@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+{% load i18n %}<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'ar' }}" dir="{% if LANGUAGE_BIDI or not LANGUAGE_CODE %}rtl{% else %}ltr{% endif %}">
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -11,7 +11,7 @@
   <link rel="manifest" href="/static/patient_app/manifest.json">
   <link rel="apple-touch-icon" href="/static/patient_app/icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/static/patient_app/icons/icon-192.png">
-  <title>CyMed Patient</title>
+  <title>{% trans "CyMed Patient" %}</title>
   <base href="/patient-app/">
   <style>
     html, body { margin: 0; padding: 0; background: #0A0E27; color: #fff; height: 100%; font-family: system-ui; }
@@ -27,7 +27,7 @@
     <div class="brand">
       <div class="dot"></div>
       <h1>CyMed</h1>
-      <p>Loading your health…</p>
+      <p>{% trans "Loading your health…" %}</p>
     </div>
   </div>
 
@@ -40,7 +40,8 @@
     }
   </script>
 
-  <!-- Flutter Web bootstrap (produced by `flutter build web`) -->
+  <!-- Flutter Web bootstrap (produced by `flutter build web`). The Flutter
+       app resolves its own locale + text direction via flutter_localizations. -->
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

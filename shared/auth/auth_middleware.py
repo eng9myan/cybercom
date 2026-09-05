@@ -56,6 +56,19 @@ class CyIdentityAuthMiddleware:
         if request.path.startswith('/admin') or request.path.startswith('/static/') or request.path.startswith('/media/'):
             return self.get_response(request)
 
+        # Per-product public paths (opt-in via settings, default none). A
+        # product declares its own unauthenticated surfaces — e.g. cymed's
+        # server-rendered portal shells and the API console — without every
+        # other product's paths leaking into this shared allowlist.
+        #   AUTH_PUBLIC_PATHS          — exact-match set/list
+        #   AUTH_PUBLIC_PATH_PREFIXES  — startswith() list
+        for p in getattr(settings, 'AUTH_PUBLIC_PATHS', ()):
+            if request.path == p:
+                return self.get_response(request)
+        for prefix in getattr(settings, 'AUTH_PUBLIC_PATH_PREFIXES', ()):
+            if request.path.startswith(prefix):
+                return self.get_response(request)
+
         auth_header = request.headers.get('Authorization', None)
         if not auth_header or not auth_header.startswith('Bearer '):
             return JsonResponse({"detail": "Authentication credentials were not provided."}, status=401)

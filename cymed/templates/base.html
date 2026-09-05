@@ -1,12 +1,13 @@
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0a0e27">
-    <title>{% block title %}Hakeem — Next-Gen Healthcare{% endblock %}</title>
+    <title>{% block title %}{% trans "Hakeem — Next-Gen Healthcare" %}{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --brand-primary: #0062CC;
@@ -40,6 +41,15 @@
             min-height: 100vh;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+        }
+        /* Arabic type — Cairo covers the Arabic block; Inter stays the Latin face. */
+        html[dir="rtl"], html[dir="rtl"] body {
+            font-family: 'Cairo', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        html[dir="rtl"] .logo,
+        html[dir="rtl"] h1, html[dir="rtl"] h2, html[dir="rtl"] h3,
+        html[dir="rtl"] .stat-value {
+            font-family: 'Cairo', 'Space Grotesk', sans-serif;
         }
 
         /* Animated background mesh */
@@ -133,6 +143,17 @@
             color: var(--text-primary); background: rgba(255,255,255,0.05);
         }
 
+        /* Language switch */
+        .lang-switch { display: inline-flex; gap: 4px; align-items: center; }
+        .lang-switch button {
+            background: transparent; border: 1px solid var(--glass-border);
+            color: var(--text-secondary); font-family: inherit; font-size: 12px;
+            font-weight: 600; padding: 4px 10px; border-radius: var(--radius-sm);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .lang-switch button:hover { color: var(--text-primary); border-color: rgba(0,212,170,0.4); }
+        .lang-switch button.active { color: var(--text-primary); background: rgba(0,98,204,0.15); border-color: var(--brand-primary); }
+
         /* Status badge */
         .badge {
             display: inline-flex; align-items: center; gap: 6px;
@@ -141,6 +162,7 @@
         .badge-success { background: rgba(0, 212, 170, 0.15); color: #00D4AA; }
         .badge-warning { background: rgba(255, 165, 2, 0.15); color: #FFA502; }
         .badge-danger { background: rgba(255, 71, 87, 0.15); color: #FF4757; }
+        .badge-muted { background: rgba(255,255,255,0.06); color: var(--text-muted); }
 
         /* Grid layout */
         .dashboard-grid {
@@ -169,7 +191,7 @@
             background: rgba(0, 98, 204, 0.1); color: var(--text-primary);
         }
         .sidebar-item.active {
-            border-left: 3px solid var(--brand-primary);
+            border-inline-start: 3px solid var(--brand-primary);
         }
 
         /* Stat cards */
@@ -190,6 +212,7 @@
             font-size: 32px; font-weight: 700; margin: 8px 0;
             background: var(--gradient-primary);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            font-variant-numeric: tabular-nums;
         }
         .stat-label { font-size: 13px; color: var(--text-secondary); }
         .stat-change {
@@ -204,7 +227,7 @@
             width: 100%; border-collapse: collapse;
         }
         .data-table th {
-            text-align: left; padding: 12px 16px;
+            text-align: start; padding: 12px 16px;
             font-size: 12px; font-weight: 600; color: var(--text-muted);
             text-transform: uppercase; letter-spacing: 0.5px;
             border-bottom: 1px solid var(--glass-border);
@@ -216,6 +239,12 @@
         .data-table tr:hover td {
             background: rgba(0, 98, 204, 0.03);
         }
+
+        /* Empty / signed-out state */
+        .empty-state {
+            padding: 48px 24px; text-align: center; color: var(--text-secondary);
+        }
+        .empty-state h3 { color: var(--text-primary); margin-bottom: 8px; }
 
         /* Animations */
         @keyframes fadeInUp {
@@ -261,5 +290,27 @@
     <div class="bg-mesh"></div>
     {% block content %}{% endblock %}
     {% block extra_js %}{% endblock %}
+
+    {# Language switcher — posts to Django's set_language view, sets the
+       session/cookie language, and reloads the page in the chosen locale. #}
+    <script>
+    (function () {
+        window.cymedSetLang = function (code) {
+            var f = document.createElement('form');
+            f.method = 'post';
+            f.action = '{% url "set_language" %}';
+            f.style.display = 'none';
+            var csrf = document.createElement('input');
+            csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken';
+            csrf.value = '{{ csrf_token }}';
+            var lang = document.createElement('input');
+            lang.type = 'hidden'; lang.name = 'language'; lang.value = code;
+            var next = document.createElement('input');
+            next.type = 'hidden'; next.name = 'next'; next.value = window.location.pathname;
+            f.appendChild(csrf); f.appendChild(lang); f.appendChild(next);
+            document.body.appendChild(f); f.submit();
+        };
+    })();
+    </script>
 </body>
 </html>

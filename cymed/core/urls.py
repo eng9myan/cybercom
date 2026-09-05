@@ -4,6 +4,7 @@ from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from core.views.health import HealthView, LivenessView, ReadinessView
+from core.views.portals import MainDashboardView, PatientPortalView, ProviderPortalView
 
 urlpatterns = [
     # ── Admin ──────────────────────────────────────────────────────────────
@@ -14,10 +15,10 @@ urlpatterns = [
     path("health/readiness", ReadinessView.as_view(), name="readiness-check"),
     path("", include("platform.observability.urls")),   # exposes /metrics
     # ── Frontend Portals ───────────────────────────────────────────────────
-    path("", TemplateView.as_view(template_name="dashboard/index.html"), name="home"),
-    path("patient-portal/", TemplateView.as_view(template_name="patient_portal/index.html"), name="patient-portal"),
+    path("", MainDashboardView.as_view(), name="home"),
+    path("patient-portal/", PatientPortalView.as_view(), name="patient-portal"),
     path("patient-app/", TemplateView.as_view(template_name="patient_app/index.html"), name="patient-app"),
-    path("provider-portal/", TemplateView.as_view(template_name="provider_portal/index.html"), name="provider-portal"),
+    path("provider-portal/", ProviderPortalView.as_view(), name="provider-portal"),
     # ── OpenAPI Schema ─────────────────────────────────────────────────────
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
@@ -36,6 +37,9 @@ urlpatterns = [
     path("api/v1/notifications/", include("platform.notifications.urls")),
     path("api/v1/audit/", include("platform.audit.urls")),
     path("api/v1/canonical/", include("platform.canonical.urls")),
+    # Language switch for the server-rendered portals (POST target of the
+    # header toggle in base.html). Django's built-in set_language view.
+    path("i18n/", include("django.conf.urls.i18n")),
     # ── CyMed Clinical Core API v1 (Program 3.0) ───────────────────────────
     path("api/v1/patients/", include("products.cymed.core.patients.urls")),
     path("api/v1/providers/", include("products.cymed.core.providers.urls")),

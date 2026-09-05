@@ -1,0 +1,326 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: cymed-portals 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);\n"
+
+msgid "Hakeem — Next-Gen Healthcare"
+msgstr "حكيم — رعاية صحية من الجيل القادم"
+
+msgid "Hakeem"
+msgstr "حكيم"
+
+msgid "Hakeem Command Center"
+msgstr "مركز قيادة حكيم"
+
+msgid "Hakeem Patient Portal"
+msgstr "بوابة مرضى حكيم"
+
+msgid "Hakeem Patient"
+msgstr "مريض حكيم"
+
+msgid "Hakeem Provider Portal"
+msgstr "بوابة مقدّمي الرعاية في حكيم"
+
+msgid "Hakeem Provider"
+msgstr "مقدّم رعاية حكيم"
+
+msgid "CyMed Patient"
+msgstr "مريض CyMed"
+
+msgid "Loading your health…"
+msgstr "جارٍ تحميل بياناتك الصحية…"
+
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+msgid "Patient Portal"
+msgstr "بوابة المريض"
+
+msgid "Provider Portal"
+msgstr "بوابة مقدّم الرعاية"
+
+msgid "API Docs"
+msgstr "توثيق الواجهة البرمجية"
+
+msgid "System Online"
+msgstr "النظام متصل"
+
+msgid "Not signed in"
+msgstr "غير مسجّل الدخول"
+
+msgid "Connected"
+msgstr "متصل"
+
+msgid "On call"
+msgstr "في المناوبة"
+
+msgid "Off call"
+msgstr "خارج المناوبة"
+
+msgid "Live"
+msgstr "مباشر"
+
+msgid "Modules"
+msgstr "الوحدات"
+
+msgid "Hospital"
+msgstr "المستشفى"
+
+msgid "Clinic"
+msgstr "العيادة"
+
+msgid "Pharmacy"
+msgstr "الصيدلية"
+
+msgid "Laboratory"
+msgstr "المختبر"
+
+msgid "Imaging"
+msgstr "الأشعة"
+
+msgid "Integrations"
+msgstr "التكاملات"
+
+msgid "ICD-11 Terminology"
+msgstr "مصطلحات ICD-11"
+
+msgid "JoFawTra (JO)"
+msgstr "جوفوترة (الأردن)"
+
+msgid "ZATCA (SA)"
+msgstr "هيئة الزكاة والضريبة (السعودية)"
+
+msgid "Command Center"
+msgstr "مركز القيادة"
+
+msgid "Real-time overview of your healthcare network"
+msgstr "نظرة لحظية على شبكتك الصحية"
+
+msgid "Active admissions"
+msgstr "حالات الإدخال النشطة"
+
+msgid "Occupied beds"
+msgstr "الأسرّة المشغولة"
+
+msgid "Emergency waiting"
+msgstr "منتظرو الطوارئ"
+
+msgid "ICU occupancy"
+msgstr "إشغال العناية المركزة"
+
+msgid "Capacity & staffing"
+msgstr "السعة والملاك الوظيفي"
+
+msgid "Indicator"
+msgstr "المؤشر"
+
+msgid "Value"
+msgstr "القيمة"
+
+msgid "Scheduled procedures today"
+msgstr "العمليات المجدولة اليوم"
+
+msgid "Bed occupancy"
+msgstr "إشغال الأسرّة"
+
+msgid "ICU / ventilator utilization"
+msgstr "استخدام العناية المركزة / أجهزة التنفس"
+
+msgid "Nurse-to-patient ratio adherence"
+msgstr "الالتزام بنسبة الممرض إلى المريض"
+
+msgid "Physician duty-hours compliance"
+msgstr "الالتزام بساعات عمل الأطباء"
+
+msgid "Within policy"
+msgstr "ضمن السياسة"
+
+msgid "Sign in to see live network data"
+msgstr "سجّل الدخول لعرض بيانات الشبكة المباشرة"
+
+msgid ""
+"This command center reads live figures from your tenant's hospital, clinic, "
+"pharmacy, lab and imaging modules once you are authenticated."
+msgstr ""
+"يعرض مركز القيادة أرقامًا مباشرة من وحدات المستشفى والعيادة والصيدلية "
+"والمختبر والأشعة الخاصة بك بعد تسجيل الدخول."
+
+msgid "Open the API console"
+msgstr "فتح وحدة تحكم الواجهة البرمجية"
+
+msgid "Sign in to your patient portal"
+msgstr "سجّل الدخول إلى بوابة المريض"
+
+msgid ""
+"Your appointments, health records, prescriptions, NFC emergency card and "
+"bills load here once you authenticate with your Hakeem account."
+msgstr ""
+"تظهر هنا مواعيدك وسجلاتك الصحية ووصفاتك وبطاقة الطوارئ NFC وفواتيرك بعد "
+"تسجيل الدخول بحساب حكيم."
+
+msgid "Sign in"
+msgstr "تسجيل الدخول"
+
+msgid "MRN"
+msgstr "رقم السجل الطبي"
+
+msgid "Overview"
+msgstr "نظرة عامة"
+
+msgid "Appointments"
+msgstr "المواعيد"
+
+msgid "Health Records"
+msgstr "السجلات الصحية"
+
+msgid "Prescriptions"
+msgstr "الوصفات الطبية"
+
+msgid "NFC Emergency Card"
+msgstr "بطاقة الطوارئ NFC"
+
+msgid "Billing"
+msgstr "الفوترة"
+
+msgid "Welcome back, %(name)s"
+msgstr "مرحبًا بعودتك، %(name)s"
+
+msgid "Your health at a glance"
+msgstr "صحتك في لمحة"
+
+msgid "Next appointment"
+msgstr "الموعد التالي"
+
+msgid "Active prescriptions"
+msgstr "الوصفات النشطة"
+
+msgid "Pending lab results"
+msgstr "نتائج المختبر المعلّقة"
+
+msgid "NFC card"
+msgstr "بطاقة NFC"
+
+msgid "Active"
+msgstr "نشطة"
+
+msgid "Not set up"
+msgstr "غير مُهيّأة"
+
+msgid "Instant health access for emergencies"
+msgstr "وصول صحي فوري في الطوارئ"
+
+msgid ""
+"Paramedics can tap your NFC card or scan its QR to see your allergies, "
+"medications, conditions, blood type and emergency contacts. Manage the card "
+"from the CyMed patient mobile app or via the API."
+msgstr ""
+"يمكن للمسعفين لمس بطاقة NFC أو مسح رمز QR لرؤية الحساسيات والأدوية والحالات "
+"وفصيلة الدم وجهات اتصال الطوارئ. تُدار البطاقة من تطبيق مرضى CyMed أو عبر "
+"الواجهة البرمجية."
+
+msgid "Manage NFC cards"
+msgstr "إدارة بطاقات NFC"
+
+msgid ""
+"Your upcoming and past appointments. Load them from /api/v1/scheduling/."
+msgstr "مواعيدك القادمة والسابقة. حمّلها من ‎/api/v1/scheduling/‎."
+
+msgid ""
+"Your ICD-11-coded conditions, encounters and clinical documents from "
+"/api/v1/clinical/."
+msgstr ""
+"حالاتك المرمّزة وفق ICD-11 وزياراتك ووثائقك السريرية من ‎/api/v1/clinical/‎."
+
+msgid ""
+"Active and historical prescriptions with e-Rx tracking from "
+"/api/v1/pharmacy/."
+msgstr ""
+"الوصفات النشطة والسابقة مع تتبّع الوصفة الإلكترونية من ‎/api/v1/pharmacy/‎."
+
+msgid "Invoices, insurance claims and payment history from /api/v1/payments/."
+msgstr "الفواتير ومطالبات التأمين وسجل المدفوعات من ‎/api/v1/payments/‎."
+
+msgid "Sign in to your provider portal"
+msgstr "سجّل الدخول إلى بوابة مقدّم الرعاية"
+
+msgid ""
+"Your schedule, patient roster, priority alerts, orders and credentialing "
+"status load here once you authenticate with your Hakeem provider account."
+msgstr ""
+"يظهر هنا جدولك وقائمة مرضاك والتنبيهات ذات الأولوية والطلبات وحالة الاعتماد "
+"المهني بعد تسجيل الدخول بحساب مقدّم الرعاية في حكيم."
+
+msgid "NPI"
+msgstr "رقم المزوّد الوطني"
+
+msgid "My Patients"
+msgstr "مرضاي"
+
+msgid "Schedule"
+msgstr "الجدول"
+
+msgid "Orders & Results"
+msgstr "الطلبات والنتائج"
+
+msgid "Credentialing"
+msgstr "الاعتماد المهني"
+
+msgid "Telemedicine"
+msgstr "الطب عن بُعد"
+
+msgid "Provider Command Center"
+msgstr "مركز قيادة مقدّم الرعاية"
+
+msgid "Today's appointments"
+msgstr "مواعيد اليوم"
+
+msgid "Pending results"
+msgstr "النتائج المعلّقة"
+
+msgid "Active patients"
+msgstr "المرضى النشطون"
+
+msgid "Telemedicine queue"
+msgstr "قائمة انتظار الطب عن بُعد"
+
+msgid "Priority patient alerts"
+msgstr "تنبيهات المرضى ذات الأولوية"
+
+msgid "No priority alerts right now."
+msgstr "لا توجد تنبيهات ذات أولوية حاليًا."
+
+msgid "Credentialing status"
+msgstr "حالة الاعتماد المهني"
+
+msgid "Verify and track your professional credentials"
+msgstr "تحقّق من مؤهلاتك المهنية وتابعها"
+
+msgid "No credentialing records yet. Add them via the API or your admin."
+msgstr "لا توجد سجلات اعتماد بعد. أضِفها عبر الواجهة البرمجية أو المسؤول."
+
+msgid "Open credentialing API"
+msgstr "فتح واجهة الاعتماد البرمجية"
+
+msgid ""
+"Your patient roster with active conditions and care plans from "
+"/api/v1/clinical/."
+msgstr "قائمة مرضاك مع الحالات النشطة وخطط الرعاية من ‎/api/v1/clinical/‎."
+
+msgid "Calendar and availability from /api/v1/scheduling/."
+msgstr "التقويم والإتاحة من ‎/api/v1/scheduling/‎."
+
+msgid ""
+"Lab, imaging and pharmacy orders with results from /api/v1/lab/, "
+"/api/v1/imaging/, /api/v1/pharmacy/."
+msgstr ""
+"طلبات المختبر والأشعة والصيدلية مع النتائج من ‎/api/v1/lab/‎ "
+"و‎/api/v1/imaging/‎ و‎/api/v1/pharmacy/‎."
+
+msgid "Virtual consultations from /api/v1/clinic/telemedicine/."
+msgstr "الاستشارات الافتراضية من ‎/api/v1/clinic/telemedicine/‎."

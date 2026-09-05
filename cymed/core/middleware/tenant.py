@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import connection
 from django.http import JsonResponse
 
@@ -23,6 +24,19 @@ class TenantIsolationMiddleware:
             "/api/v1/identity/metrics",
             "/api/v1/identity/token/validate/",
         ]:
+            return self.get_response(request)
+
+        # Server-rendered portal shells + API console. These render a public
+        # "sign in" state and only surface tenant data once request.user_session
+        # is present; the view gates on that, not this middleware. Without this
+        # they 400 before the view ever runs. Shares the allowlist with
+        # shared.auth.auth_middleware so the two can't drift.
+        # (PROJECT_STATE follow-up: apply the public-path exemption to the cymed portals.)
+        if request.path in getattr(settings, "AUTH_PUBLIC_PATHS", ()) or any(
+            request.path.startswith(p)
+            for p in getattr(settings, "AUTH_PUBLIC_PATH_PREFIXES", ())
+        ):
+            request.tenant_id = None
             return self.get_response(request)
 
         # Allow public website marketing APIs to bypass tenant validation

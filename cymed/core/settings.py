@@ -225,6 +225,10 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # Resolves the active language (session key / cookie / Accept-Language)
+    # for the server-rendered portals; must sit after SessionMiddleware and
+    # before CommonMiddleware. (ADR-0032: Arabic + English.)
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -254,6 +258,7 @@ TEMPLATES = [
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
+                "django.template.context_processors.i18n",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
@@ -447,6 +452,24 @@ LANGUAGES = [
 ]
 
 LOCALE_PATHS = [BASE_DIR / "locale"]
+
+# Unauthenticated surfaces — the server-rendered portal shells (which render a
+# public "sign in" state and gate real data on request.user_session in the
+# view), the API console, and the language-switch endpoint. Consumed by
+# shared.auth.auth_middleware and core.middleware.tenant.
+AUTH_PUBLIC_PATHS = (
+    "/",
+    "/patient-portal/",
+    "/patient-app/",
+    "/provider-portal/",
+    "/api/docs/",
+    "/api/redoc/",
+    "/i18n/setlang/",
+)
+AUTH_PUBLIC_PATH_PREFIXES = ("/api/schema/",)
+
+# Where the portal "Sign in" button points until a full web auth flow lands.
+PORTAL_LOGIN_URL = os.environ.get("PORTAL_LOGIN_URL", "/api/docs/")
 
 # ---------------------------------------------------------------------------
 # STATIC & MEDIA
