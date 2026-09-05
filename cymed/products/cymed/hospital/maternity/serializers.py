@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.hospital.maternity.models import (
     Delivery,
     LaborEpisode,
@@ -53,11 +52,14 @@ class DeliverySerializer(serializers.ModelSerializer):
         tenant_id = validated_data.get("tenant_id")
         delivery = super().create(validated_data)
 
-        # Trigger Delivery charge
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.billing.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.charge.created",
+            aggregate_type="BillingCharge",
+            aggregate_id=delivery.id,
+            tenant_id=tenant_id,
             payload={
                 "encounter_id": str(
                     delivery.labor_episode.pregnancy.patient.id

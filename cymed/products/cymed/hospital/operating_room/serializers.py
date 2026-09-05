@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from platform.terminology.services import TerminologyService
 from products.cymed.hospital.operating_room.models import (
     ProcedureBooking,
@@ -60,11 +59,14 @@ class SurgicalCaseSerializer(serializers.ModelSerializer):
 
         # Trigger Surgery Completed Event
         if new_status == "completed" and old_status != "completed":
-            # Outbox surgery completed
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.hospital.events",
+            # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+            from platform.canonical import events as canonical_events
+
+            canonical_events.emit(
                 event_type="cymed.hospital.surgery.completed",
+                aggregate_type="SurgicalCase",
+                aggregate_id=surgical_case.id,
+                tenant_id=tenant_id,
                 payload={
                     "surgical_case_id": str(surgical_case.id),
                     "patient_id": str(surgical_case.patient.id),
@@ -77,10 +79,11 @@ class SurgicalCaseSerializer(serializers.ModelSerializer):
             )
 
             # Trigger ERP Billing Charge Event
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.billing.events",
+            canonical_events.emit(
                 event_type="cymed.charge.created",
+                aggregate_type="BillingCharge",
+                aggregate_id=surgical_case.id,
+                tenant_id=tenant_id,
                 payload={
                     "encounter_id": str(
                         surgical_case.id
@@ -93,10 +96,11 @@ class SurgicalCaseSerializer(serializers.ModelSerializer):
             )
 
             # Trigger ERP Inventory Consumed Event
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.inventory.events",
+            canonical_events.emit(
                 event_type="cymed.inventory.consumed",
+                aggregate_type="SurgicalCase",
+                aggregate_id=surgical_case.id,
+                tenant_id=tenant_id,
                 payload={
                     "encounter_id": str(surgical_case.id),
                     "item_code": "SURG-KIT-COMP-01",
@@ -151,11 +155,14 @@ class SurgicalEquipmentSerializer(serializers.ModelSerializer):
         tenant_id = validated_data.get("tenant_id")
         equip = super().create(validated_data)
 
-        # Trigger Asset Assigned outbox event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.assets.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.asset.assigned",
+            aggregate_type="SurgicalEquipment",
+            aggregate_id=equip.id,
+            tenant_id=tenant_id,
             payload={
                 "surgical_case_id": str(equip.surgical_case.id),
                 "asset_serial": equip.asset_serial,

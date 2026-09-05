@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.hospital.icu.models import (
     CriticalEvent,
     ICUAssessment,
@@ -32,11 +31,14 @@ class ICUStaySerializer(serializers.ModelSerializer):
         tenant_id = validated_data.get("tenant_id")
         icu_stay = super().create(validated_data)
 
-        # Trigger Daily ICU Billing Charge
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.billing.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.charge.created",
+            aggregate_type="BillingCharge",
+            aggregate_id=icu_stay.stay.admission.encounter.id,
+            tenant_id=tenant_id,
             payload={
                 "encounter_id": str(icu_stay.stay.admission.encounter.id),
                 "charge_type": "icu_room",
@@ -66,10 +68,14 @@ class ICUAssessmentSerializer(serializers.ModelSerializer):
 
         # SOFA score alert triggers
         if assess.sofa_score >= 10:
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.hospital.events",
+            # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+            from platform.canonical import events as canonical_events
+
+            canonical_events.emit(
                 event_type="cymed.hospital.icu.alert",
+                aggregate_type="ICUStay",
+                aggregate_id=assess.icu_stay.id,
+                tenant_id=tenant_id,
                 payload={
                     "icu_stay_id": str(assess.icu_stay.id),
                     "patient_id": str(assess.icu_stay.stay.admission.encounter.patient.id),
@@ -92,11 +98,15 @@ class VentilatorRecordSerializer(serializers.ModelSerializer):
         vent = super().create(validated_data)
 
         # Alert if oxygen requirements are critical
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
         if vent.fio2_pct >= 60:
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.hospital.events",
+            canonical_events.emit(
                 event_type="cymed.hospital.icu.alert",
+                aggregate_type="ICUStay",
+                aggregate_id=vent.icu_stay.id,
+                tenant_id=tenant_id,
                 payload={
                     "icu_stay_id": str(vent.icu_stay.id),
                     "patient_id": str(vent.icu_stay.stay.admission.encounter.patient.id),
@@ -106,10 +116,11 @@ class VentilatorRecordSerializer(serializers.ModelSerializer):
             )
 
         # Trigger Ventilator Charge Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.billing.events",
+        canonical_events.emit(
             event_type="cymed.charge.created",
+            aggregate_type="BillingCharge",
+            aggregate_id=vent.icu_stay.stay.admission.encounter.id,
+            tenant_id=tenant_id,
             payload={
                 "encounter_id": str(vent.icu_stay.stay.admission.encounter.id),
                 "charge_type": "ventilator_use",
@@ -135,11 +146,14 @@ class CriticalEventSerializer(serializers.ModelSerializer):
         tenant_id = validated_data.get("tenant_id")
         evt = super().create(validated_data)
 
-        # Trigger ICU Critical Alert Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.hospital.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.hospital.icu.alert",
+            aggregate_type="ICUStay",
+            aggregate_id=evt.icu_stay.id,
+            tenant_id=tenant_id,
             payload={
                 "icu_stay_id": str(evt.icu_stay.id),
                 "patient_id": str(evt.icu_stay.stay.admission.encounter.patient.id),

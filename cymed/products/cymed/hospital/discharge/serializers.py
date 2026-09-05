@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from platform.terminology.services import TerminologyService
 from products.cymed.hospital.discharge.models import (
     DischargeChecklist,
@@ -34,11 +33,14 @@ class DischargeChecklistSerializer(serializers.ModelSerializer):
             and old_status != "completed"
             and checklist.task_name == "billing_cleared"
         ):
-            # Trigger ERP Billing Charge Event for discharge processing
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.billing.events",
+            # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+            from platform.canonical import events as canonical_events
+
+            canonical_events.emit(
                 event_type="cymed.charge.created",
+                aggregate_type="BillingCharge",
+                aggregate_id=checklist.stay.admission.encounter.id,
+                tenant_id=tenant_id,
                 payload={
                     "encounter_id": str(checklist.stay.admission.encounter.id),
                     "charge_type": "discharge_processing",

@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.hospital.capacity_management.models import (
     CapacityRule,
     CapacityThreshold,
@@ -35,10 +34,14 @@ class SurgePlanSerializer(serializers.ModelSerializer):
 
         # Trigger emergency procurement if surge plan is newly activated
         if new_active and not old_active:
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.procurement.events",
+            # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+            from platform.canonical import events as canonical_events
+
+            canonical_events.emit(
                 event_type="cymed.procurement.requested",
+                aggregate_type="SurgePlan",
+                aggregate_id=plan.id,
+                tenant_id=tenant_id,
                 payload={
                     "surge_plan_id": str(plan.id),
                     "item_code": "SURGE-BED-EXTRA",

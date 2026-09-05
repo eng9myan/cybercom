@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.hospital.adt.models import (
     Admission,
     AdmissionReason,
@@ -60,11 +59,14 @@ class AdmissionSerializer(serializers.ModelSerializer):
         tenant_id = validated_data.get("tenant_id")
         admission = super().create(validated_data)
 
-        # Trigger Outbox Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.hospital.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.hospital.admission.created",
+            aggregate_type="Admission",
+            aggregate_id=admission.id,
+            tenant_id=tenant_id,
             payload={
                 "admission_id": str(admission.id),
                 "encounter_id": str(admission.encounter.id),
@@ -75,10 +77,11 @@ class AdmissionSerializer(serializers.ModelSerializer):
         )
 
         # Trigger ERP Billing Charge Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.billing.events",
+        canonical_events.emit(
             event_type="cymed.charge.created",
+            aggregate_type="BillingCharge",
+            aggregate_id=admission.encounter.id,
+            tenant_id=tenant_id,
             payload={
                 "encounter_id": str(admission.encounter.id),
                 "charge_type": "admission",
@@ -127,11 +130,14 @@ class TransferApprovalSerializer(serializers.ModelSerializer):
         req.status = "approved"
         req.save()
 
-        # Trigger Outbox Event for Transfer
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.hospital.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.hospital.transfer.created",
+            aggregate_type="TransferRequest",
+            aggregate_id=req.id,
+            tenant_id=tenant_id,
             payload={
                 "transfer_request_id": str(req.id),
                 "patient_id": str(req.patient.id),
@@ -144,10 +150,11 @@ class TransferApprovalSerializer(serializers.ModelSerializer):
         )
 
         # Trigger ERP Billing Charge Event for Bed Transfer
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.billing.events",
+        canonical_events.emit(
             event_type="cymed.charge.created",
+            aggregate_type="BillingCharge",
+            aggregate_id=req.encounter.id,
+            tenant_id=tenant_id,
             payload={
                 "encounter_id": str(req.encounter.id),
                 "charge_type": "bed_transfer",
@@ -187,11 +194,14 @@ class DischargeSummarySerializer(serializers.ModelSerializer):
         admission.status = "discharged"
         admission.save()
 
-        # Trigger Outbox Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.hospital.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.hospital.discharge.completed",
+            aggregate_type="Admission",
+            aggregate_id=admission.id,
+            tenant_id=tenant_id,
             payload={
                 "admission_id": str(admission.id),
                 "discharged_at": summary.discharged_at.isoformat(),

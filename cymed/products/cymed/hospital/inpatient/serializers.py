@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.hospital.inpatient.models import (
     DailyRound,
     DischargePlanning,
@@ -45,11 +44,14 @@ class DailyRoundSerializer(serializers.ModelSerializer):
         tenant_id = validated_data.get("tenant_id")
         round_obj = super().create(validated_data)
 
-        # Trigger ERP Billing Charge Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.billing.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.charge.created",
+            aggregate_type="BillingCharge",
+            aggregate_id=round_obj.stay.admission.encounter.id,
+            tenant_id=tenant_id,
             payload={
                 "encounter_id": str(round_obj.stay.admission.encounter.id),
                 "charge_type": "physician_round",

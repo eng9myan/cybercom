@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.hospital.nursing.models import (
     NursingAssessment,
     NursingAssignment,
@@ -31,11 +30,14 @@ class NursingAssignmentSerializer(serializers.ModelSerializer):
         tenant_id = validated_data.get("tenant_id")
         assignment = super().create(validated_data)
 
-        # Trigger workforce synced outbox event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.workforce.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.employee.synced",
+            aggregate_type="NursingAssignment",
+            aggregate_id=assignment.id,
+            tenant_id=tenant_id,
             payload={
                 "assignment_id": str(assignment.id),
                 "employee_id": str(assignment.nurse_id),
@@ -80,11 +82,14 @@ class NursingTaskSerializer(serializers.ModelSerializer):
 
             validated_data["completed_at"] = timezone.now()
 
-            # Trigger ERP Billing Charge Event
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.billing.events",
+            # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+            from platform.canonical import events as canonical_events
+
+            canonical_events.emit(
                 event_type="cymed.charge.created",
+                aggregate_type="BillingCharge",
+                aggregate_id=instance.admission.encounter.id,
+                tenant_id=tenant_id,
                 payload={
                     "encounter_id": str(instance.admission.encounter.id),
                     "charge_type": "nursing_care",

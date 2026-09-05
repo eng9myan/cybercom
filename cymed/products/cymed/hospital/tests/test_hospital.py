@@ -4,7 +4,7 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from platform.events.models import OutboxEvent
+from platform.canonical.models import DomainEvent
 from products.cymed.core.encounters.models import Encounter
 from products.cymed.core.facilities.models import Bed, Department, Facility, Room, Ward
 from products.cymed.core.organizations.models import Organization
@@ -136,13 +136,13 @@ class TestHospitalEdition:
         assert resp.status_code == 201
         admission_id = resp.data["id"]
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.hospital.admission.created"
             ).count()
             == 1
         )
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id,
                 event_type="cymed.charge.created",
                 payload__charge_type="admission",
@@ -182,7 +182,7 @@ class TestHospitalEdition:
         assert app_resp.status_code == 201
         assert TransferRequest.objects.get(id=req_id).status == "approved"
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.hospital.transfer.created"
             ).count()
             == 1
@@ -204,7 +204,7 @@ class TestHospitalEdition:
         assert disc_resp.status_code == 201
         assert Admission.objects.get(id=admission_id).status == "discharged"
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.hospital.discharge.completed"
             ).count()
             == 1
@@ -222,7 +222,7 @@ class TestHospitalEdition:
         )
         assert assign_resp.status_code == 201
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.hospital.bed.assigned"
             ).count()
             == 1
@@ -297,7 +297,7 @@ class TestHospitalEdition:
         assert visit_resp.status_code == 201
         visit_id = visit_resp.data["id"]
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id,
                 event_type="cymed.charge.created",
                 payload__charge_type="emergency_admission",
@@ -319,7 +319,7 @@ class TestHospitalEdition:
         assert triage_resp.status_code == 201
         assert EmergencyVisit.objects.get(id=visit_id).status == "resuscitation"
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id,
                 event_type="cymed.hospital.icu.alert",
                 payload__alert_type="critical_esi_level_1",
@@ -335,7 +335,7 @@ class TestHospitalEdition:
         )
         assert acuity_resp.status_code == 201
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id,
                 event_type="cymed.hospital.icu.alert",
                 payload__alert_type="high_news2_deterioration",
@@ -490,7 +490,7 @@ class TestHospitalEdition:
         )
         assert assign_resp.status_code == 201
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.employee.synced"
             ).count()
             == 1
@@ -583,7 +583,7 @@ class TestHospitalEdition:
         assert stay_resp.status_code == 201
         icu_id = stay_resp.data["id"]
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id,
                 event_type="cymed.charge.created",
                 payload__charge_type="icu_room",
@@ -643,7 +643,7 @@ class TestHospitalEdition:
         )
         assert crit_resp.status_code == 201
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id,
                 event_type="cymed.hospital.icu.alert",
                 payload__alert_type="critical_event_vent_failure",
@@ -746,7 +746,7 @@ class TestHospitalEdition:
         )
         assert eq_resp.status_code == 201
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.asset.assigned"
             ).count()
             == 1
@@ -758,13 +758,13 @@ class TestHospitalEdition:
         )
         assert patch_resp.status_code == 200
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.hospital.surgery.completed"
             ).count()
             == 1
         )
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id,
                 event_type="cymed.charge.created",
                 payload__charge_type="or_utilization",
@@ -772,7 +772,7 @@ class TestHospitalEdition:
             == 1
         )
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.inventory.consumed"
             ).count()
             == 1
@@ -837,7 +837,7 @@ class TestHospitalEdition:
         )
         assert rec_assess_resp.status_code == 201
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id,
                 event_type="cymed.charge.created",
                 payload__charge_type="anesthesia_recovery",
@@ -1018,7 +1018,7 @@ class TestHospitalEdition:
         )
         assert patch_resp.status_code == 200
         assert (
-            OutboxEvent.objects.filter(
+            DomainEvent.objects.filter(
                 tenant_id=test_tenant_id,
                 event_type="cymed.charge.created",
                 payload__charge_type="discharge_processing",

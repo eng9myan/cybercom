@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.hospital.transfer_center.models import (
     AcceptanceReview,
     ExternalReferral,
@@ -24,11 +23,14 @@ class TransferCaseSerializer(serializers.ModelSerializer):
         tenant_id = validated_data.get("tenant_id")
         tcase = super().create(validated_data)
 
-        # Trigger Hospital Transfer Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.hospital.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.hospital.transfer.created",
+            aggregate_type="TransferCase",
+            aggregate_id=tcase.id,
+            tenant_id=tenant_id,
             payload={
                 "transfer_case_id": str(tcase.id),
                 "patient_id": str(tcase.patient.id),
@@ -39,10 +41,11 @@ class TransferCaseSerializer(serializers.ModelSerializer):
         )
 
         # Trigger ERP Procurement for ambulance / transit services
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.procurement.events",
+        canonical_events.emit(
             event_type="cymed.procurement.requested",
+            aggregate_type="TransferCase",
+            aggregate_id=tcase.id,
+            tenant_id=tenant_id,
             payload={
                 "encounter_id": str(tcase.id),
                 "item_code": "AMB-TRANS-SERV",

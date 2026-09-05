@@ -27,19 +27,22 @@ from platform.common.tenant_context import tenant_context
 logger = logging.getLogger(__name__)
 
 
-def _emit_outbox_event(tenant_id: str, topic: str, event_type: str, payload: dict) -> None:
-    """Helper to write to the platform transactional outbox."""
+def _emit_outbox_event(
+    tenant_id: str, event_type: str, payload: dict, *, aggregate_type: str, aggregate_id
+) -> None:
+    """Canonical outbox (M9 cutover — was platform.events.OutboxEvent)."""
     try:
-        from platform.events.models import OutboxEvent
+        from platform.canonical import events as canonical_events
 
-        OutboxEvent.objects.create(
-            tenant_id=uuid.UUID(str(tenant_id)),
-            topic=topic,
+        canonical_events.emit(
             event_type=event_type,
+            aggregate_type=aggregate_type,
+            aggregate_id=aggregate_id,
+            tenant_id=uuid.UUID(str(tenant_id)),
             payload=payload,
         )
     except Exception as exc:
-        logger.error(f"Failed to emit OutboxEvent {event_type} on {topic}: {exc}")
+        logger.error(f"Failed to emit domain event {event_type}: {exc}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -119,7 +122,8 @@ class AdmissionService:
             "admitted_at": admission.admitted_at.isoformat(),
         }
         _emit_outbox_event(
-            tenant_id, "cymed.hospital.admission.created", "AdmissionCreated", payload
+            tenant_id, "AdmissionCreated", payload,
+            aggregate_type="Admission", aggregate_id=admission.id,
         )
 
         # 5. Post charge to CyCom ERP (Simulated Event)
@@ -129,7 +133,10 @@ class AdmissionService:
             "amount": 250.00,
             "posted_at": timezone.now().isoformat(),
         }
-        _emit_outbox_event(tenant_id, "cymed.charge.created", "ChargeCreated", charge_payload)
+        _emit_outbox_event(
+            tenant_id, "ChargeCreated", charge_payload,
+            aggregate_type="BillingCharge", aggregate_id=encounter_uuid,
+        )
 
         return {
             "admission_id": str(admission.id),
@@ -207,7 +214,8 @@ class AdmissionService:
             "discharged_by": str(discharged_by),
         }
         _emit_outbox_event(
-            tenant_id, "cymed.hospital.discharge.completed", "DischargeCompleted", payload
+            tenant_id, "DischargeCompleted", payload,
+            aggregate_type="Admission", aggregate_id=admission.id,
         )
 
         return {
@@ -298,7 +306,10 @@ class AdmissionService:
             "target_bed_id": str(target_bed_id),
             "status": status,
         }
-        _emit_outbox_event(tenant_id, "cymed.hospital.transfer.created", "TransferCreated", payload)
+        _emit_outbox_event(
+            tenant_id, "TransferCreated", payload,
+            aggregate_type="TransferRequest", aggregate_id=req.id,
+        )
 
         return {
             "transfer_request_id": str(req.id),
@@ -620,7 +631,8 @@ class EmergencyService:
             "status": visit.status,
         }
         _emit_outbox_event(
-            tenant_id, "cymed.emergency.triage.completed", "EmergencyTriageCompleted", payload
+            tenant_id, "EmergencyTriageCompleted", payload,
+            aggregate_type="EmergencyTriage", aggregate_id=triage.id,
         )
 
         # Critical Alert if ESI 1 or 2
@@ -631,7 +643,8 @@ class EmergencyService:
                 "message": f"Critical triage alert: ESI Level {esi_level} patient registered.",
             }
             _emit_outbox_event(
-                tenant_id, "cymed.emergency.alert.critical", "CriticalAlertTriggered", alert_payload
+                tenant_id, "CriticalAlertTriggered", alert_payload,
+                aggregate_type="EmergencyVisit", aggregate_id=visit.id,
             )
 
         return {
@@ -845,7 +858,10 @@ class ICUService:
             "sofa_score": sofa_score,
             "recorded_by": str(rounded_by),
         }
-        _emit_outbox_event(tenant_id, "cymed.icu.round.completed", "ICURoundCompleted", payload)
+        _emit_outbox_event(
+            tenant_id, "ICURoundCompleted", payload,
+            aggregate_type="ICURound", aggregate_id=round_rec.id,
+        )
 
         return {
             "round_id": str(round_rec.id),
@@ -1004,7 +1020,10 @@ class OperatingRoomService:
             "surgeon_id": str(surgeon_id),
             "scheduled_start": start.isoformat(),
         }
-        _emit_outbox_event(tenant_id, "cymed.or.case.scheduled", "SurgicalCaseScheduled", payload)
+        _emit_outbox_event(
+            tenant_id, "SurgicalCaseScheduled", payload,
+            aggregate_type="SurgicalCase", aggregate_id=case.id,
+        )
 
         return {
             "case_id": str(case.id),
@@ -1040,7 +1059,10 @@ class OperatingRoomService:
             "surgical_case_id": str(case.id),
             "started_at": timezone.now().isoformat(),
         }
-        _emit_outbox_event(tenant_id, "cymed.or.case.started", "SurgicalCaseStarted", payload)
+        _emit_outbox_event(
+            tenant_id, "SurgicalCaseStarted", payload,
+            aggregate_type="SurgicalCase", aggregate_id=case.id,
+        )
 
         return {
             "case_id": str(case.id),
@@ -1075,7 +1097,10 @@ class OperatingRoomService:
             "complications": complications,
             "completed_at": timezone.now().isoformat(),
         }
-        _emit_outbox_event(tenant_id, "cymed.or.case.completed", "SurgicalCaseCompleted", payload)
+        _emit_outbox_event(
+            tenant_id, "SurgicalCaseCompleted", payload,
+            aggregate_type="SurgicalCase", aggregate_id=case.id,
+        )
 
         # Trigger billing event
         charge_payload = {
@@ -1086,7 +1111,10 @@ class OperatingRoomService:
             "amount": 1500.00,
             "posted_at": timezone.now().isoformat(),
         }
-        _emit_outbox_event(tenant_id, "cymed.charge.created", "ChargeCreated", charge_payload)
+        _emit_outbox_event(
+            tenant_id, "ChargeCreated", charge_payload,
+            aggregate_type="BillingCharge", aggregate_id=case.id,
+        )
 
         return {
             "case_id": str(case.id),
@@ -1608,7 +1636,8 @@ class CapacityService:
             "activated_by": activated_by,
         }
         _emit_outbox_event(
-            tenant_id, "cymed.hospital.surge.activated", "SurgePlanActivated", payload
+            tenant_id, "SurgePlanActivated", payload,
+            aggregate_type="SurgePlan", aggregate_id=plan.id,
         )
 
         return plan

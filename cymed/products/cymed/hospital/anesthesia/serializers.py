@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.hospital.anesthesia.models import (
     AnesthesiaAssessment,
     AnesthesiaPlan,
@@ -50,11 +49,14 @@ class AnesthesiaRecordSerializer(serializers.ModelSerializer):
         tenant_id = validated_data.get("tenant_id")
         record = super().create(validated_data)
 
-        # Trigger Anesthesiologist Charge
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.billing.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.charge.created",
+            aggregate_type="BillingCharge",
+            aggregate_id=record.surgical_case.id,
+            tenant_id=tenant_id,
             payload={
                 "encounter_id": str(record.surgical_case.id),
                 "charge_type": "anesthesia_services",
@@ -78,11 +80,14 @@ class RecoveryAssessmentSerializer(serializers.ModelSerializer):
         tenant_id = validated_data.get("tenant_id")
         assessment = super().create(validated_data)
 
-        # Trigger Post-Anesthesia Recovery Charge Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.billing.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.charge.created",
+            aggregate_type="BillingCharge",
+            aggregate_id=assessment.surgical_case.id,
+            tenant_id=tenant_id,
             payload={
                 "encounter_id": str(assessment.surgical_case.id),
                 "charge_type": "anesthesia_recovery",

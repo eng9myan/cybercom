@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.hospital.bed_management.models import (
     BedAssignment,
     BedBlocking,
@@ -26,11 +25,14 @@ class BedAssignmentSerializer(serializers.ModelSerializer):
         bed.status = "occupied"
         bed.save()
 
-        # Trigger Outbox Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.hospital.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.hospital.bed.assigned",
+            aggregate_type="BedAssignment",
+            aggregate_id=assignment.id,
+            tenant_id=tenant_id,
             payload={
                 "bed_assignment_id": str(assignment.id),
                 "patient_id": str(assignment.patient.id),
@@ -40,10 +42,11 @@ class BedAssignmentSerializer(serializers.ModelSerializer):
         )
 
         # Trigger ERP Billing Charge Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.billing.events",
+        canonical_events.emit(
             event_type="cymed.charge.created",
+            aggregate_type="BillingCharge",
+            aggregate_id=assignment.id,
+            tenant_id=tenant_id,
             payload={
                 "bed_assignment_id": str(assignment.id),
                 "charge_type": "bed_occupancy",

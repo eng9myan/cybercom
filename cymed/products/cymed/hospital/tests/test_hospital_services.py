@@ -3,7 +3,7 @@ import uuid
 import pytest
 from django.utils import timezone
 
-from platform.events.models import OutboxEvent
+from platform.canonical.models import DomainEvent
 from products.cymed.core.encounters.models import Encounter
 from products.cymed.core.facilities.models import Bed, Department, Facility, Room, Ward
 from products.cymed.core.organizations.models import Organization
@@ -116,7 +116,7 @@ class TestHospitalServices:
         assert bed.status == "occupied"
 
         # Verify OutboxEvents
-        events = OutboxEvent.objects.filter(tenant_id=test_tenant_id)
+        events = DomainEvent.objects.filter(tenant_id=test_tenant_id)
         assert events.filter(event_type="AdmissionCreated").exists()
         assert events.filter(event_type="ChargeCreated", payload__charge_type="admission").exists()
 
@@ -180,7 +180,7 @@ class TestHospitalServices:
         assert triage_res["visit_status"] == "fast_track"
 
         # Check critical alert event was generated
-        assert OutboxEvent.objects.filter(
+        assert DomainEvent.objects.filter(
             tenant_id=test_tenant_id, event_type="CriticalAlertTriggered"
         ).exists()
 

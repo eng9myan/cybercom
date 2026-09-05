@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from platform.events.models import OutboxEvent
 from products.cymed.hospital.emergency.models import (
     EmergencyAcuity,
     EmergencyDisposition,
@@ -35,11 +34,14 @@ class EmergencyVisitSerializer(serializers.ModelSerializer):
         tenant_id = validated_data.get("tenant_id")
         visit = super().create(validated_data)
 
-        # Trigger ERP Billing Charge Event
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.billing.events",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        from platform.canonical import events as canonical_events
+
+        canonical_events.emit(
             event_type="cymed.charge.created",
+            aggregate_type="BillingCharge",
+            aggregate_id=visit.id,
+            tenant_id=tenant_id,
             payload={
                 "encounter_id": str(visit.id),
                 "charge_type": "emergency_admission",
@@ -78,10 +80,14 @@ class EmergencyTriageSerializer(serializers.ModelSerializer):
 
         # Trigger ICU Critical Alert Outbox Event if ESI is Critical (Level 1)
         if triage.esi_level == 1:
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.hospital.events",
+            # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+            from platform.canonical import events as canonical_events
+
+            canonical_events.emit(
                 event_type="cymed.hospital.icu.alert",
+                aggregate_type="EmergencyVisit",
+                aggregate_id=visit.id,
+                tenant_id=tenant_id,
                 payload={
                     "visit_id": str(visit.id),
                     "patient_id": str(visit.patient.id),
@@ -104,11 +110,14 @@ class EmergencyAcuitySerializer(serializers.ModelSerializer):
 
         # Deterioration/Sepsis alert using MEWS/NEWS2 heuristics
         if acuity.news2_score >= 5:
-            # Trigger Sepsis/Deterioration alert
-            OutboxEvent.objects.create(
-                tenant_id=tenant_id,
-                topic="cymed.hospital.events",
+            # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+            from platform.canonical import events as canonical_events
+
+            canonical_events.emit(
                 event_type="cymed.hospital.icu.alert",
+                aggregate_type="EmergencyVisit",
+                aggregate_id=acuity.visit.id,
+                tenant_id=tenant_id,
                 payload={
                     "visit_id": str(acuity.visit.id),
                     "patient_id": str(acuity.visit.patient.id),
