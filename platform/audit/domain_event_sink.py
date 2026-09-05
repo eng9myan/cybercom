@@ -33,6 +33,8 @@ _CATEGORY_BY_PREFIX = {
     "cymed.breakglass": "security",
     "cymed.license": "erp",
     "cymed.hospital": "clinical",
+    "cymed.lab": "clinical",
+    "cymed.imaging": "clinical",
     "cymed.charge": "financial",
     "cymed.inventory": "erp",
     "cymed.asset": "erp",

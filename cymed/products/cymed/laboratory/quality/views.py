@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 
 from ..views import LaboratoryModelViewSet
 from .models import ProficiencyTest, QualityControl, QualityFailure, QualityRule, QualityRun
@@ -59,10 +59,12 @@ class QualityRunViewSet(LaboratoryModelViewSet):
         )
         if is_rejection:
             QualityFailure.objects.create(tenant_id=tenant_id, qc_run=obj)
-            OutboxEvent.objects.create(
-                tenant_id=str(tenant_id) if tenant_id else None,
-                topic="cymed.lab.qc.failed",
+            # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+            canonical_events.emit(
                 event_type="cymed.lab.qc.failed",
+                aggregate_type="QualityRun",
+                aggregate_id=obj.id,
+                tenant_id=tenant_id,
                 payload={
                     "qc_run_id": str(obj.id),
                     "z_score": str(z_score),

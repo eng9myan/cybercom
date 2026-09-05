@@ -23,7 +23,7 @@ class ImagingOrderService:
         clinical_indication="",
         icd11_codes=None,
     ) -> dict:
-        from platform.events.models import OutboxEvent
+        from platform.canonical import events as canonical_events
         from products.cymed.imaging.orders.models import (
             ImagingOrder,
             ImagingOrderItem,
@@ -64,10 +64,12 @@ class ImagingOrderService:
             to_status="pending",
             changed_by=ordered_by,
         )
-        OutboxEvent.objects.create(
-            tenant_id=tenant_id,
-            topic="cymed.imaging.orders",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.imaging.order.created",
+            aggregate_type="ImagingOrder",
+            aggregate_id=order.id,
+            tenant_id=tenant_id,
             payload={
                 "aggregate_type": "ImagingOrder",
                 "aggregate_id": str(order.id),
@@ -131,7 +133,7 @@ class ReportingService:
     def finalize_report(report_id, finalized_by) -> dict:
         import django.utils.timezone as tz
 
-        from platform.events.models import OutboxEvent
+        from platform.canonical import events as canonical_events
         from products.cymed.imaging.radiology_reporting.models import RadiologyReport
         from products.cymed.imaging.results.models import ImagingResult
 
@@ -164,10 +166,12 @@ class ReportingService:
                 "status": "final",
             },
         )
-        OutboxEvent.objects.create(
-            tenant_id=report.tenant_id,
-            topic="cymed.imaging.reports",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.imaging.report.finalized",
+            aggregate_type="RadiologyReport",
+            aggregate_id=report.id,
+            tenant_id=report.tenant_id,
             payload={
                 "aggregate_type": "RadiologyReport",
                 "aggregate_id": str(report.id),

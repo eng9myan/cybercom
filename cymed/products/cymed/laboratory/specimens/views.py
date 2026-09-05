@@ -1,4 +1,4 @@
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 
 from ..views import LaboratoryModelViewSet
 from .models import (
@@ -35,10 +35,12 @@ class SpecimenViewSet(LaboratoryModelViewSet):
         obj = serializer.save(
             tenant_id=tenant_id, specimen_number=f"SP-{str(uuid.uuid4()).upper()[:10]}"
         )
-        OutboxEvent.objects.create(
-            tenant_id=str(tenant_id) if tenant_id else None,
-            topic="cymed.lab.specimen.collected",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.lab.specimen.collected",
+            aggregate_type="Specimen",
+            aggregate_id=obj.id,
+            tenant_id=tenant_id,
             payload={
                 "specimen_id": str(obj.id),
                 "specimen_number": obj.specimen_number,
@@ -82,10 +84,12 @@ class SpecimenRejectionViewSet(LaboratoryModelViewSet):
         specimen = obj.specimen
         specimen.status = "rejected"
         specimen.save(update_fields=["status", "updated_at"])
-        OutboxEvent.objects.create(
-            tenant_id=str(tenant_id) if tenant_id else None,
-            topic="cymed.lab.specimen.rejected",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.lab.specimen.rejected",
+            aggregate_type="Specimen",
+            aggregate_id=specimen.id,
+            tenant_id=tenant_id,
             payload={"specimen_id": str(specimen.id), "reason": obj.rejection_reason},
         )
 

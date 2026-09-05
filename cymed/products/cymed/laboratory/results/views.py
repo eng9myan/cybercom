@@ -1,4 +1,4 @@
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 
 from ..views import LaboratoryModelViewSet
 from .models import (
@@ -28,10 +28,12 @@ class LabResultViewSet(LaboratoryModelViewSet):
     def perform_create(self, serializer):
         tenant_id = getattr(self.request, "tenant_id", None)
         obj = serializer.save(tenant_id=tenant_id)
-        OutboxEvent.objects.create(
-            tenant_id=str(tenant_id) if tenant_id else None,
-            topic="cymed.lab.result.created",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.lab.result.created",
+            aggregate_type="LabResult",
+            aggregate_id=obj.id,
+            tenant_id=tenant_id,
             payload={"result_id": str(obj.id), "status": obj.status},
         )
 
@@ -49,10 +51,12 @@ class ResultValueViewSet(LaboratoryModelViewSet):
             CriticalResult.objects.get_or_create(
                 result_value=obj, defaults={"tenant_id": tenant_id}
             )
-            OutboxEvent.objects.create(
-                tenant_id=str(tenant_id) if tenant_id else None,
-                topic="cymed.lab.critical_result.created",
+            # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+            canonical_events.emit(
                 event_type="cymed.lab.critical_result.created",
+                aggregate_type="ResultValue",
+                aggregate_id=obj.id,
+                tenant_id=tenant_id,
                 payload={
                     "result_value_id": str(obj.id),
                     "analyte": obj.analyte_name,
@@ -96,9 +100,11 @@ class ResultApprovalViewSet(LaboratoryModelViewSet):
             result.approved_by = obj.approved_by
             result.approved_at = obj.approved_at
             result.save(update_fields=["status", "approved_by", "approved_at", "updated_at"])
-            OutboxEvent.objects.create(
-                tenant_id=str(tenant_id) if tenant_id else None,
-                topic="cymed.lab.result.verified",
+            # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+            canonical_events.emit(
                 event_type="cymed.lab.result.verified",
+                aggregate_type="LabResult",
+                aggregate_id=result.id,
+                tenant_id=tenant_id,
                 payload={"result_id": str(result.id), "approved_by": str(obj.approved_by)},
             )

@@ -141,7 +141,7 @@ class SpecimenService:
     def reject_specimen(
         tenant_id, specimen_id, rejected_by, reason, action_taken="recollect"
     ) -> dict:
-        from platform.events.models import OutboxEvent
+        from platform.canonical import events as canonical_events
         from products.cymed.laboratory.specimens.models import Specimen, SpecimenRejection
 
         specimen = Specimen.objects.get(pk=specimen_id, tenant_id=tenant_id)
@@ -154,10 +154,12 @@ class SpecimenService:
         )
         specimen.status = "rejected"
         specimen.save(update_fields=["status", "updated_at"])
-        OutboxEvent.objects.create(
-            tenant_id=str(tenant_id),
-            topic="cymed.lab.specimen.rejected",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.lab.specimen.rejected",
+            aggregate_type="Specimen",
+            aggregate_id=specimen.id,
+            tenant_id=tenant_id,
             payload={"specimen_id": str(specimen.id), "reason": reason},
         )
         return {"specimen_id": str(specimen.id), "rejection_id": str(rejection.id)}

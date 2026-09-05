@@ -1,6 +1,6 @@
 import uuid
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 
 from ..views import LaboratoryModelViewSet
 from .models import (
@@ -47,10 +47,12 @@ class LabOrderViewSet(LaboratoryModelViewSet):
         tenant_id = getattr(self.request, "tenant_id", None)
         order_number = f"LAB-{str(uuid.uuid4()).upper()[:12]}"
         obj = serializer.save(tenant_id=tenant_id, order_number=order_number)
-        OutboxEvent.objects.create(
-            tenant_id=str(tenant_id) if tenant_id else None,
-            topic="cymed.lab.order.created",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.lab.order.created",
+            aggregate_type="LabOrder",
+            aggregate_id=obj.id,
+            tenant_id=tenant_id,
             payload={
                 "order_id": str(obj.id),
                 "order_number": obj.order_number,
