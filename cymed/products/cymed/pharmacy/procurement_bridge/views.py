@@ -5,7 +5,7 @@ import uuid
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 
 from ..views import PharmacyModelViewSet
 from .models import ProcurementRequest
@@ -23,11 +23,12 @@ class ProcurementRequestViewSet(PharmacyModelViewSet):
         tenant_id = getattr(self.request, "tenant_id", None)
         req_number = f"PRQ-{str(uuid.uuid4()).upper()[:12]}"
         obj = serializer.save(tenant_id=tenant_id, request_number=req_number)
-        # Notify CyCom ERP via event bus
-        OutboxEvent.objects.create(
-            tenant_id=str(tenant_id) if tenant_id else None,
-            topic="cymed.procurement.requested",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.procurement.requested",
+            aggregate_type="ProcurementRequest",
+            aggregate_id=obj.id,
+            tenant_id=tenant_id,
             payload={
                 "request_id": str(obj.id),
                 "request_number": obj.request_number,

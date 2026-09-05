@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 
 from ..views import PharmacyModelViewSet
 from .models import InventoryQueryResult, MedicationConsumptionEvent
@@ -24,10 +24,12 @@ class MedicationConsumptionEventViewSet(PharmacyModelViewSet):
         """Manually retry ERP sync for a failed consumption event."""
         event = self.get_object()
         tenant_id = getattr(request, "tenant_id", None)
-        OutboxEvent.objects.create(
-            tenant_id=str(tenant_id) if tenant_id else None,
-            topic="cymed.inventory.consumed",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.inventory.consumed.retry",
+            aggregate_type="MedicationConsumptionEvent",
+            aggregate_id=event.id,
+            tenant_id=tenant_id,
             payload={
                 "consumption_id": str(event.id),
                 "drug_code": event.drug_code,

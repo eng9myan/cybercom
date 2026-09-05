@@ -9,7 +9,7 @@ from rest_framework import status as http_status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 
 from ..views import PharmacyModelViewSet
 from .models import (
@@ -104,10 +104,12 @@ class DispenseOrderViewSet(PharmacyModelViewSet):
                 "picked_up_by": dispense.picked_up_by,
             },
         )
-        OutboxEvent.objects.create(
-            tenant_id=str(dispense.tenant_id) if dispense.tenant_id else None,
-            topic="cymed.pharmacy.dispense.completed",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.pharmacy.dispense.completed",
+            aggregate_type="DispenseOrder",
+            aggregate_id=dispense.id,
+            tenant_id=dispense.tenant_id,
             payload={
                 "dispense_id": str(dispense.id),
                 "prescription_id": str(dispense.prescription_id)
@@ -117,10 +119,11 @@ class DispenseOrderViewSet(PharmacyModelViewSet):
             },
         )
         # Notify inventory bridge for consumption
-        OutboxEvent.objects.create(
-            tenant_id=str(dispense.tenant_id) if dispense.tenant_id else None,
-            topic="cymed.inventory.consumed",
+        canonical_events.emit(
             event_type="cymed.inventory.consumed",
+            aggregate_type="DispenseOrder",
+            aggregate_id=dispense.id,
+            tenant_id=dispense.tenant_id,
             payload={"dispense_id": str(dispense.id), "patient_id": str(dispense.patient_id)},
         )
         return Response(DispenseOrderSerializer(dispense).data)

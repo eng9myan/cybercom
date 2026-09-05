@@ -35,6 +35,7 @@ _CATEGORY_BY_PREFIX = {
     "cymed.hospital": "clinical",
     "cymed.lab": "clinical",
     "cymed.imaging": "clinical",
+    "cymed.pharmacy": "clinical",
     "cymed.charge": "financial",
     "cymed.inventory": "erp",
     "cymed.asset": "erp",

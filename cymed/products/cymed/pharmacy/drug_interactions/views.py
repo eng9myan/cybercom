@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 
 from ..views import PharmacyModelViewSet
 from .models import DrugInteraction, InteractionAlert, InteractionRule, InteractionSeverity
@@ -59,10 +59,12 @@ class DrugInteractionViewSet(PharmacyModelViewSet):
         )
 
         if interactions:
-            OutboxEvent.objects.create(
-                tenant_id=str(tenant_id) if tenant_id else None,
-                topic="cymed.pharmacy.interaction.detected",
+            # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+            canonical_events.emit(
                 event_type="cymed.pharmacy.interaction.detected",
+                aggregate_type="Patient",
+                aggregate_id=data["patient_id"],
+                tenant_id=tenant_id,
                 payload={
                     "patient_id": str(data["patient_id"]),
                     "interaction_count": len(interactions),

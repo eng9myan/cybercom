@@ -4,7 +4,7 @@ import django.utils.timezone as tz
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 
 from ..views import PharmacyModelViewSet
 from .models import (
@@ -42,10 +42,12 @@ class MedicationReconciliationViewSet(PharmacyModelViewSet):
         rec.completed_at = tz.now()
         rec.save(update_fields=["status", "completed_at", "updated_at"])
 
-        OutboxEvent.objects.create(
-            tenant_id=str(rec.tenant_id) if rec.tenant_id else None,
-            topic="cymed.pharmacy.medication.reconciled",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.pharmacy.medication.reconciled",
+            aggregate_type="MedicationReconciliation",
+            aggregate_id=rec.id,
+            tenant_id=rec.tenant_id,
             payload={
                 "reconciliation_id": str(rec.id),
                 "reconciliation_type": rec.reconciliation_type,

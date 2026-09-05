@@ -296,14 +296,15 @@ class DrugInteractionService:
             update_fields=["alert_status", "overridden_by", "overridden_at", "override_reason"]
         )
 
-        # Publish event
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
         try:
-            from platform.events.models import OutboxEvent
+            from platform.canonical import events as canonical_events
 
-            OutboxEvent.objects.create(
-                tenant_id=str(tenant_id) if tenant_id else None,
-                topic="cymed.pharmacy.interaction.detected",
+            canonical_events.emit(
                 event_type="cymed.pharmacy.interaction.overridden",
+                aggregate_type="DrugInteraction",
+                aggregate_id=interaction.id,
+                tenant_id=tenant_id,
                 payload={
                     "interaction_id": str(interaction.id),
                     "overridden_by": str(pharmacist_id),

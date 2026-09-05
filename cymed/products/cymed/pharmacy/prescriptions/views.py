@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from platform.events.models import OutboxEvent
+from platform.canonical import events as canonical_events
 
 from ..views import PharmacyModelViewSet
 from .models import (
@@ -45,10 +45,12 @@ class PrescriptionViewSet(PharmacyModelViewSet):
         tenant_id = getattr(self.request, "tenant_id", None)
         rx_number = f"RX-{str(uuid.uuid4()).upper()[:12]}"
         obj = serializer.save(tenant_id=tenant_id, prescription_number=rx_number)
-        OutboxEvent.objects.create(
-            tenant_id=str(tenant_id) if tenant_id else None,
-            topic="cymed.pharmacy.prescription.created",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.pharmacy.prescription.created",
+            aggregate_type="Prescription",
+            aggregate_id=obj.id,
+            tenant_id=tenant_id,
             payload={
                 "prescription_id": str(obj.id),
                 "prescription_number": obj.prescription_number,
@@ -73,10 +75,12 @@ class PrescriptionViewSet(PharmacyModelViewSet):
 
         prescription.verified_at = tz.now()
         prescription.save(update_fields=["status", "verified_by", "verified_at", "updated_at"])
-        OutboxEvent.objects.create(
-            tenant_id=str(prescription.tenant_id) if prescription.tenant_id else None,
-            topic="cymed.pharmacy.prescription.verified",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.pharmacy.prescription.verified",
+            aggregate_type="Prescription",
+            aggregate_id=prescription.id,
+            tenant_id=prescription.tenant_id,
             payload={"prescription_id": str(prescription.id)},
         )
         return Response(PrescriptionSerializer(prescription).data)
@@ -139,10 +143,12 @@ class MedicationOrderViewSet(PharmacyModelViewSet):
             to_status="verified",
             changed_by=order.verified_by,
         )
-        OutboxEvent.objects.create(
-            tenant_id=str(order.tenant_id) if order.tenant_id else None,
-            topic="cymed.pharmacy.prescription.verified",
+        # Canonical outbox (M9 cutover — was platform.events.OutboxEvent).
+        canonical_events.emit(
             event_type="cymed.pharmacy.prescription.verified",
+            aggregate_type="MedicationOrder",
+            aggregate_id=order.id,
+            tenant_id=order.tenant_id,
             payload={"order_id": str(order.id), "order_number": order.order_number},
         )
         return Response(MedicationOrderSerializer(order).data)

@@ -1,21 +1,23 @@
 """
 CyMed Pharmacy Edition — Signal Handlers
-Publishes domain events via Program 2.5 Event Framework (OutboxEvent).
+Publishes canonical domain events (platform.canonical.events — M9 cutover,
+was the legacy Program 2.5 OutboxEvent transactional outbox).
 """
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 
-def _publish_event(topic: str, event_type: str, payload: dict, tenant_id=None):
-    """Helper to publish via OutboxEvent (Program 2.5)."""
+def _publish_event(event_type: str, aggregate_type: str, aggregate_id, payload: dict, tenant_id=None):
+    """Helper to publish a canonical domain event."""
     try:
-        from platform.events.models import OutboxEvent
+        from platform.canonical import events as canonical_events
 
-        OutboxEvent.objects.create(
-            tenant_id=str(tenant_id) if tenant_id else None,
-            topic=topic,
+        canonical_events.emit(
             event_type=event_type,
+            aggregate_type=aggregate_type,
+            aggregate_id=aggregate_id,
+            tenant_id=tenant_id,
             payload=payload,
         )
     except Exception:
@@ -27,8 +29,9 @@ def _publish_event(topic: str, event_type: str, payload: dict, tenant_id=None):
 def on_prescription_saved(sender, instance, created, **kwargs):
     if created:
         _publish_event(
-            topic="cymed.pharmacy.prescription.created",
             event_type="cymed.pharmacy.prescription.created",
+            aggregate_type="Prescription",
+            aggregate_id=instance.id,
             payload={
                 "prescription_id": str(instance.id),
                 "prescription_number": instance.prescription_number,
@@ -44,8 +47,9 @@ def on_prescription_saved(sender, instance, created, **kwargs):
 def on_dispense_saved(sender, instance, created, **kwargs):
     if not created and instance.status == "completed":
         _publish_event(
-            topic="cymed.pharmacy.dispense.completed",
             event_type="cymed.pharmacy.dispense.completed",
+            aggregate_type="DispenseOrder",
+            aggregate_id=instance.id,
             payload={
                 "dispense_id": str(instance.id),
                 "prescription_id": str(instance.prescription_id)
