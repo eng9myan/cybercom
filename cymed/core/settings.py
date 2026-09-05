@@ -209,6 +209,8 @@ PRODUCT_APPS = [
     "products.cymed.mrff.offline_kit.apps.OfflineKitConfig",
     "products.cymed.mrff.ambient_scribe.apps.AmbientScribeConfig",
     "products.cymed.mrff.population_health.apps.PopulationHealthConfig",
+    # ── CyMed operational simulations (demo-tenant seeding) ────────
+    "products.cymed.simulations.apps.SimulationsConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
