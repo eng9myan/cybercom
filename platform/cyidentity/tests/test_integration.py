@@ -192,12 +192,20 @@ class TestCyIDIntegration:
         )
 
     def test_enroll_then_link_into_two_tenants(self, admin_client):
-        # Same defensive pattern as every test in test_cyidentity.py — this
-        # module-level settings_test.py assignment doesn't reliably survive
-        # Django's LazySettings across every test-run ordering (pre-existing,
-        # documented flakiness, not introduced here).
+        # Same defensive pattern as every test in test_cyidentity.py. (The
+        # `create=True` kwarg this used to carry was the actual bug behind
+        # the old "doesn't reliably survive... across test-run ordering"
+        # flakiness: mock's get_original() can't find KEYCLOAK_ENABLED in
+        # LazySettings.__dict__ (it lives on settings._wrapped), so it takes
+        # the non-local restore path on __exit__ — which mock special-cases
+        # to re-`setattr` "for proxy objects like django settings" only when
+        # `create` is falsy. With `create=True` that guard doesn't fire and
+        # `delattr` permanently deletes the setting for the rest of the
+        # process, so later tests/requests see the `getattr(..., True)`
+        # fallback and hit a real Keycloak network call. Fixed by dropping
+        # `create=True` everywhere this pattern patches KEYCLOAK_ENABLED.)
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             self._run_enroll_then_link_into_two_tenants(admin_client)
 

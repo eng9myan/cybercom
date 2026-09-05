@@ -651,14 +651,14 @@ class TestBreakGlass:
 class TestKeycloakAdminClient:
     def test_authenticate_returns_token(self, fake_kc):
         with patch.object(
-            settings := __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            settings := __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             token = fake_kc.authenticate()
         assert token.startswith("fake-admin-token-")
 
     def test_create_realm_fake(self, fake_kc):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             fake_kc.authenticate()
             r = fake_kc.create_realm({"realm": "alpha", "enabled": True})
@@ -667,7 +667,7 @@ class TestKeycloakAdminClient:
 
     def test_delete_realm_fake(self, fake_kc):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             fake_kc.authenticate()
             fake_kc.create_realm({"realm": "alpha", "enabled": True})
@@ -676,7 +676,7 @@ class TestKeycloakAdminClient:
 
     def test_client_secret_round_trip(self, fake_kc):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             fake_kc.authenticate()
             fake_kc.create_client("r1", {"clientId": "c1"})
@@ -691,7 +691,7 @@ class TestKeycloakAdminClient:
 class TestJWKSCache:
     def test_fake_mode_returns_empty_keys(self):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             cache_inst = JWKSCache(jwks_uri="http://x/jwks")
             data = cache_inst.get_keys()
@@ -704,7 +704,7 @@ class TestJWKSCache:
 class TestTokenValidator:
     def test_fake_mode_no_jwk_raises(self):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             v = TokenValidator()
         with pytest.raises(TokenValidationError):
@@ -717,7 +717,7 @@ class TestTokenValidator:
 class TestRealmService:
     def test_provision_creates_realm_and_config(self, active_realm, db):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             svc = RealmService()
             realm = svc.provision(
@@ -733,14 +733,14 @@ class TestRealmService:
 
     def test_activate_via_service(self, realm):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             updated = RealmService().activate(realm)
         assert updated.status == RealmStatus.ACTIVE
 
     def test_decommission_via_service(self, active_realm):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             updated = RealmService().decommission(active_realm)
         assert updated.status == RealmStatus.DECOMMISSIONED
@@ -752,7 +752,7 @@ class TestRealmService:
 class TestClientService:
     def test_register_creates_client(self, active_realm):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             c = ClientService().register(
                 active_realm,
@@ -767,7 +767,7 @@ class TestClientService:
 
     def test_rotate_secret_replaces_prior(self, active_realm):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             c = ClientService().register(active_realm, client_id="web", name="W")
             row1, txt1 = ClientService().rotate_secret(c, created_by="admin")
@@ -785,7 +785,7 @@ class TestClientService:
 class TestUserProvisioningService:
     def test_provision_user_creates_profile(self, active_realm):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             u = UserProvisioningService().provision_user(
                 active_realm,
@@ -800,7 +800,7 @@ class TestUserProvisioningService:
 
     def test_provision_user_idempotent(self, active_realm):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             u1 = UserProvisioningService().provision_user(
                 active_realm, username="x", email="x@x.io"
@@ -1003,7 +1003,7 @@ class TestCyIdentityTasks:
         from platform.cyidentity.tasks import rotate_client_secret_task
 
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             ClientService().register(active_realm, client_id="rotate", name="R")
             result = rotate_client_secret_task("rotate", created_by="admin")

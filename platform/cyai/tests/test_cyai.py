@@ -1,4 +1,5 @@
 import uuid
+from unittest.mock import patch
 
 import pytest
 from rest_framework.test import APIClient
@@ -103,13 +104,19 @@ class TestModelGatewayAndRAG:
         res_oa = ModelGateway.generate_completion(str(test_tenant_id), config_oa, "Tell me a story")
         assert "[GPT gpt-4o]" in res_oa["text"]
 
-        # Anthropic model config
+        # Anthropic model config — _call_anthropic makes a real API call (see
+        # its docstring), so stub it here rather than requiring a live
+        # ANTHROPIC_API_KEY in CI; routing/guardrail/logging behavior is what
+        # this test verifies, not the live SDK call itself.
         config_ant = ModelConfig.objects.create(
             name="Claude", provider="anthropic", model_name="claude-3"
         )
-        res_ant = ModelGateway.generate_completion(
-            str(test_tenant_id), config_ant, "Tell me a story"
-        )
+        with patch.object(
+            ModelGateway, "_call_anthropic", return_value="[Claude claude-3] Response to: Tell me a story..."
+        ):
+            res_ant = ModelGateway.generate_completion(
+                str(test_tenant_id), config_ant, "Tell me a story"
+            )
         assert "[Claude claude-3]" in res_ant["text"]
 
     def test_gateway_blocked_by_guardrail(self, test_tenant_id):

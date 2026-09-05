@@ -23,7 +23,7 @@ class TestDemoProvisionAPI:
 
     def test_default_trial_creates_real_tenant_and_subscription(self):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             resp = self._client().post(
                 "/api/v1/public/demo/provision/",
@@ -43,7 +43,7 @@ class TestDemoProvisionAPI:
 
     def test_sandbox_flag_shortens_trial_to_three_hours(self):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             resp = self._client().post(
                 "/api/v1/public/demo/provision/",

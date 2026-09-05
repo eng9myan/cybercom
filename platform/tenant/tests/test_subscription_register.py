@@ -19,7 +19,7 @@ class TestSubscriptionRegisterAPI:
 
     def test_professional_tier_creates_pending_tenant_and_invoice(self):
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ):
             resp = self._client().post(
                 "/api/v1/public/subscriptions/register/",
@@ -60,7 +60,7 @@ class TestSubscriptionRegisterAPI:
         expected = {"starter": "49", "professional": "149", "enterprise": "399"}
         for tier, price in expected.items():
             with patch.object(
-                __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+                __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
             ):
                 resp = self._client().post(
                     "/api/v1/public/subscriptions/register/",
@@ -93,7 +93,7 @@ class TestSubscriptionRegisterAPI:
         )
 
         with patch.object(
-            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False, create=True
+            __import__("django").conf.settings, "KEYCLOAK_ENABLED", False
         ), patch.object(
             KeycloakAdminClient, "allow_unmanaged_user_attributes"
         ) as allow_unmanaged:
