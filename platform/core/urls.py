@@ -24,6 +24,7 @@ _APP_ROUTES = [
     ("api/v1/terminology/", "platform.terminology.urls"),
     ("api/v1/notifications/", "platform.notifications.urls"),
     ("api/v1/audit/", "platform.audit.urls"),
+    ("api/v1/canonical/", "platform.canonical.urls"),
     ("api/v1/provisioning/", "platform.provisioning.urls"),
     ("api/v1/einvoicing/", "platform.einvoicing.urls"),
     ("api/v1/", "platform.api.urls"),

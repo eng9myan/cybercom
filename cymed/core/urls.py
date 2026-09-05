@@ -35,6 +35,7 @@ urlpatterns = [
     path("api/v1/terminology/", include("platform.terminology.urls")),
     path("api/v1/notifications/", include("platform.notifications.urls")),
     path("api/v1/audit/", include("platform.audit.urls")),
+    path("api/v1/canonical/", include("platform.canonical.urls")),
     # ── CyMed Clinical Core API v1 (Program 3.0) ───────────────────────────
     path("api/v1/patients/", include("products.cymed.core.patients.urls")),
     path("api/v1/providers/", include("products.cymed.core.providers.urls")),

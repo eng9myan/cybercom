@@ -8,6 +8,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 
+from platform.canonical import flavors
+
 
 class DemoRequestThrottle(AnonRateThrottle):
     scope = "website_demo_request"
@@ -54,6 +56,7 @@ from platform.tenant.serializers import (
     TenantEnvironmentSerializer,
     TenantFeatureFlagSerializer,
     TenantFeatureFlagToggleSerializer,
+    TenantFlavorActionSerializer,
     TenantLicenseSerializer,
     TenantProfileSerializer,
     TenantRealmAssignSerializer,
@@ -492,6 +495,33 @@ class TenantViewSet(viewsets.ModelViewSet):
         TenantLifecycleService().suspend(
             tenant, reason=ser.validated_data.get("reason", ""), by=str(request.user)
         )
+        return Response(TenantSerializer(tenant).data)
+
+    @action(
+        detail=True, methods=["post"], permission_classes=[IsPlatformAdmin], url_path="enable-flavor"
+    )
+    def enable_flavor(self, request, pk=None):
+        """Turn on a vertical flavor (blueprint N) for this tenant — appends
+        its registry key to `flavor_set`. 404s if the key isn't registered."""
+        tenant = self.get_object()
+        ser = TenantFlavorActionSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        try:
+            flavors.enable_for_tenant(tenant, ser.validated_data["key"])
+        except flavors.FlavorNotFoundError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
+        return Response(TenantSerializer(tenant).data)
+
+    @action(
+        detail=True, methods=["post"], permission_classes=[IsPlatformAdmin], url_path="disable-flavor"
+    )
+    def disable_flavor(self, request, pk=None):
+        """Turn off a vertical flavor for this tenant. Always safe — no
+        error if the key was never enabled or isn't registered."""
+        tenant = self.get_object()
+        ser = TenantFlavorActionSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        flavors.disable_for_tenant(tenant, ser.validated_data["key"])
         return Response(TenantSerializer(tenant).data)
 
     @action(detail=True, methods=["post"], permission_classes=[IsPlatformAdmin], url_path="archive")

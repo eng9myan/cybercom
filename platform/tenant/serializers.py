@@ -66,6 +66,7 @@ class TenantSerializer(serializers.ModelSerializer):
             "home_region",
             "identity_realm_id",
             "keycloak_realm_name",
+            "flavor_set",
             "activated_at",
             "suspended_at",
             "archived_at",
@@ -80,6 +81,10 @@ class TenantSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
+            # mutated only via TenantViewSet.enable_flavor / .disable_flavor,
+            # which validate the key against the flavor registry — never a
+            # raw PATCH (blueprint N.6).
+            "flavor_set",
             "activated_at",
             "suspended_at",
             "archived_at",
@@ -266,6 +271,12 @@ class TenantSuspendSerializer(serializers.Serializer):
 class TenantTerminateSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=500)
     confirm = serializers.BooleanField()
+
+
+class TenantFlavorActionSerializer(serializers.Serializer):
+    """Body for TenantViewSet.enable_flavor / .disable_flavor (blueprint N)."""
+
+    key = serializers.SlugField(max_length=64)
 
     def validate_confirm(self, value):
         if not value:
