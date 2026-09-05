@@ -52,6 +52,14 @@ class PosOrder(BaseEntity):
         ('POS', 'POS Terminal'),
         ('KIOSK', 'Self-Service Kiosk'),
         ('ONLINE', 'Online Order'),
+        ('DRIVE_THRU', 'Drive-Thru'),
+    ]
+    DAYPART = [
+        ('BREAKFAST', 'Breakfast'),
+        ('LUNCH', 'Lunch'),
+        ('AFTERNOON', 'Afternoon'),
+        ('DINNER', 'Dinner'),
+        ('LATE_NIGHT', 'Late Night'),
     ]
 
     session = models.ForeignKey(
@@ -86,6 +94,16 @@ class PosOrder(BaseEntity):
     ]
     kitchen_status = models.CharField(max_length=20, choices=KITCHEN_STATUS, default='PENDING')
 
+    # Fulfilment timing — populated as an order moves counter -> kitchen -> handout.
+    # These let the QSR reporting layer compute prep time, total wait, and
+    # on-time service level per channel/daypart without inferring from status
+    # transitions after the fact.
+    daypart = models.CharField(max_length=20, choices=DAYPART, blank=True)
+    placed_at = models.DateTimeField(null=True, blank=True)
+    prep_started_at = models.DateTimeField(null=True, blank=True)
+    ready_at = models.DateTimeField(null=True, blank=True)
+    served_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         ordering = ['-created_at']
         unique_together = [('tenant_id', 'order_number')]
@@ -105,6 +123,20 @@ class PosOrder(BaseEntity):
         self.tax_amount = tax
         self.total = subtotal + tax - discount
         self.save()
+
+    @property
+    def prep_seconds(self):
+        if self.prep_started_at and self.ready_at:
+            return (self.ready_at - self.prep_started_at).total_seconds()
+        return None
+
+    @property
+    def wait_seconds(self):
+        """Total customer wait: order placed -> handed over."""
+        start = self.placed_at or self.created_at
+        if start and self.served_at:
+            return (self.served_at - start).total_seconds()
+        return None
 
     def __str__(self):
         return self.order_number or str(self.id)

@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'apps.accounting',
     'apps.hr',
     'apps.payroll',
+    'apps.simulations',
 ]
 
 MIDDLEWARE = [
