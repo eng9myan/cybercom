@@ -64,6 +64,10 @@ services:
       - "3020:3000"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://cyshop.cy-com.com}
+      # Server-side target for the Next.js /api/* rewrite (relative-URL fetches
+      # from the /app screens). Must be reachable from inside this container —
+      # the backend service on the compose network, not the browser's localhost.
+      BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://cyshop-backend:8000}
     depends_on:
       - cyshop-backend
 

@@ -81,6 +81,8 @@ class QsrSeeder:
         if not t:
             return
         tid = t.id
+        from apps.pos.models import PosReceipt
+        PosReceipt.objects.filter(tenant_id=tid).delete()
         PosPayment.objects.filter(tenant_id=tid).delete()
         PosOrderLine.objects.filter(tenant_id=tid).delete()
         PosOrder.objects.filter(tenant_id=tid).delete()
@@ -91,6 +93,15 @@ class QsrSeeder:
         PurchaseOrder.objects.filter(tenant_id=tid).delete()
         StockMovement.objects.filter(tenant_id=tid).delete()
         StockLevel.objects.filter(tenant_id=tid).delete()
+        from apps.accounting.models import JournalEntryLine, JournalEntry, Journal, Account
+        from apps.payroll.models import PayslipLine, Payslip, PayrollBatch
+        PayslipLine.objects.filter(payslip__batch__tenant=t).delete()
+        Payslip.objects.filter(batch__tenant=t).delete()
+        PayrollBatch.objects.filter(tenant=t).delete()
+        JournalEntryLine.objects.filter(tenant_id=tid).delete()
+        JournalEntry.objects.filter(tenant_id=tid).delete()
+        Journal.objects.filter(tenant_id=tid).delete()
+        Account.objects.filter(tenant_id=tid).delete()
         Employee.objects.filter(tenant=t).delete()
         SimulationRun.objects.filter(tenant_id=tid).exclude(pk=self.run.pk).delete()
         self.log(f"  wiped prior operational data for tenant '{self.subdomain}'")
@@ -104,8 +115,92 @@ class QsrSeeder:
         self._seed_consumption()
         self._seed_orders()
         self._seed_staff()
+        self._seed_finance()
         self.run.record_counts = dict(self.counts)
         return dict(self.counts)
+
+    def _seed_finance(self):
+        """Chart of accounts + opening journal entries + one payroll run, so the
+        Finance and Payroll screens show real data in the demo."""
+        from datetime import date
+        from decimal import Decimal as Dec
+        from apps.accounting.models import Account, Journal, JournalEntry, JournalEntryLine
+        from apps.hr.models import Employee
+        from apps.payroll.models import PayrollBatch, Payslip
+        tid = self.tenant.id
+
+        coa = [
+            ("1000", "Cash & Bank", "النقد والبنك", "asset"),
+            ("1100", "Accounts Receivable", "الذمم المدينة", "asset"),
+            ("1400", "Inventory", "المخزون", "asset"),
+            ("2000", "Accounts Payable", "الذمم الدائنة", "liability"),
+            ("2100", "Payroll Payable", "رواتب مستحقة", "liability"),
+            ("3000", "Owner's Equity", "حقوق الملكية", "equity"),
+            ("4000", "Sales Revenue", "إيرادات المبيعات", "revenue"),
+            ("5000", "Cost of Goods Sold", "تكلفة البضاعة المباعة", "expense"),
+            ("6000", "Salaries & Wages", "الرواتب والأجور", "expense"),
+            ("6100", "Rent Expense", "مصروف الإيجار", "expense"),
+        ]
+        acc = {}
+        for code, name, name_ar, at in coa:
+            a, _ = Account.objects.get_or_create(
+                tenant_id=tid, code=code,
+                defaults={"name": name, "name_ar": name_ar, "account_type": at})
+            acc[code] = a
+        jrn, _ = Journal.objects.get_or_create(
+            tenant_id=tid, code="GEN", defaults={"name": "General Journal", "journal_type": "general"})
+
+        d0 = self.r.start_date
+        entries = [
+            ("OPEN-1", d0, "Opening capital", [("1000", "80000", ""), ("3000", "", "80000")]),
+            ("OPEN-2", d0, "Opening inventory", [("1400", "25000", ""), ("3000", "", "25000")]),
+            ("SALE-1", d0, "Weekly cash sales (summary)",
+             [("1000", "48000", ""), ("4000", "", "48000")]),
+            ("COGS-1", d0, "Cost of weekly sales",
+             [("5000", "18500", ""), ("1400", "", "18500")]),
+            ("RENT-1", d0, "Monthly rent", [("6100", "6000", ""), ("1000", "", "6000")]),
+        ]
+        n_ent = 0
+        for ref, dt, desc, lines in entries:
+            if JournalEntry.objects.filter(tenant_id=tid, reference=ref).exists():
+                continue
+            e = JournalEntry.objects.create(
+                tenant_id=tid, journal=jrn, reference=ref, entry_date=dt,
+                description=desc, status="draft")
+            for i, (code, debit, credit) in enumerate(lines):
+                JournalEntryLine.objects.create(
+                    tenant_id=tid, entry=e, line_order=i, account=acc[code],
+                    debit=Dec(debit or "0"), credit=Dec(credit or "0"))
+            e.status = "posted"
+            e.save(update_fields=["status", "updated_at", "version"])
+            n_ent += 1
+        self.counts["chart_of_accounts"] = len(acc)
+        self.counts["journal_entries"] = n_ent
+
+        # one payroll run over the first ~40 employees
+        emps = list(Employee.objects.filter(tenant=self.tenant)[:40])
+        if emps and not PayrollBatch.objects.filter(tenant=self.tenant).exists():  # noqa
+            batch = PayrollBatch.objects.create(
+                tenant=self.tenant, name=f"Payroll {d0:%b %Y}",
+                period_start=d0.replace(day=1), period_end=d0, status="approved")
+            g = n = 0.0
+            for emp in emps:
+                gross = float(emp.base_salary or 700)
+                ded = round(gross * 0.11, 2)   # social security-ish
+                net = round(gross - ded, 2)
+                Payslip.objects.create(
+                    batch=batch, employee=emp,
+                    gross_salary=gross, deductions_total=ded,
+                    working_days=22, status="approved")
+                g += gross
+                n += net
+            batch.total_gross = round(g, 2)
+            batch.total_net = round(n, 2)
+            batch.save(update_fields=["total_gross", "total_net", "updated_at"])
+            self.counts["payroll_batches"] = 1
+            self.counts["payslips"] = len(emps)
+        self.log(f"  finance: {len(acc)} accounts, {n_ent} journal entries, "
+                 f"{self.counts.get('payslips', 0)} payslips")
 
     # ------------------------------------------------------------------
 

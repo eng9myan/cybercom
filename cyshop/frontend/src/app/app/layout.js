@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Users, ShieldAlert, Settings, User, LogOut, Bell, ChevronLeft, ChevronRight,
   Target, FileText, ShoppingBag, BarChart3, MessageSquare, Layers, Search, Sparkles, Command,
   Package, Warehouse, ArrowLeftRight, Tag, Monitor, Clock, Truck, Building2,
+  BookOpen, UserRound, Wallet, ScrollText,
 } from "lucide-react";
 import Logo from "@/components/brand/Logo";
 import { api } from "@/lib/api";
@@ -58,6 +59,19 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: "Finance",
+    items: [
+      { name: "Accounting", path: "/app/accounting", icon: BookOpen },
+    ],
+  },
+  {
+    label: "People",
+    items: [
+      { name: "Human Resources", path: "/app/hr", icon: UserRound },
+      { name: "Payroll", path: "/app/payroll", icon: Wallet },
+    ],
+  },
+  {
     label: "Customer",
     items: [
       { name: "Customer Portal", path: "/app/customer-portal", icon: MessageSquare },
@@ -68,6 +82,7 @@ const NAV_GROUPS = [
     items: [
       { name: "Users", path: "/app/users", icon: Users },
       { name: "Roles & RBAC", path: "/app/roles", icon: ShieldAlert },
+      { name: "Audit Log", path: "/app/audit", icon: ScrollText },
       { name: "System Settings", path: "/app/settings", icon: Settings },
       { name: "Device Registry", path: "/app/settings/devices", icon: Monitor },
       { name: "My Profile", path: "/app/profile", icon: User },
