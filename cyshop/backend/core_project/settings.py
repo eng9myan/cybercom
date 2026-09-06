@@ -58,6 +58,8 @@ INSTALLED_APPS = [
     'apps.accounting',
     'apps.hr',
     'apps.payroll',
+    'apps.einvoicing',
+    'apps.banking',
     'apps.simulations',
 ]
 

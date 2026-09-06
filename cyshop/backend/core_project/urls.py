@@ -23,6 +23,8 @@ urlpatterns = [
     path('api/v1/pos/', include('apps.pos.urls')),
     path('api/v1/purchasing/', include('apps.purchasing.urls')),
     path('api/v1/accounting/', include('apps.accounting.urls')),
+    path('api/v1/einvoicing/', include('apps.einvoicing.urls')),
+    path('api/v1/banking/', include('apps.banking.urls')),
     path('api/v1/hr/', include('apps.hr.urls')),
     path('api/v1/payroll/', include('apps.payroll.urls')),
     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
