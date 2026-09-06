@@ -46,6 +46,12 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id', 'created_at', 'updated_at']
 
+    def validate(self, data):
+        for f in ('sell_price', 'cost_price'):
+            if data.get(f) is not None and data[f] < 0:
+                raise serializers.ValidationError({f: 'Cannot be negative.'})
+        return data
+
     def create(self, validated_data):
         validated_data['tenant_id'] = self.context['request'].tenant_id
         return super().create(validated_data)
@@ -78,6 +84,21 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = '__all__'
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate_sell_price(self, v):
+        if v is not None and v < 0:
+            raise serializers.ValidationError('Sell price cannot be negative.')
+        return v
+
+    def validate_cost_price(self, v):
+        if v is not None and v < 0:
+            raise serializers.ValidationError('Cost price cannot be negative.')
+        return v
+
+    def validate_min_stock_qty(self, v):
+        if v is not None and v < 0:
+            raise serializers.ValidationError('Minimum stock quantity cannot be negative.')
+        return v
 
     def create(self, validated_data):
         validated_data['tenant_id'] = self.context['request'].tenant_id

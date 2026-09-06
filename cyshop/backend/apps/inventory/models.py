@@ -113,6 +113,10 @@ class StockMovement(BaseEntity):
     movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPES)
     reference = models.CharField(max_length=255, blank=True)
     notes = models.TextField(blank=True)
+    # Opt-in override: allow the source balance to go below zero (bulk imports,
+    # end-of-day aggregate consumption postings, manual adjustments). Default
+    # off — an ordinary issue/sale that would oversell is rejected.
+    allow_negative = models.BooleanField(default=False)
 
     # Denormalized for reporting without joins
     warehouse = models.ForeignKey(
@@ -145,6 +149,15 @@ class StockMovement(BaseEntity):
                 defaults={'tenant_id': self.tenant_id, 'quantity': 0},
             )
             level.quantity -= self.quantity
+            if (level.quantity < 0 and not self.allow_negative
+                    and self.movement_type not in ('ADJUSTMENT',)):
+                raise ValidationError(
+                    {'quantity': (
+                        f"Insufficient stock at {self.from_location}: on hand "
+                        f"{level.quantity + self.quantity}, issue {self.quantity}. "
+                        f"Set allow_negative to override."
+                    )}
+                )
             level.save(update_fields=['quantity', 'updated_at', 'version'])
 
         if self.to_location:

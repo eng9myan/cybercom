@@ -406,6 +406,7 @@ class QsrSeeder:
                         quantity=_d(use), unit_cost=_d(S.RAW_BY_SKU[sku].unit_cost),
                         movement_type="ISSUE", reference=f"{self.tag} usage {day}",
                         notes="kitchen consumption (BOM)",
+                        allow_negative=True,  # aggregated end-of-day posting
                     )
                     StockMovement.objects.filter(pk=mv.pk).update(created_at=use_dt)
                     n_use += 1

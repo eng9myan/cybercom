@@ -39,6 +39,13 @@ class PosOrderLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
     line_subtotal = serializers.DecimalField(max_digits=15, decimal_places=4, read_only=True)
     line_tax = serializers.DecimalField(max_digits=15, decimal_places=4, read_only=True)
+    quantity = serializers.DecimalField(
+        max_digits=15, decimal_places=4, min_value=Decimal('0.0001'))
+    unit_price = serializers.DecimalField(
+        max_digits=15, decimal_places=4, min_value=Decimal('0'), required=False)
+    discount_percent = serializers.DecimalField(
+        max_digits=5, decimal_places=2, min_value=Decimal('0'), max_value=Decimal('100'),
+        default=Decimal('0.00'))
 
     class Meta:
         model = PosOrderLine
@@ -103,9 +110,13 @@ class _LineInputSerializer(serializers.Serializer):
     variant = serializers.PrimaryKeyRelatedField(
         queryset=ProductVariant.objects.all(), required=False, allow_null=True
     )
-    quantity = serializers.DecimalField(max_digits=15, decimal_places=4)
-    unit_price = serializers.DecimalField(max_digits=15, decimal_places=4, required=False)
-    discount_percent = serializers.DecimalField(max_digits=5, decimal_places=2, default='0.00')
+    quantity = serializers.DecimalField(
+        max_digits=15, decimal_places=4, min_value=Decimal('0.0001'))
+    unit_price = serializers.DecimalField(
+        max_digits=15, decimal_places=4, required=False, min_value=Decimal('0'))
+    discount_percent = serializers.DecimalField(
+        max_digits=5, decimal_places=2, default='0.00',
+        min_value=Decimal('0'), max_value=Decimal('100'))
     notes = serializers.CharField(required=False, allow_blank=True, default='')
 
 
