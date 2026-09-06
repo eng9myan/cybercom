@@ -93,10 +93,12 @@ echo "==> Starting all services"
 $compose up -d
 
 echo "==> Waiting for health check on port $port"
+healthy=0
 for attempt in {1..30}; do
   if curl --fail --silent --show-error "http://127.0.0.1:${port}/health" >/dev/null; then
     echo "Release $release is healthy and active on port $port"
-    exit 0
+    healthy=1
+    break
   fi
   if [[ "$attempt" == 30 ]]; then
     echo "Health check failed for release $release" >&2
@@ -106,3 +108,16 @@ for attempt in {1..30}; do
   fi
   sleep 2
 done
+
+# Operational simulations — populate the courier + Anabtawi demo tenants
+# with a week of trading (deliveries, routes, manufacturing batches,
+# consolidated export shipments). Deterministic + --wipe => same result
+# every deploy. Non-fatal; skipped if the sim app isn't in this release.
+if [[ "$healthy" == 1 ]] && \
+   $compose run --rm backend python manage.py help seed_courier_sim >/dev/null 2>&1; then
+  echo "==> Seeding courier + Anabtawi operational simulations (can take a few minutes)"
+  $compose run --rm backend python manage.py seed_courier_sim --wipe --no-files || \
+    echo "WARN: seed_courier_sim failed — demo tenant left as-is" >&2
+  $compose run --rm backend python manage.py seed_anabtawi_sim --wipe --no-files || \
+    echo "WARN: seed_anabtawi_sim failed — demo tenant left as-is" >&2
+fi

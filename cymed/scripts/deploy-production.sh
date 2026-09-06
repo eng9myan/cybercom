@@ -114,4 +114,14 @@ if [[ "$healthy" == 1 ]]; then
     > "$app_root/shared/keycloak-bootstrap-output.txt" 2>&1 || {
       echo "Keycloak bootstrap step failed — check $app_root/shared/keycloak-bootstrap-output.txt on the server" >&2
     }
+
+  # Operational simulation — populates the hospital demo tenant with a
+  # week of a hospital + clinic network running (ED, admissions, ICU,
+  # orders, clinics). Deterministic + --wipe => same result every deploy.
+  # Non-fatal; skipped if the sim app isn't in this release.
+  if $compose run --rm backend python manage.py help seed_hospital_sim >/dev/null 2>&1; then
+    echo "==> Seeding hospital operational simulation (can take a few minutes)"
+    $compose run --rm backend python manage.py seed_hospital_sim --wipe --no-files || \
+      echo "WARN: seed_hospital_sim failed — demo tenant left as-is" >&2
+  fi
 fi

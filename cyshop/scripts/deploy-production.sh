@@ -127,4 +127,15 @@ done
 if [[ "$healthy" == 1 && "$frontend_up" == 1 ]]; then
   echo "==> Seeding demo tenant + owner demo login"
   $compose exec -T cyshop-backend python manage.py seed_demo
+
+  # Operational simulation — populates the QSR demo tenant with a full
+  # week of trading (orders, kitchen timing, inventory, deliveries, crew)
+  # so a prospect browsing the demo sees a running business, not empty
+  # screens. Deterministic + --wipe => same result every deploy. Skipped
+  # (non-fatal) if the sim app isn't in this release.
+  if $compose exec -T cyshop-backend python manage.py help seed_qsr_sim >/dev/null 2>&1; then
+    echo "==> Seeding QSR operational simulation (this can take a few minutes)"
+    $compose exec -T cyshop-backend python manage.py seed_qsr_sim --wipe --no-files || \
+      echo "WARN: seed_qsr_sim failed — demo tenant left as-is" >&2
+  fi
 fi
