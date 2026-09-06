@@ -149,6 +149,13 @@ if _cors_origins:
 else:
     CORS_ALLOW_ALL_ORIGINS = DEBUG
 
+# The frontend sends the workspace on login as X-Tenant-Subdomain; without it
+# in the allow-list the browser blocks the preflight and the login (and the
+# demo launcher) fail with a CORS error.
+from corsheaders.defaults import default_headers as _cors_default_headers  # noqa: E402
+
+CORS_ALLOW_HEADERS = (*_cors_default_headers, 'x-tenant-subdomain', 'x-tenant-id')
+
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
