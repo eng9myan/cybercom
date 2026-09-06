@@ -245,3 +245,20 @@ h1, h2, h3, h4, h5, h6 {
 }
 .cy-input::placeholder { color: var(--color-ink-muted); }
 textarea.cy-input { resize: vertical; min-height: 80px; }
+
+/* --------------------------------------------------------------------------
+   Contrast safety net. This app is dark-themed, but many /app screens use
+   `bg-white` utility surfaces (buttons, chips, cards). Several of those also
+   carried `hover:text-white`, so the label vanished on hover (white on white).
+   Force any white-background element to dark text, at rest and on hover.
+   -------------------------------------------------------------------------- */
+.bg-white,
+.bg-white:hover,
+.hover\:bg-white:hover {
+  color: #0f172a;
+}
+.bg-white .text-white,
+.bg-white:hover .text-white,
+.hover\:bg-white:hover .text-white {
+  color: #0f172a;
+}

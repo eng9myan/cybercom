@@ -104,22 +104,22 @@ export default function DemosPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--color-bg,#fafafa)]">
+    <main className="min-h-screen bg-[var(--color-bg,#0a0a0f)] text-white">
       <div className="mx-auto max-w-6xl px-6 py-14">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-800"
+          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white"
         >
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
 
-        <div className="mt-8 mb-2 inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1 text-xs font-semibold text-brand-blue">
+        <div className="mt-8 mb-2 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-brand-blue">
           <Sparkles className="w-3.5 h-3.5" /> Live sandboxes
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-neutral-900">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white">
           Choose a demo and walk the platform
         </h1>
-        <p className="mt-3 max-w-2xl text-neutral-600">
+        <p className="mt-3 max-w-2xl text-gray-400">
           Every demo is a real, seeded environment — a full week of operations you can
           click through: orders, inventory, scheduling, deliveries, reports. Nothing is
           mocked. Pick the one closest to your business.
