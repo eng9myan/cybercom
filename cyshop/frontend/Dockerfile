@@ -7,6 +7,10 @@ RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 FROM node:20-alpine AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* is inlined at build time — the API base must be present here,
+# not just at runtime. Passed from docker-compose build.args / --build-arg.
+ARG NEXT_PUBLIC_API_URL=https://cyshop.cy-com.com
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
