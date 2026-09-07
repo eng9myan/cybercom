@@ -8,7 +8,9 @@ class TaxProfileSerializer(serializers.ModelSerializer):
         model = TaxProfile
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
-        extra_kwargs = {"client_secret": {"write_only": True}, "csid": {"write_only": True}}
+        extra_kwargs = {"client_secret": {"write_only": True}, "csid": {"write_only": True},
+                        "private_key_pem": {"write_only": True},
+                        "certificate_pem": {"write_only": True}}
 
     def create(self, v):
         v["tenant_id"] = self.context["request"].tenant_id

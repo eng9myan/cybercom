@@ -181,6 +181,10 @@ def submit(doc: EInvoiceDocument) -> EInvoiceDocument:
         generate(doc.invoice)
         doc.refresh_from_db()
     profile = getattr(doc.invoice.company, "tax_profile", None)
+    if profile is not None and getattr(profile, "certificate_pem", "") and getattr(profile, "private_key_pem", ""):
+        from .signing import sign_document
+        sign_document(doc)
+        doc.refresh_from_db()
     if not profile or not (profile.client_id and profile.client_secret and profile.csid):
         doc.warnings = (doc.warnings or []) + [
             "Scheme onboarding credentials (client_id / client_secret / CSID) are "

@@ -59,3 +59,39 @@ class EInvoiceTests(TestCase):
         d2 = services.generate(self._invoice(number="B"))
         self.assertEqual(d2.pih, d1.invoice_hash)
         self.assertGreater(d2.icv, d1.icv)
+
+    def test_sign_without_csid_warns_not_signed(self):
+        from .signing import sign_document
+        doc = services.generate(self._invoice())
+        doc = sign_document(doc)
+        self.assertNotEqual(doc.status, "signed")
+        self.assertTrue(any("Not signed" in w for w in doc.warnings))
+
+    def test_sign_with_csid_produces_xades(self):
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from cryptography import x509
+        from cryptography.x509.oid import NameOID
+        import datetime
+        from .signing import sign_document
+
+        key = ec.generate_private_key(ec.SECP256K1())
+        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Acme")])
+        cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name)
+                .public_key(key.public_key()).serial_number(x509.random_serial_number())
+                .not_valid_before(datetime.datetime.now(datetime.UTC))
+                .not_valid_after(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365))
+                .sign(key, hashes.SHA256()))
+        TaxProfile.objects.create(
+            tenant_id=self.t.id, company=self.co, scheme="zatca", legal_name="Acme",
+            vat_number="300000000000003",
+            certificate_pem=cert.public_bytes(serialization.Encoding.PEM).decode(),
+            private_key_pem=key.private_bytes(
+                serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+                serialization.NoEncryption()).decode())
+        doc = services.generate(self._invoice())
+        doc = sign_document(doc)
+        self.assertEqual(doc.status, "signed")
+        self.assertIn("ext:UBLExtensions", doc.signed_xml)
+        self.assertIn("xades:SigningTime", doc.signed_xml)
+        self.assertIn("ds:SignatureValue", doc.signed_xml)

@@ -32,6 +32,13 @@
   --shadow-pop: 0 8px 32px -8px rgba(237,108,0,.4);
 
   --ease-out-quart: cubic-bezier(.22,1,.36,1);
+
+  /* Typography floor (audit M-2): 12px body text failed the legibility
+     review, especially in Arabic. Lift the small steps one notch. */
+  --text-xs: 0.8125rem;      /* 13px  (was 12px) */
+  --text-xs--line-height: 1.15rem;
+  --text-sm: 0.9063rem;      /* ~14.5px (was 14px) */
+  --text-sm--line-height: 1.4rem;
 }
 
 * { box-sizing: border-box; }
@@ -245,6 +252,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 .cy-input::placeholder { color: var(--color-ink-muted); }
 textarea.cy-input { resize: vertical; min-height: 80px; }
+
+/* Audit M-2: hard-coded sub-12px labels (table headers use text-[11px]).
+   Raise the floor without touching every call site. */
+.text-\[11px\] { font-size: 12px; }
+[dir="rtl"] .text-\[10px\], [dir="rtl"] .text-\[11px\] { font-size: 12.5px; }
 
 /* --------------------------------------------------------------------------
    Contrast safety net. This app is dark-themed, but many /app screens use

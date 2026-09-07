@@ -5,7 +5,7 @@ import {
   Plus, Search, RefreshCw, X, Eye, ChevronRight,
   CheckCircle2, AlertTriangle, Package, Trash2, ShoppingCart,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, openAuthed } from "@/lib/api";
 
 const STATUS_COLORS = {
   DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
@@ -191,9 +191,14 @@ function PoDetailDrawer({ po, onClose, onConfirm, onCancel }) {
               {po.status}
             </span>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-[var(--color-surface-2)] flex items-center justify-center">
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => openAuthed(`/api/v1/purchasing/purchase-orders/${po.id}/print/`)} className="text-xs font-semibold px-2 py-1 rounded-lg border border-[var(--color-line)] hover:bg-[var(--color-surface-2)]">
+              Print / PDF
+            </button>
+            <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-[var(--color-surface-2)] flex items-center justify-center">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-6">

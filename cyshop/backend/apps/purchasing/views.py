@@ -82,6 +82,11 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         po.save()
         return Response(PurchaseOrderSerializer(po, context={'request': request}).data)
 
+    @action(detail=True, methods=['get'], url_path='print')
+    def print_view(self, request, pk=None):
+        from .printing import render_purchase_order
+        return render_purchase_order(self.get_object())
+
     @action(detail=True, methods=['post'])
     def add_line(self, request, pk=None):
         from apps.catalog.models import Product

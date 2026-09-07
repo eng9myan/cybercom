@@ -49,6 +49,15 @@ class InvoiceViewSet(_Tenant, viewsets.ModelViewSet):
         })
 
     @action(detail=True, methods=["post"])
+    def sign(self, request, pk=None):
+        """Apply the XAdES-B signature (needs the seller CSID on the tax profile)."""
+        from .signing import sign_document
+        inv = self.get_object()
+        doc = getattr(inv, "einvoice", None) or services.generate(inv)
+        doc = sign_document(doc)
+        return Response(EInvoiceDocumentSerializer(doc).data)
+
+    @action(detail=True, methods=["post"])
     def submit(self, request, pk=None):
         inv = self.get_object()
         doc = getattr(inv, "einvoice", None) or services.generate(inv)

@@ -48,6 +48,7 @@ export default function EInvoicingPage() {
     } catch (e) { setErr(e.message); }
   };
   const issue = async (id) => { try { const r = await apiFetch(`/api/v1/einvoicing/invoices/${id}/issue/`, { method: "POST" }); setDetail(r.einvoice); load(); } catch (e) { setErr(e.message); } };
+  const sign = async (id) => { try { setDetail(await apiFetch(`/api/v1/einvoicing/invoices/${id}/sign/`, { method: "POST" })); load(); } catch (e) { setErr(e.message); } };
   const submit = async (id) => { try { setDetail(await apiFetch(`/api/v1/einvoicing/invoices/${id}/submit/`, { method: "POST" })); load(); } catch (e) { setErr(e.message); } };
 
   const [pf, setPf] = useState({ company: "", scheme: "none", legal_name: "", legal_name_ar: "", vat_number: "", country_code: "SA" });
@@ -132,6 +133,7 @@ export default function EInvoicingPage() {
                     <td className={td}>{iv.einvoice ? <span className="cy-pill text-xs">{iv.einvoice.scheme}/{iv.einvoice.status}</span> : "—"}</td>
                     <td className={`${td} whitespace-nowrap`}>
                       <button onClick={() => issue(iv.id)} className="text-brand-blue text-xs font-semibold">{t("einv.issue")}</button>{" · "}
+                      <button onClick={() => sign(iv.id)} className="text-brand-blue text-xs font-semibold">{t("einv.sign")}</button>{" · "}
                       <button onClick={() => submit(iv.id)} className="text-green-400 text-xs font-semibold"><Send className="w-3 h-3 inline" /> {t("einv.submit")}</button>{" · "}
                       <a href={`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/einvoicing/invoices/${iv.id}/xml/`} target="_blank" rel="noreferrer" className="text-[var(--color-ink-muted)] text-xs"><FileCode className="w-3 h-3 inline" /> XML</a>{" · "}
                       <button type="button" onClick={() => openAuthed(`/api/v1/einvoicing/invoices/${iv.id}/print/`)} className="text-[var(--color-ink-muted)] text-xs">Print / PDF</button>
@@ -157,6 +159,13 @@ export default function EInvoicingPage() {
           <input className={inp} placeholder={t("einv.legalNameAr")} value={pf.legal_name_ar} onChange={(e) => setPf({ ...pf, legal_name_ar: e.target.value })} />
           <input className={inp} placeholder={t("einv.sellerVat")} value={pf.vat_number} onChange={(e) => setPf({ ...pf, vat_number: e.target.value })} />
           <input className={`${inp} w-24`} placeholder="Country" value={pf.country_code} onChange={(e) => setPf({ ...pf, country_code: e.target.value })} />
+          {pf.scheme !== "none" && (
+            <div className="space-y-2 border-t border-[var(--color-line)] pt-3">
+              <p className="text-xs text-[var(--color-ink-muted)]">{t("einv.csidHint")}</p>
+              <textarea className={`${inp} h-24 font-mono text-xs`} placeholder="-----BEGIN CERTIFICATE----- (CSID)" value={pf.certificate_pem || ""} onChange={(e) => setPf({ ...pf, certificate_pem: e.target.value })} />
+              <textarea className={`${inp} h-24 font-mono text-xs`} placeholder="-----BEGIN PRIVATE KEY-----" value={pf.private_key_pem || ""} onChange={(e) => setPf({ ...pf, private_key_pem: e.target.value })} />
+            </div>
+          )}
           <button className="cy-btn cy-btn-primary !py-2 !px-3 text-sm">{t("einv.saveProfile")}</button>
         </form>
       )}

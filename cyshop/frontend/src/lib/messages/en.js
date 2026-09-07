@@ -50,6 +50,8 @@ const en = {
     hash: "Invoice hash", qr: "QR code", warnings: "Warnings",
     noInvoices: "No invoices yet.", sellerVat: "Seller VAT number",
     legalName: "Legal name", legalNameAr: "Legal name (Arabic)", saveProfile: "Save profile",
+    sign: "Sign (XAdES)",
+    csidHint: "Paste the seller CSID certificate and its private key (issued after ZATCA / JoFotara onboarding). Signing is disabled until both are present.",
   },
   bank: {
     title: "Bank Reconciliation", accounts: "Bank accounts", newAccount: "Add bank account",

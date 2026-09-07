@@ -38,6 +38,8 @@ class TaxProfile(BaseEntity):
     csid = models.TextField(blank=True, help_text="Compliance/Production CSID (base64)")
     client_id = models.CharField(max_length=255, blank=True)
     client_secret = models.CharField(max_length=255, blank=True)
+    certificate_pem = models.TextField(blank=True, help_text="PEM X.509 cert issued by the scheme CA (CSID)")
+    private_key_pem = models.TextField(blank=True, help_text="PEM private key paired with the CSID cert (sensitive)")
     default_vat_rate = models.DecimalField(max_digits=5, decimal_places=4, default=Decimal("0.15"))
 
     class Meta:
