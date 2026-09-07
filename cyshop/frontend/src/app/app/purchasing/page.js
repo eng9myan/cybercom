@@ -192,7 +192,7 @@ function PoDetailDrawer({ po, onClose, onConfirm, onCancel }) {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => openAuthed(`/api/v1/purchasing/purchase-orders/${po.id}/print/`)} className="text-xs font-semibold px-2 py-1 rounded-lg border border-[var(--color-line)] hover:bg-[var(--color-surface-2)]">
+            <button onClick={() => openAuthed(`/api/v1/purchasing/orders/${po.id}/print/`)} className="text-xs font-semibold px-2 py-1 rounded-lg border border-[var(--color-line)] hover:bg-[var(--color-surface-2)]">
               Print / PDF
             </button>
             <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-[var(--color-surface-2)] flex items-center justify-center">
