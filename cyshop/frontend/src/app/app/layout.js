@@ -11,81 +11,85 @@ import {
 } from "lucide-react";
 import Logo from "@/components/brand/Logo";
 import { api } from "@/lib/api";
+import { useT } from "@/lib/i18n";
+import LangToggle from "@/components/LangToggle";
 
 const NAV_GROUPS = [
   {
-    label: "Overview",
+    label: "Overview", gk: "nav.overview",
     items: [
-      { name: "Dashboard", path: "/app", icon: LayoutDashboard },
-      { name: "Sales Analytics", path: "/app/sales-dashboard", icon: BarChart3 },
+      { name: "Dashboard", k: "nav.dashboard", path: "/app", icon: LayoutDashboard },
+      { name: "Sales Analytics", k: "nav.salesAnalytics", path: "/app/sales-dashboard", icon: BarChart3 },
     ],
   },
   {
-    label: "Pipeline",
+    label: "Pipeline", gk: "nav.pipeline",
     items: [
-      { name: "CRM Kanban", path: "/app/crm", icon: Layers },
-      { name: "Leads", path: "/app/leads", icon: Target },
-      { name: "Quotations", path: "/app/quotations", icon: FileText },
-      { name: "Sales Orders", path: "/app/orders", icon: ShoppingBag },
+      { name: "CRM Kanban", k: "nav.crm", path: "/app/crm", icon: Layers },
+      { name: "Leads", k: "nav.leads", path: "/app/leads", icon: Target },
+      { name: "Quotations", k: "nav.quotations", path: "/app/quotations", icon: FileText },
+      { name: "Sales Orders", k: "nav.salesOrders", path: "/app/orders", icon: ShoppingBag },
     ],
   },
   {
-    label: "Point of Sale",
+    label: "Point of Sale", gk: "nav.pos",
     items: [
-      { name: "POS Terminal", path: "/app/pos", icon: Monitor },
-      { name: "Sessions", path: "/app/pos/sessions", icon: Clock },
+      { name: "POS Terminal", k: "nav.posTerminal", path: "/app/pos", icon: Monitor },
+      { name: "Sessions", k: "nav.sessions", path: "/app/pos/sessions", icon: Clock },
     ],
   },
   {
-    label: "Catalog",
+    label: "Catalog", gk: "nav.catalog",
     items: [
-      { name: "Products", path: "/app/catalog", icon: Package },
-      { name: "Categories", path: "/app/catalog/categories", icon: Tag },
+      { name: "Products", k: "nav.products", path: "/app/catalog", icon: Package },
+      { name: "Categories", k: "nav.categories", path: "/app/catalog/categories", icon: Tag },
     ],
   },
   {
-    label: "Inventory",
+    label: "Inventory", gk: "nav.inventory",
     items: [
-      { name: "Stock Levels", path: "/app/inventory", icon: Warehouse },
-      { name: "Stock Movements", path: "/app/inventory/movements", icon: ArrowLeftRight },
-      { name: "Inter-Branch Transfers", path: "/app/inventory/transfers", icon: Truck },
+      { name: "Stock Levels", k: "nav.stockLevels", path: "/app/inventory", icon: Warehouse },
+      { name: "Stock Movements", k: "nav.stockMovements", path: "/app/inventory/movements", icon: ArrowLeftRight },
+      { name: "Inter-Branch Transfers", k: "nav.transfers", path: "/app/inventory/transfers", icon: Truck },
     ],
   },
   {
-    label: "Purchasing",
+    label: "Purchasing", gk: "nav.purchasing",
     items: [
-      { name: "Purchase Orders", path: "/app/purchasing", icon: Truck },
-      { name: "Vendors", path: "/app/purchasing/vendors", icon: Building2 },
+      { name: "Purchase Orders", k: "nav.purchaseOrders", path: "/app/purchasing", icon: Truck },
+      { name: "Vendors", k: "nav.vendors", path: "/app/purchasing/vendors", icon: Building2 },
     ],
   },
   {
-    label: "Finance",
+    label: "Finance", gk: "nav.finance",
     items: [
-      { name: "Accounting", path: "/app/accounting", icon: BookOpen },
+      { name: "Accounting", k: "nav.accounting", path: "/app/accounting", icon: BookOpen },
+      { name: "E-Invoicing", k: "nav.einvoicing", path: "/app/einvoicing", icon: FileText },
+      { name: "Bank Reconciliation", k: "nav.banking", path: "/app/banking", icon: Building2 },
     ],
   },
   {
-    label: "People",
+    label: "People", gk: "nav.people",
     items: [
-      { name: "Human Resources", path: "/app/hr", icon: UserRound },
-      { name: "Payroll", path: "/app/payroll", icon: Wallet },
+      { name: "Human Resources", k: "nav.hr", path: "/app/hr", icon: UserRound },
+      { name: "Payroll", k: "nav.payroll", path: "/app/payroll", icon: Wallet },
     ],
   },
   {
-    label: "Customer",
+    label: "Customer", gk: "nav.customer",
     items: [
-      { name: "Customer Portal", path: "/app/customer-portal", icon: MessageSquare },
+      { name: "Customer Portal", k: "nav.customerPortal", path: "/app/customer-portal", icon: MessageSquare },
     ],
   },
   {
-    label: "Administration",
+    label: "Administration", gk: "nav.administration",
     items: [
-      { name: "Users", path: "/app/users", icon: Users },
-      { name: "Roles & RBAC", path: "/app/roles", icon: ShieldAlert },
-      { name: "Audit Log", path: "/app/audit", icon: ScrollText },
-      { name: "System Settings", path: "/app/settings", icon: Settings },
-      { name: "Device Registry", path: "/app/settings/devices", icon: Monitor },
-      { name: "My Profile", path: "/app/profile", icon: User },
+      { name: "Users", k: "nav.users", path: "/app/users", icon: Users },
+      { name: "Roles & RBAC", k: "nav.roles", path: "/app/roles", icon: ShieldAlert },
+      { name: "Audit Log", k: "nav.auditLog", path: "/app/audit", icon: ScrollText },
+      { name: "System Settings", k: "nav.settings", path: "/app/settings", icon: Settings },
+      { name: "Device Registry", k: "nav.devices", path: "/app/settings/devices", icon: Monitor },
+      { name: "My Profile", k: "nav.profile", path: "/app/profile", icon: User },
     ],
   },
 ];
@@ -95,6 +99,7 @@ const FLAT_NAV = NAV_GROUPS.flatMap((g) => g.items);
 export default function AppLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useT();
   const [collapsed, setCollapsed] = useState(false);
   const [tenantName, setTenantName] = useState("");
   const [username, setUsername] = useState("");
@@ -183,7 +188,7 @@ export default function AppLayout({ children }) {
             <div key={group.label}>
               {!collapsed && (
                 <div className="px-3 mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
-                  {group.label}
+                  {group.gk ? t(group.gk) : group.label}
                 </div>
               )}
               <ul className="space-y-1">
@@ -205,7 +210,7 @@ export default function AppLayout({ children }) {
                           <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-[#ED6C00]" aria-hidden />
                         )}
                         <Icon className={`w-[18px] h-[18px] shrink-0 ${active ? "text-[#ED6C00]" : ""}`} />
-                        {!collapsed && <span className="truncate">{item.name}</span>}
+                        {!collapsed && <span className="truncate">{item.k ? t(item.k) : item.name}</span>}
                       </Link>
                     </li>
                   );
@@ -272,6 +277,7 @@ export default function AppLayout({ children }) {
             </div>
 
             <div className="flex items-center gap-2 ml-auto">
+              <LangToggle />
               <button
                 onClick={() => setAiOpen(true)}
                 className="cy-btn cy-btn-primary !py-2 !px-3 text-sm"
