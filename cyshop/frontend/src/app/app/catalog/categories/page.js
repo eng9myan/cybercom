@@ -170,9 +170,9 @@ export default function CategoriesPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="font-semibold">{cat.name}</span>
-                <span className="ml-2 text-xs text-[var(--color-ink-muted)]">/{cat.slug}</span>
+                <span className="ms-2 text-xs text-[var(--color-ink-muted)]">/{cat.slug}</span>
                 {cat.children_count > 0 && (
-                  <span className="ml-2 text-xs px-1.5 py-0.5 rounded bg-[var(--color-surface-2)]">
+                  <span className="ms-2 text-xs px-1.5 py-0.5 rounded bg-[var(--color-surface-2)]">
                     {cat.children_count} sub-categories
                   </span>
                 )}
@@ -187,7 +187,7 @@ export default function CategoriesPage() {
               </div>
             </div>
             {children(cat.id).map((child) => (
-              <div key={child.id} className="flex items-center gap-3 pl-12 pr-4 py-2.5 border-t border-[var(--color-line)] hover:bg-[var(--color-surface)] transition-colors">
+              <div key={child.id} className="flex items-center gap-3 ps-12 pe-4 py-2.5 border-t border-[var(--color-line)] hover:bg-[var(--color-surface)] transition-colors">
                 <div className="w-6 h-6 rounded bg-[var(--color-surface-2)] flex items-center justify-center">
                   <Folder className="w-3 h-3 text-[var(--color-ink-muted)]" />
                 </div>

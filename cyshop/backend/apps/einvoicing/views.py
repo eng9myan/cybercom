@@ -62,6 +62,11 @@ class InvoiceViewSet(_Tenant, viewsets.ModelViewSet):
             return Response({"detail": "Not generated yet — call issue first."}, status=400)
         return Response(doc.ubl_xml, content_type="application/xml")
 
+    @action(detail=True, methods=["get"], url_path="print")
+    def print_view(self, request, pk=None):
+        from .printing import render_invoice
+        return render_invoice(self.get_object())
+
 
 class EInvoiceDocumentViewSet(_Tenant, viewsets.ReadOnlyModelViewSet):
     serializer_class = EInvoiceDocumentSerializer

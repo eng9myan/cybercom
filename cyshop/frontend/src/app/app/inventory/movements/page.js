@@ -241,12 +241,12 @@ export default function StockMovementsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-line)] bg-[var(--color-surface)]">
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Type</th>
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Product</th>
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden md:table-cell">From → To</th>
-                <th className="text-right px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Qty</th>
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden lg:table-cell">Reference</th>
-                <th className="text-right px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden sm:table-cell">Date</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Type</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Product</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden md:table-cell">From → To</th>
+                <th className="text-end px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Qty</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden lg:table-cell">Reference</th>
+                <th className="text-end px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden sm:table-cell">Date</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-line)]">
@@ -276,9 +276,9 @@ export default function StockMovementsPage() {
                     <td className="px-4 py-3 text-xs text-[var(--color-ink-muted)] font-mono hidden md:table-cell">
                       {mv.from_location_code || "—"} → {mv.to_location_code || "—"}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold tabular-nums">{parseFloat(mv.quantity).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-end font-bold tabular-nums">{parseFloat(mv.quantity).toFixed(2)}</td>
                     <td className="px-4 py-3 text-[var(--color-ink-muted)] hidden lg:table-cell">{mv.reference || "—"}</td>
-                    <td className="px-4 py-3 text-right text-xs text-[var(--color-ink-muted)] hidden sm:table-cell">
+                    <td className="px-4 py-3 text-end text-xs text-[var(--color-ink-muted)] hidden sm:table-cell">
                       {mv.created_at ? new Date(mv.created_at).toLocaleString() : "—"}
                     </td>
                   </tr>

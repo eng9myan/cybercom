@@ -323,7 +323,7 @@ export default function CustomerPortalPage() {
             {communications.length === 0 ? (
               <p className="text-xs text-[var(--color-ink-muted)]">No previous messages logged.</p>
             ) : (
-              <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-60 overflow-y-auto pe-1">
                 {communications.map(c => (
                   <div key={c.id} className="bg-white border border-[var(--color-line)] p-3 rounded-lg text-xs space-y-1">
                     <div className="flex justify-between items-center text-[10px]">

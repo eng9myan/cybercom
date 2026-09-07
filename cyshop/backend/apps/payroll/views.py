@@ -53,6 +53,11 @@ class PayslipViewSet(viewsets.ModelViewSet):
             qs = qs.filter(status=slip_status)
         return qs.select_related('batch', 'employee')
 
+    @action(detail=True, methods=['get'], url_path='print')
+    def print_view(self, request, pk=None):
+        from .printing import render_payslip
+        return render_payslip(self.get_object())
+
 
 class PayslipLineViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]

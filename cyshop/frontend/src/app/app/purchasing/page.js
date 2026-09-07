@@ -183,7 +183,7 @@ function PoDetailDrawer({ po, onClose, onConfirm, onCancel }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-end bg-black/30 backdrop-blur-sm">
-      <div className="h-full w-full max-w-lg bg-white shadow-2xl border-l border-[var(--color-line)] overflow-y-auto">
+      <div className="h-full w-full max-w-lg bg-white shadow-2xl border-s border-[var(--color-line)] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-line)] sticky top-0 bg-white z-10">
           <div>
             <div className="font-heading font-bold text-lg">{po.po_number}</div>
@@ -223,7 +223,7 @@ function PoDetailDrawer({ po, onClose, onConfirm, onCancel }) {
                         Ordered: {l.quantity} · Received: {l.received_qty} · Outstanding: {l.outstanding_qty}
                       </div>
                     </div>
-                    <div className="text-right shrink-0 ml-4">
+                    <div className="text-end shrink-0 ms-4">
                       <div className="font-bold">{parseFloat(l.line_subtotal || 0).toFixed(2)}</div>
                       <div className="text-xs text-[var(--color-ink-muted)]">{l.unit_cost} ea</div>
                     </div>
@@ -367,7 +367,7 @@ export default function PurchasingPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-ink-muted)]" />
           <input
             placeholder="Search POs…"
-            className="cy-input pl-9 w-56"
+            className="cy-input ps-9 w-56"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -393,7 +393,7 @@ export default function PurchasingPage() {
             <thead>
               <tr className="border-b border-[var(--color-line)] bg-[var(--color-surface)]">
                 {["PO Number", "Vendor", "Status", "Date", "Expected", "Lines", "Total", ""].map(h => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">{h}</th>
+                  <th key={h} className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>

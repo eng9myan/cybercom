@@ -27,7 +27,7 @@ export default function AuditPage() {
   }, [method, q]);
   useEffect(() => { load(); }, [load]);
 
-  const th = "text-left px-3 py-2 text-[11px] uppercase tracking-wide text-[var(--color-ink-muted)] font-semibold";
+  const th = "text-start px-3 py-2 text-[11px] uppercase tracking-wide text-[var(--color-ink-muted)] font-semibold";
   const td = "px-3 py-2 text-sm border-t border-[var(--color-line)]";
 
   return (

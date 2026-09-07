@@ -167,7 +167,7 @@ export default function DevicesPage() {
             <thead>
               <tr className="border-b border-[var(--color-line)] bg-[var(--color-surface)]">
                 {["Name", "Code", "Type", "Branch", "Route", "Last Seen", "Actions"].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">{h}</th>
+                  <th key={h} className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>

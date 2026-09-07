@@ -120,7 +120,7 @@ export default function InventoryPage() {
           <p className="text-sm font-medium text-[#DC2626]">
             {lowStock.length} product{lowStock.length !== 1 ? "s are" : " is"} below minimum stock threshold.
           </p>
-          <Link href="/app/inventory/movements" className="ml-auto text-sm font-semibold text-[#DC2626] hover:underline shrink-0">
+          <Link href="/app/inventory/movements" className="ms-auto text-sm font-semibold text-[#DC2626] hover:underline shrink-0">
             Receive stock →
           </Link>
         </div>
@@ -130,7 +130,7 @@ export default function InventoryPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-ink-muted)]" />
-          <input className="cy-input pl-9" placeholder="Search by product name…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="cy-input ps-9" placeholder="Search by product name…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <select className="cy-input w-auto" value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)}>
           <option value="">All Warehouses</option>
@@ -144,12 +144,12 @@ export default function InventoryPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-line)] bg-[var(--color-surface)]">
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Product</th>
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden md:table-cell">Location</th>
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden lg:table-cell">Warehouse</th>
-                <th className="text-right px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">On Hand</th>
-                <th className="text-right px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden sm:table-cell">Reserved</th>
-                <th className="text-right px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Available</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Product</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden md:table-cell">Location</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden lg:table-cell">Warehouse</th>
+                <th className="text-end px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">On Hand</th>
+                <th className="text-end px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden sm:table-cell">Reserved</th>
+                <th className="text-end px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Available</th>
                 <th className="text-center px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Status</th>
               </tr>
             </thead>
@@ -181,9 +181,9 @@ export default function InventoryPage() {
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-[var(--color-ink-muted)] hidden md:table-cell">{l.location_code}</td>
                     <td className="px-4 py-3 text-[var(--color-ink-muted)] hidden lg:table-cell">{l.warehouse_name}</td>
-                    <td className="px-4 py-3 text-right font-semibold tabular-nums">{onHand.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-right text-[var(--color-ink-muted)] tabular-nums hidden sm:table-cell">{reserved.toFixed(2)}</td>
-                    <td className={`px-4 py-3 text-right font-bold tabular-nums ${isLow ? "text-[#DC2626]" : "text-[#16A34A]"}`}>
+                    <td className="px-4 py-3 text-end font-semibold tabular-nums">{onHand.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-end text-[var(--color-ink-muted)] tabular-nums hidden sm:table-cell">{reserved.toFixed(2)}</td>
+                    <td className={`px-4 py-3 text-end font-bold tabular-nums ${isLow ? "text-[#DC2626]" : "text-[#16A34A]"}`}>
                       {available.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-center">

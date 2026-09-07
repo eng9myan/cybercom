@@ -253,7 +253,7 @@ export default function QuotationsPage() {
             placeholder="Search by quote # or customer..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white border border-[var(--color-line)] rounded-xl py-2 pl-10 pr-4 text-xs text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] focus:outline-none focus:border-[var(--color-ink)] font-medium"
+            className="w-full bg-white border border-[var(--color-line)] rounded-xl py-2 ps-10 pe-4 text-xs text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] focus:outline-none focus:border-[var(--color-ink)] font-medium"
           />
         </div>
 
@@ -299,7 +299,7 @@ export default function QuotationsPage() {
         </div>
       ) : (
         <div className="bg-white border border-[var(--color-line)] rounded-2xl overflow-hidden shadow">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-start border-collapse">
             <thead>
               <tr className="border-b border-[var(--color-line)] text-[10px] uppercase tracking-wider text-[var(--color-ink-muted)] bg-white">
                 <th className="px-6 py-4 font-bold">Quote Number</th>
@@ -307,7 +307,7 @@ export default function QuotationsPage() {
                 <th className="px-6 py-4 font-bold">Customer Type</th>
                 <th className="px-6 py-4 font-bold">Total Amount</th>
                 <th className="px-6 py-4 font-bold">Status</th>
-                <th className="px-6 py-4 font-bold text-right">Actions</th>
+                <th className="px-6 py-4 font-bold text-end">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-850 text-xs">
@@ -332,7 +332,7 @@ export default function QuotationsPage() {
                         {q.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-end">
                       <button
                         onClick={() => {
                           setSelectedQuotation(q);
@@ -355,7 +355,7 @@ export default function QuotationsPage() {
       {/* DETAIL DRAWER / MODAL */}
       {isDetailOpen && selectedQuotation && (
         <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-50 flex items-center justify-end">
-          <div className="bg-white border-l border-[var(--color-line)] w-full max-w-2xl h-full flex flex-col justify-between shadow-2xl animate-slideOver">
+          <div className="bg-white border-s border-[var(--color-line)] w-full max-w-2xl h-full flex flex-col justify-between shadow-2xl animate-slideOver">
             <div className="px-8 py-6 border-b border-[var(--color-line)] flex justify-between items-center bg-white">
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--color-ink-soft)]">Quotation Detail</h2>
@@ -393,24 +393,24 @@ export default function QuotationsPage() {
               <div className="space-y-3">
                 <span className="text-[10px] text-[var(--color-ink-muted)] uppercase tracking-widest font-bold block">Quotation Line Items</span>
                 <div className="bg-white border border-[var(--color-line)] rounded-xl overflow-hidden">
-                  <table className="w-full text-left">
+                  <table className="w-full text-start">
                     <thead>
                       <tr className="border-b border-[var(--color-line)] text-[9px] uppercase tracking-wider text-[var(--color-ink-muted)] bg-white">
                         <th className="px-4 py-2">Item Name</th>
-                        <th className="px-4 py-2 text-right">Qty</th>
-                        <th className="px-4 py-2 text-right">Unit Price</th>
-                        <th className="px-4 py-2 text-right">Discount</th>
-                        <th className="px-4 py-2 text-right">Line Total</th>
+                        <th className="px-4 py-2 text-end">Qty</th>
+                        <th className="px-4 py-2 text-end">Unit Price</th>
+                        <th className="px-4 py-2 text-end">Discount</th>
+                        <th className="px-4 py-2 text-end">Line Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-850 text-[11px] font-mono">
                       {selectedQuotation.lines?.map((line, idx) => (
                         <tr key={idx} className="hover:bg-white">
                           <td className="px-4 py-3 font-sans text-[var(--color-ink-soft)] font-medium">{line.item_name}</td>
-                          <td className="px-4 py-3 text-right text-[var(--color-ink-muted)]">{parseFloat(line.qty).toFixed(1)}</td>
-                          <td className="px-4 py-3 text-right text-[var(--color-ink-muted)]">{parseFloat(line.unit_price).toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right text-[var(--color-ink-muted)]">-{parseFloat(line.discount).toFixed(2)}</td>
-                          <td className="px-4 py-3 text-right font-bold text-[var(--color-ink)]">{parseFloat(line.line_total).toFixed(2)} JOD</td>
+                          <td className="px-4 py-3 text-end text-[var(--color-ink-muted)]">{parseFloat(line.qty).toFixed(1)}</td>
+                          <td className="px-4 py-3 text-end text-[var(--color-ink-muted)]">{parseFloat(line.unit_price).toFixed(2)}</td>
+                          <td className="px-4 py-3 text-end text-[var(--color-ink-muted)]">-{parseFloat(line.discount).toFixed(2)}</td>
+                          <td className="px-4 py-3 text-end font-bold text-[var(--color-ink)]">{parseFloat(line.line_total).toFixed(2)} JOD</td>
                         </tr>
                       ))}
                     </tbody>

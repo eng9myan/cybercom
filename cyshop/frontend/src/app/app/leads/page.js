@@ -211,7 +211,7 @@ export default function LeadsPage() {
             placeholder="Search leads by name, company..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white border border-[var(--color-line)] rounded-xl py-2 pl-10 pr-4 text-xs text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] focus:outline-none focus:border-[var(--color-ink)] font-medium"
+            className="w-full bg-white border border-[var(--color-line)] rounded-xl py-2 ps-10 pe-4 text-xs text-[var(--color-ink)] placeholder-[var(--color-ink-muted)] focus:outline-none focus:border-[var(--color-ink)] font-medium"
           />
         </div>
 
@@ -515,7 +515,7 @@ export default function LeadsPage() {
                 You are about to qualify <strong className="text-[var(--color-ink)]">{selectedLead.name}</strong> and convert it into a pipeline Deal Opportunity. 
                 This will automatically:
               </p>
-              <ul className="text-xs text-[var(--color-ink-muted)] list-disc pl-4 space-y-1">
+              <ul className="text-xs text-[var(--color-ink-muted)] list-disc ps-4 space-y-1">
                 <li>Change Lead status to <strong className="text-emerald-400">QUALIFIED</strong>.</li>
                 <li>Create an Opportunity card in the CRM Kanban Board with stage <strong className="text-[#ED6C00]">QUALIFIED</strong>.</li>
                 <li>Log a converted audit action under activities history.</li>

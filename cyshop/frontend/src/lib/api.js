@@ -49,3 +49,14 @@ export const api = {
   patch: (path, body) => apiFetch(path, { method: 'PATCH', body: JSON.stringify(body) }),
   del: (path) => apiFetch(path, { method: 'DELETE' }),
 };
+
+/** Open an authenticated GET (print view, XML export) in a new tab — a plain
+ *  <a href> can't carry the bearer token. */
+export async function openAuthed(path) {
+  const res = await fetch(`${BASE}${path}`, { headers: getHeaders() });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}

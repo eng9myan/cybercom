@@ -106,7 +106,7 @@ export default function RolesPage() {
           </h3>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-semibold">
+            <table className="w-full text-start text-xs font-semibold">
               <thead>
                 <tr className="border-b border-[var(--color-line)] text-[var(--color-ink-muted)] uppercase tracking-wider text-[10px]">
                   <th className="py-3">Role Code</th>
@@ -184,7 +184,7 @@ export default function RolesPage() {
               <Key className="w-4 h-4 text-purple-400" /> Active Permission Registry
             </h3>
 
-            <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+            <div className="space-y-3 max-h-60 overflow-y-auto pe-2">
               {permissions.length === 0 ? (
                 <div className="text-[var(--color-ink-muted)] text-xs text-center py-4">No permission scopes registered</div>
               ) : (

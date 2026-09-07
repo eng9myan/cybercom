@@ -75,7 +75,7 @@ export default function AccountingPage() {
   };
 
   const inp = "cy-input h-9 text-sm";
-  const th = "text-left px-3 py-2 text-[11px] uppercase tracking-wide text-[var(--color-ink-muted)] font-semibold";
+  const th = "text-start px-3 py-2 text-[11px] uppercase tracking-wide text-[var(--color-ink-muted)] font-semibold";
   const td = "px-3 py-2 text-sm border-t border-[var(--color-line)]";
 
   return (
@@ -153,7 +153,7 @@ export default function AccountingPage() {
                 <button type="button" onClick={() => setLines([...lines, { account: "", debit: "", credit: "" }])} className="text-brand-blue">+ line</button>
                 <span className="text-[var(--color-ink-muted)]">Debits {money(totD)} · Credits {money(totC)}</span>
                 <span className={totD === totC && totD > 0 ? "text-green-400" : "text-amber-400"}>{totD === totC && totD > 0 ? "balanced" : "not balanced"}</span>
-                <button disabled={busy || totD !== totC || !totD} className="cy-btn cy-btn-primary !py-2 !px-3 text-sm ml-auto">Post entry</button>
+                <button disabled={busy || totD !== totC || !totD} className="cy-btn cy-btn-primary !py-2 !px-3 text-sm ms-auto">Post entry</button>
               </div>
             </form>
           </Panel>
@@ -177,14 +177,14 @@ export default function AccountingPage() {
       {tab === "Trial Balance" && tb && (
         <Panel>
           <table className="w-full">
-            <thead><tr><th className={th}>Code</th><th className={th}>Account</th><th className={`${th} text-right`}>Debit</th><th className={`${th} text-right`}>Credit</th></tr></thead>
+            <thead><tr><th className={th}>Code</th><th className={th}>Account</th><th className={`${th} text-end`}>Debit</th><th className={`${th} text-end`}>Credit</th></tr></thead>
             <tbody>
               {tb.rows.map((r) => (
                 <tr key={r.account_id}><td className={td}>{r.code}</td><td className={td}>{r.name}</td>
-                  <td className={`${td} text-right tabular-nums`}>{money(r.debit)}</td><td className={`${td} text-right tabular-nums`}>{money(r.credit)}</td></tr>
+                  <td className={`${td} text-end tabular-nums`}>{money(r.debit)}</td><td className={`${td} text-end tabular-nums`}>{money(r.credit)}</td></tr>
               ))}
               <tr className="font-bold"><td className={td} colSpan={2}>Total</td>
-                <td className={`${td} text-right tabular-nums`}>{money(tb.total_debit)}</td><td className={`${td} text-right tabular-nums`}>{money(tb.total_credit)}</td></tr>
+                <td className={`${td} text-end tabular-nums`}>{money(tb.total_debit)}</td><td className={`${td} text-end tabular-nums`}>{money(tb.total_credit)}</td></tr>
               {!tb.rows.length && <tr><td className={td} colSpan={4}>No posted entries yet.</td></tr>}
             </tbody>
           </table>

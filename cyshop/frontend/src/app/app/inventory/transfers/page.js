@@ -222,12 +222,12 @@ export default function StockTransfersPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-line)] bg-[var(--color-surface)]">
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Transfer #</th>
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Product</th>
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden md:table-cell">Branch → Branch</th>
-                <th className="text-right px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Qty</th>
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Status</th>
-                <th className="text-right px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Actions</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Transfer #</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Product</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden md:table-cell">Branch → Branch</th>
+                <th className="text-end px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Qty</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Status</th>
+                <th className="text-end px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--color-line)]">
@@ -252,13 +252,13 @@ export default function StockTransfersPage() {
                     <td className="px-4 py-3 text-xs text-[var(--color-ink-muted)] hidden md:table-cell">
                       {t.from_branch_name} → {t.to_branch_name}
                     </td>
-                    <td className="px-4 py-3 text-right font-bold tabular-nums">{parseFloat(t.quantity).toFixed(2)}</td>
+                    <td className="px-4 py-3 text-end font-bold tabular-nums">{parseFloat(t.quantity).toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${info.color}18`, color: info.color }}>
                         {info.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-end">
                       {t.status === "DRAFT" && (
                         <button
                           disabled={busyId === t.id}

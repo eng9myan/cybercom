@@ -70,7 +70,7 @@ export default function BankingPage() {
   };
 
   const inp = "cy-input h-9 text-sm";
-  const th = "text-left px-3 py-2 text-[11px] uppercase tracking-wide text-[var(--color-ink-muted)] font-semibold";
+  const th = "text-start px-3 py-2 text-[11px] uppercase tracking-wide text-[var(--color-ink-muted)] font-semibold";
   const td = "px-3 py-2 text-sm border-t border-[var(--color-line)]";
 
   return (
@@ -96,12 +96,12 @@ export default function BankingPage() {
 
       <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] overflow-x-auto">
         <table className="w-full">
-          <thead><tr><th className={th}>{t("accounting.name")}</th><th className={th}>Bank</th><th className={th}>{t("bank.amount")}</th><th className={`${th} text-right`}>{t("bank.bookBalance")}</th><th className={th}></th></tr></thead>
+          <thead><tr><th className={th}>{t("accounting.name")}</th><th className={th}>Bank</th><th className={th}>{t("bank.amount")}</th><th className={`${th} text-end`}>{t("bank.bookBalance")}</th><th className={th}></th></tr></thead>
           <tbody>
             {accounts.map((a) => (
               <tr key={a.id} className={sel === a.id ? "bg-white/5" : ""}>
                 <td className={td}>{a.name}</td><td className={td}>{a.bank_name}</td><td className={td}>{a.currency}</td>
-                <td className={`${td} text-right tabular-nums`}>{money(a.book_balance)}</td>
+                <td className={`${td} text-end tabular-nums`}>{money(a.book_balance)}</td>
                 <td className={td}><button onClick={() => loadLines(a.id)} className="text-brand-blue text-xs font-semibold">{t("bank.reconcile")}</button></td>
               </tr>
             ))}
@@ -135,12 +135,12 @@ export default function BankingPage() {
 
           <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] overflow-x-auto">
             <table className="w-full">
-              <thead><tr><th className={th}>{t("common.date")}</th><th className={th}>{t("accounting.description")}</th><th className={`${th} text-right`}>{t("bank.amount")}</th><th className={th}>{t("bank.matched")}</th><th className={th}></th></tr></thead>
+              <thead><tr><th className={th}>{t("common.date")}</th><th className={th}>{t("accounting.description")}</th><th className={`${th} text-end`}>{t("bank.amount")}</th><th className={th}>{t("bank.matched")}</th><th className={th}></th></tr></thead>
               <tbody>
                 {lines.map((l) => (
                   <tr key={l.id}>
                     <td className={td}>{l.txn_date}</td><td className={td}>{l.description}{l.match_note ? ` · ${l.match_note}` : ""}</td>
-                    <td className={`${td} text-right tabular-nums ${Number(l.amount) < 0 ? "text-red-300" : "text-green-300"}`}>{money(l.amount)}</td>
+                    <td className={`${td} text-end tabular-nums ${Number(l.amount) < 0 ? "text-red-300" : "text-green-300"}`}>{money(l.amount)}</td>
                     <td className={td}>{l.reconciled ? <span className="text-green-400 text-xs">{t("bank.matched")}</span> : <span className="text-[var(--color-ink-muted)] text-xs">{t("bank.unmatched")}</span>}</td>
                     <td className={td}><button onClick={() => toggleMatch(l)} className="text-brand-blue text-xs">{l.matched ? <><Link2Off className="w-3 h-3 inline" /> {t("bank.unmatched")}</> : <><Link2 className="w-3 h-3 inline" /> {t("bank.matched")}</>}</button></td>
                   </tr>

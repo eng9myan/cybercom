@@ -182,7 +182,7 @@ export default function VendorsPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-ink-muted)]" />
         <input
           placeholder="Search vendors…"
-          className="cy-input pl-9"
+          className="cy-input ps-9"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -194,7 +194,7 @@ export default function VendorsPage() {
             <thead>
               <tr className="border-b border-[var(--color-line)] bg-[var(--color-surface)]">
                 {["Vendor", "Code", "Contact", "Email", "Phone", "Terms", "Currency", "Actions"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">{h}</th>
+                  <th key={h} className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>

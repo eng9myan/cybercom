@@ -129,13 +129,13 @@ export default function UsersPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-semibold">
+              <table className="w-full text-start text-xs font-semibold">
                 <thead>
                   <tr className="border-b border-[var(--color-line)] text-[var(--color-ink-muted)] uppercase tracking-wider text-[10px]">
                     <th className="py-3">User Details</th>
                     <th className="py-3">Email</th>
                     <th className="py-3">Status</th>
-                    <th className="py-3 text-right">Actions</th>
+                    <th className="py-3 text-end">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-850 text-[var(--color-ink-soft)]">
@@ -153,7 +153,7 @@ export default function UsersPage() {
                             {u.is_active ? "ACTIVE" : "DISABLED"}
                           </span>
                         </td>
-                        <td className="py-4 text-right">
+                        <td className="py-4 text-end">
                           <button
                             onClick={() => handleDeleteUser(u.id)}
                             className="text-[var(--color-ink-muted)] hover:text-red-400 transition duration-150"

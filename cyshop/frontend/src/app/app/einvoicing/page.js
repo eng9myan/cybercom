@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, openAuthed } from "@/lib/api";
 import { useT } from "@/lib/i18n";
 import { FileText, Plus, RefreshCw, Send, FileCode, QrCode } from "lucide-react";
 
@@ -62,7 +62,7 @@ export default function EInvoicingPage() {
   };
 
   const inp = "cy-input h-9 text-sm";
-  const th = "text-left px-3 py-2 text-[11px] uppercase tracking-wide text-[var(--color-ink-muted)] font-semibold";
+  const th = "text-start px-3 py-2 text-[11px] uppercase tracking-wide text-[var(--color-ink-muted)] font-semibold";
   const td = "px-3 py-2 text-sm border-t border-[var(--color-line)]";
 
   return (
@@ -104,7 +104,7 @@ export default function EInvoicingPage() {
             ))}
             <div className="flex gap-3 items-center">
               <button type="button" className="text-brand-blue text-sm" onClick={() => setLines([...lines, { description: "", quantity: 1, unit_price: "", tax_rate: 0.15 }])}>+ {t("accounting.line")}</button>
-              <button className="cy-btn cy-btn-primary !py-2 !px-3 text-sm ml-auto"><Plus className="w-4 h-4" /> {t("einv.issue")}</button>
+              <button className="cy-btn cy-btn-primary !py-2 !px-3 text-sm ms-auto"><Plus className="w-4 h-4" /> {t("einv.issue")}</button>
             </div>
           </form>
 
@@ -122,18 +122,19 @@ export default function EInvoicingPage() {
 
           <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] overflow-x-auto">
             <table className="w-full">
-              <thead><tr><th className={th}>{t("einv.number")}</th><th className={th}>{t("einv.customer")}</th><th className={th}>{t("einv.type")}</th><th className={th}>{t("einv.issueDate")}</th><th className={`${th} text-right`}>{t("einv.subtotal")}</th><th className={`${th} text-right`}>{t("einv.vat")}</th><th className={`${th} text-right`}>{t("common.total")}</th><th className={th}>{t("einv.scheme")}</th><th className={th}></th></tr></thead>
+              <thead><tr><th className={th}>{t("einv.number")}</th><th className={th}>{t("einv.customer")}</th><th className={th}>{t("einv.type")}</th><th className={th}>{t("einv.issueDate")}</th><th className={`${th} text-end`}>{t("einv.subtotal")}</th><th className={`${th} text-end`}>{t("einv.vat")}</th><th className={`${th} text-end`}>{t("common.total")}</th><th className={th}>{t("einv.scheme")}</th><th className={th}></th></tr></thead>
               <tbody>
                 {invoices.map((iv) => (
                   <tr key={iv.id}>
                     <td className={td}>{iv.number}</td><td className={td}>{iv.customer_name}</td><td className={td}>{iv.invoice_type}</td><td className={td}>{iv.issue_date}</td>
-                    <td className={`${td} text-right tabular-nums`}>{money(iv.subtotal)}</td><td className={`${td} text-right tabular-nums`}>{money(iv.tax_total)}</td>
-                    <td className={`${td} text-right tabular-nums font-semibold`}>{money(iv.total)} {iv.currency}</td>
+                    <td className={`${td} text-end tabular-nums`}>{money(iv.subtotal)}</td><td className={`${td} text-end tabular-nums`}>{money(iv.tax_total)}</td>
+                    <td className={`${td} text-end tabular-nums font-semibold`}>{money(iv.total)} {iv.currency}</td>
                     <td className={td}>{iv.einvoice ? <span className="cy-pill text-xs">{iv.einvoice.scheme}/{iv.einvoice.status}</span> : "—"}</td>
                     <td className={`${td} whitespace-nowrap`}>
                       <button onClick={() => issue(iv.id)} className="text-brand-blue text-xs font-semibold">{t("einv.issue")}</button>{" · "}
                       <button onClick={() => submit(iv.id)} className="text-green-400 text-xs font-semibold"><Send className="w-3 h-3 inline" /> {t("einv.submit")}</button>{" · "}
-                      <a href={`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/einvoicing/invoices/${iv.id}/xml/`} target="_blank" rel="noreferrer" className="text-[var(--color-ink-muted)] text-xs"><FileCode className="w-3 h-3 inline" /> XML</a>
+                      <a href={`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/einvoicing/invoices/${iv.id}/xml/`} target="_blank" rel="noreferrer" className="text-[var(--color-ink-muted)] text-xs"><FileCode className="w-3 h-3 inline" /> XML</a>{" · "}
+                      <button type="button" onClick={() => openAuthed(`/api/v1/einvoicing/invoices/${iv.id}/print/`)} className="text-[var(--color-ink-muted)] text-xs">Print / PDF</button>
                     </td>
                   </tr>
                 ))}

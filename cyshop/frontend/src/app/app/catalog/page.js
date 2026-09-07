@@ -348,7 +348,7 @@ export default function CatalogPage() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-ink-muted)]" />
           <input
-            className="cy-input pl-9"
+            className="cy-input ps-9"
             placeholder="Search by name, SKU or barcode…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -366,12 +366,12 @@ export default function CatalogPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[var(--color-line)] bg-[var(--color-surface)]">
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Product</th>
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden md:table-cell">SKU</th>
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden lg:table-cell">Category</th>
-                <th className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Type</th>
-                <th className="text-right px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Sell Price</th>
-                <th className="text-right px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden md:table-cell">Cost</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Product</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden md:table-cell">SKU</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden lg:table-cell">Category</th>
+                <th className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Type</th>
+                <th className="text-end px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">Sell Price</th>
+                <th className="text-end px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden md:table-cell">Cost</th>
                 <th className="text-center px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide hidden sm:table-cell">POS</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -414,8 +414,8 @@ export default function CatalogPage() {
                   <td className="px-4 py-3">
                     <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-surface-2)] font-medium">{p.product_type}</span>
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold tabular-nums">{parseFloat(p.sell_price).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right text-[var(--color-ink-muted)] tabular-nums hidden md:table-cell">{parseFloat(p.cost_price).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-end font-semibold tabular-nums">{parseFloat(p.sell_price).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-end text-[var(--color-ink-muted)] tabular-nums hidden md:table-cell">{parseFloat(p.cost_price).toFixed(2)}</td>
                   <td className="px-4 py-3 text-center hidden sm:table-cell">
                     <span className={`inline-block w-2 h-2 rounded-full ${p.pos_available ? "bg-[#16A34A]" : "bg-[var(--color-line)]"}`} />
                   </td>

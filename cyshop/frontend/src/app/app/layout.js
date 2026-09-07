@@ -161,7 +161,7 @@ export default function AppLayout({ children }) {
     <div className="min-h-dvh flex bg-[var(--color-surface)] text-[var(--color-ink)]">
       {/* Sidebar */}
       <aside
-        className={`hidden md:flex flex-col bg-[var(--color-surface)] border-r border-[rgba(255,255,255,0.07)] transition-[width] duration-300 ${
+        className={`hidden md:flex flex-col bg-[var(--color-surface)] border-e border-[rgba(255,255,255,0.07)] transition-[width] duration-300 ${
           collapsed ? "w-[76px]" : "w-[260px]"
         }`}
       >
@@ -171,7 +171,7 @@ export default function AppLayout({ children }) {
 
         {!collapsed && (
           <div className="px-4 py-4 border-b border-[rgba(255,255,255,0.07)]">
-            <button className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[var(--color-surface-2)] hover:bg-[var(--color-line)] transition text-left">
+            <button className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[var(--color-surface-2)] hover:bg-[var(--color-line)] transition text-start">
               <span className="flex items-center gap-2 min-w-0">
                 <span className="w-6 h-6 rounded-md bg-gradient-to-br from-[#ED6C00] to-[#FF8A2A] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                   {(tenantName || "T").slice(0, 2).toUpperCase()}
@@ -207,7 +207,7 @@ export default function AppLayout({ children }) {
                         }`}
                       >
                         {active && (
-                          <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r bg-[#ED6C00]" aria-hidden />
+                          <span className="absolute start-0 top-1.5 bottom-1.5 w-[3px] rounded-e bg-[#ED6C00]" aria-hidden />
                         )}
                         <Icon className={`w-[18px] h-[18px] shrink-0 ${active ? "text-[#ED6C00]" : ""}`} />
                         {!collapsed && <span className="truncate">{item.k ? t(item.k) : item.name}</span>}
@@ -269,14 +269,14 @@ export default function AppLayout({ children }) {
                 className="w-full h-10 px-3 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] hover:border-[var(--color-ink)] flex items-center gap-2 text-sm text-[var(--color-ink-muted)] transition"
               >
                 <Search className="w-4 h-4" />
-                <span className="flex-1 text-left">Ask AI or search anything…</span>
+                <span className="flex-1 text-start">Ask AI or search anything…</span>
                 <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded border border-[rgba(255,255,255,0.12)] bg-[var(--color-surface-2)] text-[var(--color-ink-muted)]">
                   <Command className="w-3 h-3" /> K
                 </span>
               </button>
             </div>
 
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2 ms-auto">
               <LangToggle />
               <button
                 onClick={() => setAiOpen(true)}
@@ -299,7 +299,7 @@ export default function AppLayout({ children }) {
                   )}
                 </button>
                 {showNotifications && (
-                  <div className="absolute top-full right-0 mt-2 w-80 cy-glass p-3 z-50">
+                  <div className="absolute top-full end-0 mt-2 w-80 cy-glass p-3 z-50">
                     <div className="px-1 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--color-ink-muted)]">
                       Notifications
                     </div>
@@ -372,7 +372,7 @@ export default function AppLayout({ children }) {
               ].map((s, i) => (
                 <button
                   key={i}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--color-surface-2)] text-left transition"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--color-surface-2)] text-start transition"
                 >
                   <s.i className="w-4 h-4 text-[var(--color-ink-muted)]" />
                   <span className="text-sm flex-1">{s.t}</span>

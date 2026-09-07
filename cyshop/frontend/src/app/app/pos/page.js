@@ -129,7 +129,7 @@ function ReceiptPanel({ order, receipt, onNewOrder }) {
         <div className="text-sm text-[var(--color-ink-muted)] mt-1">{order.order_number}</div>
       </div>
       {receipt && (
-        <div className="w-full max-w-xs bg-[var(--color-surface)] rounded-xl p-4 text-left text-sm">
+        <div className="w-full max-w-xs bg-[var(--color-surface)] rounded-xl p-4 text-start text-sm">
           <div className="flex justify-between"><span className="text-[var(--color-ink-muted)]">Receipt #</span><span className="font-mono font-semibold">{receipt.receipt_number}</span></div>
           <div className="flex justify-between mt-1"><span className="text-[var(--color-ink-muted)]">Subtotal</span><span>{parseFloat(order.subtotal).toFixed(2)}</span></div>
           <div className="flex justify-between mt-1"><span className="text-[var(--color-ink-muted)]">Tax</span><span>{parseFloat(order.tax_amount).toFixed(2)}</span></div>
@@ -284,7 +284,7 @@ export default function PosPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-ink-muted)]" />
             <input
               placeholder="Search products…"
-              className="cy-input pl-9"
+              className="cy-input ps-9"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -346,7 +346,7 @@ export default function PosPage() {
                   <button
                     key={p.id}
                     onClick={() => addToCart(p)}
-                    className={`relative group p-3 rounded-2xl border text-left transition-all hover:shadow-md hover:-translate-y-0.5 ${
+                    className={`relative group p-3 rounded-2xl border text-start transition-all hover:shadow-md hover:-translate-y-0.5 ${
                       inCart
                         ? "border-[#ED6C00] bg-[rgba(237,108,0,.06)]"
                         : "border-[var(--color-line)] bg-white"
@@ -434,11 +434,11 @@ export default function PosPage() {
                 <button onClick={() => changeQty(p.id, 1)} className="w-6 h-6 rounded-md bg-white border border-[var(--color-line)] flex items-center justify-center hover:border-[#ED6C00] transition-colors">
                   <Plus className="w-3 h-3" />
                 </button>
-                <button onClick={() => removeFromCart(p.id)} className="w-6 h-6 rounded-md hover:bg-red-50 hover:text-[#DC2626] text-[var(--color-ink-muted)] flex items-center justify-center transition-colors ml-1">
+                <button onClick={() => removeFromCart(p.id)} className="w-6 h-6 rounded-md hover:bg-red-50 hover:text-[#DC2626] text-[var(--color-ink-muted)] flex items-center justify-center transition-colors ms-1">
                   <Trash2 className="w-3 h-3" />
                 </button>
               </div>
-              <div className="w-16 text-right text-xs font-bold shrink-0">
+              <div className="w-16 text-end text-xs font-bold shrink-0">
                 {(qty * parseFloat(p.sell_price)).toFixed(2)}
               </div>
             </div>

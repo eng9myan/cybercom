@@ -33,7 +33,7 @@ export default function HrPage() {
     catch (e) { setErr(e.message); }
   };
 
-  const th = "text-left px-3 py-2 text-[11px] uppercase tracking-wide text-[var(--color-ink-muted)] font-semibold";
+  const th = "text-start px-3 py-2 text-[11px] uppercase tracking-wide text-[var(--color-ink-muted)] font-semibold";
   const td = "px-3 py-2 text-sm border-t border-[var(--color-line)]";
   const Panel = ({ children }) => <div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] overflow-x-auto">{children}</div>;
 
@@ -57,12 +57,12 @@ export default function HrPage() {
       {tab === "Employees" && (
         <Panel>
           <table className="w-full">
-            <thead><tr><th className={th}>ID</th><th className={th}>Name</th><th className={th}>Job title</th><th className={th}>Type</th><th className={th}>Hired</th><th className={`${th} text-right`}>Base salary</th><th className={th}>Status</th></tr></thead>
+            <thead><tr><th className={th}>ID</th><th className={th}>Name</th><th className={th}>Job title</th><th className={th}>Type</th><th className={th}>Hired</th><th className={`${th} text-end`}>Base salary</th><th className={th}>Status</th></tr></thead>
             <tbody>
               {emps.slice(0, 300).map((e) => (
                 <tr key={e.id}><td className={td}>{e.employee_id}</td><td className={td}>{e.full_name}</td><td className={td}>{e.job_title}</td>
                   <td className={td}>{e.employment_type}</td><td className={td}>{e.hire_date}</td>
-                  <td className={`${td} text-right tabular-nums`}>{money(e.base_salary, e.currency)}</td>
+                  <td className={`${td} text-end tabular-nums`}>{money(e.base_salary, e.currency)}</td>
                   <td className={td}><span className="cy-pill text-xs">{e.status}</span></td></tr>
               ))}
               {!emps.length && <tr><td className={td} colSpan={7}>No employees.</td></tr>}
@@ -74,11 +74,11 @@ export default function HrPage() {
       {tab === "Contracts" && (
         <Panel>
           <table className="w-full">
-            <thead><tr><th className={th}>Employee</th><th className={th}>Type</th><th className={th}>Start</th><th className={th}>End</th><th className={`${th} text-right`}>Gross</th><th className={th}>Active</th></tr></thead>
+            <thead><tr><th className={th}>Employee</th><th className={th}>Type</th><th className={th}>Start</th><th className={th}>End</th><th className={`${th} text-end`}>Gross</th><th className={th}>Active</th></tr></thead>
             <tbody>
               {contracts.map((c) => (
                 <tr key={c.id}><td className={td}>{c.employee_name || c.employee}</td><td className={td}>{c.contract_type}</td><td className={td}>{c.start_date}</td>
-                  <td className={td}>{c.end_date || "—"}</td><td className={`${td} text-right tabular-nums`}>{money(c.gross_salary)}</td><td className={td}>{c.is_active ? "yes" : "no"}</td></tr>
+                  <td className={td}>{c.end_date || "—"}</td><td className={`${td} text-end tabular-nums`}>{money(c.gross_salary)}</td><td className={td}>{c.is_active ? "yes" : "no"}</td></tr>
               ))}
               {!contracts.length && <tr><td className={td} colSpan={6}>No contracts recorded.</td></tr>}
             </tbody>

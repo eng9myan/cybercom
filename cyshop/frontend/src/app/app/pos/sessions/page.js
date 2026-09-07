@@ -201,7 +201,7 @@ export default function PosSessionsPage() {
             <thead>
               <tr className="border-b border-[var(--color-line)] bg-[var(--color-surface)]">
                 {["Session", "Status", "Cashier", "Opened", "Orders", "Sales", "Actions"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">{h}</th>
+                  <th key={h} className="text-start px-4 py-3 font-semibold text-[var(--color-ink-muted)] text-xs uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
