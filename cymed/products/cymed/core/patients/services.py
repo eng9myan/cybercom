@@ -1,4 +1,5 @@
 import random
+from difflib import SequenceMatcher
 
 from django.db import transaction
 from django.utils import timezone
@@ -47,16 +48,29 @@ class PatientService:
             if qs.exists():
                 return qs
 
-        # 2. Fuzzy name match + DOB match
-        # Checks if first name starts similarly and DOB matches
-        name_qs = Patient.objects.filter(
-            tenant_id=tenant_id,
-            dob=dob,
-            is_active=True,
-            first_name__icontains=first_name[:3],
-            last_name__icontains=last_name[:3],
-        )
-        return name_qs
+        # 2. Fuzzy name match + DOB match.
+        #    M-6: first_name / last_name are now encrypted, so a DB icontains is
+        #    impossible. Narrow on DOB (plaintext, indexed) — a tiny candidate
+        #    set — then fuzzy-compare the decrypted names in Python.
+        from platform.common.tenant_context import tenant_context
+
+        candidates = Patient.objects.filter(tenant_id=tenant_id, dob=dob, is_active=True)
+
+        def _similar(a: str, b: str) -> bool:
+            a, b = (a or "").strip().lower(), (b or "").strip().lower()
+            if not a or not b:
+                return False
+            if a[:3] == b[:3]:
+                return True
+            return SequenceMatcher(None, a, b).ratio() >= 0.7
+
+        with tenant_context(tenant_id):
+            match_ids = [
+                p.id
+                for p in candidates
+                if _similar(p.first_name, first_name) and _similar(p.last_name, last_name)
+            ]
+        return Patient.objects.filter(id__in=match_ids)
 
     @classmethod
     def merge_patients(

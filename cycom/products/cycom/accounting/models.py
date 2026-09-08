@@ -22,6 +22,14 @@ class Account(BaseModel):
     )
     currency = models.CharField(max_length=10, default="JOD")
     is_active = models.BooleanField(default=True)
+    # A group/header account is a roll-up node in the chart, not a real ledger
+    # account — journal lines must never post against it or the trial-balance
+    # hierarchy and the financial statements are corrupted. Auto-managed:
+    # save() sets it true whenever the account has children (see below), and
+    # the accounting posting choke point (accounting.services.post_journal_entry)
+    # rejects any line whose account.is_postable is False. Default True so
+    # existing single-level charts keep working.
+    is_postable = models.BooleanField(default=True)
 
     class Meta:
         db_table = "cycom_accounting_accounts"
@@ -30,6 +38,16 @@ class Account(BaseModel):
 
     def __str__(self):
         return f"{self.code} — {self.name}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # A parent account is a header: it must not be posted to, and its own
+        # parent (if any) becomes a header too. Done after save so a freshly
+        # created child has a pk to point at.
+        if self.parent_id:
+            parent = self.parent
+            if parent.is_postable:
+                Account.objects.filter(pk=parent.pk).update(is_postable=False)
 
 
 class JournalEntry(BaseModel):

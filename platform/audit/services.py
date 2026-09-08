@@ -135,7 +135,18 @@ class AuditService:
         return event
 
     def _chain_key(self, tenant_id) -> str:
-        return f"tenant:{tenant_id}" if tenant_id else "platform:global"
+        if not tenant_id:
+            return "platform:global"
+        # Normalise the tenant id to its canonical UUID string so the hex form
+        # and the hyphenated form don't split one tenant's audit trail across
+        # two chains (same class of bug as M-5).
+        import uuid as _uuid
+
+        try:
+            tenant_id = _uuid.UUID(str(tenant_id))
+        except (ValueError, AttributeError, TypeError):
+            pass
+        return f"tenant:{tenant_id}"
 
     def _compliance_tags(self, category: str, classification: str) -> list:
         tags = []

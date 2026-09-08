@@ -1,7 +1,7 @@
 """CyMed Pharmacy — Inventory Bridge Views."""
 
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from platform.api.permissions import IsAuthenticatedClinicalStaff as IsAuthenticated  # M-7: staff-role gate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 

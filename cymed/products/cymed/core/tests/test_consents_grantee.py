@@ -22,7 +22,10 @@ def _client_for_tenant(tenant_id, mint_token, mock_jwks):
             "sub": str(uuid.uuid4()),
             "email": "user@cybercom.io",
             "tenant_id": str(tenant_id),
-            "realm_access": {"roles": []},
+            # M-7: the API now requires an authenticated staff role
+            # (IsAuthenticatedClinicalStaff); a real staff token always carries
+            # one. The consent-grant cross-tenant checks below are the point here.
+            "realm_access": {"roles": ["clinician"]},
         }
     )
     client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}", HTTP_X_TENANT_ID=str(tenant_id))

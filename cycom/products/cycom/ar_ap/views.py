@@ -76,25 +76,86 @@ class InvoiceViewSet(TenantScopedModelViewSet):
         if tax_total and not invoice.tax_account_id:
             raise ValidationError("Invoice has tax lines but no tax_account set.")
 
+        side = Invoice.BASE_SIDE.get(invoice.invoice_type, "customer")
+        is_credit_note = invoice.invoice_type in Invoice.CREDIT_NOTE_TYPES
+
+        # C-1: a credit/debit note must reference a posted invoice of its base
+        # side, and it must not credit more than the original.
+        if is_credit_note:
+            original = invoice.reverses
+            if original is None:
+                raise ValidationError({"reverses": "A credit/debit note must reference the original invoice it reverses."})
+            if Invoice.BASE_SIDE.get(original.invoice_type) != side or original.invoice_type in Invoice.CREDIT_NOTE_TYPES:
+                raise ValidationError({"reverses": "Referenced document is not an invoice of the matching side."})
+            if original.status not in ("posted", "partial", "paid"):
+                raise ValidationError({"reverses": f"Original invoice must be posted (it is '{original.status}')."})
+            already_credited = sum(
+                (cn.amount_total for cn in original.credit_notes.filter(status__in=("posted", "partial", "paid"))),
+                Decimal("0"),
+            )
+            if already_credited + total > original.amount_total + Decimal("0.01"):
+                raise ValidationError(
+                    f"Credit notes ({already_credited + total}) would exceed the original invoice total "
+                    f"({original.amount_total})."
+                )
+
+        # HR-2: an ordinary PO-linked vendor bill must pass 3-way match
+        # (ordered ↔ received ↔ billed) before it posts — previously the match
+        # was a GET-only report that blocked nothing. Repost with
+        # override_match=true (admin only) to accept an out-of-tolerance bill.
+        if invoice.invoice_type == "vendor" and invoice.purchase_order_id:
+            from products.cycom.procurement.services import three_way_match as _match
+
+            invoice.amount_subtotal = subtotal  # in-memory so the match sees a real billed figure
+            match = _match(invoice)
+            blocking = [e for e in match["exceptions"] if "informational" not in e]
+            if blocking:
+                if not request.data.get("override_match"):
+                    raise ValidationError({
+                        "three_way_match": blocking,
+                        "detail": "Vendor bill fails 3-way match. Resolve the exception, or repost with "
+                                  "override_match=true (requires an admin role).",
+                    })
+                claims = getattr(request, "auth_claims", {}) or {}
+                roles = set(claims.get("realm_access", {}).get("roles", []))
+                if not roles & {"platform_admin", "tenant_admin", "cyidentity_admin"}:
+                    raise ValidationError("override_match requires an admin role.")
+
         gl_lines = []
-        if invoice.invoice_type == "customer":
-            # Dr Accounts Receivable (control), Cr revenue accounts, Cr tax payable
-            gl_lines.append({"account": invoice.control_account, "debit": total, "credit": 0})
+        if side == "customer":
+            # normal: Dr AR (control) / Cr revenue / Cr output VAT
+            # credit note: the exact reverse
+            ar = {"account": invoice.control_account, "debit": 0 if is_credit_note else total,
+                  "credit": total if is_credit_note else 0}
+            gl_lines.append(ar)
             for line in lines:
-                gl_lines.append(
-                    {"account": line.account, "debit": 0, "credit": line.subtotal, "description": line.description}
-                )
+                gl_lines.append({
+                    "account": line.account,
+                    "debit": line.subtotal if is_credit_note else 0,
+                    "credit": 0 if is_credit_note else line.subtotal,
+                    "description": line.description,
+                })
             if tax_total:
-                gl_lines.append({"account": invoice.tax_account, "debit": 0, "credit": tax_total})
+                gl_lines.append({"account": invoice.tax_account,
+                                 "debit": tax_total if is_credit_note else 0,
+                                 "credit": 0 if is_credit_note else tax_total})
         else:
-            # vendor bill: Dr expense accounts, Dr tax receivable, Cr Accounts Payable (control)
+            # vendor bill normal: Dr expense / Dr input VAT / Cr AP (control)
+            # vendor debit note: the exact reverse
             for line in lines:
-                gl_lines.append(
-                    {"account": line.account, "debit": line.subtotal, "credit": 0, "description": line.description}
-                )
+                gl_lines.append({
+                    "account": line.account,
+                    "debit": 0 if is_credit_note else line.subtotal,
+                    "credit": line.subtotal if is_credit_note else 0,
+                    "description": line.description,
+                })
             if tax_total:
-                gl_lines.append({"account": invoice.tax_account, "debit": tax_total, "credit": 0})
-            gl_lines.append({"account": invoice.control_account, "debit": 0, "credit": total})
+                gl_lines.append({"account": invoice.tax_account,
+                                 "debit": 0 if is_credit_note else tax_total,
+                                 "credit": tax_total if is_credit_note else 0})
+            gl_lines.append({"account": invoice.control_account,
+                             "debit": total if is_credit_note else 0,
+                             "credit": 0 if is_credit_note else total})
 
         # GL entry + invoice flip are one unit: a concurrent post that also
         # passed the draft guard loses the row_version CAS below, and its
@@ -133,7 +194,10 @@ class InvoiceViewSet(TenantScopedModelViewSet):
         # E-invoicing clearance (JoFotara today; ZATCA/Peppol as they land).
         # Non-blocking by policy for JO — a failure sets einvoice_status
         # "rejected" and is surfaced in the UI, never rolls back the posting.
-        if invoice.invoice_type == "customer":
+        # Credit notes on the customer side also clear (JoFotara requires a
+        # credit-note document referencing the original); the engine maps the
+        # document type from invoice_type.
+        if invoice.invoice_type in ("customer", "customer_credit_note"):
             try:
                 run_einvoice_clearance(invoice)
             except Exception:  # pragma: no cover - defensive; helper already guards

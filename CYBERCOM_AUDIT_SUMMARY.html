@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CyberCom Audit Summary — CyCom &amp; CyMed</title>
+<style>
+  :root{
+    --bg:#f7f7f5; --card:#fff; --ink:#1a1a1a; --muted:#666; --line:#e3e3df;
+    --crit:#b3261e; --high:#c8641b; --med:#b8960a; --low:#5a7d3a; --good:#2c7a4b;
+    --brand:#E67E22; --blue:#5DADE2;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 20px 80px}
+  h1{font-size:26px;margin:0 0 4px}
+  h2{font-size:20px;margin:38px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--brand)}
+  h3{font-size:16px;margin:22px 0 6px}
+  .sub{color:var(--muted);margin:0 0 24px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+  .card h3{margin-top:0}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:#efefec;font-weight:600}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:700;color:#fff}
+  .c-crit{background:var(--crit)} .c-high{background:var(--high)} .c-med{background:var(--med)} .c-low{background:var(--low)} .c-good{background:var(--good)}
+  .tag{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#eee;padding:1px 5px;border-radius:4px}
+  .verdict{background:#fff;border-left:4px solid var(--crit);padding:12px 16px;border-radius:0 8px 8px 0;margin:12px 0}
+  .count{font-size:30px;font-weight:800;line-height:1}
+  .count-row{display:flex;gap:20px;flex-wrap:wrap;margin:8px 0}
+  .count-row div{text-align:center}
+  .count-row span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+  ul{margin:6px 0 6px 0;padding-left:20px} li{margin:3px 0}
+  .foot{color:var(--muted);font-size:13px;margin-top:40px;border-top:1px solid var(--line);padding-top:14px}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>CyberCom Full System Audit — Summary</h1>
+  <p class="sub"><b>Update 2026-09-08: all P0 findings fixed &amp; live-verified</b> — see the "P0 fixes" section. CyCom: 146/146 tests pass. CyMed: fresh <code>migrate</code> now completes; PHI audit trail + RBAC + name/MRN encryption live.<br>
+  CyCom ERP &amp; CyMed · functional / workflow / compliance / localization · 2026-09-08 · tree <span class="tag">D:\cybercom</span> @ <span class="tag">4dcc3af</span><br>
+  Method: live stacks (Django + Next / Django), seeded tenants, API-driven business-cycle testing + code review + test suites. In-browser UX/UI + bilingual visual pass not done (Chrome extension not connected). Full detail: <code>CYCOM_AUDIT.md</code>, <code>CYMED_AUDIT.md</code>.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>CyCom ERP <span class="pill c-high">not launch-ready</span></h3>
+      <div class="count-row">
+        <div><span class="count" style="color:var(--good)">0</span><span>Critical</span></div>
+        <div><span class="count" style="color:var(--high)">5</span><span>High</span></div>
+        <div><span class="count" style="color:var(--med)">15</span><span>Med</span></div>
+        <div><span class="count" style="color:var(--low)">6</span><span>Low</span></div>
+      </div>
+      <p>Broad, capable Django+Next ERP. Real differentiator: Ready-ERP provisioning + auto e-invoicing. Transaction engine sound — POS checkout <b>does</b> post GL+COGS+goods-issue atomically (re-verified; the earlier "Critical" was a seed-state mistake). Blocked by input-validation / financial-control gaps. Remediation = a hardening pass, not a rebuild.</p>
+    </div>
+    <div class="card">
+      <h3>CyMed <span class="pill c-crit">not launch-ready</span></h3>
+      <div class="count-row">
+        <div><span class="count" style="color:var(--crit)">3</span><span>Critical</span></div>
+        <div><span class="count" style="color:var(--high)">7</span><span>High</span></div>
+        <div><span class="count" style="color:var(--med)">8</span><span>Med</span></div>
+        <div><span class="count" style="color:var(--low)">3</span><span>Low</span></div>
+      </div>
+      <p>Very large, well-structured hospital-ERP backend (~140 apps) with the right security/compliance primitives — but won't install clean, has no clinician UI, keeps no audit trail, and ships a stub drug-interaction checker. Distance to a pilot is a focused program.</p>
+    </div>
+  </div>
+
+  <h2>CyCom — top findings</h2>
+  <table>
+    <tr><th>ID</th><th>Sev</th><th>Finding</th></tr>
+    <tr><td>A-1</td><td><span class="pill c-high">High</span></td><td>Duplicate invoice number → uncaught HTTP 500 (debug page), not a validation error.</td></tr>
+    <tr><td>A-2 / C-1</td><td><span class="pill c-high">High</span></td><td>Negative invoice-line quantity accepted (silent back-door credit note). No credit-note document type exists at all.</td></tr>
+    <tr><td>A-3</td><td><span class="pill c-high">High</span></td><td>Journal/invoice lines can post to header (roll-up) accounts — corrupts the trial-balance hierarchy.</td></tr>
+    <tr><td>HR-2</td><td><span class="pill c-high">High</span></td><td>3-way match is a GET report that blocks nothing — a vendor over-bill posts with no check.</td></tr>
+    <tr><td>HR-4</td><td><span class="pill c-med">Med</span></td><td>The value-based approval matrix that provisioning builds is not enforced on approve actions.</td></tr>
+    <tr><td>A-4 / S-2 / HR-1</td><td><span class="pill c-med">Med</span></td><td>Manual document numbering everywhere; POS orders + payroll runs demand chart-of-accounts UUIDs in every request body.</td></tr>
+    <tr><td>L-1 / L-2</td><td><span class="pill c-med">Med</span></td><td>No locale-aware number/currency/date formatting; ~30% of screens not string-externalized; English-only seed data.</td></tr>
+    <tr><td>S-1 / I-1</td><td><span class="pill c-low">Low</span></td><td><i>Corrected from Critical/High.</i> POS checkout posts GL+COGS+goods-issue correctly; negative stock is blocked at apply-time. Remaining: seed leaves orders undrafted; raw draft-move create is unvalidated.</td></tr>
+  </table>
+  <p><b>Verified good:</b> Ready-ERP provisioning (blank tenant → working JO company in ~1s); <b>POS checkout posts Cash/Revenue/VAT + COGS + goods-issue atomically, blocks negative stock</b>; balanced double-entry through one choke point; trial balance / P&amp;L / balance-sheet / VAT-return tie; auto JoFotara envelope on invoice post; payment-posting guards; sales order→invoice; PO goods-receipt; 146/146 product tests pass.</p>
+
+  <div class="verdict" style="border-left-color:var(--high)">
+    <b>Buyer verdict (SMB owner vs Odoo):</b> Not quite — but closer than expected, and setup beats Odoo's. The Ready-ERP wizard does in seconds what an Odoo consultant needs days for; a till sale does post to the ledger. Blocked by: a 500 just from re-entering an invoice number, a negative invoice saving with no warning, no credit-note flow. A couple of weeks of hardening on a foundation that's largely there.
+  </div>
+
+  <h2>CyMed — top findings</h2>
+  <table>
+    <tr><th>ID</th><th>Sev</th><th>Finding</th></tr>
+    <tr><td>M-1</td><td><span class="pill c-crit">Crit</span></td><td><b>A fresh <code>manage.py migrate</code> does not complete.</b> Empty <code>provider_portal</code> migrations that tooling silently ignores + an incomplete migration dependency graph (<code>no such table: platform_tenants</code> mid-run). Can't stand up from clean.</td></tr>
+    <tr><td>M-11</td><td><span class="pill c-crit">Crit</span></td><td><b>No PHI-access audit trail.</b> The hash-chained audit sink is fully modelled with verification tooling, but nothing writes to it — 0 audit rows after seeding + PHI reads. Hard compliance failure (HIPAA/GDPR/NPHIES/Hakeem).</td></tr>
+    <tr><td>M-5</td><td><span class="pill c-crit">Crit</span></td><td>PHI field-encryption key is derived from the raw tenant-UUID string with no canonicalisation — the hex form (how the id is stored) → every encrypted column throws, <code>GET /api/v1/patients/</code> returns HTTP 500. No graceful degradation.</td></tr>
+    <tr><td>M-2</td><td><span class="pill c-high">High</span></td><td>No clinician UI. Only 4 Django-templated portal shells + a React Native patient app. No EMR / nurse station / OR board / dispensing / radiology reporting.</td></tr>
+    <tr><td>M-6 / M-7</td><td><span class="pill c-high">High</span></td><td>Patient name + MRN stored plaintext; 102/128 view modules have no permission class — any authenticated token reads ICU/OR/pharmacy/lab and bulk national IDs.</td></tr>
+    <tr><td>M-12–M-15</td><td><span class="pill c-high">High</span></td><td>Exposed drug-interaction engine = 6 hardcoded name-matched pairs, no drug-class allergy cross-check, trusts caller-supplied context over the medical record, 500s on malformed input. The real engine exists but is gated off.</td></tr>
+    <tr><td>M-16</td><td><span class="pill c-high">High</span></td><td>CDS alert overrides are unattributed (<code>request.user</code> always Anonymous → <code>acknowledged_by</code> always None).</td></tr>
+    <tr><td>M-18</td><td><span class="pill c-med">Med</span></td><td>FHIR R4 broken (wrong Django app labels → 500 on Patient/Observation) and minimal (4 resource types).</td></tr>
+    <tr><td>M-3</td><td><span class="pill c-high">High</span></td><td>The security + clinical-safety test suites abort at collection in a full run → 0 tests; pass only when named explicitly.</td></tr>
+  </table>
+  <p><b>Verified good:</b> enormous coherent domain model with clean app boundaries; per-tenant field encryption + blind-index sidecars; CDS risk scores (NEWS2 / sepsis) compute correctly on live data; a proper <code>pharmacy/drug_interactions</code> engine with override tracking (just not enabled); realistic hospital simulation seeder.</p>
+
+  <div class="verdict">
+    <b>Buyer verdict (hospital IT director):</b> No. The ambition and coverage are impressive and the architecture is sound, but you can't run a hospital on a system that doesn't install cleanly, has no clinician application, keeps no audit log, and ships a toy interaction checker. Those are patient-safety and legal-compliance issues, not feature gaps. Five fixes + a reference site would make it a serious contender on breadth alone.
+  </div>
+
+  <h2>P0 fixes — applied &amp; live-verified 2026-09-08</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>CyCom <span class="pill c-good">P0 done</span></h3>
+      <ul>
+        <li><b>A-1</b> dup document number → clean 400 (was 500) ✅</li>
+        <li><b>A-2</b> negative invoice-line quantity rejected ✅</li>
+        <li><b>A-3</b> <code>Account.is_postable</code> — posting to header accounts blocked at the GL choke point ✅</li>
+        <li><b>C-1</b> real credit-note document type + reversed GL posting + over-credit guard ✅</li>
+        <li><b>HR-2</b> 3-way match now enforced in <code>post_invoice</code> (admin override) ✅</li>
+        <li><b>A-5</b> draft invoice totals populated · bonus: A-6 GST→VAT, A-7 dup CoA accounts ✅</li>
+        <li>146/146 <code>products/cycom</code> tests still pass</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>CyMed <span class="pill c-good">P0 done</span> (except M-2)</h3>
+      <ul>
+        <li><b>M-1</b> fresh <code>manage.py migrate</code> completes in one pass ✅</li>
+        <li><b>M-5</b> tenant-UUID normalised in the DEK + chain key; decrypt failure → sentinel, not 500 ✅</li>
+        <li><b>M-6</b> patient name + MRN encrypted (blind-index search, MRN uniqueness kept) ✅</li>
+        <li><b>M-7</b> real prod auth (<code>ClaimsAuthentication</code>) + deny-by-default staff-role gate — no-auth 401, patient token 403, staff 200 ✅</li>
+        <li><b>M-11</b> hash-chained PHI-access audit trail wired (middleware → <code>AuditService</code>) ✅ · bonus: M-8 API throttles</li>
+        <li><b>M-2</b> clinician UI — product decision (build vs partner), <i>not a code fix</i></li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="foot">
+    Generated by the CyberCom audit run, 2026-09-08. Findings are from a live API + code review pass on <code>D:\cybercom</code>; no code was changed (one throwaway migration was generated locally to let CyMed start — noted in <code>CYMED_AUDIT.md</code> M-1). Outstanding: full in-browser UX/UI + EN/AR visual pass (needs the Claude Chrome extension); CyCom prod-Keycloak-path security review; CyMed RCM / care-plan / NPHIES workflow depth. Severity is the auditor's judgment for a paid, pre-launch engagement.
+  </p>
+</div>
+</body>
+</html>

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from rest_framework import serializers
 
 from products.cycom.ar_ap.models import Invoice, InvoiceLine, Partner, Payment
@@ -33,6 +35,20 @@ class InvoiceLineSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "invoice", "created_at", "updated_at"]
 
+    def validate_quantity(self, value):
+        # A-2: a negative-quantity line is an uncontrolled back-door credit
+        # note (no separate numbering, no approval, no e-invoice credit-note
+        # handling). Reversals go through a real CreditNote (invoice_type
+        # *_credit_note), never a negative line on an ordinary invoice.
+        if value is not None and value <= 0:
+            raise serializers.ValidationError("Line quantity must be greater than zero.")
+        return value
+
+    def validate_unit_price(self, value):
+        if value is not None and value < 0:
+            raise serializers.ValidationError("Line unit price cannot be negative.")
+        return value
+
 
 class InvoiceSerializer(serializers.ModelSerializer):
     lines = InvoiceLineSerializer(many=True)
@@ -51,13 +67,45 @@ class InvoiceSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invoice must have at least one line.")
         return lines
 
+    def _tenant_id(self):
+        req = self.context.get("request")
+        return getattr(req, "tenant_id", None) if req else None
+
+    def validate(self, attrs):
+        # A-1: reject a duplicate document number up front with a clean field
+        # error, instead of letting it hit the DB unique constraint
+        # (Invoice.Meta.unique_together = (tenant_id, number)) and surface as
+        # an uncaught IntegrityError / 500 (+ debug-page leak).
+        number = attrs.get("number")
+        tenant_id = self._tenant_id()
+        if number and tenant_id:
+            qs = Invoice.objects.filter(tenant_id=tenant_id, number=number)
+            if self.instance is not None:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError(
+                    {"number": f"An invoice/bill with number '{number}' already exists for this tenant."}
+                )
+        return attrs
+
     def create(self, validated_data):
         lines_data = validated_data.pop("lines")
         invoice = Invoice.objects.create(**validated_data)
+        subtotal = Decimal("0")
+        tax_total = Decimal("0")
         for line_data in lines_data:
-            InvoiceLine.objects.create(
+            line = InvoiceLine.objects.create(
                 invoice=invoice, tenant_id=validated_data["tenant_id"], **line_data
             )
+            subtotal += line.subtotal
+            tax_total += line.tax_amount
+        # A-5: populate header totals from the lines on create, so a draft
+        # invoice shows real amounts to a reviewer/approver (previously 0.00
+        # until posting) and 3-way match can read amount_subtotal.
+        invoice.amount_subtotal = subtotal.quantize(Decimal("0.01"))
+        invoice.amount_tax = tax_total.quantize(Decimal("0.01"))
+        invoice.amount_total = (subtotal + tax_total).quantize(Decimal("0.01"))
+        invoice.save(update_fields=["amount_subtotal", "amount_tax", "amount_total"])
         invoice.refresh_from_db()
         return invoice
 

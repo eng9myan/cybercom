@@ -56,11 +56,17 @@ class TestPatientsModule:
         assert response.status_code == 201
         assert "mrn" in response.data
         assert response.data["first_name"] == "Ahmad"
+        # M-6: mrn / name are now encrypted PHI. The API response is decrypted
+        # (the request carries a tenant context); a bare ORM read is not.
+        assert response.data["mrn"].startswith("MRN-")
 
-        # Verify database
-        patient = Patient.objects.get(id=response.data["id"])
-        assert patient.tenant_id == test_tenant_id
-        assert patient.mrn.startswith("MRN-")
+        # Verify database — encrypted fields need a tenant context to decrypt.
+        from platform.common.tenant_context import tenant_context
+
+        with tenant_context(test_tenant_id):
+            patient = Patient.objects.get(id=response.data["id"])
+            assert patient.tenant_id == test_tenant_id
+            assert patient.mrn.startswith("MRN-")
 
         # Verify created event — canonical DomainEvent (M9 cutover).
         from platform.canonical.models import DomainEvent

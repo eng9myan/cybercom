@@ -71,7 +71,19 @@ class Invoice(BaseModel):
     INVOICE_TYPES = [
         ("customer", "Customer Invoice"),
         ("vendor", "Vendor Bill"),
+        # C-1: credit / debit notes are a distinct document type — their own
+        # numbering, their own approval, and they post the REVERSE GL entry of
+        # an ordinary invoice of the matching side. `reverses` links back to
+        # the original invoice.
+        ("customer_credit_note", "Customer Credit Note"),
+        ("vendor_credit_note", "Vendor Debit Note"),
     ]
+    CREDIT_NOTE_TYPES = ("customer_credit_note", "vendor_credit_note")
+    # A credit note settles/reverses like its base side (customer / vendor).
+    BASE_SIDE = {
+        "customer": "customer", "customer_credit_note": "customer",
+        "vendor": "vendor", "vendor_credit_note": "vendor",
+    }
     STATUS_CHOICES = [
         ("draft", "Draft"),
         ("posted", "Posted"),
@@ -80,7 +92,7 @@ class Invoice(BaseModel):
         ("cancelled", "Cancelled"),
     ]
 
-    invoice_type = models.CharField(max_length=20, choices=INVOICE_TYPES)
+    invoice_type = models.CharField(max_length=24, choices=INVOICE_TYPES)
     number = models.CharField(max_length=100)
     partner = models.ForeignKey(Partner, on_delete=models.PROTECT, related_name="invoices")
     date = models.DateField()
@@ -113,6 +125,11 @@ class Invoice(BaseModel):
     purchase_order = models.ForeignKey(
         "cycom_procurement.PurchaseOrder", on_delete=models.SET_NULL,
         null=True, blank=True, related_name="vendor_bills",
+    )
+    # C-1: the original invoice a credit/debit note reverses. Required when
+    # invoice_type is one of CREDIT_NOTE_TYPES, null otherwise.
+    reverses = models.ForeignKey(
+        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="credit_notes",
     )
 
     # ── E-invoicing (JoFotara / ZATCA / Peppol) — populated by

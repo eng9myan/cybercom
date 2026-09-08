@@ -13,11 +13,16 @@ class GenderType(models.TextChoices):
 
 
 class Patient(BaseModel, SoftDeleteMixin):
-    first_name = models.CharField(max_length=150)
-    last_name = models.CharField(max_length=150)
+    # M-6: patient name and MRN are PHI under HIPAA/GDPR/NPHIES — encrypted
+    # per-tenant like the government identifiers below. Exact-match lookup and
+    # (for MRN) uniqueness move to the deterministic <field>_bidx blind index;
+    # partial-name search is no longer possible on these columns (use the
+    # dedicated patient search / identifiers for that).
+    first_name = EncryptedText(classification="phi", blind_index=True)
+    last_name = EncryptedText(classification="phi", blind_index=True)
     dob = models.DateField()
     gender = models.CharField(max_length=10, choices=GenderType.choices, default=GenderType.UNKNOWN)
-    mrn = models.CharField(max_length=100, unique=True, db_index=True)
+    mrn = EncryptedText(classification="phi", blind_index=True)
     # PHI-adjacent government identifiers — encrypted per-tenant. Uniqueness /
     # dedup moves to the deterministic <field>_bidx blind index (ciphertext is
     # non-deterministic so a plain unique= is impossible). Lookups:
@@ -31,7 +36,12 @@ class Patient(BaseModel, SoftDeleteMixin):
 
     class Meta:
         db_table = "cymed_patients"
-        ordering = ["last_name", "first_name"]
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant_id", "mrn_bidx"], name="uq_patient_tenant_mrn"
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name} ({self.mrn})"

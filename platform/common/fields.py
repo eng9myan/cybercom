@@ -27,11 +27,21 @@ from django.db import models
 
 from platform.common.pii_registry import register_pii_field
 from platform.common.tenant_context import TenantContextMissing, get_current_tenant
-from platform.security.crypto import blind_index, decrypt, encrypt, is_encrypted
+from platform.security.crypto import (
+    FieldDecryptionError,
+    blind_index,
+    decrypt,
+    encrypt,
+    is_encrypted,
+)
 
 logger = logging.getLogger("platform.common.fields")
 
 MASK = "••••"  # ••••
+# M-5: shown when a ciphertext is present but cannot be decrypted (key-era
+# mismatch, corruption). Distinct from MASK (no tenant context). A read never
+# raises — one broken row must not 500 a whole list endpoint.
+UNDECRYPTABLE = "⚠ unavailable"
 
 
 class EncryptedText(models.BinaryField):
@@ -97,6 +107,10 @@ class EncryptedText(models.BinaryField):
         """What a read with no tenant context yields (never the plaintext)."""
         return MASK
 
+    def _undecryptable_read_value(self):
+        """What a read yields when the ciphertext can't be decrypted (M-5)."""
+        return UNDECRYPTABLE
+
     def _is_masked_read(self, value) -> bool:
         """True when `value` on an instance is a mask sentinel from a no-context
         read (so re-saving it would corrupt the column)."""
@@ -115,7 +129,14 @@ class EncryptedText(models.BinaryField):
         if tid is None:
             logger.warning("encrypted field read with no tenant context — masking")
             return self._masked_read_value()
-        return self._from_plaintext(decrypt(tid, raw))
+        try:
+            return self._from_plaintext(decrypt(tid, raw))
+        except FieldDecryptionError:
+            logger.error(
+                "encrypted field '%s' failed to decrypt for tenant %s — returning sentinel",
+                getattr(self, "_name", "?"), tid,
+            )
+            return self._undecryptable_read_value()
 
     def to_python(self, value):
         if value is None or isinstance(value, str):
@@ -229,6 +250,10 @@ class EncryptedJSON(EncryptedText):
 
     def _masked_read_value(self):
         # No mask sentinel for JSON — an iterable default keeps callers working.
+        return self.json_default()
+
+    def _undecryptable_read_value(self):
+        # Likewise for an undecryptable JSON value (M-5).
         return self.json_default()
 
     def _is_masked_read(self, value) -> bool:

@@ -54,7 +54,10 @@ class Command(BaseCommand):
             "receipts", "quotations",
         )}
 
-        # ── Accounts (create if the provisioned CoA lacks them) ──────────────
+        # ── Accounts — use the LEAF codes of the provisioned CoA. Posting to a
+        #    group/header code (1000/4000/5000 are headers in the JO chart)
+        #    is now rejected by accounting.services.post_journal_entry (A-3),
+        #    so this seed must target the postable children.
         def acct(code, name, typ):
             a = Account.objects.filter(tenant_id=tid, code=code).first()
             if not a:
@@ -62,11 +65,11 @@ class Command(BaseCommand):
                 n["accounts"] += 1
             return a
 
-        cash = acct("1000", "Cash on Hand", "asset")
+        cash = acct("1110", "Cash on Hand", "asset")
         inv_acct = acct("1140", "Inventory", "asset")
-        revenue = acct("4000", "Sales Revenue", "income")
-        tax_acct = acct("2120", "Output VAT", "liability")
-        cogs = acct("5000", "Cost of Goods Sold", "expense")
+        revenue = acct("4100", "Sales Revenue", "income")
+        tax_acct = acct("2120", "Sales Tax Payable (Output VAT)", "liability")
+        cogs = acct("5100", "Cost of Goods Sold", "expense")
 
         # ── Catalog: units, tax, categories ──────────────────────────────────
         def unit(name, abbr):

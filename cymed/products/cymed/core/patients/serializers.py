@@ -43,7 +43,11 @@ class PatientCommunicationSerializer(serializers.ModelSerializer):
 class PatientSerializer(serializers.ModelSerializer):
     # EncryptedText is a BinaryField subclass; DRF's default mapping would
     # base64-encode it. The field hands us a decrypted str on read and takes a
-    # str on write, so treat it as plain text here.
+    # str on write, so treat it as plain text here. (M-6: name + mrn joined
+    # national_id/passport as encrypted PHI.)
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
+    mrn = serializers.CharField(read_only=True)
     national_id = serializers.CharField(
         required=False, allow_blank=True, allow_null=True, max_length=100
     )
