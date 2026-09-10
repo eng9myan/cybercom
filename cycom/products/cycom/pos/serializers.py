@@ -1,5 +1,10 @@
+from django.db import transaction
 from rest_framework import serializers
 
+from products.cycom.accounting.sequencing import (
+    allocate_document_number,
+    can_override_document_number,
+)
 from products.cycom.pos.models import (
     Device,
     POSOrder,
@@ -39,6 +44,8 @@ class POSOrderSerializer(serializers.ModelSerializer):
     lines = POSOrderLineSerializer(many=True)
     payments = POSOrderPaymentSerializer(many=True, read_only=True)
     amount_paid = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    # A-4: auto-allocated from a per-tenant/month gapless sequence when omitted.
+    order_number = serializers.CharField(required=False, allow_blank=True, max_length=100)
 
     class Meta:
         model = POSOrder
@@ -53,8 +60,22 @@ class POSOrderSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Order must have at least one line.")
         return lines
 
+    def validate(self, attrs):
+        request = self.context.get("request")
+        if attrs.get("order_number") and request is not None and not can_override_document_number(request):
+            raise serializers.ValidationError(
+                {"order_number": "You are not allowed to set the order number manually; "
+                                 "leave it blank to have it auto-generated."}
+            )
+        return attrs
+
+    @transaction.atomic
     def create(self, validated_data):
         lines_data = validated_data.pop("lines")
+        if not validated_data.get("order_number"):
+            validated_data["order_number"] = allocate_document_number(
+                validated_data["tenant_id"], "pos_order"
+            )
         order = POSOrder.objects.create(**validated_data)
         for line_data in lines_data:
             POSOrderLine.objects.create(order=order, tenant_id=validated_data["tenant_id"], **line_data)

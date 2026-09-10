@@ -130,10 +130,12 @@ class PayrollRunViewSet(TenantScopedModelViewSet):
                 entry = post_journal_entry(
                     tenant_id=run.tenant_id,
                     date=run.period_end,
-                    reference=f"PAYROLL-{run.period_start}-{run.period_end}",
+                    reference=run.number or f"PAYROLL-{run.period_start}-{run.period_end}",
                     lines=gl_lines,
                     currency=run.currency,
-                    narration=f"Payroll run {run.period_start} to {run.period_end}",
+                    narration=(
+                        f"Payroll run {run.number} " if run.number else "Payroll run "
+                    ) + f"({run.period_start} to {run.period_end})",
                 )
 
                 run.status = "posted"

@@ -87,3 +87,45 @@ class JournalLine(BaseModel):
     class Meta:
         db_table = "cycom_accounting_journal_lines"
         ordering = ["id"]
+
+
+class DocumentSequence(BaseModel):
+    """Per-tenant, per-document-type gapless counter (audit A-4).
+
+    Jordan's ISTD / JoFotara rules require fiscal documents (invoices, credit
+    notes, POS receipts, payroll runs) to carry a sequential number with no
+    gaps and no duplicates — one monotonic series per (tenant, doc_type), and
+    per period when the series resets annually/monthly. Manual free-text entry
+    can't guarantee that; `accounting.sequencing.allocate_document_number()` is
+    the only sanctioned way to consume a number and it takes a row lock so
+    concurrent issuers neither collide nor skip.
+
+    `pattern` is a str.format template over: prefix, seq (zero-padded to
+    `padding`), yyyy, yy, mm — e.g. "INV-{yyyy}-{seq}" -> "INV-2026-00042".
+    """
+
+    PERIOD_NONE = "none"
+    PERIOD_YEARLY = "yearly"
+    PERIOD_MONTHLY = "monthly"
+    PERIOD_CHOICES = [
+        (PERIOD_NONE, "Continuous"),
+        (PERIOD_YEARLY, "Reset yearly"),
+        (PERIOD_MONTHLY, "Reset monthly"),
+    ]
+
+    doc_type = models.CharField(max_length=40)
+    prefix = models.CharField(max_length=16, blank=True)
+    pattern = models.CharField(max_length=64, default="{prefix}{yyyy}-{seq}")
+    padding = models.PositiveSmallIntegerField(default=5)
+    period_scope = models.CharField(max_length=8, choices=PERIOD_CHOICES, default=PERIOD_YEARLY)
+    # The period the current counter belongs to: "2026", "2026-09", or "".
+    period_key = models.CharField(max_length=7, blank=True)
+    next_value = models.PositiveBigIntegerField(default=1)
+
+    class Meta:
+        db_table = "cycom_accounting_document_sequences"
+        unique_together = [("tenant_id", "doc_type")]
+        ordering = ["doc_type"]
+
+    def __str__(self):
+        return f"{self.doc_type} @ {self.period_key or 'continuous'} → next {self.next_value}"

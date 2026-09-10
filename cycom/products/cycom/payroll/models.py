@@ -65,6 +65,10 @@ class PayrollRun(BaseModel):
         ("posted", "Posted"),
     ]
 
+    # A-4: gapless per-tenant run number, auto-allocated from a DocumentSequence
+    # on create (see PayrollRunViewSet.perform_create). Blank only on rows that
+    # predate the sequence; the 0002 data migration backfills those.
+    number = models.CharField(max_length=100, blank=True, default="")
     period_start = models.DateField()
     period_end = models.DateField()
     currency = models.CharField(max_length=10, default="JOD")
@@ -89,9 +93,10 @@ class PayrollRun(BaseModel):
     class Meta:
         db_table = "cycom_payroll_runs"
         ordering = ["-period_start"]
+        unique_together = [("tenant_id", "number")]
 
     def __str__(self):
-        return f"Payroll {self.period_start} – {self.period_end} ({self.status})"
+        return f"{self.number or 'Payroll'} {self.period_start} – {self.period_end} ({self.status})"
 
 
 class Payslip(BaseModel):

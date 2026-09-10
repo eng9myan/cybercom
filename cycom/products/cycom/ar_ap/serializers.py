@@ -1,7 +1,13 @@
 from decimal import Decimal
 
+from django.db import transaction
 from rest_framework import serializers
 
+from products.cycom.accounting.sequencing import (
+    INVOICE_TYPE_TO_DOC_TYPE,
+    allocate_document_number,
+    can_override_document_number,
+)
 from products.cycom.ar_ap.models import Invoice, InvoiceLine, Partner, Payment
 
 
@@ -53,6 +59,10 @@ class InvoiceLineSerializer(serializers.ModelSerializer):
 class InvoiceSerializer(serializers.ModelSerializer):
     lines = InvoiceLineSerializer(many=True)
     amount_due = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    # A-4: number is auto-allocated from a per-tenant/per-type gapless sequence
+    # when omitted. A caller with a finance/admin role may still supply one
+    # explicitly (migration, correction) — see validate().
+    number = serializers.CharField(required=False, allow_blank=True, max_length=100)
 
     class Meta:
         model = Invoice
@@ -72,6 +82,16 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return getattr(req, "tenant_id", None) if req else None
 
     def validate(self, attrs):
+        # A-4: a manually supplied number is a privileged override of the auto
+        # sequence — allow it only for finance/admin roles (or non-API callers
+        # with no request context, e.g. data migrations).
+        request = self.context.get("request")
+        if attrs.get("number") and request is not None and not can_override_document_number(request):
+            raise serializers.ValidationError(
+                {"number": "You are not allowed to set the document number manually; "
+                           "leave it blank to have it auto-generated."}
+            )
+
         # A-1: reject a duplicate document number up front with a clean field
         # error, instead of letting it hit the DB unique constraint
         # (Invoice.Meta.unique_together = (tenant_id, number)) and surface as
@@ -88,8 +108,19 @@ class InvoiceSerializer(serializers.ModelSerializer):
                 )
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
         lines_data = validated_data.pop("lines")
+        # A-4: auto-allocate a gapless number when the caller didn't supply one.
+        # Allocation shares this transaction, so a later failure rolls the
+        # counter back too — no burned numbers.
+        if not validated_data.get("number"):
+            doc_type = INVOICE_TYPE_TO_DOC_TYPE.get(
+                validated_data["invoice_type"], "customer_invoice"
+            )
+            validated_data["number"] = allocate_document_number(
+                validated_data["tenant_id"], doc_type, when=validated_data.get("date")
+            )
         invoice = Invoice.objects.create(**validated_data)
         subtotal = Decimal("0")
         tax_total = Decimal("0")
