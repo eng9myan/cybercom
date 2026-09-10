@@ -8,6 +8,7 @@ from rest_framework.exceptions import ValidationError
 
 from core.viewsets import TenantScopedModelViewSet
 from platform.tenant.permissions import IsPlatformAdmin
+from products.cycom.access.approvals import require_approval_authority
 from products.cycom.accounting.services import UnbalancedEntryError, post_journal_entry
 from products.cycom.ar_ap.compliance_client import notify_invoice_finalized
 from products.cycom.ar_ap.einvoice import run_einvoice_clearance
@@ -231,6 +232,12 @@ class PaymentViewSet(TenantScopedModelViewSet):
             raise ValidationError(
                 f"Payment {payment.amount} exceeds amount due {invoice.amount_due} on invoice {invoice.number}."
             )
+
+        # HR-4: an outgoing payment (vendor bill settlement) runs the value-based
+        # 'payment' approval chain — the caller must hold the approver role for
+        # the amount's tier (admins bypass; no policy → admin required).
+        if Invoice.BASE_SIDE.get(invoice.invoice_type) == "vendor":
+            require_approval_authority(request, payment.tenant_id, "payment", payment.amount)
 
         if invoice.invoice_type == "customer":
             # customer payment received: Dr Cash, Cr Accounts Receivable
