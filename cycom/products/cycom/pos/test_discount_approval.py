@@ -42,7 +42,7 @@ def pos_fixtures(db, tenant_id):
     )
     warehouse = Warehouse.objects.create(tenant_id=tenant_id, code="WH-MAIN", name="Main Warehouse")
     product = Product.objects.create(
-        tenant_id=tenant_id, sku="SKU-1", name="Widget", inventory_account=inventory_account
+        tenant_id=tenant_id, internal_ref="SKU-1", name="Widget", inventory_account=inventory_account
     )
 
     receipt = StockMove.objects.create(

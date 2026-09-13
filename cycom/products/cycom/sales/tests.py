@@ -22,7 +22,7 @@ class SalesFlowTests(TestCase):
         self.inv = Account.objects.create(tenant_id=T, code="1140", name="Inventory", account_type="asset")
         self.tax = Account.objects.create(tenant_id=T, code="2120", name="Output GST", account_type="liability")
         self.rev = Account.objects.create(tenant_id=T, code="4100", name="Revenue", account_type="income")
-        self.product = Product.objects.create(tenant_id=T, sku="RB-12", name="Rebar", inventory_account=self.inv)
+        self.product = Product.objects.create(tenant_id=T, internal_ref="RB-12", name="Rebar", inventory_account=self.inv)
 
         self.so = SalesOrder.objects.create(
             tenant_id=T, number="SO-1", customer_name="Ministry of Works",

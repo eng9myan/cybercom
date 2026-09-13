@@ -186,7 +186,7 @@ def test_pos_order_number_auto_allocated(admin_client, tenant_id):
     wh = Warehouse.objects.create(tenant_id=tenant_id, code="WH1", name="Main")
     session = POSSession.objects.create(tenant_id=tenant_id, warehouse=wh, opening_cash=0)
     prod = Product.objects.create(
-        tenant_id=tenant_id, sku="SKU1", name="Widget", inventory_account=inv_acc
+        tenant_id=tenant_id, internal_ref="SKU1", name="Widget", inventory_account=inv_acc
     )
     payload = {
         "session": str(session.id),

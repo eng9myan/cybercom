@@ -3,6 +3,14 @@ from django.db import models
 from platform.common.models import BaseModel
 from products.cycom.accounting.models import Account, JournalEntry
 
+# S-3: catalog.Product is now the single product master (see
+# products/cycom/catalog/models.py) — inventory.Product is retired. Re-exported
+# here so every existing `from products.cycom.inventory.models import Product`
+# import (pos, sales, procurement, manufacturing, access, cyai_memory,
+# simulations) keeps working unchanged; it's the same class either way, Django
+# resolves FK targets by the class object, not the import path.
+from products.cycom.catalog.models import Product  # noqa: F401
+
 
 class Warehouse(BaseModel):
     code = models.CharField(max_length=50)
@@ -38,24 +46,6 @@ class Warehouse(BaseModel):
 
     def __str__(self):
         return f"{self.code} — {self.name}"
-
-
-class Product(BaseModel):
-    sku = models.CharField(max_length=100)
-    name = models.CharField(max_length=255)
-    uom = models.CharField(max_length=20, default="each")
-    inventory_account = models.ForeignKey(
-        Account, on_delete=models.PROTECT, related_name="products_as_inventory"
-    )
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        db_table = "cycom_inventory_products"
-        unique_together = [("tenant_id", "sku")]
-        ordering = ["sku"]
-
-    def __str__(self):
-        return f"{self.sku} — {self.name}"
 
 
 class StockItem(BaseModel):

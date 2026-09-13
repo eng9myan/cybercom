@@ -31,7 +31,7 @@ def shop(db):
     )
     wh = Warehouse.objects.create(tenant_id=T, code="WH", name="Main")
     prod = Product.objects.create(
-        tenant_id=T, name="Latte", sku="LATTE", inventory_account=inv_acct,
+        tenant_id=T, name="Latte", internal_ref="LATTE", inventory_account=inv_acct,
     )
     # stock the shelf: receive 100 @ cost 1.00
     rcpt = StockMove.objects.create(

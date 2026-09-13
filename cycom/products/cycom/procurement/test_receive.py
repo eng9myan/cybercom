@@ -27,7 +27,7 @@ class GoodsReceiptTests(TestCase):
             tenant_id=TENANT, name="Steel Supplier", partner_type="vendor"
         )
         self.product = Product.objects.create(
-            tenant_id=TENANT, sku="RB-12", name="Rebar 12mm", inventory_account=self.inv_acct
+            tenant_id=TENANT, internal_ref="RB-12", name="Rebar 12mm", inventory_account=self.inv_acct
         )
         self.po = PurchaseOrder.objects.create(
             tenant_id=TENANT, vendor=self.vendor, warehouse=self.wh, status="approved"

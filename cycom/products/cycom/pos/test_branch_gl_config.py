@@ -49,7 +49,7 @@ def test_order_resolves_accounts_from_configured_branch(admin_client, tenant_id,
     )
     session = POSSession.objects.create(tenant_id=tenant_id, warehouse=wh, opening_cash=0)
     product = Product.objects.create(
-        tenant_id=tenant_id, sku="S1", name="Widget", inventory_account=accounts["inv"]
+        tenant_id=tenant_id, internal_ref="S1", name="Widget", inventory_account=accounts["inv"]
     )
 
     resp = admin_client.post("/api/v1/pos/orders/", _order_payload(session, product), format="json")
@@ -69,7 +69,7 @@ def test_order_still_accepts_explicit_override_over_branch_default(admin_client,
     other_cash = Account.objects.create(tenant_id=tenant_id, code="1010", name="Petty Cash", account_type="asset")
     session = POSSession.objects.create(tenant_id=tenant_id, warehouse=wh, opening_cash=0)
     product = Product.objects.create(
-        tenant_id=tenant_id, sku="S2", name="Gadget", inventory_account=accounts["inv"]
+        tenant_id=tenant_id, internal_ref="S2", name="Gadget", inventory_account=accounts["inv"]
     )
 
     payload = _order_payload(session, product)
@@ -85,7 +85,7 @@ def test_order_rejects_cleanly_when_branch_has_no_config_and_none_supplied(admin
     wh = Warehouse.objects.create(tenant_id=tenant_id, code="WH-BR3", name="Branch 3")  # no POS config
     session = POSSession.objects.create(tenant_id=tenant_id, warehouse=wh, opening_cash=0)
     product = Product.objects.create(
-        tenant_id=tenant_id, sku="S3", name="Gizmo", inventory_account=accounts["inv"]
+        tenant_id=tenant_id, internal_ref="S3", name="Gizmo", inventory_account=accounts["inv"]
     )
 
     resp = admin_client.post("/api/v1/pos/orders/", _order_payload(session, product), format="json")

@@ -36,9 +36,9 @@ def mrp_fixtures(db, tenant_id):
     )
     warehouse = Warehouse.objects.create(tenant_id=tenant_id, code="WH-MAIN", name="Main")
 
-    screw = Product.objects.create(tenant_id=tenant_id, sku="SCREW", name="Screw", inventory_account=inv_account)
-    panel = Product.objects.create(tenant_id=tenant_id, sku="PANEL", name="Panel", inventory_account=inv_account)
-    widget = Product.objects.create(tenant_id=tenant_id, sku="WIDGET", name="Widget", inventory_account=inv_account)
+    screw = Product.objects.create(tenant_id=tenant_id, internal_ref="SCREW", name="Screw", inventory_account=inv_account)
+    panel = Product.objects.create(tenant_id=tenant_id, internal_ref="PANEL", name="Panel", inventory_account=inv_account)
+    widget = Product.objects.create(tenant_id=tenant_id, internal_ref="WIDGET", name="Widget", inventory_account=inv_account)
 
     for product, qty, cost in [(screw, Decimal("100"), Decimal("0.50")), (panel, Decimal("20"), Decimal("10.00"))]:
         receipt = StockMove.objects.create(

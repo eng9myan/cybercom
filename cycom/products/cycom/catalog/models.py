@@ -18,6 +18,7 @@ from django.db.models import Q
 from django.utils.text import slugify
 
 from platform.common.models import BaseModel, SoftDeleteMixin
+from products.cycom.accounting.models import Account
 
 
 class CatalogModel(BaseModel, SoftDeleteMixin):
@@ -122,6 +123,16 @@ class Product(CatalogModel):
     pos_available = models.BooleanField(default=True)
     pos_category_sequence = models.PositiveIntegerField(default=0)
 
+    # S-3: catalog.Product is the single product master (absorbed from the
+    # formerly-separate inventory.Product, retired). `inventory_account` is the
+    # GL account stock moves post against — required for anything that actually
+    # moves through the warehouse (STORABLE/CONSUMABLE with track_stock=True),
+    # legitimately null for SERVICE products and non-stocked KITs.
+    inventory_account = models.ForeignKey(
+        Account, on_delete=models.PROTECT, null=True, blank=True,
+        related_name="catalog_products_as_inventory",
+    )
+
     class Meta:
         db_table = "cycom_catalog_products"
         ordering = ["name"]
@@ -139,6 +150,16 @@ class Product(CatalogModel):
 
     def __str__(self):
         return self.name
+
+    # S-3 compat shims: code ported from the old inventory.Product (retired)
+    # read `.sku` / `.uom` — same data lives here as `internal_ref` / `unit`.
+    @property
+    def sku(self):
+        return self.internal_ref
+
+    @property
+    def uom(self):
+        return self.unit.abbreviation if self.unit_id else ""
 
 
 class KitComponent(CatalogModel):

@@ -121,7 +121,7 @@ def po(db, tenant_id):
     inv = Account.objects.create(tenant_id=tenant_id, code="1200", name="Inv", account_type="asset")
     wh = Warehouse.objects.create(tenant_id=tenant_id, code="WH1", name="Main")
     vendor = Partner.objects.create(tenant_id=tenant_id, name="Vendor", partner_type="vendor")
-    prod = Product.objects.create(tenant_id=tenant_id, sku="S1", name="Widget", inventory_account=inv)
+    prod = Product.objects.create(tenant_id=tenant_id, internal_ref="S1", name="Widget", inventory_account=inv)
     order = PurchaseOrder.objects.create(tenant_id=tenant_id, vendor=vendor, warehouse=wh, status="draft")
     PurchaseOrderLine.objects.create(
         tenant_id=tenant_id, order=order, product=prod,
