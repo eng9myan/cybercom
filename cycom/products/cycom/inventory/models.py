@@ -10,6 +10,27 @@ class Warehouse(BaseModel):
     address = models.CharField(max_length=255, blank=True)
     is_active = models.BooleanField(default=True)
 
+    # S-2: per-branch POS GL defaults. A multi-branch retailer configures
+    # these once per warehouse/branch instead of a till clerk supplying
+    # chart-of-accounts UUIDs on every sale (see pos.serializers.POSOrderSerializer,
+    # which resolves an order's accounts from here when the request omits them).
+    pos_cash_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True, related_name="warehouses_pos_cash"
+    )
+    pos_revenue_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True, related_name="warehouses_pos_revenue"
+    )
+    pos_cogs_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True, related_name="warehouses_pos_cogs"
+    )
+    pos_tax_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True, related_name="warehouses_pos_tax"
+    )
+    pos_advance_liability_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="warehouses_pos_advance_liability",
+    )
+
     class Meta:
         db_table = "cycom_inventory_warehouses"
         unique_together = [("tenant_id", "code")]
