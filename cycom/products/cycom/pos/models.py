@@ -164,10 +164,16 @@ class POSOrderPayment(BaseModel):
 class POSOrderLine(BaseModel):
     order = models.ForeignKey(POSOrder, on_delete=models.CASCADE, related_name="lines")
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="pos_order_lines")
+    # quantity doubles as a weight (e.g. kg) when product.pricing_mode=="weight"
+    # — same decimal field, no schema change needed for that vertical.
     quantity = models.DecimalField(max_digits=12, decimal_places=4, default=1)
     unit_price = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     tax_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    # Required at checkout when product.tracking_mode=="serial" — exactly
+    # `quantity` serials, passed through to the issuing StockMove (see
+    # pos.services.checkout_order / inventory.services.apply_stock_move).
+    serial_numbers = models.JSONField(default=list, blank=True)
 
     class Meta:
         db_table = "cycom_pos_order_lines"

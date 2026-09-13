@@ -1,10 +1,12 @@
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import F
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from products.cycom.accounting.services import post_journal_entry
-from products.cycom.inventory.models import StockItem
+from products.cycom.inventory.models import SerialUnit, StockItem, StockLot
 
 
 def _get_or_create_stock_item(tenant_id, product, warehouse):
@@ -14,14 +16,134 @@ def _get_or_create_stock_item(tenant_id, product, warehouse):
     return item
 
 
+# ── Batch/lot + expiry tracking (tracking_mode="batch") ─────────────────────
+# The StockItem aggregate above is still updated by every move regardless of
+# tracking_mode — these only add the per-lot breakdown underneath it.
+
+def _receive_lot(move):
+    if not move.lot_number:
+        raise ValidationError("Receipt of a batch-tracked product requires lot_number.")
+    lot, _ = StockLot.objects.get_or_create(
+        tenant_id=move.tenant_id, product=move.product, warehouse=move.warehouse,
+        lot_number=move.lot_number, defaults={"expiry_date": move.expiry_date},
+    )
+    if move.expiry_date and lot.expiry_date != move.expiry_date:
+        lot.expiry_date = move.expiry_date
+    new_qty = lot.quantity_on_hand + move.quantity
+    new_value = (lot.quantity_on_hand * lot.average_cost) + (move.quantity * move.unit_cost)
+    lot.average_cost = (new_value / new_qty) if new_qty else Decimal("0")
+    lot.quantity_on_hand = new_qty
+    lot.save(update_fields=["expiry_date", "quantity_on_hand", "average_cost"])
+    move.lot = lot
+
+
+def _issue_lots(move, *, override_expired):
+    """Consumes the named lot, or FEFO (earliest expiry first, no-expiry lots
+    last) across lots when none is named. An expired lot blocks the issue
+    unless override_expired=True — the caller (the view) is responsible for
+    only setting that for an admin, same pattern as HR-2's 3-way-match
+    override."""
+    if move.lot_number:
+        lots = list(StockLot.objects.filter(
+            tenant_id=move.tenant_id, product=move.product, warehouse=move.warehouse,
+            lot_number=move.lot_number,
+        ))
+        if not lots:
+            raise ValidationError(f"No lot '{move.lot_number}' on hand at {move.warehouse}.")
+    else:
+        lots = list(
+            StockLot.objects.filter(
+                tenant_id=move.tenant_id, product=move.product, warehouse=move.warehouse,
+                quantity_on_hand__gt=0,
+            ).order_by(F("expiry_date").asc(nulls_last=True), "lot_number")
+        )
+
+    today = timezone.localdate()
+    remaining = move.quantity
+    consumed_first = None
+    for lot in lots:
+        if remaining <= 0:
+            break
+        if lot.quantity_on_hand <= 0:
+            continue
+        if lot.expiry_date and lot.expiry_date < today and not override_expired:
+            raise ValidationError(
+                f"Lot '{lot.lot_number}' expired {lot.expiry_date} — pass override_expired "
+                "(admin role required) to issue it anyway."
+            )
+        take = min(remaining, lot.quantity_on_hand)
+        lot.quantity_on_hand -= take
+        lot.save(update_fields=["quantity_on_hand"])
+        consumed_first = consumed_first or lot
+        remaining -= take
+
+    if remaining > 0:
+        raise ValidationError(
+            f"Cannot issue {move.quantity} of a batch-tracked product: "
+            f"only {move.quantity - remaining} available across its lots at {move.warehouse}."
+        )
+    move.lot = consumed_first
+
+
+# ── Serial-number tracking (tracking_mode="serial") ─────────────────────────
+
+def _receive_serials(move):
+    if len(move.serial_numbers) != move.quantity:
+        raise ValidationError(
+            f"Receipt of {move.quantity} serial-tracked unit(s) needs exactly that many "
+            f"serial_numbers (got {len(move.serial_numbers)})."
+        )
+    if len(set(move.serial_numbers)) != len(move.serial_numbers):
+        raise ValidationError("serial_numbers has a duplicate.")
+    existing = set(SerialUnit.objects.filter(
+        tenant_id=move.tenant_id, product=move.product, serial_number__in=move.serial_numbers,
+    ).values_list("serial_number", flat=True))
+    if existing:
+        raise ValidationError(f"Serial(s) already exist for this product: {sorted(existing)}.")
+    SerialUnit.objects.bulk_create([
+        SerialUnit(
+            tenant_id=move.tenant_id, product=move.product, warehouse=move.warehouse,
+            serial_number=s, status="in_stock",
+        )
+        for s in move.serial_numbers
+    ])
+
+
+def _issue_serials(move):
+    if len(move.serial_numbers) != move.quantity:
+        raise ValidationError(
+            f"Issue of {move.quantity} serial-tracked unit(s) needs exactly that many "
+            f"serial_numbers (got {len(move.serial_numbers)})."
+        )
+    units = list(SerialUnit.objects.filter(
+        tenant_id=move.tenant_id, product=move.product, warehouse=move.warehouse,
+        serial_number__in=move.serial_numbers, status="in_stock",
+    ))
+    missing = set(move.serial_numbers) - {u.serial_number for u in units}
+    if missing:
+        raise ValidationError(f"Serial(s) not in stock at {move.warehouse}: {sorted(missing)}.")
+    for unit in units:
+        unit.status = "issued"
+        unit.warehouse = None
+        unit.sold_reference = move.reference
+    SerialUnit.objects.bulk_update(units, ["status", "warehouse", "sold_reference"])
+
+
 @transaction.atomic
-def apply_stock_move(move):
+def apply_stock_move(move, *, override_expired=False):
     """
     Applies a StockMove to the StockItem valuation ledger (weighted-average
     costing) and, where the move actually changes total inventory value
     against an outside account, posts a balanced GL entry. Transfers between
     warehouses don't touch the GL — both sides use the same product-level
     inventory_account, so a transfer's debit/credit would cancel out.
+
+    Batch (tracking_mode="batch") and serial (tracking_mode="serial") products
+    get an additional per-lot / per-unit ledger on receipt and issue — see
+    _receive_lot/_issue_lots/_receive_serials/_issue_serials above. transfer
+    and adjustment stay aggregate-only for tracked products for now (not a
+    launch blocker — POS checkout and PO receiving, the paths that matter for
+    retail, are both issue/receipt).
     """
     if move.move_type == "transfer":
         if move.status != "approved":
@@ -42,6 +164,11 @@ def apply_stock_move(move):
         item.average_cost = (new_value / new_qty) if new_qty else Decimal("0")
         item.quantity_on_hand = new_qty
         item.save(update_fields=["quantity_on_hand", "average_cost"])
+
+        if move.product.tracking_mode == "batch":
+            _receive_lot(move)
+        elif move.product.tracking_mode == "serial":
+            _receive_serials(move)
 
         move_value = (move.quantity * move.unit_cost).quantize(Decimal("0.01"))
         entry = post_journal_entry(
@@ -66,6 +193,11 @@ def apply_stock_move(move):
         move_value = (move.quantity * item.average_cost).quantize(Decimal("0.01"))
         item.quantity_on_hand -= move.quantity
         item.save(update_fields=["quantity_on_hand"])
+
+        if move.product.tracking_mode == "batch":
+            _issue_lots(move, override_expired=override_expired)
+        elif move.product.tracking_mode == "serial":
+            _issue_serials(move)
 
         entry = post_journal_entry(
             tenant_id=move.tenant_id,
@@ -141,7 +273,7 @@ def apply_stock_move(move):
     # Compare-and-set on row_version: if a concurrent apply_stock_move() already
     # took this move to 'done', the CAS matches no rows and raises
     # OptimisticLockError, rolling back this txn (and its duplicate GL entry).
-    move.save_if_unchanged(fields=["status", "journal_entry"])
+    move.save_if_unchanged(fields=["status", "journal_entry", "lot"])
     return move
 
 

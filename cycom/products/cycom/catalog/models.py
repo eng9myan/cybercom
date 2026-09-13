@@ -119,6 +119,24 @@ class Product(CatalogModel):
     track_stock = models.BooleanField(default=True)
     min_stock_qty = models.DecimalField(max_digits=15, decimal_places=4, default="0.0000")
 
+    # Per-vertical retail tracking (Pharmacy Retail: batch/expiry; Electronics:
+    # serial numbers). "none" is the default and keeps the plain aggregate
+    # StockItem behavior every other vertical already uses — see
+    # inventory.services.apply_stock_move for how each mode is enforced.
+    TRACKING_MODES = [
+        ("none", "Not Tracked"),
+        ("batch", "Batch / Lot + Expiry"),
+        ("serial", "Serial Number"),
+    ]
+    tracking_mode = models.CharField(max_length=10, choices=TRACKING_MODES, default="none")
+
+    # Grocery / Sweets & Bakery: sold by weight rather than a fixed unit price.
+    # `unit_price * quantity` math is unchanged (quantity is just entered as a
+    # decimal weight in `unit`, e.g. kg) — this only flags the entry mode for
+    # the till UI and line-level validation.
+    PRICING_MODES = [("fixed", "Fixed Price"), ("weight", "Weight-Based")]
+    pricing_mode = models.CharField(max_length=10, choices=PRICING_MODES, default="fixed")
+
     # POS visibility
     pos_available = models.BooleanField(default=True)
     pos_category_sequence = models.PositiveIntegerField(default=0)

@@ -116,6 +116,11 @@ def checkout_order(order):
     # For layaway, goods are only released now (at final settlement), not
     # when the earlier advance payments were collected.
     for line in lines:
+        if line.product.tracking_mode == "serial" and len(line.serial_numbers) != line.quantity:
+            raise ValidationError(
+                f"Line for {line.product} is serial-tracked — needs exactly "
+                f"{line.quantity} serial_numbers (got {len(line.serial_numbers)})."
+            )
         move = StockMove.objects.create(
             tenant_id=order.tenant_id,
             move_type="issue",
@@ -125,6 +130,7 @@ def checkout_order(order):
             date=today,
             reference=order.order_number,
             offset_account=order.cogs_account,
+            serial_numbers=line.serial_numbers,
             status="draft",
         )
         apply_stock_move(move)
