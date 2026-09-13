@@ -117,6 +117,17 @@ class POSOrder(BaseModel):
             total += p.amount
         return total
 
+    @property
+    def discount_amount(self):
+        """Total currency value discounted off this order's lines (gross list
+        price minus the discounted subtotal). This is the figure the
+        `pos_discount` approval matrix bands against — see access.approvals."""
+        total = Decimal("0")
+        for line in self.lines.all():
+            gross = (line.quantity * line.unit_price).quantize(Decimal("0.01"))
+            total += gross - line.subtotal
+        return total
+
     # Ordered kitchen-ticket flow; advance_kitchen() steps one stage forward.
     KITCHEN_FLOW = ["pending", "in_progress", "ready", "served"]
 

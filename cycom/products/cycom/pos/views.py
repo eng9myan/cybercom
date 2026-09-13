@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from core.viewsets import TenantScopedModelViewSet
-from platform.tenant.permissions import IsPlatformAdmin
+from products.cycom.access.approvals import require_approval_authority
 from products.cycom.pos.models import Device, POSOrder, POSSession, PosReceipt
 from products.cycom.pos.serializers import (
     DeviceSerializer,
@@ -72,21 +72,22 @@ class POSOrderViewSet(TenantScopedModelViewSet):
         submit_discount_for_approval(order)
         return Response(POSOrderSerializer(order).data)
 
-    @action(
-        detail=True, methods=["post"], url_path="approve-discount", permission_classes=[IsPlatformAdmin]
-    )
+    @action(detail=True, methods=["post"], url_path="approve-discount")
     def approve_discount_action(self, request, pk=None):
         order = self.get_object()
+        # HR-4/S-2 (retail): the till discount matrix (retailgroup blueprint's
+        # 'pos_discount' policy: Cashier / Branch Manager / Retail Ops Manager
+        # bands) governs this, not a flat platform-admin gate.
+        require_approval_authority(request, order.tenant_id, "pos_discount", order.discount_amount)
         claims = getattr(request, "auth_claims", {}) or {}
         approved_by = request.data.get("approved_by", "") or claims.get("email", "")
         approve_discount(order, approved_by)
         return Response(POSOrderSerializer(order).data)
 
-    @action(
-        detail=True, methods=["post"], url_path="reject-discount", permission_classes=[IsPlatformAdmin]
-    )
+    @action(detail=True, methods=["post"], url_path="reject-discount")
     def reject_discount_action(self, request, pk=None):
         order = self.get_object()
+        require_approval_authority(request, order.tenant_id, "pos_discount", order.discount_amount)
         reject_discount(order, request.data.get("reason", ""))
         return Response(POSOrderSerializer(order).data)
 
