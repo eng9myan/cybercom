@@ -109,6 +109,29 @@ def _receive_serials(move):
     ])
 
 
+def _return_serials(move):
+    """A return receipt: these serials already exist (they were issued at an
+    earlier sale) — flip them back to in_stock rather than creating new
+    units, which is what a genuine new-stock receipt (_receive_serials) does
+    and would wrongly reject as 'already exists'."""
+    if len(move.serial_numbers) != move.quantity:
+        raise ValidationError(
+            f"Return of {move.quantity} serial-tracked unit(s) needs exactly that many "
+            f"serial_numbers (got {len(move.serial_numbers)})."
+        )
+    units = list(SerialUnit.objects.filter(
+        tenant_id=move.tenant_id, product=move.product,
+        serial_number__in=move.serial_numbers, status="issued",
+    ))
+    missing = set(move.serial_numbers) - {u.serial_number for u in units}
+    if missing:
+        raise ValidationError(f"Serial(s) not currently issued, can't return: {sorted(missing)}.")
+    for unit in units:
+        unit.status = "in_stock"
+        unit.warehouse = move.warehouse
+    SerialUnit.objects.bulk_update(units, ["status", "warehouse"])
+
+
 def _issue_serials(move):
     if len(move.serial_numbers) != move.quantity:
         raise ValidationError(
@@ -130,7 +153,7 @@ def _issue_serials(move):
 
 
 @transaction.atomic
-def apply_stock_move(move, *, override_expired=False):
+def apply_stock_move(move, *, override_expired=False, is_return=False):
     """
     Applies a StockMove to the StockItem valuation ledger (weighted-average
     costing) and, where the move actually changes total inventory value
@@ -144,6 +167,14 @@ def apply_stock_move(move, *, override_expired=False):
     and adjustment stay aggregate-only for tracked products for now (not a
     launch blocker — POS checkout and PO receiving, the paths that matter for
     retail, are both issue/receipt).
+
+    `is_return=True` (pos.services.post_return) treats a serial-tracked
+    receipt as units coming BACK from a sale (flips existing 'issued' serials
+    to 'in_stock') rather than brand-new stock arriving (which would create
+    new SerialUnit rows and reject already-existing serials as a duplicate).
+    Batch products need no such flag — returning batched stock to its
+    original lot is exactly the same weighted-average blend a fresh receipt
+    already does.
     """
     if move.move_type == "transfer":
         if move.status != "approved":
@@ -168,7 +199,7 @@ def apply_stock_move(move, *, override_expired=False):
         if move.product.tracking_mode == "batch":
             _receive_lot(move)
         elif move.product.tracking_mode == "serial":
-            _receive_serials(move)
+            _return_serials(move) if is_return else _receive_serials(move)
 
         move_value = (move.quantity * move.unit_cost).quantize(Decimal("0.01"))
         entry = post_journal_entry(

@@ -13,6 +13,8 @@ from products.cycom.pos.models import (
     POSOrderPayment,
     POSSession,
     PosReceipt,
+    PosReturn,
+    PosReturnLine,
 )
 
 
@@ -145,3 +147,32 @@ class PosReceiptSerializer(serializers.ModelSerializer):
         model = PosReceipt
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "printed_at", "emailed_at", "created_at", "updated_at"]
+
+
+class PosReturnLineSerializer(serializers.ModelSerializer):
+    refund_amount = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    refund_tax = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    product_name = serializers.CharField(source="order_line.product.name", read_only=True)
+
+    class Meta:
+        model = PosReturnLine
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "ret", "created_at", "updated_at"]
+
+
+class PosReturnSerializer(serializers.ModelSerializer):
+    """Read-only for the whole object — created via POSOrderViewSet's
+    submit-return action (pos.services.submit_return), which needs the
+    order+lines validation that a plain nested-create serializer can't
+    express cleanly (partial-return-remaining math against prior returns)."""
+
+    lines = PosReturnLineSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = PosReturn
+        fields = "__all__"
+        read_only_fields = [
+            "id", "tenant_id", "order", "status", "requested_by", "approved_by_user_id",
+            "approval_method", "rejection_reason", "amount_subtotal", "amount_tax",
+            "amount_total", "journal_entry", "created_at", "updated_at",
+        ]

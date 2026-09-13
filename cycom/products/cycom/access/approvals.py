@@ -49,7 +49,7 @@ def is_admin(request):
     return bool({_slug(r) for r in _claim_roles(request)} & ADMIN_ROLES)
 
 
-def _user_id(request):
+def current_user_id(request):
     claims = getattr(request, "auth_claims", {}) or {}
     session = getattr(request, "user_session", None) or {}
     return claims.get("sub") or session.get("user_id")
@@ -61,7 +61,7 @@ def user_holds_role(request, tenant_id, role_name):
     target = _slug(role_name)
     if target in {_slug(r) for r in _claim_roles(request)}:
         return True
-    user_id = _user_id(request)
+    user_id = current_user_id(request)
     if not user_id or tenant_id is None:
         return False
     held = RoleAssignment.objects.filter(

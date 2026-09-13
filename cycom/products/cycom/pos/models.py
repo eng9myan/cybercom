@@ -175,6 +175,12 @@ class POSOrderLine(BaseModel):
     # pos.services.checkout_order / inventory.services.apply_stock_move).
     serial_numbers = models.JSONField(default=list, blank=True)
 
+    # Captured at checkout (not settable directly) so a later return restocks
+    # at the ORIGINAL cost/lot, not whatever the average/lot has drifted to
+    # since — see pos.services.checkout_order and post_return.
+    unit_cost_at_sale = models.DecimalField(max_digits=14, decimal_places=4, null=True, blank=True)
+    lot_number_at_sale = models.CharField(max_length=100, blank=True)
+
     class Meta:
         db_table = "cycom_pos_order_lines"
         ordering = ["id"]
@@ -189,6 +195,16 @@ class POSOrderLine(BaseModel):
     @property
     def tax_amount(self):
         return (self.subtotal * self.tax_percent / 100).quantize(Decimal("0.01"))
+
+    @property
+    def returned_quantity(self):
+        """Sum of quantity already returned against this line across every
+        non-rejected return (draft/pending_approval hold the qty too, so two
+        concurrent partial-return requests can't both over-return)."""
+        return sum(
+            (rl.quantity for rl in self.return_lines.exclude(ret__status="rejected")),
+            Decimal("0"),
+        )
 
 
 # ── Ported from CyShop ──────────────────────────────────────────────────────
@@ -258,3 +274,77 @@ class PosReceipt(BaseModel):
 
     def __str__(self):
         return self.receipt_number
+
+
+class PosReturn(BaseModel):
+    """A return/refund against one paid POSOrder — full or partial (line-
+    level, via PosReturnLine). Value-based-approval-gated (pos_refund policy,
+    same engine as pos_discount) with an at-terminal manager-PIN/barcode
+    fallback — see pos.services and access.credentials."""
+
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("pending_approval", "Pending Approval"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+
+    order = models.ForeignKey(POSOrder, on_delete=models.PROTECT, related_name="returns")
+    reason = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    requested_by = models.CharField(max_length=255, blank=True)
+    # Set to whoever's authority actually cleared it — the caller's own
+    # identity for a self-service approval, or the credential-verified
+    # manager's user_id for a PIN/barcode approval (see pos.views).
+    approved_by_user_id = models.CharField(max_length=255, blank=True)
+    approval_method = models.CharField(
+        max_length=10, blank=True,
+        choices=[("self", "Self (own role)"), ("pin", "Manager PIN"), ("barcode", "Manager Barcode")],
+    )
+    rejection_reason = models.TextField(blank=True)
+    amount_subtotal = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    amount_tax = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    amount_total = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    journal_entry = models.ForeignKey(
+        JournalEntry, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        db_table = "cycom_pos_returns"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Return {self.id} for {self.order.order_number} ({self.status})"
+
+
+class PosReturnLine(BaseModel):
+    ret = models.ForeignKey(PosReturn, on_delete=models.CASCADE, related_name="lines")
+    order_line = models.ForeignKey(POSOrderLine, on_delete=models.PROTECT, related_name="return_lines")
+    quantity = models.DecimalField(max_digits=12, decimal_places=4)
+    restock = models.BooleanField(default=True)
+    # Which specific units are going back to stock, for a serial-tracked
+    # product — must be a subset of order_line.serial_numbers, length == quantity.
+    serial_numbers = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        db_table = "cycom_pos_return_lines"
+        ordering = ["id"]
+
+    @property
+    def refund_amount(self):
+        line = self.order_line
+        if not line.quantity:
+            return Decimal("0")
+        proportion = self.quantity / line.quantity
+        return (line.subtotal * proportion).quantize(Decimal("0.01"))
+
+    @property
+    def refund_tax(self):
+        line = self.order_line
+        if not line.quantity:
+            return Decimal("0")
+        proportion = self.quantity / line.quantity
+        return (line.tax_amount * proportion).quantize(Decimal("0.01"))
+
+    def __str__(self):
+        return f"{self.quantity} x {self.order_line.product} (return {self.ret_id})"

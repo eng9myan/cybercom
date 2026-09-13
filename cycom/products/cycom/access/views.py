@@ -1,7 +1,9 @@
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from core.viewsets import TenantScopedModelViewSet
 from platform.tenant.permissions import IsPlatformAdmin
+from products.cycom.access.credentials import set_manager_barcode, set_manager_pin
 from products.cycom.access.models import AccessGrant, Role, RoleAssignment
 from products.cycom.access.serializers import (
     AccessGrantSerializer,
@@ -25,6 +27,20 @@ class RoleAssignmentViewSet(TenantScopedModelViewSet):
     queryset = RoleAssignment.objects.select_related("role").all()
     serializer_class = RoleAssignmentSerializer
     permission_classes = [IsPlatformAdmin]
+
+    @action(detail=True, methods=["post"], url_path="set-manager-pin")
+    def set_manager_pin_action(self, request, pk=None):
+        """Sets/rotates this role assignment's till PIN — admin-only (matches
+        every other write on this viewset). Never returns the PIN back."""
+        assignment = self.get_object()
+        set_manager_pin(assignment, request.data.get("pin"))
+        return Response({"detail": "PIN set."})
+
+    @action(detail=True, methods=["post"], url_path="set-manager-barcode")
+    def set_manager_barcode_action(self, request, pk=None):
+        assignment = self.get_object()
+        set_manager_barcode(assignment, request.data.get("barcode"))
+        return Response({"detail": "Barcode set."})
 
 
 class AccessGrantViewSet(TenantScopedModelViewSet):

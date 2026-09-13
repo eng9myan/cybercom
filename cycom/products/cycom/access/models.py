@@ -32,6 +32,29 @@ class RoleAssignment(BaseModel):
         return f"{self.user_id} -> {self.role}"
 
 
+class ManagerCredential(BaseModel):
+    """A hashed PIN and/or barcode value proving the holder is a manager
+    holding `role_assignment.role` — lets a cashier get value-based approval
+    (pos_discount, pos_refund, ...) at the till without a full login/device
+    handoff (see access.credentials.verify_manager_credential). Never stores
+    plaintext; hashed via Django's own password hasher (make_password /
+    check_password), same as a user password would be."""
+
+    role_assignment = models.ForeignKey(
+        RoleAssignment, on_delete=models.CASCADE, related_name="credentials"
+    )
+    pin_hash = models.CharField(max_length=255, blank=True)
+    barcode_hash = models.CharField(max_length=255, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "cycom_access_manager_credentials"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"credential for {self.role_assignment}"
+
+
 class AccessGrant(BaseModel):
     """
     A single scoped access grant: either directly to a user or to a role
