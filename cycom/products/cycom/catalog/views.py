@@ -18,6 +18,7 @@ from products.cycom.catalog.models import (
     ProductUnit,
     ProductVariant,
     TaxClass,
+    VehicleFitment,
 )
 from products.cycom.catalog.serializers import (
     CategorySerializer,
@@ -27,6 +28,7 @@ from products.cycom.catalog.serializers import (
     ProductUnitSerializer,
     ProductVariantSerializer,
     TaxClassSerializer,
+    VehicleFitmentSerializer,
 )
 
 
@@ -123,6 +125,36 @@ class ProductViewSet(TenantScopedModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save(product=product, tenant_id=request.tenant_id)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class VehicleFitmentViewSet(TenantScopedModelViewSet):
+    """Auto Parts: which products fit a vehicle. `search`
+    (?make=&model=&year=) is the counter lookup — "what fits a 2015 Camry?" —
+    listing/CRUD stays available for managing fitment data per part."""
+
+    serializer_class = VehicleFitmentSerializer
+    queryset = VehicleFitment.objects.filter(is_deleted=False).select_related("product")
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if v := self.request.query_params.get("product"):
+            qs = qs.filter(product_id=v)
+        return qs
+
+    @action(detail=False, methods=["get"])
+    def search(self, request):
+        make = request.query_params.get("make", "")
+        model = request.query_params.get("model", "")
+        year = request.query_params.get("year")
+        if not (make and model and year):
+            return Response({"detail": "make, model, and year are required."}, status=400)
+        try:
+            year = int(year)
+        except ValueError:
+            return Response({"detail": "year must be a number."}, status=400)
+
+        matches = [f for f in self.get_queryset() if f.matches(make=make, model=model, year=year)]
+        return Response(VehicleFitmentSerializer(matches, many=True, context={"request": request}).data)
 
 
 class ProductVariantViewSet(TenantScopedModelViewSet):

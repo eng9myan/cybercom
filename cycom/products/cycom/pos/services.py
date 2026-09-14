@@ -121,6 +121,16 @@ def checkout_order(order):
                 f"Line for {line.product} is serial-tracked — needs exactly "
                 f"{line.quantity} serial_numbers (got {len(line.serial_numbers)})."
             )
+        if line.product.requires_prescription:
+            if line.prescription_id is None:
+                raise ValidationError(
+                    f"Line for {line.product} requires a prescription — none supplied."
+                )
+            if line.prescription.refills_remaining <= 0:
+                raise ValidationError(
+                    f"Prescription {line.prescription.rx_number or line.prescription_id} "
+                    "has no refills remaining."
+                )
         move = StockMove.objects.create(
             tenant_id=order.tenant_id,
             move_type="issue",
@@ -144,6 +154,10 @@ def checkout_order(order):
         line.unit_cost_at_sale = item.average_cost
         line.lot_number_at_sale = move.lot.lot_number if move.lot_id else ""
         line.save(update_fields=["unit_cost_at_sale", "lot_number_at_sale"])
+
+        if line.product.requires_prescription:
+            line.prescription.refills_used += 1
+            line.prescription.save(update_fields=["refills_used"])
 
     if is_layaway:
         # Reverse the accumulated deposit liability into revenue/tax —

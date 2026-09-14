@@ -8,13 +8,14 @@ from rest_framework.response import Response
 from core.viewsets import TenantScopedModelViewSet
 from products.cycom.access.approvals import current_user_id, require_approval_authority
 from products.cycom.access.credentials import verify_manager_credential
-from products.cycom.pos.models import Device, POSOrder, POSSession, PosReceipt, PosReturn
+from products.cycom.pos.models import Device, POSOrder, POSSession, PosReceipt, PosReturn, Prescription
 from products.cycom.pos.serializers import (
     DeviceSerializer,
     POSOrderSerializer,
     POSSessionSerializer,
     PosReceiptSerializer,
     PosReturnSerializer,
+    PrescriptionSerializer,
 )
 from products.cycom.pos.services import (
     approve_discount,
@@ -139,6 +140,22 @@ class POSOrderViewSet(TenantScopedModelViewSet):
             order.kitchen_status = target
             order.save(update_fields=["kitchen_status", "updated_at"])
         return Response(POSOrderSerializer(order).data)
+
+
+class PrescriptionViewSet(TenantScopedModelViewSet):
+    """Pharmacy Retail: prescriptions backing requires_prescription lines —
+    see pos.services.checkout_order for the checkout-time gate."""
+
+    queryset = Prescription.objects.all()
+    serializer_class = PrescriptionSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if v := self.request.query_params.get("patient_name"):
+            qs = qs.filter(patient_name__icontains=v)
+        if v := self.request.query_params.get("rx_number"):
+            qs = qs.filter(rx_number=v)
+        return qs
 
 
 class DeviceViewSet(TenantScopedModelViewSet):

@@ -13,6 +13,7 @@ from products.cycom.catalog.models import (
     ProductUnit,
     ProductVariant,
     TaxClass,
+    VehicleFitment,
 )
 
 
@@ -38,6 +39,15 @@ class ProductUnitSerializer(serializers.ModelSerializer):
 class TaxClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaxClass
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
+
+class VehicleFitmentSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source="product.name", read_only=True)
+
+    class Meta:
+        model = VehicleFitment
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
 

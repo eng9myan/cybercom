@@ -8,6 +8,7 @@ from products.cycom.catalog.views import (
     ProductVariantViewSet,
     ProductViewSet,
     TaxClassViewSet,
+    VehicleFitmentViewSet,
 )
 
 router = DefaultRouter()
@@ -17,5 +18,6 @@ router.register("tax-classes", TaxClassViewSet)
 router.register("products", ProductViewSet)
 router.register("variants", ProductVariantViewSet)
 router.register("kit-components", KitComponentViewSet)
+router.register("vehicle-fitments", VehicleFitmentViewSet)
 
 urlpatterns = [path("", include(router.urls))]

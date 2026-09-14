@@ -67,6 +67,11 @@ class POSOrder(BaseModel):
     customer_name = models.CharField(max_length=255, blank=True)
     customer_phone = models.CharField(max_length=50, blank=True)
     table_ref = models.CharField(max_length=50, blank=True)
+    # Auto Parts: optional capture for warranty/recall lookup — free text,
+    # unvalidated, never a checkout gate (a shop legitimately sells a
+    # universal part, or to a walk-in with no vehicle on file).
+    vehicle_vin = models.CharField(max_length=32, blank=True)
+    vehicle_plate = models.CharField(max_length=20, blank=True)
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default="POS")
     kitchen_status = models.CharField(
         max_length=20, choices=KITCHEN_STATUS_CHOICES, default="pending", db_index=True
@@ -161,6 +166,32 @@ class POSOrderPayment(BaseModel):
         return f"{self.order.order_number} advance {self.amount}"
 
 
+class Prescription(BaseModel):
+    """Pharmacy Retail: a prescription backing a `requires_prescription`
+    product line — checkout blocks the sale without one (or once its refills
+    are exhausted). Standalone record, not linked to CyMed (a separate
+    product) — kept lightweight for retail counter use."""
+
+    patient_name = models.CharField(max_length=255)
+    prescriber_name = models.CharField(max_length=255, blank=True)
+    prescriber_license = models.CharField(max_length=100, blank=True)
+    rx_number = models.CharField(max_length=100, blank=True)
+    date_issued = models.DateField()
+    refills_allowed = models.PositiveSmallIntegerField(default=0)
+    refills_used = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        db_table = "cycom_pos_prescriptions"
+        ordering = ["-date_issued"]
+
+    @property
+    def refills_remaining(self):
+        return max(self.refills_allowed - self.refills_used, 0)
+
+    def __str__(self):
+        return f"Rx {self.rx_number or self.id} for {self.patient_name}"
+
+
 class POSOrderLine(BaseModel):
     order = models.ForeignKey(POSOrder, on_delete=models.CASCADE, related_name="lines")
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="pos_order_lines")
@@ -174,6 +205,11 @@ class POSOrderLine(BaseModel):
     # `quantity` serials, passed through to the issuing StockMove (see
     # pos.services.checkout_order / inventory.services.apply_stock_move).
     serial_numbers = models.JSONField(default=list, blank=True)
+    # Required at checkout when product.requires_prescription — see
+    # pos.services.checkout_order.
+    prescription = models.ForeignKey(
+        Prescription, on_delete=models.PROTECT, null=True, blank=True, related_name="order_lines"
+    )
 
     # Captured at checkout (not settable directly) so a later return restocks
     # at the ORIGINAL cost/lot, not whatever the average/lot has drifted to

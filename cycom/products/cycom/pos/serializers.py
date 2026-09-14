@@ -13,6 +13,7 @@ from products.cycom.pos.models import (
     POSOrderPayment,
     POSSession,
     PosReceipt,
+    Prescription,
     PosReturn,
     PosReturnLine,
 )
@@ -25,6 +26,15 @@ class POSSessionSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "tenant_id", "opened_at", "closed_at", "status", "created_at", "updated_at"]
 
 
+class PrescriptionSerializer(serializers.ModelSerializer):
+    refills_remaining = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Prescription
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "refills_used", "created_at", "updated_at"]
+
+
 class POSOrderLineSerializer(serializers.ModelSerializer):
     subtotal = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
     tax_amount = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
@@ -33,6 +43,7 @@ class POSOrderLineSerializer(serializers.ModelSerializer):
     # entry vs a quantity stepper; whether a serial-number scan is required).
     pricing_mode = serializers.CharField(source="product.pricing_mode", read_only=True)
     tracking_mode = serializers.CharField(source="product.tracking_mode", read_only=True)
+    requires_prescription = serializers.BooleanField(source="product.requires_prescription", read_only=True)
 
     class Meta:
         model = POSOrderLine

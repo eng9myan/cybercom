@@ -151,6 +151,22 @@ class Product(CatalogModel):
         related_name="catalog_products_as_inventory",
     )
 
+    # Auto Parts: a refundable deposit charged on parts with a returnable
+    # "core" (alternators, starters, batteries) — the old unit is handed back
+    # to reclaim it. Field + a Core Charge Liability GL account (see the
+    # retail_autoparts provisioning pack) only for now; the actual
+    # charge-at-sale / refund-on-core-return workflow is a documented
+    # follow-up, not built this pass — same posture as weight-pricing's
+    # scale-hardware integration.
+    core_charge = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+
+    # Pharmacy Retail: gates checkout (pos.services.checkout_order requires a
+    # valid, non-exhausted pos.Prescription on the line — see POSOrderLine).
+    # Kept jurisdiction-neutral rather than encoding a specific country's
+    # controlled-substance schedule taxonomy.
+    requires_prescription = models.BooleanField(default=False)
+    controlled_substance = models.BooleanField(default=False)
+
     class Meta:
         db_table = "cycom_catalog_products"
         ordering = ["name"]
@@ -231,3 +247,43 @@ class ProductVariant(CatalogModel):
 
     def __str__(self):
         return f"{self.product.name} – {self.name}"
+
+
+class VehicleFitment(CatalogModel):
+    """Auto Parts: one vehicle spec a product fits. Reference/search data for
+    the counter ("what fits a 2015 Camry?") — never a checkout gate; a shop
+    still legitimately sells a universal part, or sells to an unlisted
+    vehicle. `year_end=None` means open-ended (still fits current models)."""
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="fitments")
+    make = models.CharField(max_length=100)
+    model = models.CharField(max_length=100)
+    year_start = models.PositiveSmallIntegerField()
+    year_end = models.PositiveSmallIntegerField(null=True, blank=True)
+    engine_trim = models.CharField(max_length=100, blank=True)
+
+    class Meta:
+        db_table = "cycom_catalog_vehicle_fitments"
+        ordering = ["make", "model", "year_start"]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.year_end is not None and self.year_end < self.year_start:
+            raise ValidationError({"year_end": "year_end cannot be before year_start."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def matches(self, *, make, model, year):
+        return (
+            self.make.strip().lower() == make.strip().lower()
+            and self.model.strip().lower() == model.strip().lower()
+            and self.year_start <= year
+            and (self.year_end is None or year <= self.year_end)
+        )
+
+    def __str__(self):
+        span = f"{self.year_start}-{self.year_end or ''}"
+        return f"{self.product.name} fits {self.make} {self.model} ({span})"
