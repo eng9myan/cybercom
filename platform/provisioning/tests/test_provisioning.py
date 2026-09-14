@@ -98,7 +98,7 @@ class ProvisioningFlowTests(TestCase):
         from platform.provisioning.models import IndustryTemplate
 
         keys = list(IndustryTemplate.objects.values_list("key", flat=True))
-        self.assertGreaterEqual(len(keys), 11)
+        self.assertGreaterEqual(len(keys), 17)
         for i, key in enumerate(keys):
             tenant = uuid.uuid4()
             bp = CompanyBlueprint.objects.create(
@@ -127,6 +127,71 @@ class ProvisioningFlowTests(TestCase):
         self.assertIn("pos", result.summary["enabled_modules"])
         self.assertIn("pos", result.summary["department_packs"])
         self.assertIn("pos_discount", result.summary["approval_policies"])
+
+    def test_retail_grocery(self):
+        bp = CompanyBlueprint.objects.create(
+            tenant_id=uuid.uuid4(), company_name="Corner Grocery Co.",
+            country_code="JO", industry_key="retail_grocery", size=CompanySize.SMALL,
+        )
+        result = ProvisioningService(bp).build()
+        self.assertIn("pos", result.summary["enabled_modules"])
+        self.assertIn("pos_discount", result.summary["approval_policies"])
+        self.assertTrue(Role.objects.filter(tenant_id=bp.tenant_id, name="Store Manager").exists())
+        self.assertTrue(Account.objects.filter(tenant_id=bp.tenant_id, code="4130", name="Grocery POS Revenue").exists())
+
+    def test_retail_fastfood(self):
+        bp = CompanyBlueprint.objects.create(
+            tenant_id=uuid.uuid4(), company_name="Quick Burger Co.",
+            country_code="JO", industry_key="retail_fastfood", size=CompanySize.SMALL,
+        )
+        result = ProvisioningService(bp).build()
+        self.assertIn("pos", result.summary["enabled_modules"])
+        self.assertTrue(Role.objects.filter(tenant_id=bp.tenant_id, name="Shift Manager").exists())
+        self.assertTrue(Account.objects.filter(tenant_id=bp.tenant_id, code="4130", name="Fast Food POS Revenue").exists())
+
+    def test_retail_fastfood_tables(self):
+        bp = CompanyBlueprint.objects.create(
+            tenant_id=uuid.uuid4(), company_name="Sit-Down Burger Co.",
+            country_code="JO", industry_key="retail_fastfood_tables", size=CompanySize.SMALL,
+        )
+        result = ProvisioningService(bp).build()
+        self.assertIn("pos", result.summary["enabled_modules"])
+        self.assertTrue(Role.objects.filter(tenant_id=bp.tenant_id, name="Shift Manager").exists())
+
+    def test_retail_restaurant(self):
+        bp = CompanyBlueprint.objects.create(
+            tenant_id=uuid.uuid4(), company_name="Amman Bistro Co.",
+            country_code="JO", industry_key="retail_restaurant", size=CompanySize.MEDIUM,
+        )
+        result = ProvisioningService(bp).build()
+        self.assertIn("pos", result.summary["enabled_modules"])
+        self.assertIn("pos_comp", result.summary["approval_policies"])
+        names = set(Role.objects.filter(tenant_id=bp.tenant_id).values_list("name", flat=True))
+        self.assertIn("Waiter", names)
+        self.assertIn("Head Waiter", names)
+        self.assertIn("Kitchen Manager", names)
+
+    def test_retail_autoparts(self):
+        bp = CompanyBlueprint.objects.create(
+            tenant_id=uuid.uuid4(), company_name="Amman Auto Parts Co.",
+            country_code="JO", industry_key="retail_autoparts", size=CompanySize.MEDIUM,
+        )
+        result = ProvisioningService(bp).build()
+        self.assertIn("pos", result.summary["department_packs"])
+        self.assertIn("sales", result.summary["department_packs"])
+        self.assertTrue(Account.objects.filter(tenant_id=bp.tenant_id, code="2115", name="Core Charge Liability", account_type="liability").exists())
+
+    def test_retail_pharmacy(self):
+        bp = CompanyBlueprint.objects.create(
+            tenant_id=uuid.uuid4(), company_name="Amman Pharmacy Co.",
+            country_code="JO", industry_key="retail_pharmacy", size=CompanySize.SMALL,
+        )
+        result = ProvisioningService(bp).build()
+        self.assertIn("pos", result.summary["enabled_modules"])
+        self.assertIn("controlled_substance_dispense", result.summary["approval_policies"])
+        names = set(Role.objects.filter(tenant_id=bp.tenant_id).values_list("name", flat=True))
+        self.assertIn("Pharmacist", names)
+        self.assertIn("Pharmacy Technician", names)
 
 
 class AIProposalTests(TestCase):

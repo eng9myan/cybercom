@@ -1,0 +1,56 @@
+{
+  "key": "retail_fastfood_tables",
+  "name": "Fast Food (With Tables)",
+  "version": "1.0",
+  "description": "Counter quick-serve with dine-in seating: order at till, food served to a table, same menu shape as fast food.",
+  "department_pack_keys": ["finance", "procurement", "inventory", "hr", "pos"],
+  "recommended_ops": ["buys_products", "operates_branches", "retail_pos"],
+  "terminology": {"sale_order": "POS Order", "customer": "Guest", "vendor": "Supplier"},
+  "default_config": {
+    "roles": [
+      {"name": "Shift Manager", "description": "Runs the shift, staff, and till approvals."},
+      {"name": "Cashier", "description": "Runs the counter till and checkout."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 1000, "role": "Procurement Manager"},
+      {"min": 1000, "max": null, "role": "Shift Manager"}]},
+    {"document_type": "pos_discount", "name": "POS Discount Approval", "tiers": [
+      {"min": 0, "max": 15, "role": "Cashier"},
+      {"min": 15, "max": 75, "role": "Shift Manager"},
+      {"min": 75, "max": null, "role": "General Manager"}]},
+    {"document_type": "pos_refund", "name": "POS Refund Approval", "tiers": [
+      {"min": 0, "max": 50, "role": "Shift Manager"},
+      {"min": 50, "max": null, "role": "General Manager"}]}
+  ],
+  "categories": ["Burgers", "Sides", "Beverages", "Combos", "Desserts"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1115", "name": "Cash in POS Drawers", "account_type": "asset", "parent": "1110"},
+      {"code": "1125", "name": "Card Settlements Receivable", "account_type": "asset", "parent": "1120"},
+      {"code": "4130", "name": "Fast Food POS Revenue", "account_type": "income", "parent": "4100"},
+      {"code": "5160", "name": "Food Waste & Shrinkage", "account_type": "expense", "parent": "5100"}
+    ]
+  },
+  "industry_fields": {
+    "product": ["barcode", "retail_price", "combo_components"],
+    "branch": ["code", "pricelist", "cash_rounding"],
+    "order": ["table_ref"]
+  },
+  "dashboards": ["Daily Sales", "Till Cash Variance", "Waste & Shrinkage", "Table Turnover"],
+  "reports": ["Z Report", "Daily Sales Summary", "Item Mix Report"],
+  "doc_templates": ["POS Receipt", "Return Voucher", "Daily Cash Report"],
+  "import_templates": [
+    {"entity": "products", "columns": ["sku", "barcode", "name", "category", "cost", "retail_price", "vat_rate"]},
+    {"entity": "opening_inventory", "columns": ["sku", "quantity", "unit_cost"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Same counter-order flow as fast food, but food is served to a seated table: orders should set `table_ref` on the POS order (field already exists, no code change) so the till and kitchen can track which table an order belongs to. No reservation/table-management module — just the reference field.",
+    "starter_prompts": [
+      "Show today's sales by item.",
+      "Which tables had the most orders today?",
+      "Show top-selling combos this month."
+    ]
+  }
+}

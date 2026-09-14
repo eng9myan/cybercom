@@ -1,0 +1,59 @@
+{
+  "key": "retail_autoparts",
+  "name": "Auto Parts Store",
+  "version": "1.0",
+  "description": "Auto parts counter retail: vehicle-fitment lookup, core-charge deposits on reman parts, B2B garage/fleet accounts alongside walk-in POS.",
+  "department_pack_keys": ["finance", "procurement", "inventory", "hr", "pos", "sales"],
+  "recommended_ops": ["buys_products", "operates_branches", "retail_pos"],
+  "terminology": {"sale_order": "POS Order", "customer": "Customer", "vendor": "Supplier"},
+  "default_config": {
+    "roles": [
+      {"name": "Parts Counter Manager", "description": "Owns counter operations, fitment data, and B2B accounts."},
+      {"name": "Parts Counter Clerk", "description": "Looks up fitment and runs the till."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 2000, "role": "Procurement Manager"},
+      {"min": 2000, "max": null, "role": "Parts Counter Manager"}]},
+    {"document_type": "pos_discount", "name": "POS Discount Approval", "tiers": [
+      {"min": 0, "max": 30, "role": "Parts Counter Clerk"},
+      {"min": 30, "max": 150, "role": "Parts Counter Manager"},
+      {"min": 150, "max": null, "role": "General Manager"}]},
+    {"document_type": "pos_refund", "name": "POS Refund Approval", "tiers": [
+      {"min": 0, "max": 100, "role": "Parts Counter Manager"},
+      {"min": 100, "max": null, "role": "General Manager"}]}
+  ],
+  "categories": ["Engine Parts", "Brakes & Suspension", "Electrical", "Fluids & Chemicals", "Batteries", "Accessories"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1115", "name": "Cash in POS Drawers", "account_type": "asset", "parent": "1110"},
+      {"code": "1125", "name": "Card Settlements Receivable", "account_type": "asset", "parent": "1120"},
+      {"code": "2115", "name": "Core Charge Liability", "account_type": "liability", "parent": "2100"},
+      {"code": "4130", "name": "Auto Parts POS Revenue", "account_type": "income", "parent": "4100"},
+      {"code": "4140", "name": "B2B Fleet & Garage Revenue", "account_type": "income", "parent": "4100"}
+    ]
+  },
+  "industry_fields": {
+    "product": ["barcode", "retail_price", "core_charge"],
+    "order": ["vehicle_vin", "vehicle_plate"],
+    "fitment": ["make", "model", "year_start", "year_end", "engine_trim"]
+  },
+  "dashboards": ["Daily Sales", "Core Charge Liability", "Fitment Search Volume", "B2B Account Balances"],
+  "reports": ["Z Report", "Daily Sales Summary", "Core Charge Outstanding", "Fitment Coverage Gaps"],
+  "doc_templates": ["POS Receipt", "Return Voucher", "B2B Invoice", "Daily Cash Report"],
+  "import_templates": [
+    {"entity": "products", "columns": ["sku", "barcode", "name", "category", "cost", "retail_price", "core_charge", "vat_rate"]},
+    {"entity": "fitments", "columns": ["sku", "make", "model", "year_start", "year_end", "engine_trim"]},
+    {"entity": "opening_inventory", "columns": ["sku", "quantity", "unit_cost"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Counter clerks search fitment by make/model/year to confirm a part fits before selling — fitment is reference/search data, not a checkout gate, since universal parts and walk-ins with no vehicle on file are legitimate sales. `core_charge` on reman parts (alternators, starters, batteries) posts to Core Charge Liability at sale; the return/refund side of that liability is a documented follow-up, not yet built. `sales` department pack is included for B2B fleet/garage accounts alongside walk-in POS.",
+    "starter_prompts": [
+      "What parts fit a 2015 Toyota Camry?",
+      "Show outstanding core charge liability.",
+      "Show today's sales by category.",
+      "List B2B fleet accounts with open balances."
+    ]
+  }
+}

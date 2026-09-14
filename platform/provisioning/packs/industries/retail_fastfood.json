@@ -1,0 +1,55 @@
+{
+  "key": "retail_fastfood",
+  "name": "Fast Food (Quick-Serve)",
+  "version": "1.0",
+  "description": "Counter quick-serve: order at till, no table service, high throughput checkout.",
+  "department_pack_keys": ["finance", "procurement", "inventory", "hr", "pos"],
+  "recommended_ops": ["buys_products", "operates_branches", "retail_pos"],
+  "terminology": {"sale_order": "POS Order", "customer": "Guest", "vendor": "Supplier"},
+  "default_config": {
+    "roles": [
+      {"name": "Shift Manager", "description": "Runs the shift, staff, and till approvals."},
+      {"name": "Cashier", "description": "Runs the counter till and checkout."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 1000, "role": "Procurement Manager"},
+      {"min": 1000, "max": null, "role": "Shift Manager"}]},
+    {"document_type": "pos_discount", "name": "POS Discount Approval", "tiers": [
+      {"min": 0, "max": 15, "role": "Cashier"},
+      {"min": 15, "max": 75, "role": "Shift Manager"},
+      {"min": 75, "max": null, "role": "General Manager"}]},
+    {"document_type": "pos_refund", "name": "POS Refund Approval", "tiers": [
+      {"min": 0, "max": 50, "role": "Shift Manager"},
+      {"min": 50, "max": null, "role": "General Manager"}]}
+  ],
+  "categories": ["Burgers", "Sides", "Beverages", "Combos", "Desserts"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1115", "name": "Cash in POS Drawers", "account_type": "asset", "parent": "1110"},
+      {"code": "1125", "name": "Card Settlements Receivable", "account_type": "asset", "parent": "1120"},
+      {"code": "4130", "name": "Fast Food POS Revenue", "account_type": "income", "parent": "4100"},
+      {"code": "5160", "name": "Food Waste & Shrinkage", "account_type": "expense", "parent": "5100"}
+    ]
+  },
+  "industry_fields": {
+    "product": ["barcode", "retail_price", "combo_components"],
+    "branch": ["code", "pricelist", "cash_rounding"]
+  },
+  "dashboards": ["Daily Sales", "Till Cash Variance", "Waste & Shrinkage", "Item Mix"],
+  "reports": ["Z Report", "Daily Sales Summary", "Item Mix Report"],
+  "doc_templates": ["POS Receipt", "Return Voucher", "Daily Cash Report"],
+  "import_templates": [
+    {"entity": "products", "columns": ["sku", "barcode", "name", "category", "cost", "retail_price", "vat_rate"]},
+    {"entity": "opening_inventory", "columns": ["sku", "quantity", "unit_cost"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Quick-serve is counter-only: no table concept, order and checkout happen at the till in one step, throughput and till cash variance matter more than table turnover. Watch food waste and item-mix trends.",
+    "starter_prompts": [
+      "Show today's sales by item.",
+      "Which tills had cash variances this week?",
+      "Show top-selling combos this month."
+    ]
+  }
+}
