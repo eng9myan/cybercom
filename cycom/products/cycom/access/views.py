@@ -10,7 +10,7 @@ from products.cycom.access.serializers import (
     RoleAssignmentSerializer,
     RoleSerializer,
 )
-from products.cycom.access.services import create_grant
+from products.cycom.access.services import create_grant, resolve_pending_invites
 
 # Granting/revoking access is itself a privileged action — every viewset
 # here is platform-admin-only, unlike the rest of Cycom's tenant-scoped
@@ -27,6 +27,17 @@ class RoleAssignmentViewSet(TenantScopedModelViewSet):
     queryset = RoleAssignment.objects.select_related("role").all()
     serializer_class = RoleAssignmentSerializer
     permission_classes = [IsPlatformAdmin]
+
+    def get_queryset(self):
+        # The Team page is the first authenticated request a just-invited
+        # user's session makes — resolve any "pending:<their email>"
+        # placeholder to their real sub before listing, so they see their
+        # own assignment land immediately instead of needing a second visit.
+        claims = getattr(self.request, "auth_claims", {}) or {}
+        tenant_id = getattr(self.request, "tenant_id", None)
+        if tenant_id is not None:
+            resolve_pending_invites(tenant_id, claims.get("sub"), claims.get("email"))
+        return super().get_queryset()
 
     @action(detail=True, methods=["post"], url_path="set-manager-pin")
     def set_manager_pin_action(self, request, pk=None):

@@ -17,6 +17,26 @@ def current_user_id(request):
     return claims.get("sub")
 
 
+def resolve_pending_invites(tenant_id, user_id: str, email: str) -> int:
+    """
+    Team & Roles lets an admin assign a role to someone before they've ever
+    logged in — the real Keycloak `sub` isn't known yet at invite time. A
+    pending assignment is stored with `user_id="pending:<email>"` as a
+    placeholder (no schema change: RoleAssignment.user_id is a free-text
+    CharField, and this placeholder never collides with a real sub). The
+    first time that person is seen with a verified token (any authenticated
+    request — this is called from RoleAssignmentViewSet.get_queryset, which
+    the Team page hits right after login), swap the placeholder for their
+    real user_id. Idempotent and cheap: a no-op update when nothing is
+    pending for this email.
+    """
+    if not email or not user_id:
+        return 0
+    return RoleAssignment.objects.filter(
+        tenant_id=tenant_id, user_id__iexact=f"pending:{email}"
+    ).update(user_id=user_id)
+
+
 def create_grant(tenant_id, subject_type, user_id="", role_id=None, warehouse_id=None, product_id=None):
     if subject_type == "user":
         if not user_id:

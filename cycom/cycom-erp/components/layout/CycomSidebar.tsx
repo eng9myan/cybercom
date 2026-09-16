@@ -41,7 +41,8 @@ const MODULE_SIDEBARS: Record<string, ModuleConfig> = {
       { tKey: 'sidebar.chartOfAccounts', label: 'Chart of Accounts', href: '/setup/coa', icon: Calculator, dot: '#5DADE2' },
       { tKey: 'sidebar.payrollStructure', label: 'Payroll Structure', href: '/setup/payroll', icon: DollarSign, dot: '#10B981' },
       { tKey: 'sidebar.warehouse', label: 'Warehouse', href: '/setup/warehouse', icon: Package, dot: '#F59E0B' },
-      { tKey: 'sidebar.approvalPolicies', label: 'Approval Policies', href: '/setup/approvals', icon: ShieldCheck, dot: '#8B5CF6' }
+      { tKey: 'sidebar.approvalPolicies', label: 'Approval Policies', href: '/setup/approvals', icon: ShieldCheck, dot: '#8B5CF6' },
+      { tKey: 'sidebar.teamRoles', label: 'Team & Roles', href: '/setup/team', icon: Users, dot: '#3B82F6' }
     ]
   },
   sign: {
