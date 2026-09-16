@@ -1,211 +1,225 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import {
-  TrendingUp, Users, DollarSign, ArrowUpRight, ArrowDownRight,
-  Building2, ShoppingCart, BarChart3, Stethoscope, Pill,
-  FlaskConical, Scan, Activity, Calendar, UserCheck,
+  TrendingUp, Users, DollarSign, ArrowUpRight,
+  BarChart3, Calendar, UserCheck, Receipt, Loader2, ShoppingBag,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  adminApi, type Tenant, type TenantSubscription, type TenantSubscriptionInvoice,
+} from "@/lib/adminApi";
 
-/* ── revenue snapshot ── */
-const METRICS = [
-  { label: "MRR", value: "$147,230", change: "+12.4%", up: true, icon: DollarSign, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-  { label: "ARR", value: "$1.77M", change: "+14.1%", up: true, icon: TrendingUp, color: "text-blue-400", bg: "bg-blue-500/10" },
-  { label: "Active Customers", value: "38", change: "+3 this month", up: true, icon: Users, color: "text-cy-orange", bg: "bg-cy-orange/10" },
-  { label: "Churn Rate", value: "1.8%", change: "-0.4%", up: false, icon: Activity, color: "text-violet-400", bg: "bg-violet-500/10" },
-];
+const PRODUCT_LABEL: Record<string, string> = {
+  cycom: "CyCom ERP",
+  cyshop: "CyShop",
+  cymed_hospital: "CyMed Hospital",
+  cymed_clinic: "CyMed Clinic",
+  cymed_pharmacy: "CyMed Pharmacy",
+  cymed_laboratory: "CyMed Laboratory",
+  cymed_imaging: "CyMed Imaging",
+};
 
-const PRODUCT_MIX = [
-  { name: "CyMed Hospital", icon: Building2, color: "text-emerald-400", bg: "bg-emerald-500/10", customers: 12, mrr: 52400, pct: 35.6 },
-  { name: "CyCom ERP", icon: BarChart3, color: "text-blue-400", bg: "bg-blue-500/10", customers: 22, mrr: 43900, pct: 29.8 },
-  { name: "CyMed Clinic", icon: Stethoscope, color: "text-teal-400", bg: "bg-teal-500/10", customers: 15, mrr: 21300, pct: 14.5 },
-  { name: "CyShop", icon: ShoppingCart, color: "text-orange-400", bg: "bg-orange-500/10", customers: 8, mrr: 14800, pct: 10.1 },
-  { name: "CyMed Pharmacy", icon: Pill, color: "text-violet-400", bg: "bg-violet-500/10", customers: 11, mrr: 8930, pct: 6.1 },
-  { name: "CyMed Lab", icon: FlaskConical, color: "text-cyan-400", bg: "bg-cyan-500/10", customers: 5, mrr: 3950, pct: 2.7 },
-  { name: "CyMed Imaging", icon: Scan, color: "text-sky-400", bg: "bg-sky-500/10", customers: 3, mrr: 1950, pct: 1.3 },
-];
-
-const RECENT_SIGNUPS = [
-  { customer: "King Fahad Medical City", product: "CyMed Hospital Advanced", date: "2026-07-03", value: 4500, country: "SA" },
-  { customer: "Al Jazeera Pharmacy Chain", product: "CyMed Pharmacy Clinical", date: "2026-07-02", value: 399, country: "JO" },
-  { customer: "Gulf Retail Group", product: "CyShop Enterprise", date: "2026-07-01", value: null, country: "AE" },
-  { customer: "Amman Specialized Clinics", product: "CyMed Clinic Pro", date: "2026-06-30", value: 599, country: "JO" },
-  { customer: "National Lab Services", product: "CyMed Lab Full", date: "2026-06-28", value: 549, country: "KW" },
-];
-
-const MONTHLY_DATA = [
-  { month: "Jan", mrr: 98000 },
-  { month: "Feb", mrr: 104000 },
-  { month: "Mar", mrr: 109000 },
-  { month: "Apr", mrr: 115000 },
-  { month: "May", mrr: 124000 },
-  { month: "Jun", mrr: 134000 },
-  { month: "Jul", mrr: 147230 },
-];
-const maxMRR = Math.max(...MONTHLY_DATA.map((d) => d.mrr));
+function productCodeOf(t: Tenant): string {
+  return (t.metadata?.product_code as string) || "unknown";
+}
 
 export default function AdminRevenuePage() {
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [subs, setSubs] = useState<TenantSubscription[]>([]);
+  const [invoices, setInvoices] = useState<TenantSubscriptionInvoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([adminApi.listTenants(), adminApi.listSubscriptions(), adminApi.listInvoices()])
+      .then(([t, s, i]) => {
+        setTenants(t);
+        setSubs(s);
+        setInvoices(i);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load revenue data"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const subByTenant = useMemo(() => {
+    const map: Record<string, TenantSubscription> = {};
+    for (const sub of subs) if (!map[sub.tenant]) map[sub.tenant] = sub; // newest-first
+    return map;
+  }, [subs]);
+
+  const activeTenants = tenants.filter((t) => t.status === "active");
+  const mrr = activeTenants.reduce((sum, t) => sum + Number(subByTenant[t.id]?.monthly_price_usd || 0), 0);
+  const pendingInvoices = invoices.filter((i) => i.status === "pending");
+  const pendingAmount = pendingInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
+
+  const productMix = useMemo(() => {
+    const byProduct: Record<string, { customers: number; mrr: number }> = {};
+    for (const t of activeTenants) {
+      const code = productCodeOf(t);
+      const entry = (byProduct[code] ??= { customers: 0, mrr: 0 });
+      entry.customers += 1;
+      entry.mrr += Number(subByTenant[t.id]?.monthly_price_usd || 0);
+    }
+    const rows = Object.entries(byProduct).map(([code, v]) => ({
+      code, name: PRODUCT_LABEL[code] || code, ...v,
+    }));
+    const total = rows.reduce((s, r) => s + r.mrr, 0) || 1;
+    return rows
+      .map((r) => ({ ...r, pct: Math.round((r.mrr / total) * 1000) / 10 }))
+      .sort((a, b) => b.mrr - a.mrr);
+  }, [activeTenants, subByTenant]);
+
+  const recentSignups = useMemo(
+    () =>
+      [...tenants]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 6),
+    [tenants],
+  );
+
+  const METRICS = [
+    { label: "MRR", value: `$${mrr.toLocaleString()}`, icon: DollarSign, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+    { label: "ARR", value: `$${(mrr * 12).toLocaleString()}`, icon: TrendingUp, color: "text-blue-400", bg: "bg-blue-500/10" },
+    { label: "Active Customers", value: String(activeTenants.length), icon: Users, color: "text-cy-orange", bg: "bg-cy-orange/10" },
+    { label: "Pending Invoices", value: `$${pendingAmount.toLocaleString()}`, icon: Receipt, color: "text-violet-400", bg: "bg-violet-500/10" },
+  ];
+
   return (
     <div>
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-heading font-semibold text-white mb-1">Revenue Dashboard</h1>
-          <p className="text-sm text-cy-gray-400">CyberCom SaaS business overview — July 2026</p>
+          <p className="text-sm text-cy-gray-400">CyberCom SaaS business overview</p>
         </div>
         <div className="flex items-center gap-2 text-xs text-cy-gray-400">
           <Calendar className="w-3.5 h-3.5" />
-          Last updated: just now
+          {tenants.length} total tenants
         </div>
       </div>
 
-      {/* Key metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {METRICS.map(({ label, value, change, up, icon: Icon, color, bg }) => (
-          <div key={label} className="glass-card p-5 rounded-xl">
-            <div className={`w-8 h-8 ${bg} rounded-lg flex items-center justify-center mb-3`}>
-              <Icon className={`w-4 h-4 ${color}`} />
-            </div>
-            <div className="text-xl font-heading font-bold text-white">{value}</div>
-            <div className="text-xs text-cy-gray-400 mt-0.5 mb-2">{label}</div>
-            <div className={`flex items-center gap-1 text-xs font-medium ${up ? "text-emerald-400" : "text-red-400"}`}>
-              {up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-              {change}
-            </div>
-          </div>
-        ))}
-      </div>
+      {error && (
+        <div className="mb-4 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</div>
+      )}
 
-      <div className="grid lg:grid-cols-3 gap-6 mb-6">
-        {/* MRR chart */}
-        <div className="lg:col-span-2 glass-card p-5 rounded-xl">
-          <h2 className="font-heading font-semibold text-white mb-6">MRR Growth</h2>
-          <div className="flex items-end gap-3 h-32">
-            {MONTHLY_DATA.map((d) => (
-              <div key={d.month} className="flex-1 flex flex-col items-center gap-1">
-                <div className="text-xs text-cy-gray-400 font-medium">${Math.round(d.mrr / 1000)}k</div>
-                <div
-                  className="w-full rounded-t-md bg-gradient-to-t from-cy-orange/70 to-cy-orange transition-all"
-                  style={{ height: `${(d.mrr / maxMRR) * 80}px` }}
-                />
-                <div className="text-xs text-cy-gray-500">{d.month}</div>
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-5 h-5 text-cy-orange animate-spin" />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {METRICS.map(({ label, value, icon: Icon, color, bg }) => (
+              <div key={label} className="glass-card p-5 rounded-xl">
+                <div className={`w-8 h-8 ${bg} rounded-lg flex items-center justify-center mb-3`}>
+                  <Icon className={`w-4 h-4 ${color}`} />
+                </div>
+                <div className="text-xl font-heading font-bold text-white">{value}</div>
+                <div className="text-xs text-cy-gray-400 mt-0.5">{label}</div>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Product mix */}
-        <div className="glass-card p-5 rounded-xl">
-          <h2 className="font-heading font-semibold text-white mb-4">Revenue by Product</h2>
-          <div className="space-y-3">
-            {PRODUCT_MIX.map((p) => {
-              const Icon = p.icon;
-              return (
-                <div key={p.name}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Icon className={`w-3.5 h-3.5 ${p.color} flex-shrink-0`} />
-                    <span className="text-xs text-cy-gray-300 flex-1 min-w-0 truncate">{p.name}</span>
-                    <span className="text-xs font-medium text-white">{p.pct}%</span>
-                  </div>
-                  <div className="h-1.5 bg-cy-glass-border rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full ${p.bg.replace("bg-", "bg-").replace("/10", "/80")}`} style={{ width: `${p.pct}%`, background: "currentColor" }}>
-                      <div className={`h-full rounded-full ${p.color.replace("text-", "bg-")}`} style={{ width: "100%", opacity: 0.7 }} />
-                    </div>
-                  </div>
+          <div className="grid lg:grid-cols-3 gap-6 mb-6">
+            {/* Product mix */}
+            <div className="lg:col-span-2 glass-card rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-cy-glass-border">
+                <h2 className="font-heading font-semibold text-white">Revenue by Product</h2>
+                <Link href="/en/admin/subscriptions" className="text-xs text-cy-orange hover:text-cy-orange-light">All subscriptions →</Link>
+              </div>
+              {productMix.length === 0 ? (
+                <div className="px-5 py-8 text-center text-sm text-cy-gray-400">No active revenue yet.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-cy-glass-border">
+                        {["Product", "Customers", "MRR", "% of Total"].map((h) => (
+                          <th key={h} className="px-4 py-3 text-left text-xs font-medium text-cy-gray-400">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {productMix.map((p) => (
+                        <tr key={p.code} className="border-b border-cy-glass-border/50 hover:bg-cy-glass-border/20 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded bg-cy-orange/10 flex items-center justify-center">
+                                <BarChart3 className="w-3.5 h-3.5 text-cy-orange" />
+                              </div>
+                              <span className="text-white font-medium">{p.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-cy-gray-300">{p.customers}</td>
+                          <td className="px-4 py-3 text-white font-semibold">${p.mrr.toLocaleString()}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-1.5 bg-cy-glass-border rounded-full max-w-16 overflow-hidden">
+                                <div className="h-full bg-cy-orange rounded-full" style={{ width: `${p.pct}%` }} />
+                              </div>
+                              <span className="text-cy-gray-300">{p.pct}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+              )}
+            </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Product table */}
-        <div className="lg:col-span-2 glass-card rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-cy-glass-border">
-            <h2 className="font-heading font-semibold text-white">Product Breakdown</h2>
-            <Link href="/en/admin/products" className="text-xs text-cy-orange hover:text-cy-orange-light">Manage →</Link>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-cy-glass-border">
-                  {["Product", "Customers", "MRR", "% of Total"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-cy-gray-400">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {PRODUCT_MIX.map((p) => {
-                  const Icon = p.icon;
+            {/* Recent signups */}
+            <div className="glass-card rounded-xl overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-cy-glass-border">
+                <h2 className="font-heading font-semibold text-white">Recent Signups</h2>
+                <Link href="/en/admin/customers" className="text-xs text-cy-orange hover:text-cy-orange-light">All →</Link>
+              </div>
+              <div className="divide-y divide-cy-glass-border/50">
+                {recentSignups.length === 0 && (
+                  <div className="px-4 py-8 text-center text-sm text-cy-gray-400">No signups yet.</div>
+                )}
+                {recentSignups.map((t) => {
+                  const sub = subByTenant[t.id];
+                  const mrrVal = Number(sub?.monthly_price_usd || 0);
                   return (
-                    <tr key={p.name} className="border-b border-cy-glass-border/50 hover:bg-cy-glass-border/20 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-6 h-6 rounded ${p.bg} flex items-center justify-center`}>
-                            <Icon className={`w-3.5 h-3.5 ${p.color}`} />
+                    <div key={t.id} className="px-4 py-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-white truncate">{t.display_name || t.name}</div>
+                          <div className="text-xs text-cy-gray-400 mt-0.5 truncate">
+                            {PRODUCT_LABEL[productCodeOf(t)] || productCodeOf(t)} · {sub?.plan || t.tier}
                           </div>
-                          <span className="text-white font-medium">{p.name}</span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-cy-gray-300">{p.customers}</td>
-                      <td className="px-4 py-3 text-white font-semibold">${p.mrr.toLocaleString()}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-cy-glass-border rounded-full max-w-16 overflow-hidden">
-                            <div className="h-full bg-cy-orange rounded-full" style={{ width: `${p.pct}%` }} />
-                          </div>
-                          <span className="text-cy-gray-300">{p.pct}%</span>
+                        <div className="text-right flex-shrink-0">
+                          {mrrVal > 0
+                            ? <div className="text-xs font-semibold text-emerald-400">${mrrVal}/mo</div>
+                            : <div className="text-xs text-cy-orange">Trial</div>}
+                          <div className="text-xs text-cy-gray-500 mt-0.5">{t.country_code || "—"}</div>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Recent signups */}
-        <div className="glass-card rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-cy-glass-border">
-            <h2 className="font-heading font-semibold text-white">Recent Signups</h2>
-            <Link href="/en/admin/customers" className="text-xs text-cy-orange hover:text-cy-orange-light">All →</Link>
-          </div>
-          <div className="divide-y divide-cy-glass-border/50">
-            {RECENT_SIGNUPS.map((s) => (
-              <div key={s.customer} className="px-4 py-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="text-xs font-medium text-white truncate">{s.customer}</div>
-                    <div className="text-xs text-cy-gray-400 mt-0.5 truncate">{s.product}</div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    {s.value !== null
-                      ? <div className="text-xs font-semibold text-emerald-400">${s.value}/mo</div>
-                      : <div className="text-xs text-cy-orange">Custom</div>}
-                    <div className="text-xs text-cy-gray-500 mt-0.5">{s.country}</div>
-                  </div>
-                </div>
               </div>
+            </div>
+          </div>
+
+          {/* Quick actions */}
+          <div className="grid sm:grid-cols-3 gap-4 mt-6">
+            {[
+              { label: "View all customers", href: "/en/admin/customers", icon: UserCheck },
+              { label: `Approve invoices (${pendingInvoices.length} pending)`, href: "/en/admin/invoices", icon: Receipt },
+              { label: "Manage subscriptions", href: "/en/admin/subscriptions", icon: ShoppingBag },
+            ].map(({ label, href, icon: Icon }) => (
+              <Link key={href} href={href} className="glass-card p-4 rounded-xl flex items-center gap-3 hover:border-cy-orange/30 border border-cy-glass-border transition-colors">
+                <Icon className="w-5 h-5 text-cy-orange" />
+                <span className="text-sm font-medium text-white">{label}</span>
+                <ArrowUpRight className="w-4 h-4 text-cy-gray-400 ml-auto" />
+              </Link>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Quick actions */}
-      <div className="grid sm:grid-cols-3 gap-4 mt-6">
-        {[
-          { label: "View all customers", href: "/en/admin/customers", icon: UserCheck },
-          { label: "Manage subscriptions", href: "/en/admin/subscriptions", icon: ShoppingCart },
-          { label: "Product catalog", href: "/en/admin/products", icon: BarChart3 },
-        ].map(({ label, href, icon: Icon }) => (
-          <Link key={href} href={href} className="glass-card p-4 rounded-xl flex items-center gap-3 hover:border-cy-orange/30 border border-cy-glass-border transition-colors">
-            <Icon className="w-5 h-5 text-cy-orange" />
-            <span className="text-sm font-medium text-white">{label}</span>
-            <ArrowUpRight className="w-4 h-4 text-cy-gray-400 ml-auto" />
-          </Link>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   );
 }

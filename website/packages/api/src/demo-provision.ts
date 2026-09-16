@@ -45,7 +45,7 @@ export const demoProvisionApi = {
   // fields on failure.
   async provision(payload: DemoProvisionPayload): Promise<DemoProvisionResponse> {
     const baseUrl = DEFAULT_BASE_URL.replace(/\/$/, "");
-    const res = await fetch(`${baseUrl}/api/v1/public/demo/provision/`, {
+    const res = await fetch(`${baseUrl}/api/v1/tenants/demo/`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(payload),

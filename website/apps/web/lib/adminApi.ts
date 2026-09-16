@@ -31,14 +31,41 @@ export interface TenantSubscription {
   auto_renew: boolean;
 }
 
-async function authedFetch<T>(path: string): Promise<T> {
+export interface TenantSubscriptionInvoice {
+  id: string;
+  subscription: string;
+  tenant_slug: string;
+  tenant_name: string;
+  invoice_number: string;
+  amount: string;
+  currency: string;
+  payment_method: string;
+  status: "pending" | "paid" | "void";
+  provider: string;
+  provider_ref: string;
+  due_date: string;
+  paid_at: string | null;
+  approved_by: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+async function authedFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const token = tokenStore.getAccessToken();
   const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    ...init,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...init?.headers,
+    },
   });
   if (!res.ok) {
-    throw new Error(`${path} → ${res.status} ${res.statusText}`);
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.detail || `${path} → ${res.status} ${res.statusText}`);
   }
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
@@ -47,15 +74,41 @@ interface Paginated<T> {
   results: T[];
 }
 
+function unwrap<T>(data: Paginated<T> | T[]): T[] {
+  return Array.isArray(data) ? data : data.results;
+}
+
 export const adminApi = {
   async listTenants(): Promise<Tenant[]> {
-    const data = await authedFetch<Paginated<Tenant> | Tenant[]>("/api/v1/tenants/");
-    return Array.isArray(data) ? data : data.results;
+    return unwrap(await authedFetch<Paginated<Tenant> | Tenant[]>("/api/v1/tenants/"));
   },
   async listSubscriptions(): Promise<TenantSubscription[]> {
-    const data = await authedFetch<Paginated<TenantSubscription> | TenantSubscription[]>(
-      "/api/v1/tenants/subscriptions/",
+    return unwrap(
+      await authedFetch<Paginated<TenantSubscription> | TenantSubscription[]>(
+        "/api/v1/tenants/subscriptions/",
+      ),
     );
-    return Array.isArray(data) ? data : data.results;
+  },
+  async listInvoices(): Promise<TenantSubscriptionInvoice[]> {
+    return unwrap(
+      await authedFetch<Paginated<TenantSubscriptionInvoice> | TenantSubscriptionInvoice[]>(
+        "/api/v1/tenants/subscription-invoices/",
+      ),
+    );
+  },
+  async markInvoicePaid(id: string): Promise<TenantSubscriptionInvoice> {
+    return authedFetch<TenantSubscriptionInvoice>(
+      `/api/v1/tenants/subscription-invoices/${id}/mark-paid/`,
+      { method: "POST" },
+    );
+  },
+  async suspendTenant(id: string, reason: string): Promise<Tenant> {
+    return authedFetch<Tenant>(`/api/v1/tenants/${id}/suspend/`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    });
+  },
+  async activateTenant(id: string): Promise<Tenant> {
+    return authedFetch<Tenant>(`/api/v1/tenants/${id}/activate/`, { method: "POST" });
   },
 };

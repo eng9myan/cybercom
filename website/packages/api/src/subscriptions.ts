@@ -47,7 +47,7 @@ export const subscriptionApi = {
   // generic {errors: {...}} convention.
   async register(payload: SubscriptionRegisterPayload): Promise<SubscriptionRegisterResponse> {
     const baseUrl = DEFAULT_BASE_URL.replace(/\/$/, "");
-    const res = await fetch(`${baseUrl}/api/v1/public/subscriptions/register/`, {
+    const res = await fetch(`${baseUrl}/api/v1/tenants/register/`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(payload),

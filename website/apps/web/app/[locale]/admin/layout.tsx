@@ -5,7 +5,7 @@ import { usePathname, useParams, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Settings, Bell, LogOut, ChevronRight,
-  Shield, Menu, X, BarChart3, Loader2,
+  Shield, Menu, X, BarChart3, Loader2, Receipt,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { tokenStore } from "@/lib/auth/tokens";
@@ -15,6 +15,7 @@ const NAV = [
   { href: "/en/admin", label: "Revenue", icon: TrendingUp, exact: true },
   { href: "/en/admin/customers", label: "Customers", icon: Users },
   { href: "/en/admin/subscriptions", label: "Subscriptions", icon: ShoppingBag },
+  { href: "/en/admin/invoices", label: "Invoices", icon: Receipt },
   { href: "/en/admin/products", label: "Products", icon: Package },
 ];
 

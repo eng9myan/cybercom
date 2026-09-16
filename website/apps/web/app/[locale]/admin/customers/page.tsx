@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  Search, Filter, CheckCircle2, Clock, AlertCircle, Loader2,
+  Search, Filter, CheckCircle2, Clock, AlertCircle, Loader2, Ban, Play,
 } from "lucide-react";
 import { adminApi, type Tenant, type TenantSubscription } from "@/lib/adminApi";
 
@@ -21,9 +21,14 @@ export default function AdminCustomersPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [actingId, setActingId] = useState<string | null>(null);
+  const [suspendingId, setSuspendingId] = useState<string | null>(null);
+  const [suspendReason, setSuspendReason] = useState("");
 
-  useEffect(() => {
-    Promise.all([adminApi.listTenants(), adminApi.listSubscriptions()])
+  const load = () => {
+    setLoading(true);
+    setError(null);
+    return Promise.all([adminApi.listTenants(), adminApi.listSubscriptions()])
       .then(([tenantRows, subRows]) => {
         setTenants(tenantRows);
         const map: Record<string, TenantSubscription> = {};
@@ -35,7 +40,38 @@ export default function AdminCustomersPage() {
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load customers"))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function confirmSuspend(t: Tenant) {
+    setActingId(t.id);
+    try {
+      await adminApi.suspendTenant(t.id, suspendReason);
+      setSuspendingId(null);
+      setSuspendReason("");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to suspend tenant");
+    } finally {
+      setActingId(null);
+    }
+  }
+
+  async function activate(t: Tenant) {
+    setActingId(t.id);
+    try {
+      await adminApi.activateTenant(t.id);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to activate tenant");
+    } finally {
+      setActingId(null);
+    }
+  }
 
   function displayStatus(t: Tenant): string {
     const sub = subsByTenant[t.id];
@@ -106,7 +142,7 @@ export default function AdminCustomersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-cy-glass-border">
-                  {["Customer", "Country", "Tier", "MRR", "Status", "Since"].map((h) => (
+                  {["Customer", "Country", "Tier", "MRR", "Status", "Since", "Actions"].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-cy-gray-400">{h}</th>
                   ))}
                 </tr>
@@ -138,6 +174,51 @@ export default function AdminCustomersPage() {
                       </td>
                       <td className="px-4 py-4 text-xs text-cy-gray-400">
                         {new Date(t.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      </td>
+                      <td className="px-4 py-4">
+                        {t.status === "suspended" ? (
+                          <button
+                            onClick={() => activate(t)}
+                            disabled={actingId === t.id}
+                            className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
+                          >
+                            {actingId === t.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+                            Activate
+                          </button>
+                        ) : suspendingId === t.id ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              autoFocus
+                              value={suspendReason}
+                              onChange={(e) => setSuspendReason(e.target.value)}
+                              placeholder="Reason…"
+                              className="text-xs px-2 py-1.5 rounded-lg bg-cy-dark/60 border border-cy-glass-border text-white placeholder:text-cy-gray-500 outline-none focus:border-red-400 w-28"
+                            />
+                            <button
+                              onClick={() => confirmSuspend(t)}
+                              disabled={actingId === t.id || !suspendReason.trim()}
+                              className="inline-flex items-center gap-1 text-xs px-2 py-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                            >
+                              {actingId === t.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => { setSuspendingId(null); setSuspendReason(""); }}
+                              disabled={actingId === t.id}
+                              className="text-xs px-2 py-1.5 rounded-lg border border-cy-glass-border text-cy-gray-300 hover:bg-cy-glass-border/50 disabled:opacity-50"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setSuspendingId(t.id); setSuspendReason(""); }}
+                            className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors"
+                          >
+                            <Ban className="w-3 h-3" />
+                            Suspend
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
