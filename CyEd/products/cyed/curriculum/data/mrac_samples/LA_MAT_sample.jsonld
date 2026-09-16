@@ -1,0 +1,580 @@
+[
+ {
+  "@id": "fixture",
+  "@graph": [
+   {
+    "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/00b7efe0-9202-4b7b-aa2a-167737075f28",
+    "@type": [
+     "http://purl.org/ASN/schema/core/Statement",
+     "http://www.w3.org/2004/02/skos/core#Concept"
+    ],
+    "http://purl.org/ASN/schema/core/authorityStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNAuthorityStatus/Original"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/conceptTerm": [
+     {
+      "@language": "en-au",
+      "@value": "SCIENCE_TEACHER_BACKGROUND_INFORMATION"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/hasLevel": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/8a8008c9-d26c-4a35-8a29-35b7e3c825a6"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/indexingStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNIndexingStatus/No"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/skillEmbodied": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/GC/CCT/2cb21f2f-39d3-4408-b570-785cd4dd2fd9"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/GC/N/1e9018af-925a-4c63-8a0f-3995b287ec9b"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementLabel": [
+     {
+      "@language": "en-au",
+      "@value": "Content Description"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementNotation": [
+     {
+      "@language": "en-au",
+      "@value": "AC9M10M02"
+     }
+    ],
+    "http://purl.org/dc/terms/description": [
+     {
+      "@language": "en-au",
+      "@value": "interpret and use logarithmic scales  in applied contexts involving small and large quantities and change"
+     }
+    ],
+    "http://purl.org/dc/terms/educationLevel": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/schoolLevel/10"
+     }
+    ],
+    "http://purl.org/dc/terms/isPartOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/TBD"
+     }
+    ],
+    "http://purl.org/dc/terms/modified": [
+     {
+      "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "@value": "2021-10-06T15:49:29Z"
+     }
+    ],
+    "http://purl.org/dc/terms/relation": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/HASS/6b4cebae-ff40-48f6-8cc5-ee2808aca4da"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/SCI/dd420b55-97c0-4070-b955-2865d6be829a"
+     }
+    ],
+    "http://purl.org/dc/terms/title": [
+     {
+      "@language": "en-au",
+      "@value": "interpret and use logarithmic scales  in applied contexts involving small and large quantities and change"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/hasChild": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/b4e5449c-935c-4a9c-8839-02ee84a142fa"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/05b466d8-86b8-4868-8beb-8d09f79d8f6f"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/185dadda-dfca-4d8b-9bf6-0d580c05ba09"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/9070f011-ebbc-42f0-b829-11148baf0dc0"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/c0b86ab6-7084-4ee9-a79c-bea84b9461aa"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/isChildOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/7086248b-b99d-49ef-bf67-88fb564bf54a"
+     }
+    ],
+    "https://www.esa.edu.au/nominalYearLevel": [
+     {
+      "@language": "en-au",
+      "@value": "Year 10"
+     }
+    ]
+   },
+   {
+    "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/05b466d8-86b8-4868-8beb-8d09f79d8f6f",
+    "@type": [
+     "http://purl.org/ASN/schema/core/Statement",
+     "http://www.w3.org/2004/02/skos/core#Concept"
+    ],
+    "http://purl.org/ASN/schema/core/authorityStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNAuthorityStatus/Original"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/indexingStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNIndexingStatus/No"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/skillEmbodied": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/GC/CCT/2cb21f2f-39d3-4408-b570-785cd4dd2fd9"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/GC/CCT/c4b4faf5-e1c5-4264-9562-a0af41ac2e56"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/GC/CCT/a417c315-28a0-4f30-8af2-7c24df4c9716"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementLabel": [
+     {
+      "@language": "en-au",
+      "@value": "Elaboration"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementNotation": [
+     {
+      "@language": "en-au",
+      "@value": "AC9M10M02_E2"
+     }
+    ],
+    "http://purl.org/dc/terms/description": [
+     {
+      "@language": "en-au",
+      "@value": "identifying and interpreting data representations (charts and graphs) that use logarithmic scales and discussing when it is appropriate to use this type of scale and when it is not appropriate; for example, graphs representing percentage change, a wide range of values or exponential growth"
+     }
+    ],
+    "http://purl.org/dc/terms/educationLevel": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/schoolLevel/10"
+     }
+    ],
+    "http://purl.org/dc/terms/isPartOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/TBD"
+     }
+    ],
+    "http://purl.org/dc/terms/modified": [
+     {
+      "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "@value": "2021-10-06T15:49:29Z"
+     }
+    ],
+    "http://purl.org/dc/terms/title": [
+     {
+      "@language": "en-au",
+      "@value": "identifying and interpreting data representations (charts and graphs) that use logarithmic scales and discussing when it is appropriate to use this type of scale and when it is not appropriate; for example, graphs representing percentage change, a wide range of values or exponential growth"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/isChildOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/00b7efe0-9202-4b7b-aa2a-167737075f28"
+     }
+    ],
+    "https://www.esa.edu.au/nominalYearLevel": [
+     {
+      "@language": "en-au",
+      "@value": "Year 10"
+     }
+    ]
+   },
+   {
+    "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/185dadda-dfca-4d8b-9bf6-0d580c05ba09",
+    "@type": [
+     "http://purl.org/ASN/schema/core/Statement",
+     "http://www.w3.org/2004/02/skos/core#Concept"
+    ],
+    "http://purl.org/ASN/schema/core/authorityStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNAuthorityStatus/Original"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/conceptTerm": [
+     {
+      "@language": "en-au",
+      "@value": "SCIENCE_TEACHER_BACKGROUND_INFORMATION"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/indexingStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNIndexingStatus/No"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/skillEmbodied": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/GC/CCT/2cb21f2f-39d3-4408-b570-785cd4dd2fd9"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/GC/CCT/c4b4faf5-e1c5-4264-9562-a0af41ac2e56"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/GC/CCT/a417c315-28a0-4f30-8af2-7c24df4c9716"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementLabel": [
+     {
+      "@language": "en-au",
+      "@value": "Elaboration"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementNotation": [
+     {
+      "@language": "en-au",
+      "@value": "AC9M10M02_E3"
+     }
+    ],
+    "http://purl.org/dc/terms/description": [
+     {
+      "@language": "en-au",
+      "@value": "investigating and interpreting logarithmic scales used in real-world contexts; for example, Richter, decibel and sensitivity scales or growth in investments, timescales and the spread of micro-organisms and disease and describing reasons for choosing to use a logarithmic scale rather than a linear scale"
+     }
+    ],
+    "http://purl.org/dc/terms/educationLevel": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/schoolLevel/10"
+     }
+    ],
+    "http://purl.org/dc/terms/isPartOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/TBD"
+     }
+    ],
+    "http://purl.org/dc/terms/modified": [
+     {
+      "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "@value": "2021-10-06T15:49:29Z"
+     }
+    ],
+    "http://purl.org/dc/terms/title": [
+     {
+      "@language": "en-au",
+      "@value": "investigating and interpreting logarithmic scales used in real-world contexts; for example, Richter, decibel and sensitivity scales or growth in investments, timescales and the spread of micro-organisms and disease and describing reasons for choosing to use a logarithmic scale rather than a linear scale"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/isChildOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/00b7efe0-9202-4b7b-aa2a-167737075f28"
+     }
+    ],
+    "https://www.esa.edu.au/nominalYearLevel": [
+     {
+      "@language": "en-au",
+      "@value": "Year 10"
+     }
+    ]
+   },
+   {
+    "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/002482a5-a769-4b1b-ac37-f3f844d5b6c3",
+    "@type": [
+     "http://purl.org/ASN/schema/core/Statement",
+     "http://www.w3.org/2004/02/skos/core#Concept"
+    ],
+    "http://purl.org/ASN/schema/core/authorityStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNAuthorityStatus/Original"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/indexingStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNIndexingStatus/No"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementLabel": [
+     {
+      "@language": "en-au",
+      "@value": "Achievement Standard"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementNotation": [
+     {
+      "@language": "en-au",
+      "@value": "ASMATY8"
+     }
+    ],
+    "http://purl.org/dc/terms/description": [
+     {
+      "@language": "en-au",
+      "@value": "<p>By the end of Year 8, students recognise irrational numbers and terminating or recurring decimals. They apply the exponent laws to calculations with numbers involving positive integer exponents. Students solve problems involving the 4 operations with integers and positive rational numbers. They use mathematical modelling to solve practical problems involving ratios, percentages and rates in measurement and financial contexts. Students apply algebraic properties to rearrange, expand and factorise linear expressions. They graph linear relations and solve linear equations with rational solutions and one-variable inequalities, graphically and algebraically. Students use mathematical modelling to solve problems using linear relations, interpreting and reviewing the model in context. They make and test conjectures involving linear relations using digital tools.</p>\n<p>Students use appropriate metric units when solving measurement problems involving the perimeter and area of composite shapes, and volume of right prisms. They use Pythagoras’ theorem to solve measurement problems involving unknown lengths of right-angle triangles. Students use formulas to solve problems involving the area and circumference of circles. They solve problems of duration involving 12- and 24-hour cycles across multiple time zones. Students use 3 dimensions to locate and describe position. They identify conditions for congruency and similarity in shapes and create and test algorithms designed to test for congruency and similarity. Students apply the properties of quadrilaterals to solve problems.</p>\n<p>They conduct statistical investigations and explain the implications of obtaining data through sampling. Students analyse and describe the distribution of data. They compare the variation in distributions of random samples of the same and different size from a given population with respect to shape, measures of central tendency and range. Students represent the possible combinations of 2 events with tables and diagrams, and determine related probabilities to solve practical problems. They conduct experiments and simulations using digital tools to determine related probabilities of compound events.</p>"
+     }
+    ],
+    "http://purl.org/dc/terms/educationLevel": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/schoolLevel/8"
+     }
+    ],
+    "http://purl.org/dc/terms/isPartOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/TBD"
+     }
+    ],
+    "http://purl.org/dc/terms/modified": [
+     {
+      "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "@value": "2021-10-05T17:05:26Z"
+     }
+    ],
+    "http://purl.org/dc/terms/title": [
+     {
+      "@language": "en-au",
+      "@value": "<p>By the end of Year 8, students recognise irrational numbers and terminating or recurring decimals. They apply the exponent laws to calculations with numbers involving positive integer exponents. Students solve problems involving the 4 operations with integers and positive rational numbers. They use mathematical modelling to solve practical problems involving ratios, percentages and rates in measurement and financial contexts. Students apply algebraic properties to rearrange, expand and factorise linear expressions. They graph linear relations and solve linear equations with rational solutions and one-variable inequalities, graphically and algebraically. Students use mathematical modelling to solve problems using linear relations, interpreting and reviewing the model in context. They make and test conjectures involving linear relations using digital tools.</p>\n<p>Students use appropriate metric units when solving measurement problems involving the perimeter and area of composite shapes, and volume of right prisms. They use Pythagoras’ theorem to solve measurement problems involving unknown lengths of right-angle triangles. Students use formulas to solve problems involving the area and circumference of circles. They solve problems of duration involving 12- and 24-hour cycles across multiple time zones. Students use 3 dimensions to locate and describe position. They identify conditions for congruency and similarity in shapes and create and test algorithms designed to test for congruency and similarity. Students apply the properties of quadrilaterals to solve problems.</p>\n<p>They conduct statistical investigations and explain the implications of obtaining data through sampling. Students analyse and describe the distribution of data. They compare the variation in distributions of random samples of the same and different size from a given population with respect to shape, measures of central tendency and range. Students represent the possible combinations of 2 events with tables and diagrams, and determine related probabilities to solve practical problems. They conduct experiments and simulations using digital tools to determine related probabilities of compound events.</p>"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/hasChild": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/04f8219e-c3b7-4ecf-a612-701f06ecf8f7"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/63489a0b-5cb7-4785-92f6-446b45cf97cb"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/def58dc2-f833-4346-b614-9d6d5aa4bc00"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/ef00c74e-251a-493d-bc9a-8977311e05aa"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/e228cf9d-bc45-45e5-b452-1a473324be19"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/94a0cca0-be97-425a-b8de-9fb78125f71f"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/0bdea658-adfd-4471-b954-09cb4eb24b55"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/ac8c40bb-7539-4343-8c72-eac5ad1924c3"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/860c2a63-b68c-4844-913e-ea99cdfb7929"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/5e46ce82-17cc-4a88-8aeb-613756621097"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/ed6efde1-e04c-4b64-a5e8-2a1055df0069"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/d6846907-28a9-483b-9ee4-8ad3efb8b4e2"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/380421c0-5135-4076-aa07-77ebf44fbd77"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/a7a64761-3745-45c6-a935-a2ec34e4be49"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/ae4eb416-b076-442d-b19a-53d2fe6164c3"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/1914cfa9-caed-46d8-ab99-b18ff8f131ad"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/f3bec961-6736-4d5f-bb97-92d59b7a6fbf"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/ac5ab543-b549-4246-8dd8-f6c9b599c798"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/a5f69c9b-25ee-437d-9799-9f34fc740870"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/96888c16-9773-4f02-adf5-a8e4cbeafe1e"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/isChildOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/d4e9a242-2383-4dce-b46a-164921aca9e5"
+     }
+    ],
+    "https://www.esa.edu.au/nominalYearLevel": [
+     {
+      "@language": "en-au",
+      "@value": "Year 8"
+     }
+    ]
+   },
+   {
+    "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/03bfbbd0-bc57-43cd-8c4e-846b97fd1a88",
+    "@type": [
+     "http://purl.org/ASN/schema/core/Statement",
+     "http://www.w3.org/2004/02/skos/core#Concept"
+    ],
+    "http://purl.org/ASN/schema/core/authorityStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNAuthorityStatus/Original"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/indexingStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNIndexingStatus/No"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/listID": [
+     {
+      "@language": "en-au",
+      "@value": "4"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementLabel": [
+     {
+      "@language": "en-au",
+      "@value": "Strand"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementNotation": [
+     {
+      "@language": "en-au",
+      "@value": "MATMATY9_4SPA"
+     }
+    ],
+    "http://purl.org/dc/terms/description": [
+     {
+      "@language": "en-au",
+      "@value": "Space"
+     }
+    ],
+    "http://purl.org/dc/terms/educationLevel": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/schoolLevel/9"
+     }
+    ],
+    "http://purl.org/dc/terms/isPartOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/TBD"
+     }
+    ],
+    "http://purl.org/dc/terms/modified": [
+     {
+      "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "@value": "2021-10-06T15:49:29Z"
+     }
+    ],
+    "http://purl.org/dc/terms/title": [
+     {
+      "@language": "en-au",
+      "@value": "Space"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/hasChild": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/7a3e6354-a2be-42e3-b1c0-146657bd8ecd"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/0891b546-2743-4d1a-8424-eff62466b746"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/406207f6-f96c-43a3-a365-fdbe30f6341d"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/isChildOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/b4e3fa01-96d6-44d0-b0ac-c861497347f9"
+     }
+    ],
+    "https://www.esa.edu.au/nominalYearLevel": [
+     {
+      "@language": "en-au",
+      "@value": "Year 9"
+     }
+    ]
+   },
+   {
+    "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/04a4bfc9-ec2e-43ef-b786-46b59351e646",
+    "@type": [
+     "http://purl.org/ASN/schema/core/Statement",
+     "http://www.w3.org/2004/02/skos/core#Concept"
+    ],
+    "http://purl.org/ASN/schema/core/authorityStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNAuthorityStatus/Original"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/indexingStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNIndexingStatus/No"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/listID": [
+     {
+      "@language": "en-au",
+      "@value": "6"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementLabel": [
+     {
+      "@language": "en-au",
+      "@value": "Strand"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementNotation": [
+     {
+      "@language": "en-au",
+      "@value": "MATMATY3_6PRO"
+     }
+    ],
+    "http://purl.org/dc/terms/description": [
+     {
+      "@language": "en-au",
+      "@value": "Probability"
+     }
+    ],
+    "http://purl.org/dc/terms/educationLevel": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/schoolLevel/3"
+     }
+    ],
+    "http://purl.org/dc/terms/isPartOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/TBD"
+     }
+    ],
+    "http://purl.org/dc/terms/modified": [
+     {
+      "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "@value": "2021-10-06T15:49:28Z"
+     }
+    ],
+    "http://purl.org/dc/terms/title": [
+     {
+      "@language": "en-au",
+      "@value": "Probability"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/hasChild": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/13f160d5-9ed3-4d4f-be57-1845f0bc0f72"
+     },
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/e486d60e-a638-4e1b-8c21-6394075902cf"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/isChildOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/LA/MAT/7ec6f378-711b-4574-b4d4-5f5b75768b91"
+     }
+    ],
+    "https://www.esa.edu.au/nominalYearLevel": [
+     {
+      "@language": "en-au",
+      "@value": "Year 3"
+     }
+    ]
+   }
+  ]
+ }
+]

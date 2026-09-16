@@ -1,0 +1,15 @@
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "core.settings"
+testpaths = ["products", "core"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = ["--tb=short"]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "manage.py",
+    "*/migrations/*",
+    "*/tests/*",
+]

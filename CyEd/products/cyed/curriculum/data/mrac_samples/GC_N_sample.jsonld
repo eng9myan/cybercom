@@ -1,0 +1,69 @@
+[
+ {
+  "@id": "fixture-gc",
+  "@graph": [
+   {
+    "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/GC/N/1e9018af-925a-4c63-8a0f-3995b287ec9b",
+    "@type": [
+     "http://purl.org/ASN/schema/core/Statement",
+     "http://www.w3.org/2004/02/skos/core#Concept"
+    ],
+    "http://purl.org/ASN/schema/core/authorityStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNAuthorityStatus/Original"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/indexingStatus": [
+     {
+      "@id": "http://purl.org/ASN/scheme/ASNIndexingStatus/No"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/proficiencyLevel": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/progressionLevel/10"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementLabel": [
+     {
+      "@language": "en-au",
+      "@value": "Level"
+     }
+    ],
+    "http://purl.org/ASN/schema/core/statementNotation": [
+     {
+      "@language": "en-au",
+      "@value": "NNMuS10"
+     }
+    ],
+    "http://purl.org/dc/terms/description": [
+     {
+      "@language": "en-au",
+      "@value": "Level 10"
+     }
+    ],
+    "http://purl.org/dc/terms/modified": [
+     {
+      "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "@value": "2021-09-03T15:54:32Z"
+     }
+    ],
+    "http://purl.org/dc/terms/title": [
+     {
+      "@language": "en-au",
+      "@value": "Level 10"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/hasChild": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/GC/N/77727e7b-20aa-48db-af27-a6ed279ae2d0"
+     }
+    ],
+    "http://purl.org/gem/qualifiers/isChildOf": [
+     {
+      "@id": "http://vocabulary.curriculum.edu.au/MRAC/2024/04/GC/N/fc41081a-abcb-4b91-8b8c-c109fb6f3f77"
+     }
+    ]
+   }
+  ]
+ }
+]
