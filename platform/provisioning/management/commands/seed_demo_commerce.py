@@ -14,10 +14,9 @@ construction ERP breadth). Run both for a full "looks alive everywhere" tenant:
 Idempotent: keyed on natural keys, safe to re-run. `--reset` wipes the demo's
 POS orders / receipts / KDS tickets first so a messy demo self-heals.
 
-NOTE: POS/KDS order lines reference inventory.Product (the operational stock
-item), while the Catalog screen reads catalog.Product (the richer merchandising
-record). Both are seeded so every screen is populated; wiring POS to consume
-catalog products directly is a later integration step.
+catalog.Product is the single product master (audit S-3) — POS/KDS order
+lines and StockItem/StockMove reference the exact same row the Catalog screen
+reads, no more parallel catalog/inventory product records.
 """
 
 import uuid
@@ -28,8 +27,8 @@ from django.core.management.base import BaseCommand
 
 from products.cycom.accounting.models import Account
 from products.cycom.ar_ap.models import Partner
-from products.cycom.catalog.models import Category, KitComponent, Product as CatProduct, ProductUnit, TaxClass
-from products.cycom.inventory.models import Product as InvProduct, StockItem, Warehouse
+from products.cycom.catalog.models import Category, KitComponent, Product, ProductUnit, TaxClass
+from products.cycom.inventory.models import StockItem, Warehouse
 from products.cycom.pos.models import POSOrder, POSOrderLine, POSSession, PosReceipt
 from products.cycom.sales.models import SalesOrder, SalesOrderLine
 
@@ -49,12 +48,15 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         tid = uuid.UUID(opts["tenant"])
         n = {k: 0 for k in (
-            "accounts", "units", "tax", "categories", "cat_products", "variants",
-            "kits", "inv_products", "stock", "pos_orders", "kds_tickets",
+            "accounts", "units", "tax", "categories", "products", "variants",
+            "kits", "stock", "pos_orders", "kds_tickets",
             "receipts", "quotations",
         )}
 
-        # ── Accounts (create if the provisioned CoA lacks them) ──────────────
+        # ── Accounts — use the LEAF codes of the provisioned CoA. Posting to a
+        #    group/header code (1000/4000/5000 are headers in the JO chart)
+        #    is now rejected by accounting.services.post_journal_entry (A-3),
+        #    so this seed must target the postable children.
         def acct(code, name, typ):
             a = Account.objects.filter(tenant_id=tid, code=code).first()
             if not a:
@@ -62,11 +64,11 @@ class Command(BaseCommand):
                 n["accounts"] += 1
             return a
 
-        cash = acct("1000", "Cash on Hand", "asset")
+        cash = acct("1110", "Cash on Hand", "asset")
         inv_acct = acct("1140", "Inventory", "asset")
-        revenue = acct("4000", "Sales Revenue", "income")
-        tax_acct = acct("2120", "Output VAT", "liability")
-        cogs = acct("5000", "Cost of Goods Sold", "expense")
+        revenue = acct("4100", "Sales Revenue", "income")
+        tax_acct = acct("2120", "Sales Tax Payable (Output VAT)", "liability")
+        cogs = acct("5100", "Cost of Goods Sold", "expense")
 
         # ── Catalog: units, tax, categories ──────────────────────────────────
         def unit(name, abbr):
@@ -91,7 +93,7 @@ class Command(BaseCommand):
             cats[name] = o
             n["categories"] += cc
 
-        # ── Catalog products (rich merchandising records) ────────────────────
+        # ── Products (single master: catalog fields + inventory_account) ─────
         menu = [
             ("Hot Drinks", "Espresso", "1.50", "CONSUMABLE"),
             ("Hot Drinks", "Flat White", "3.25", "CONSUMABLE"),
@@ -112,22 +114,24 @@ class Command(BaseCommand):
             ("Retail", "Ceramic Mug", "6.00", "STORABLE"),
             ("Retail", "Reusable Cup", "8.50", "STORABLE"),
         ]
-        cat_prod_by_name = {}
+        prod_by_name = {}
         for i, (cat, name, price, ptype) in enumerate(menu):
-            o, cc = CatProduct.objects.get_or_create(
+            o, cc = Product.objects.get_or_create(
                 tenant_id=tid, internal_ref=f"CAT-{i+1:03d}",
                 defaults={
                     "name": name, "category": cats[cat], "unit": u_pc,
                     "tax_class": std_tax, "product_type": ptype,
                     "sell_price": Decimal(price), "cost_price": (Decimal(price) * Decimal("0.4")).quantize(Decimal("0.0001")),
                     "pos_available": True, "track_stock": ptype == "STORABLE",
+                    "inventory_account": inv_acct,
                 },
             )
-            cat_prod_by_name[name] = o
-            n["cat_products"] += cc
+            prod_by_name[name] = o
+            n["products"] += cc
 
-        # A KIT / combo built from other catalog products (BOM).
-        combo, cc = CatProduct.objects.get_or_create(
+        # A KIT / combo built from other menu products (BOM). Not stock-tracked
+        # itself — its components are consumed instead — so no inventory_account.
+        combo, cc = Product.objects.get_or_create(
             tenant_id=tid, internal_ref="CAT-COMBO1",
             defaults={
                 "name": "Breakfast Combo", "category": cats["Food"], "unit": u_pc,
@@ -135,32 +139,24 @@ class Command(BaseCommand):
                 "pos_available": True, "track_stock": False,
             },
         )
-        n["cat_products"] += cc
+        n["products"] += cc
         if cc:
             n["kits"] += 1
             for part, qty in [("Flat White", 1), ("Butter Croissant", 1), ("Fresh Orange Juice", 1)]:
                 KitComponent.objects.get_or_create(
-                    tenant_id=tid, product=combo, component_product=cat_prod_by_name[part],
+                    tenant_id=tid, product=combo, component_product=prod_by_name[part],
                     defaults={"quantity_per_unit": Decimal(qty)},
                 )
 
         # (Skipped variants for brevity — the Ceramic Mug could carry colour
         # variants, but the demo's visual value is in POS/KDS below.)
 
-        # ── Inventory: café warehouse + operational products + stock ─────────
+        # ── Inventory: café warehouse + stock, against the SAME products ─────
         wh, _ = Warehouse.objects.get_or_create(
             tenant_id=tid, code="WH-CAFE", defaults={"name": "Café Store"})
-        inv_by_name = {}
         for i, (cat, name, price, ptype) in enumerate(menu):
-            sku = f"CAFE-{i+1:03d}"
-            o, cc = InvProduct.objects.get_or_create(
-                tenant_id=tid, sku=sku,
-                defaults={"name": name, "uom": "each", "inventory_account": inv_acct},
-            )
-            inv_by_name[name] = o
-            n["inv_products"] += cc
             si, sc = StockItem.objects.get_or_create(
-                tenant_id=tid, product=o, warehouse=wh,
+                tenant_id=tid, product=prod_by_name[name], warehouse=wh,
                 defaults={"quantity_on_hand": Decimal("200"), "average_cost": (Decimal(price) * Decimal("0.4")).quantize(Decimal("0.0001"))},
             )
             n["stock"] += sc
@@ -187,7 +183,7 @@ class Command(BaseCommand):
             sub = Decimal("0")
             for name, qty, price in items:
                 POSOrderLine.objects.create(
-                    tenant_id=tid, order=o, product=inv_by_name[name],
+                    tenant_id=tid, order=o, product=prod_by_name[name],
                     quantity=Decimal(qty), unit_price=Decimal(price), tax_percent=Decimal("16"))
                 sub += Decimal(qty) * Decimal(price)
             tax = (sub * Decimal("0.16")).quantize(Decimal("0.01"))

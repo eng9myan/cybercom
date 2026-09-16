@@ -1,0 +1,56 @@
+{
+  "key": "retail_grocery",
+  "name": "Grocery Store",
+  "version": "1.0",
+  "description": "Single or multi-branch grocery retail: weight-priced produce, chilled/frozen cold chain, packaged goods, fast POS checkout.",
+  "department_pack_keys": ["finance", "procurement", "inventory", "hr", "pos"],
+  "recommended_ops": ["buys_products", "operates_branches", "retail_pos"],
+  "terminology": {"sale_order": "POS Order", "customer": "Shopper", "vendor": "Supplier"},
+  "default_config": {
+    "roles": [
+      {"name": "Store Manager", "description": "Owns store operations, pricing, and staff scheduling."},
+      {"name": "Cashier", "description": "Runs the till and checkout."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 1500, "role": "Procurement Manager"},
+      {"min": 1500, "max": null, "role": "Store Manager"}]},
+    {"document_type": "pos_discount", "name": "POS Discount Approval", "tiers": [
+      {"min": 0, "max": 30, "role": "Cashier"},
+      {"min": 30, "max": 150, "role": "Store Manager"},
+      {"min": 150, "max": null, "role": "General Manager"}]},
+    {"document_type": "pos_refund", "name": "POS Refund Approval", "tiers": [
+      {"min": 0, "max": 75, "role": "Store Manager"},
+      {"min": 75, "max": null, "role": "General Manager"}]}
+  ],
+  "categories": ["Produce", "Dairy & Chilled", "Packaged Foods", "Household", "Beverages", "Frozen"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1115", "name": "Cash in POS Drawers", "account_type": "asset", "parent": "1110"},
+      {"code": "1125", "name": "Card Settlements Receivable", "account_type": "asset", "parent": "1120"},
+      {"code": "4130", "name": "Grocery POS Revenue", "account_type": "income", "parent": "4100"},
+      {"code": "5160", "name": "Spoilage & Shrinkage", "account_type": "expense", "parent": "5100"}
+    ]
+  },
+  "industry_fields": {
+    "product": ["barcode", "retail_price", "tracking_mode", "pricing_mode"],
+    "branch": ["code", "pricelist", "cash_rounding"]
+  },
+  "dashboards": ["Daily Sales", "Cash Variance", "Spoilage & Shrinkage", "Expiry Watchlist"],
+  "reports": ["Z Report", "Daily Sales Summary", "Expiring Stock Report", "Slow Movers"],
+  "doc_templates": ["POS Receipt", "Return Voucher", "Daily Cash Report"],
+  "import_templates": [
+    {"entity": "products", "columns": ["sku", "barcode", "name", "category", "cost", "retail_price", "unit_of_weight", "vat_rate"]},
+    {"entity": "opening_inventory", "columns": ["sku", "quantity", "unit_cost", "batch_expiry"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Grocery runs on thin margins and perishability: weight-priced produce needs `pricing_mode=weight`, chilled/frozen and packaged goods need FEFO batch tracking (`tracking_mode=batch`) to catch expiry before it becomes shrinkage. Watch spoilage, cash variance at close, and slow movers.",
+    "starter_prompts": [
+      "Show today's sales by category.",
+      "List products expiring within 7 days.",
+      "Which cashiers had cash variances this week?",
+      "Show slow-moving items over 60 days."
+    ]
+  }
+}

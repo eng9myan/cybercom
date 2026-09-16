@@ -282,9 +282,21 @@ class AuditEvent(models.Model):
         raise ValueError("AuditEvent records cannot be deleted.")
 
     def compute_hash(self) -> str:
+        # Canonicalise the two values whose string form is representation-
+        # dependent, so the hash computed at write time and at verify time
+        # always match regardless of how the caller passed tenant_id (hex vs
+        # hyphenated UUID) or the datetime's precision on round-trip.
+        ts = self.timestamp
+        ts_str = ts.isoformat() if hasattr(ts, "isoformat") else str(ts)
+        tid = self.tenant_id
+        if tid:
+            try:
+                tid = uuid.UUID(str(tid))
+            except (ValueError, TypeError, AttributeError):
+                pass
         data = (
-            f"{self.id}{self.timestamp}{self.action}{self.resource_type}"
-            f"{self.resource_id}{self.actor_user_id}{self.tenant_id}{self.previous_hash}"
+            f"{self.id}{ts_str}{self.action}{self.resource_type}"
+            f"{self.resource_id}{self.actor_user_id}{tid}{self.previous_hash}"
         )
         return hashlib.sha256(data.encode()).hexdigest()
 

@@ -1,7 +1,7 @@
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from platform.api.permissions import IsAuthenticatedClinicalStaff as IsAuthenticated  # M-7: staff-role gate
 from rest_framework.response import Response
 
 from platform.canonical import events as canonical_events

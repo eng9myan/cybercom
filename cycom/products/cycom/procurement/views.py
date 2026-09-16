@@ -4,6 +4,7 @@ from rest_framework.response import Response
 
 from core.viewsets import TenantScopedModelViewSet
 from platform.tenant.permissions import IsPlatformAdmin
+from products.cycom.access.approvals import require_approval_authority
 from products.cycom.procurement.models import PurchaseOrder, PurchaseOrderLine, PurchaseRequest
 from products.cycom.procurement.serializers import PurchaseOrderSerializer, PurchaseRequestSerializer
 from products.cycom.procurement.services import receive_purchase_order
@@ -22,11 +23,14 @@ class PurchaseRequestViewSet(TenantScopedModelViewSet):
         pr.save(update_fields=["status"])
         return Response(PurchaseRequestSerializer(pr).data)
 
-    @action(detail=True, methods=["post"], url_path="approve", permission_classes=[IsPlatformAdmin])
+    @action(detail=True, methods=["post"], url_path="approve")
     def approve(self, request, pk=None):
         pr = self.get_object()
         if pr.status != "pending_approval":
             raise ValidationError(f"Request is '{pr.status}', not pending approval.")
+        # HR-4: value-based approval — the caller must hold the approver role
+        # for the tier this amount falls in (admins bypass).
+        require_approval_authority(request, pr.tenant_id, "purchase_request", pr.total_amount)
         pr.status = "approved"
         pr.save(update_fields=["status"])
         return Response(PurchaseRequestSerializer(pr).data)
@@ -77,11 +81,14 @@ class PurchaseOrderViewSet(TenantScopedModelViewSet):
     queryset = PurchaseOrder.objects.prefetch_related("lines").all()
     serializer_class = PurchaseOrderSerializer
 
-    @action(detail=True, methods=["post"], url_path="approve", permission_classes=[IsPlatformAdmin])
+    @action(detail=True, methods=["post"], url_path="approve")
     def approve(self, request, pk=None):
         order = self.get_object()
         if order.status != "draft":
             raise ValidationError(f"PO is '{order.status}', cannot approve.")
+        # HR-4: value-based approval (falls back to the purchase_request chain
+        # when no purchase_order-specific policy is provisioned).
+        require_approval_authority(request, order.tenant_id, "purchase_order", order.total_amount)
         order.status = "approved"
         order.save(update_fields=["status"])
         return Response(PurchaseOrderSerializer(order).data)

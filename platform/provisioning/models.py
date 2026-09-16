@@ -145,6 +145,15 @@ class CompanyBlueprint(BaseModel):
     )
     business_ops = models.JSONField(default=list)        # Step-5 selections
     selected_department_packs = models.JSONField(default=list)
+    # Per-document_type overrides of the industry template's approval_matrix,
+    # keyed by document_type: {"enabled": bool, "tiers": [{min,max,role}, ...]}.
+    # An entry with tiers is used verbatim (no size multiplier — the customer
+    # already chose final numbers); a missing entry falls back to the
+    # template's tiers scaled by SIZE_THRESHOLD_MULTIPLIER as before.
+    # enabled: false provisions the policy inactive (approvals.py then treats
+    # it as "no policy configured" — admin-only, same as a tenant that never
+    # had one).
+    approval_overrides = models.JSONField(default=dict, blank=True)
 
     companies = models.PositiveIntegerField(default=1)
     branches = models.PositiveIntegerField(default=1)

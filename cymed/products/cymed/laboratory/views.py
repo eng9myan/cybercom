@@ -5,7 +5,7 @@ Tenant isolation + feature flag gating for all laboratory endpoints.
 
 from rest_framework import viewsets
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from platform.api.permissions import IsAuthenticatedClinicalStaff as IsAuthenticated  # M-7: staff-role gate
 
 
 class LaboratoryModelViewSet(viewsets.ModelViewSet):

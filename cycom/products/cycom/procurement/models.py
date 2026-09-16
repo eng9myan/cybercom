@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 
 from platform.common.models import BaseModel
@@ -26,6 +28,12 @@ class PurchaseRequest(BaseModel):
 
     def __str__(self):
         return f"PR-{str(self.id)[:8]} ({self.status})"
+
+    @property
+    def total_amount(self):
+        return sum(
+            (l.quantity * l.estimated_unit_cost for l in self.lines.all()), Decimal("0")
+        )
 
 
 class PurchaseRequestLine(BaseModel):
@@ -61,6 +69,10 @@ class PurchaseOrder(BaseModel):
 
     def __str__(self):
         return f"PO-{str(self.id)[:8]} ({self.status})"
+
+    @property
+    def total_amount(self):
+        return sum((l.quantity * l.unit_cost for l in self.lines.all()), Decimal("0"))
 
 
 class PurchaseOrderLine(BaseModel):

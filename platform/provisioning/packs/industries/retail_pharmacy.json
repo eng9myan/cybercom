@@ -1,0 +1,59 @@
+{
+  "key": "retail_pharmacy",
+  "name": "Pharmacy",
+  "version": "1.0",
+  "description": "Retail pharmacy: prescription-gated dispensing, controlled-substance tracking, OTC and general retail counter.",
+  "department_pack_keys": ["finance", "procurement", "inventory", "hr", "pos"],
+  "recommended_ops": ["buys_products", "operates_branches", "retail_pos"],
+  "terminology": {"sale_order": "POS Order", "customer": "Patient", "vendor": "Supplier"},
+  "default_config": {
+    "roles": [
+      {"name": "Pharmacy Manager", "description": "Owns pharmacy operations and controlled-substance oversight."},
+      {"name": "Pharmacist", "description": "Verifies prescriptions and approves controlled-substance dispensing."},
+      {"name": "Pharmacy Technician", "description": "Runs the counter till and prescription intake."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 1500, "role": "Procurement Manager"},
+      {"min": 1500, "max": null, "role": "Pharmacy Manager"}]},
+    {"document_type": "pos_discount", "name": "POS Discount Approval", "tiers": [
+      {"min": 0, "max": 20, "role": "Pharmacy Technician"},
+      {"min": 20, "max": 100, "role": "Pharmacy Manager"},
+      {"min": 100, "max": null, "role": "General Manager"}]},
+    {"document_type": "pos_refund", "name": "POS Refund Approval", "tiers": [
+      {"min": 0, "max": 75, "role": "Pharmacy Manager"},
+      {"min": 75, "max": null, "role": "General Manager"}]},
+    {"document_type": "controlled_substance_dispense", "name": "Controlled Substance Dispense Approval", "tiers": [
+      {"min": 0, "max": null, "role": "Pharmacist"}]}
+  ],
+  "categories": ["Prescription Drugs", "OTC Medicine", "Medical Supplies", "Personal Care", "Baby & Mother", "Vitamins & Supplements"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1115", "name": "Cash in POS Drawers", "account_type": "asset", "parent": "1110"},
+      {"code": "1125", "name": "Card Settlements Receivable", "account_type": "asset", "parent": "1120"},
+      {"code": "4130", "name": "Pharmacy POS Revenue", "account_type": "income", "parent": "4100"},
+      {"code": "5160", "name": "Expired Stock Write-off", "account_type": "expense", "parent": "5100"}
+    ]
+  },
+  "industry_fields": {
+    "product": ["barcode", "retail_price", "requires_prescription", "controlled_substance", "tracking_mode"],
+    "prescription": ["patient_name", "prescriber_name", "prescriber_license", "rx_number", "date_issued", "refills_allowed", "refills_used"]
+  },
+  "dashboards": ["Daily Sales", "Prescriptions Dispensed", "Controlled Substance Log", "Expiry Watchlist"],
+  "reports": ["Z Report", "Daily Sales Summary", "Prescription Refill Report", "Controlled Substance Dispense Log", "Expiring Stock Report"],
+  "doc_templates": ["POS Receipt", "Return Voucher", "Prescription Label", "Daily Cash Report"],
+  "import_templates": [
+    {"entity": "products", "columns": ["sku", "barcode", "name", "category", "cost", "retail_price", "requires_prescription", "controlled_substance", "vat_rate"]},
+    {"entity": "opening_inventory", "columns": ["sku", "quantity", "unit_cost", "batch_expiry"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "A sale line for a `requires_prescription=True` product is hard-gated at checkout on a valid, non-exhausted `Prescription` (same pattern as serial-number checkout validation) — no request/auth threading needed since it's pure product-state. `controlled_substance` dispensing is provisioned here as a pharmacist-role approval policy (`controlled_substance_dispense`) but is NOT yet wired into checkout enforcement — that requires threading a `request`/actor through `checkout_order`, which today takes no request argument; treat this as a real gap, not a silent omission. Prescription/schedule categorization here is jurisdiction-neutral placeholder — a real deployment must map `controlled_substance` to actual local pharmacy regulation before launch.",
+    "starter_prompts": [
+      "Show today's prescriptions dispensed.",
+      "List patients with refills remaining.",
+      "Show controlled substance dispense log this week.",
+      "List products expiring within 30 days."
+    ]
+  }
+}

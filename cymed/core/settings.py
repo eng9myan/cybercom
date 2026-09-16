@@ -244,6 +244,9 @@ MIDDLEWARE = [
     "core.middleware.branding.BrandingMiddleware",
     "core.middleware.feature_flags.FeatureFlagMiddleware",
     "core.middleware.audit.AuditMiddleware",
+    # M-11: hash-chained PHI-access audit trail (ADR-0028). Must be after the
+    # auth + tenant middleware so the actor and tenant are resolved.
+    "platform.audit.middleware.PHIAccessAuditMiddleware",
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -387,9 +390,17 @@ JWT_ACCESS_TOKEN_LIFETIME_MINUTES = int(os.environ.get("JWT_ACCESS_TOKEN_LIFETIM
 # DRF — Django REST Framework
 # ---------------------------------------------------------------------------
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    # M-7: a real production auth class that bridges the CyIdentity token
+    # (request.user_session, set by CyIdentityAuthMiddleware) to request.user,
+    # and a deny-by-default permission that requires an authenticated staff
+    # account with a clinical/administrative role. Previously prod had NO auth
+    # class, so stock IsAuthenticated denied every endpoint (only the test
+    # settings' TestJWTAuthentication made the API usable).
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "platform.api.authentication.ClaimsAuthentication",
+    ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+        "platform.api.permissions.IsAuthenticatedClinicalStaff",
     ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
@@ -402,8 +413,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.environ.get("API_PAGE_SIZE", "25")),
     "EXCEPTION_HANDLER": "platform.api.exceptions.cybercom_exception_handler",
-    "DEFAULT_THROTTLE_CLASSES": [],
+    # M-8: default API throttles (previously none — the API had no rate limit).
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle",
+    ],
     "DEFAULT_THROTTLE_RATES": {
+        "user": os.environ.get("THROTTLE_API_USER", "2000/hour"),
+        "anon": os.environ.get("THROTTLE_API_ANON", "60/hour"),
         "website_public_read": os.environ.get("THROTTLE_WEBSITE_READ", "600/hour"),
         "website_public_write": os.environ.get("THROTTLE_WEBSITE_WRITE", "20/hour"),
         "website_demo_request": os.environ.get("THROTTLE_DEMO_REQUEST", "5/hour"),

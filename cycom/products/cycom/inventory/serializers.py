@@ -4,7 +4,9 @@ from products.cycom.inventory.models import (
     InternalOrder,
     InternalOrderLine,
     Product,
+    SerialUnit,
     StockItem,
+    StockLot,
     StockMove,
     Warehouse,
 )
@@ -37,7 +39,27 @@ class StockMoveSerializer(serializers.ModelSerializer):
     class Meta:
         model = StockMove
         fields = "__all__"
-        read_only_fields = ["id", "tenant_id", "status", "journal_entry", "created_at", "updated_at"]
+        read_only_fields = ["id", "tenant_id", "status", "journal_entry", "lot", "created_at", "updated_at"]
+
+
+class StockLotSerializer(serializers.ModelSerializer):
+    """Read-only — lots are only ever created/updated by apply_stock_move
+    (see Pharmacy Retail's batch/expiry tracking)."""
+
+    class Meta:
+        model = StockLot
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
+
+class SerialUnitSerializer(serializers.ModelSerializer):
+    """Read-only — serial units are only ever created/flipped by
+    apply_stock_move (see Electronics' serial-number tracking)."""
+
+    class Meta:
+        model = SerialUnit
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
 
 
 class InternalOrderLineSerializer(serializers.ModelSerializer):

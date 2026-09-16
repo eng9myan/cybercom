@@ -16,7 +16,7 @@ class BillOfMaterial(BaseModel):
 
     class Meta:
         db_table = "cycom_manufacturing_boms"
-        ordering = ["product__sku", "name"]
+        ordering = ["product__internal_ref", "name"]
 
     def __str__(self):
         return f"{self.name} ({self.product.sku})"

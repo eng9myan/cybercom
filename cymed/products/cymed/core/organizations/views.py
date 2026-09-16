@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from platform.api.permissions import IsAuthenticatedClinicalStaff as IsAuthenticated  # M-7: staff-role gate
 
 from products.cymed.core.organizations.models import Organization
 from products.cymed.core.organizations.serializers import OrganizationSerializer

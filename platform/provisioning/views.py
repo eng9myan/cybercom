@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from core.permissions import IsAuthenticatedViaClaims
 from core.viewsets import TenantScopedModelViewSet
 from platform.provisioning.models import (
+    ApprovalPolicy,
     CompanyBlueprint,
     CountryPack,
     DepartmentPack,
@@ -13,6 +14,7 @@ from platform.provisioning.models import (
     TenantConfigParameter,
 )
 from platform.provisioning.serializers import (
+    ApprovalPolicySerializer,
     CompanyBlueprintSerializer,
     CountryPackSerializer,
     DepartmentPackSerializer,
@@ -109,6 +111,21 @@ class CompanyBlueprintViewSet(TenantScopedModelViewSet):
             "added_import_templates": diff("import_templates"),
             "how_to_apply": "POST /provision again — additive only; your customizations are preserved.",
         })
+
+
+class ApprovalPolicyViewSet(TenantScopedModelViewSet):
+    """
+    Post-setup editing of the approval chains ProvisioningService generated
+    (audit follow-up: the wizard's Approvals step was preview-only and there
+    was no way to change a threshold or approver role after go-live).
+    List/retrieve/update only — policies are provisioning-managed rows, not
+    freely creatable/deletable via this API; disable one with is_active
+    instead of deleting it.
+    """
+
+    serializer_class = ApprovalPolicySerializer
+    queryset = ApprovalPolicy.objects.prefetch_related("tiers").all()
+    http_method_names = ["get", "patch", "head", "options"]
 
 
 class TenantConfigParameterViewSet(TenantScopedModelViewSet):

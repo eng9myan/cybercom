@@ -4,6 +4,7 @@ from decimal import Decimal
 import pytest
 from rest_framework.test import APIClient
 
+from platform.provisioning.models import ApprovalPolicy, ApprovalTier
 from products.cycom.accounting.models import Account
 from products.cycom.inventory.models import Product, StockMove, Warehouse
 from products.cycom.inventory.services import apply_stock_move
@@ -41,7 +42,7 @@ def pos_fixtures(db, tenant_id):
     )
     warehouse = Warehouse.objects.create(tenant_id=tenant_id, code="WH-MAIN", name="Main Warehouse")
     product = Product.objects.create(
-        tenant_id=tenant_id, sku="SKU-1", name="Widget", inventory_account=inventory_account
+        tenant_id=tenant_id, internal_ref="SKU-1", name="Widget", inventory_account=inventory_account
     )
 
     receipt = StockMove.objects.create(
@@ -215,3 +216,63 @@ def test_optimistic_lock_conflict_maps_to_409(platform_admin_client):
     resp = cybercom_exception_handler(OptimisticLockError("stale"), {"request": req})
     assert resp is not None and resp.status_code == 409
     assert resp.data["code"] == "row_version_conflict"
+
+
+# ── HR-4 for retail: the retailgroup blueprint's own pos_discount tiers ─────
+def _retailgroup_pos_discount_policy(tenant_id):
+    """Mirrors platform/provisioning/packs/industries/retailgroup.json's
+    'POS Discount Approval' matrix exactly, so this test proves the real
+    seed data drives enforcement, not a synthetic policy."""
+    policy = ApprovalPolicy.objects.create(
+        tenant_id=tenant_id, document_type="pos_discount", name="POS Discount Approval"
+    )
+    for seq, (lo, hi, role) in enumerate(
+        [(0, 50, "Cashier"), (50, 200, "Branch Manager"), (200, None, "Retail Operations Manager")], start=1
+    ):
+        ApprovalTier.objects.create(
+            tenant_id=tenant_id, policy=policy, sequence=seq,
+            threshold_min=lo, threshold_max=hi, approver_role=role,
+        )
+    return policy
+
+
+def _client_with_role(mint_token, tenant_id, role):
+    token = mint_token({
+        "sub": str(uuid.uuid4()), "email": f"{role}@cybercom.io".replace(" ", ""),
+        "tenant_id": str(tenant_id), "realm_access": {"roles": [role]},
+    })
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    return client
+
+
+@pytest.mark.django_db
+def test_cashier_can_approve_small_discount_under_retailgroup_policy(
+    mint_token, mock_jwks, tenant_id, pos_fixtures
+):
+    _retailgroup_pos_discount_policy(tenant_id)
+    # qty 2 * 50 = 100 gross, 40% off -> discount_amount 40 (Cashier band 0-50)
+    order = _make_order(tenant_id, pos_fixtures, discount_percent=40)
+    cashier = _client_with_role(mint_token, tenant_id, "Cashier")
+    cashier.post(f"/api/v1/pos/orders/{order.id}/submit-discount/")
+    resp = cashier.post(f"/api/v1/pos/orders/{order.id}/approve-discount/")
+    assert resp.status_code == 200, resp.content
+    order.refresh_from_db()
+    assert order.discount_approval_status == "approved"
+
+
+@pytest.mark.django_db
+def test_cashier_cannot_approve_large_discount_needs_branch_manager(
+    mint_token, mock_jwks, tenant_id, pos_fixtures
+):
+    _retailgroup_pos_discount_policy(tenant_id)
+    # qty 2 * 50 = 100 gross, 90% off -> discount_amount 90 (Branch Manager band)
+    order = _make_order(tenant_id, pos_fixtures, discount_percent=90)
+    cashier = _client_with_role(mint_token, tenant_id, "Cashier")
+    cashier.post(f"/api/v1/pos/orders/{order.id}/submit-discount/")
+    resp = cashier.post(f"/api/v1/pos/orders/{order.id}/approve-discount/")
+    assert resp.status_code == 403
+
+    mgr = _client_with_role(mint_token, tenant_id, "Branch Manager")
+    resp = mgr.post(f"/api/v1/pos/orders/{order.id}/approve-discount/")
+    assert resp.status_code == 200, resp.content

@@ -4,11 +4,14 @@ from rest_framework.response import Response
 
 from core.viewsets import TenantScopedModelViewSet
 from platform.tenant.permissions import IsPlatformAdmin
+from products.cycom.access.approvals import is_admin
 from products.cycom.inventory.models import (
     InternalOrder,
     InternalOrderLine,
     Product,
+    SerialUnit,
     StockItem,
+    StockLot,
     StockMove,
     Warehouse,
 )
@@ -16,7 +19,9 @@ from products.cycom.inventory.serializers import (
     InternalOrderLineCreateSerializer,
     InternalOrderSerializer,
     ProductSerializer,
+    SerialUnitSerializer,
     StockItemSerializer,
+    StockLotSerializer,
     StockMoveSerializer,
     WarehouseSerializer,
 )
@@ -58,6 +63,29 @@ class StockItemViewSet(TenantScopedModelViewSet):
     http_method_names = ["get", "head", "options"]
 
 
+class StockLotViewSet(TenantScopedModelViewSet):
+    """Pharmacy Retail / batch-tracked verticals: browse lots (expiring soon
+    first) — only ever written by StockMove.apply()."""
+
+    queryset = StockLot.objects.select_related("product", "warehouse").all()
+    serializer_class = StockLotSerializer
+    http_method_names = ["get", "head", "options"]
+    filterset_fields = ["product", "warehouse"]
+
+    def get_queryset(self):
+        return super().get_queryset().order_by("expiry_date", "lot_number")
+
+
+class SerialUnitViewSet(TenantScopedModelViewSet):
+    """Electronics / serial-tracked verticals: look up a unit by serial —
+    only ever written by StockMove.apply()."""
+
+    queryset = SerialUnit.objects.select_related("product", "warehouse").all()
+    serializer_class = SerialUnitSerializer
+    http_method_names = ["get", "head", "options"]
+    filterset_fields = ["product", "status", "serial_number"]
+
+
 class StockMoveViewSet(TenantScopedModelViewSet):
     queryset = StockMove.objects.select_related("product", "warehouse", "destination_warehouse").all()
     serializer_class = StockMoveSerializer
@@ -89,7 +117,10 @@ class StockMoveViewSet(TenantScopedModelViewSet):
     @action(detail=True, methods=["post"], url_path="apply")
     def apply(self, request, pk=None):
         move = self.get_object()
-        apply_stock_move(move)
+        override_expired = bool(request.data.get("override_expired"))
+        if override_expired and not is_admin(request):
+            raise ValidationError("override_expired requires an admin role.")
+        apply_stock_move(move, override_expired=override_expired)
         return Response(StockMoveSerializer(move).data)
 
 

@@ -2,24 +2,30 @@ from decimal import Decimal
 
 from django.utils import timezone
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
 from core.viewsets import TenantScopedModelViewSet
-from platform.tenant.permissions import IsPlatformAdmin
-from products.cycom.pos.models import Device, POSOrder, POSSession, PosReceipt
+from products.cycom.access.approvals import current_user_id, require_approval_authority
+from products.cycom.access.credentials import verify_manager_credential
+from products.cycom.pos.models import Device, POSOrder, POSSession, PosReceipt, PosReturn, Prescription
 from products.cycom.pos.serializers import (
     DeviceSerializer,
     POSOrderSerializer,
     POSSessionSerializer,
     PosReceiptSerializer,
+    PosReturnSerializer,
+    PrescriptionSerializer,
 )
 from products.cycom.pos.services import (
     approve_discount,
+    approve_return,
     checkout_order,
     record_payment,
     reject_discount,
+    reject_return,
     submit_discount_for_approval,
+    submit_return,
 )
 
 
@@ -72,23 +78,30 @@ class POSOrderViewSet(TenantScopedModelViewSet):
         submit_discount_for_approval(order)
         return Response(POSOrderSerializer(order).data)
 
-    @action(
-        detail=True, methods=["post"], url_path="approve-discount", permission_classes=[IsPlatformAdmin]
-    )
+    @action(detail=True, methods=["post"], url_path="approve-discount")
     def approve_discount_action(self, request, pk=None):
         order = self.get_object()
+        # HR-4/S-2 (retail): the till discount matrix (retailgroup blueprint's
+        # 'pos_discount' policy: Cashier / Branch Manager / Retail Ops Manager
+        # bands) governs this, not a flat platform-admin gate.
+        require_approval_authority(request, order.tenant_id, "pos_discount", order.discount_amount)
         claims = getattr(request, "auth_claims", {}) or {}
         approved_by = request.data.get("approved_by", "") or claims.get("email", "")
         approve_discount(order, approved_by)
         return Response(POSOrderSerializer(order).data)
 
-    @action(
-        detail=True, methods=["post"], url_path="reject-discount", permission_classes=[IsPlatformAdmin]
-    )
+    @action(detail=True, methods=["post"], url_path="reject-discount")
     def reject_discount_action(self, request, pk=None):
         order = self.get_object()
+        require_approval_authority(request, order.tenant_id, "pos_discount", order.discount_amount)
         reject_discount(order, request.data.get("reason", ""))
         return Response(POSOrderSerializer(order).data)
+
+    @action(detail=True, methods=["post"], url_path="submit-return")
+    def submit_return_action(self, request, pk=None):
+        order = self.get_object()
+        ret = submit_return(order, request.data.get("lines", []), request.data.get("reason", ""))
+        return Response(PosReturnSerializer(ret).data, status=201)
 
     @action(detail=True, methods=["post"], url_path="add-payment")
     def add_payment(self, request, pk=None):
@@ -129,6 +142,22 @@ class POSOrderViewSet(TenantScopedModelViewSet):
         return Response(POSOrderSerializer(order).data)
 
 
+class PrescriptionViewSet(TenantScopedModelViewSet):
+    """Pharmacy Retail: prescriptions backing requires_prescription lines —
+    see pos.services.checkout_order for the checkout-time gate."""
+
+    queryset = Prescription.objects.all()
+    serializer_class = PrescriptionSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if v := self.request.query_params.get("patient_name"):
+            qs = qs.filter(patient_name__icontains=v)
+        if v := self.request.query_params.get("rx_number"):
+            qs = qs.filter(rx_number=v)
+        return qs
+
+
 class DeviceViewSet(TenantScopedModelViewSet):
     queryset = Device.objects.all().select_related("warehouse")
     serializer_class = DeviceSerializer
@@ -162,3 +191,63 @@ class PosReceiptViewSet(TenantScopedModelViewSet):
         if order:
             qs = qs.filter(order=order)
         return qs
+
+
+def _resolve_return_approver(request, ret):
+    """The pos_refund authority for this return, either from the caller's own
+    role (self-service) or a manager's PIN/barcode supplied in the request
+    body (till workflow — a cashier's own token lacks the role, a manager
+    clears it without a full login handoff). Raises PermissionDenied if
+    neither works. Returns (approved_by_user_id, approval_method)."""
+    try:
+        require_approval_authority(request, ret.tenant_id, "pos_refund", ret.amount_total)
+        return current_user_id(request) or "", "self"
+    except PermissionDenied:
+        pin = request.data.get("manager_pin")
+        barcode = request.data.get("manager_badge")
+        manager_id = verify_manager_credential(
+            ret.tenant_id, "pos_refund", ret.amount_total, pin=pin, barcode=barcode,
+        )
+        if manager_id:
+            return manager_id, ("pin" if pin else "barcode")
+        raise
+
+
+class PosReturnViewSet(TenantScopedModelViewSet):
+    queryset = PosReturn.objects.prefetch_related("lines").select_related("order")
+    serializer_class = PosReturnSerializer
+    http_method_names = ["get", "head", "options", "post"]
+
+    def create(self, request, *args, **kwargs):
+        # Real creation is POSOrderViewSet.submit-return — it needs the
+        # already-returned-quantity validation a plain nested-create can't
+        # express. This route only exists (vs http_method_names dropping
+        # "post" entirely) so the approve/reject @actions below can POST.
+        raise ValidationError(
+            "Create a return via POST /api/v1/pos/orders/{id}/submit-return/, not this endpoint."
+        )
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        order = self.request.query_params.get("order")
+        if order:
+            qs = qs.filter(order=order)
+        return qs
+
+    @action(detail=True, methods=["post"], url_path="approve")
+    def approve(self, request, pk=None):
+        ret = self.get_object()
+        approved_by_user_id, approval_method = _resolve_return_approver(request, ret)
+        approve_return(ret, approved_by_user_id=approved_by_user_id, approval_method=approval_method)
+        return Response(PosReturnSerializer(ret).data)
+
+    @action(detail=True, methods=["post"], url_path="reject")
+    def reject(self, request, pk=None):
+        ret = self.get_object()
+        # Rejecting carries no financial/stock effect — same authority bar as
+        # approving is still required (a cashier shouldn't unilaterally kill
+        # a colleague's return request either), so it goes through the same
+        # role-or-credential check.
+        _resolve_return_approver(request, ret)
+        reject_return(ret, request.data.get("reason", ""))
+        return Response(PosReturnSerializer(ret).data)

@@ -23,7 +23,7 @@ class ThreeWayMatchTests(TestCase):
         self.grni = Account.objects.create(tenant_id=T, code="2115", name="GRNI", account_type="liability")
         self.wh = Warehouse.objects.create(tenant_id=T, code="WH", name="Main")
         self.vendor = Partner.objects.create(tenant_id=T, name="Steel Co", partner_type="vendor")
-        self.product = Product.objects.create(tenant_id=T, sku="RB", name="Rebar", inventory_account=self.inv)
+        self.product = Product.objects.create(tenant_id=T, internal_ref="RB", name="Rebar", inventory_account=self.inv)
         self.po = PurchaseOrder.objects.create(tenant_id=T, vendor=self.vendor, warehouse=self.wh, status="approved")
         # ordered 100 @ 5 = 500
         self.line = PurchaseOrderLine.objects.create(

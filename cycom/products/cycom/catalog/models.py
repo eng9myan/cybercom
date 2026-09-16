@@ -18,6 +18,7 @@ from django.db.models import Q
 from django.utils.text import slugify
 
 from platform.common.models import BaseModel, SoftDeleteMixin
+from products.cycom.accounting.models import Account
 
 
 class CatalogModel(BaseModel, SoftDeleteMixin):
@@ -118,9 +119,53 @@ class Product(CatalogModel):
     track_stock = models.BooleanField(default=True)
     min_stock_qty = models.DecimalField(max_digits=15, decimal_places=4, default="0.0000")
 
+    # Per-vertical retail tracking (Pharmacy Retail: batch/expiry; Electronics:
+    # serial numbers). "none" is the default and keeps the plain aggregate
+    # StockItem behavior every other vertical already uses — see
+    # inventory.services.apply_stock_move for how each mode is enforced.
+    TRACKING_MODES = [
+        ("none", "Not Tracked"),
+        ("batch", "Batch / Lot + Expiry"),
+        ("serial", "Serial Number"),
+    ]
+    tracking_mode = models.CharField(max_length=10, choices=TRACKING_MODES, default="none")
+
+    # Grocery / Sweets & Bakery: sold by weight rather than a fixed unit price.
+    # `unit_price * quantity` math is unchanged (quantity is just entered as a
+    # decimal weight in `unit`, e.g. kg) — this only flags the entry mode for
+    # the till UI and line-level validation.
+    PRICING_MODES = [("fixed", "Fixed Price"), ("weight", "Weight-Based")]
+    pricing_mode = models.CharField(max_length=10, choices=PRICING_MODES, default="fixed")
+
     # POS visibility
     pos_available = models.BooleanField(default=True)
     pos_category_sequence = models.PositiveIntegerField(default=0)
+
+    # S-3: catalog.Product is the single product master (absorbed from the
+    # formerly-separate inventory.Product, retired). `inventory_account` is the
+    # GL account stock moves post against — required for anything that actually
+    # moves through the warehouse (STORABLE/CONSUMABLE with track_stock=True),
+    # legitimately null for SERVICE products and non-stocked KITs.
+    inventory_account = models.ForeignKey(
+        Account, on_delete=models.PROTECT, null=True, blank=True,
+        related_name="catalog_products_as_inventory",
+    )
+
+    # Auto Parts: a refundable deposit charged on parts with a returnable
+    # "core" (alternators, starters, batteries) — the old unit is handed back
+    # to reclaim it. Field + a Core Charge Liability GL account (see the
+    # retail_autoparts provisioning pack) only for now; the actual
+    # charge-at-sale / refund-on-core-return workflow is a documented
+    # follow-up, not built this pass — same posture as weight-pricing's
+    # scale-hardware integration.
+    core_charge = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+
+    # Pharmacy Retail: gates checkout (pos.services.checkout_order requires a
+    # valid, non-exhausted pos.Prescription on the line — see POSOrderLine).
+    # Kept jurisdiction-neutral rather than encoding a specific country's
+    # controlled-substance schedule taxonomy.
+    requires_prescription = models.BooleanField(default=False)
+    controlled_substance = models.BooleanField(default=False)
 
     class Meta:
         db_table = "cycom_catalog_products"
@@ -139,6 +184,16 @@ class Product(CatalogModel):
 
     def __str__(self):
         return self.name
+
+    # S-3 compat shims: code ported from the old inventory.Product (retired)
+    # read `.sku` / `.uom` — same data lives here as `internal_ref` / `unit`.
+    @property
+    def sku(self):
+        return self.internal_ref
+
+    @property
+    def uom(self):
+        return self.unit.abbreviation if self.unit_id else ""
 
 
 class KitComponent(CatalogModel):
@@ -192,3 +247,43 @@ class ProductVariant(CatalogModel):
 
     def __str__(self):
         return f"{self.product.name} – {self.name}"
+
+
+class VehicleFitment(CatalogModel):
+    """Auto Parts: one vehicle spec a product fits. Reference/search data for
+    the counter ("what fits a 2015 Camry?") — never a checkout gate; a shop
+    still legitimately sells a universal part, or sells to an unlisted
+    vehicle. `year_end=None` means open-ended (still fits current models)."""
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="fitments")
+    make = models.CharField(max_length=100)
+    model = models.CharField(max_length=100)
+    year_start = models.PositiveSmallIntegerField()
+    year_end = models.PositiveSmallIntegerField(null=True, blank=True)
+    engine_trim = models.CharField(max_length=100, blank=True)
+
+    class Meta:
+        db_table = "cycom_catalog_vehicle_fitments"
+        ordering = ["make", "model", "year_start"]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.year_end is not None and self.year_end < self.year_start:
+            raise ValidationError({"year_end": "year_end cannot be before year_start."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def matches(self, *, make, model, year):
+        return (
+            self.make.strip().lower() == make.strip().lower()
+            and self.model.strip().lower() == model.strip().lower()
+            and self.year_start <= year
+            and (self.year_end is None or year <= self.year_end)
+        )
+
+    def __str__(self):
+        span = f"{self.year_start}-{self.year_end or ''}"
+        return f"{self.product.name} fits {self.make} {self.model} ({span})"

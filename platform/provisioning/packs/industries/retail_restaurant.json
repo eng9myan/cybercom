@@ -1,0 +1,62 @@
+{
+  "key": "retail_restaurant",
+  "name": "Restaurant",
+  "version": "1.0",
+  "description": "Full-service restaurant: waiter-taken orders, table service, kitchen routing, manager comps and write-offs.",
+  "department_pack_keys": ["finance", "procurement", "inventory", "hr", "pos"],
+  "recommended_ops": ["buys_products", "operates_branches", "retail_pos"],
+  "terminology": {"sale_order": "Table Order", "customer": "Guest", "vendor": "Supplier"},
+  "default_config": {
+    "roles": [
+      {"name": "Restaurant Manager", "description": "Owns floor operations, comps, and write-offs."},
+      {"name": "Head Waiter", "description": "Supervises the floor and waiter staff."},
+      {"name": "Waiter", "description": "Takes table orders on a handheld device."},
+      {"name": "Kitchen Manager", "description": "Runs kitchen prep and ticket routing."}
+    ]
+  },
+  "approval_matrix": [
+    {"document_type": "purchase_request", "name": "Purchase Request Approval", "tiers": [
+      {"min": 0, "max": 1500, "role": "Procurement Manager"},
+      {"min": 1500, "max": null, "role": "Restaurant Manager"}]},
+    {"document_type": "pos_discount", "name": "POS Discount Approval", "tiers": [
+      {"min": 0, "max": 20, "role": "Waiter"},
+      {"min": 20, "max": 100, "role": "Head Waiter"},
+      {"min": 100, "max": null, "role": "Restaurant Manager"}]},
+    {"document_type": "pos_refund", "name": "POS Refund Approval", "tiers": [
+      {"min": 0, "max": 75, "role": "Head Waiter"},
+      {"min": 75, "max": null, "role": "Restaurant Manager"}]},
+    {"document_type": "pos_comp", "name": "Table Comp / Write-off Approval", "tiers": [
+      {"min": 0, "max": 30, "role": "Head Waiter"},
+      {"min": 30, "max": null, "role": "Restaurant Manager"}]}
+  ],
+  "categories": ["Appetizers", "Mains", "Desserts", "Beverages", "Wine & Bar"],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {"code": "1115", "name": "Cash in POS Drawers", "account_type": "asset", "parent": "1110"},
+      {"code": "1125", "name": "Card Settlements Receivable", "account_type": "asset", "parent": "1120"},
+      {"code": "4130", "name": "Restaurant Revenue", "account_type": "income", "parent": "4100"},
+      {"code": "5160", "name": "Comps & Write-offs", "account_type": "expense", "parent": "5100"},
+      {"code": "5170", "name": "Food Waste & Shrinkage", "account_type": "expense", "parent": "5100"}
+    ]
+  },
+  "industry_fields": {
+    "product": ["retail_price", "kitchen_station"],
+    "order": ["table_ref", "kitchen_status", "waiter_device"]
+  },
+  "dashboards": ["Daily Sales", "Table Turnover", "Comps & Write-offs", "Kitchen Ticket Times"],
+  "reports": ["Z Report", "Daily Sales Summary", "Comps & Write-off Report", "Menu Mix"],
+  "doc_templates": ["Table Bill", "Kitchen Ticket", "Return Voucher", "Daily Cash Report"],
+  "import_templates": [
+    {"entity": "products", "columns": ["sku", "name", "category", "cost", "retail_price", "kitchen_station", "vat_rate"]},
+    {"entity": "opening_inventory", "columns": ["sku", "quantity", "unit_cost"]}
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Full-service floor: waiters take orders on `WAITER`-type devices against `table_ref`, kitchen routes by `kitchen_status`. Comps/write-offs are a manager-gated approval (`pos_comp`), separate from ordinary discounts, since they zero out a line rather than reduce its price. Watch comp rates, table turnover, and menu mix.",
+    "starter_prompts": [
+      "Show today's sales by table.",
+      "Which items were comped this week and by whom?",
+      "Show average table turnover time today.",
+      "Show top-selling menu items this month."
+    ]
+  }
+}

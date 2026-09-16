@@ -31,10 +31,10 @@ def inventory_fixtures(db, tenant_id):
     wh_main = Warehouse.objects.create(tenant_id=tenant_id, code="WH-MAIN", name="Main")
     wh_branch = Warehouse.objects.create(tenant_id=tenant_id, code="WH-BR1", name="Branch 1")
     prod_a = Product.objects.create(
-        tenant_id=tenant_id, sku="A", name="Widget A", inventory_account=inventory_account
+        tenant_id=tenant_id, internal_ref="A", name="Widget A", inventory_account=inventory_account
     )
     prod_b = Product.objects.create(
-        tenant_id=tenant_id, sku="B", name="Widget B", inventory_account=inventory_account
+        tenant_id=tenant_id, internal_ref="B", name="Widget B", inventory_account=inventory_account
     )
     return {"wh_main": wh_main, "wh_branch": wh_branch, "prod_a": prod_a, "prod_b": prod_b}
 
@@ -92,7 +92,7 @@ def test_role_based_grant_restricts_product_visibility(
     resp = client.get("/api/v1/inventory/products/")
     assert resp.status_code == 200
     assert resp.data["count"] == 1
-    assert resp.data["results"][0]["sku"] == "A"
+    assert resp.data["results"][0]["internal_ref"] == "A"
 
     # A different user not assigned the role is unaffected.
     other_client = _client(mint_token, mock_jwks, tenant_id, "user-no-role")

@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from django.db import transaction
 
 from products.cycom.accounting.models import Account
+from products.cycom.catalog.models import ProductUnit
 from products.cycom.inventory.models import Product, Warehouse
 from products.cycom.logistics.models import (
     Carrier, DeliveryEvent, DeliveryOrder, Package, PackageItem, Shipment,
@@ -88,16 +89,20 @@ class AnabtawiSeeder:
             tenant_id=tid, code="WH-PLANT", defaults={"name": "Manufacturing Plant Store"})
         self.wh_export, _ = Warehouse.objects.get_or_create(
             tenant_id=tid, code="WH-EXPORT", defaults={"name": "Export Consolidation Warehouse"})
+        # S-3: Product is catalog.Product now — sku/uom are the compat-property
+        # names; the real fields are internal_ref / unit (FK to ProductUnit).
+        kg_unit, _ = ProductUnit.objects.get_or_create(
+            tenant_id=tid, abbreviation="kg", defaults={"name": "Kilogram"})
 
         for rm in A.RAW_MATERIALS:
             p, _ = Product.objects.get_or_create(
-                tenant_id=tid, sku=rm.sku,
-                defaults={"name": rm.name, "uom": "kg", "inventory_account": inv_acc})
+                tenant_id=tid, internal_ref=rm.sku,
+                defaults={"name": rm.name, "unit": kg_unit, "inventory_account": inv_acc})
             self.products[rm.sku] = p
         for fg in A.PRODUCTS:
             p, _ = Product.objects.get_or_create(
-                tenant_id=tid, sku=fg.sku,
-                defaults={"name": fg.name, "uom": "kg", "inventory_account": inv_acc})
+                tenant_id=tid, internal_ref=fg.sku,
+                defaults={"name": fg.name, "unit": kg_unit, "inventory_account": inv_acc})
             self.products[fg.sku] = p
             bom, created = BillOfMaterial.objects.get_or_create(
                 tenant_id=tid, product=p, name=f"{fg.name} — standard recipe",

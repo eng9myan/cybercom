@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from platform.provisioning.views import (
     AIProposalView,
+    ApprovalPolicyViewSet,
     CompanyBlueprintViewSet,
     CountryPackViewSet,
     DepartmentPackViewSet,
@@ -16,6 +17,7 @@ router.register("department-packs", DepartmentPackViewSet, basename="department-
 router.register("industry-templates", IndustryTemplateViewSet, basename="industry-template")
 router.register("blueprints", CompanyBlueprintViewSet, basename="company-blueprint")
 router.register("config-parameters", TenantConfigParameterViewSet, basename="config-parameter")
+router.register("approval-policies", ApprovalPolicyViewSet, basename="approval-policy")
 
 urlpatterns = [
     path("ai-propose/", AIProposalView.as_view(), name="ai-propose"),

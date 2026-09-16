@@ -21,6 +21,7 @@ from __future__ import annotations
 import base64
 import binascii
 import os
+import uuid
 from functools import lru_cache
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -63,12 +64,28 @@ def _load_master_key() -> bytes:
 MASTER_KEY_PROVIDER = _load_master_key
 
 
+def _canonical_tenant_id(tenant_id) -> str:
+    """
+    M-5: the DEK is salted with the tenant id, so its STRING FORM must be
+    canonical — otherwise the hyphenated UUID, the 32-char hex form (how
+    SQLite/Postgres and some JWT claims render it), and any upper-case
+    variant each derive a DIFFERENT key and whole-tenant PHI becomes
+    undecryptable (hard 500). Normalise every representation to the canonical
+    lower-case hyphenated UUID; fall back to a stripped string only for
+    non-UUID tenant ids (there should be none).
+    """
+    try:
+        return str(uuid.UUID(str(tenant_id)))
+    except (ValueError, AttributeError, TypeError):
+        return str(tenant_id).strip()
+
+
 @lru_cache(maxsize=2048)
 def _tenant_dek(tenant_id: str) -> bytes:
     hkdf = HKDF(
         algorithm=hashes.SHA256(),
         length=32,
-        salt=str(tenant_id).encode("utf-8"),
+        salt=_canonical_tenant_id(tenant_id).encode("utf-8"),
         info=b"cybercom-field-dek-v1",
     )
     return hkdf.derive(MASTER_KEY_PROVIDER())

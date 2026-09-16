@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from platform.api.permissions import IsAuthenticatedClinicalStaff as IsAuthenticated  # M-7: staff-role gate
 
 
 class ImagingModelViewSet(viewsets.ModelViewSet):

@@ -8,10 +8,10 @@ import {
   BarChart2, FileText, Shield, Settings, TrendingUp, 
   MessageSquare, BookOpen, Layers, UserCheck, HelpCircle, 
   FolderOpen, ShieldAlert, CreditCard, Mail, 
-  Wrench, Car, Briefcase, FileSignature, Building2, 
+  Wrench, Car, Briefcase, FileSignature, Building2,
   ChevronDown, Star, CalendarOff, Award, PenTool,
   Send, LayoutGrid, ArrowLeft, MapPin, Server, Plus, Clipboard, Activity, Calculator, CheckCircle, Laptop, Edit3,
-  Sparkles
+  Sparkles, ShieldCheck
 } from 'lucide-react';
 import { useCompany } from '@/context/CompanyContext';
 import { useT } from '@/lib/i18n';
@@ -40,7 +40,8 @@ const MODULE_SIDEBARS: Record<string, ModuleConfig> = {
       { tKey: 'sidebar.company', label: 'Company', href: '/setup/company', icon: Building2, dot: '#E67E22' },
       { tKey: 'sidebar.chartOfAccounts', label: 'Chart of Accounts', href: '/setup/coa', icon: Calculator, dot: '#5DADE2' },
       { tKey: 'sidebar.payrollStructure', label: 'Payroll Structure', href: '/setup/payroll', icon: DollarSign, dot: '#10B981' },
-      { tKey: 'sidebar.warehouse', label: 'Warehouse', href: '/setup/warehouse', icon: Package, dot: '#F59E0B' }
+      { tKey: 'sidebar.warehouse', label: 'Warehouse', href: '/setup/warehouse', icon: Package, dot: '#F59E0B' },
+      { tKey: 'sidebar.approvalPolicies', label: 'Approval Policies', href: '/setup/approvals', icon: ShieldCheck, dot: '#8B5CF6' }
     ]
   },
   sign: {
