@@ -129,24 +129,43 @@ class ProvisioningService:
 
     def _generate_approvals(self, industry: IndustryTemplate, currency: str) -> list[str]:
         mult = SIZE_THRESHOLD_MULTIPLIER.get(self.blueprint.size, Decimal("1.0"))
+        overrides = self.blueprint.approval_overrides or {}
         policies = []
         for spec in industry.approval_matrix:
+            doc_type = spec["document_type"]
+            override = overrides.get(doc_type) or {}
+            enabled = override.get("enabled", True)
+
             policy, _ = ApprovalPolicy.objects.update_or_create(
                 tenant_id=self.tenant_id,
-                document_type=spec["document_type"],
+                document_type=doc_type,
                 defaults={
-                    "name": spec.get("name", spec["document_type"].replace("_", " ").title()),
+                    "name": spec.get("name", doc_type.replace("_", " ").title()),
                     "currency": currency,
                     "generated_by_blueprint": self.blueprint,
-                    "is_active": True,
+                    "is_active": enabled,
                 },
             )
             # Rebuild tiers deterministically.
             policy.tiers.all().delete()
-            for i, tier in enumerate(spec["tiers"], start=1):
-                tmin = Decimal(str(tier.get("min", 0))) * mult
+            if not enabled:
+                # Kept as an inactive row (not deleted) so re-enabling later
+                # doesn't need a re-provision. approvals.py treats "no active
+                # policy" as admin-only, same as a tenant that never had one.
+                continue
+
+            # A customized ladder is the customer's final numbers — used
+            # verbatim. The template's own tiers still scale with company
+            # size, same as before overrides existed.
+            override_tiers = override.get("tiers")
+            tiers_spec = override_tiers or spec["tiers"]
+            for i, tier in enumerate(tiers_spec, start=1):
+                tmin = Decimal(str(tier.get("min", 0)))
                 tmax = tier.get("max")
-                tmax = (Decimal(str(tmax)) * mult) if tmax is not None else None
+                tmax = Decimal(str(tmax)) if tmax is not None else None
+                if not override_tiers:
+                    tmin *= mult
+                    tmax = tmax * mult if tmax is not None else None
                 ApprovalTier.objects.create(
                     tenant_id=self.tenant_id,
                     policy=policy,

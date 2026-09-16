@@ -99,6 +99,15 @@ export default function ReadyErpWizard() {
   ];
   const FALLBACK_ROLES = [t('readyErp.fallbackRoleGm'), t('readyErp.fallbackRoleSiteEngineer'), t('readyErp.fallbackRoleQs')];
 
+  // Mirrors platform/provisioning/services.py SIZE_THRESHOLD_MULTIPLIER —
+  // used only to show accurate starting numbers to edit from; the backend is
+  // the source of truth for unedited (no-override) document types.
+  const SIZE_THRESHOLD_MULTIPLIER: Record<string, number> = {
+    micro: 0.25, small: 0.5, medium: 1.0, large: 3.0, enterprise: 10.0,
+  };
+  type ApprovalTierEdit = { min: number; max: number | null; role: string };
+  type ApprovalOverride = { enabled: boolean; tiers?: ApprovalTierEdit[] };
+
   const [step, setStep] = useState(0);
   const [templates, setTemplates] = useState<Record<string, IndustryTemplate>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -118,6 +127,10 @@ export default function ReadyErpWizard() {
     business_ops: ['manages_projects'] as string[],
     selected_department_packs: [] as string[],
     companies: 1, branches: 1, warehouses: 1, factories: 0, projects: 3,
+    // Only holds an entry once the customer touches that document type —
+    // an absent key means "use the industry default, scaled by size" (see
+    // ProvisioningService._generate_approvals). Keyed by document_type.
+    approval_overrides: {} as Record<string, ApprovalOverride>,
   });
   // Tracks whether the retail category's sub-type tile grid is showing
   // (vs. the top-level industry grid) on the Industry step.
@@ -149,6 +162,55 @@ export default function ReadyErpWizard() {
   const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
   const toggleOp = (id: string) =>
     set({ business_ops: form.business_ops.includes(id) ? form.business_ops.filter((o) => o !== id) : [...form.business_ops, id] });
+
+  // ── Approvals step (Step 7): editable overrides on top of the industry
+  // template's auto-generated matrix ────────────────────────────────────────
+  const scaledSpecTiers = (spec: { tiers: { min: number; max: number | null; role: string }[] }): ApprovalTierEdit[] => {
+    const mult = SIZE_THRESHOLD_MULTIPLIER[form.size] ?? 1;
+    return spec.tiers.map((tr) => ({
+      min: Math.round((tr.min ?? 0) * mult),
+      max: tr.max == null ? null : Math.round(tr.max * mult),
+      role: tr.role,
+    }));
+  };
+  const setApprovalOverride = (docType: string, patch: Partial<ApprovalOverride>) => {
+    const current = form.approval_overrides[docType] ?? { enabled: true };
+    set({ approval_overrides: { ...form.approval_overrides, [docType]: { ...current, ...patch } } });
+  };
+  const toggleApprovalEnabled = (docType: string) => {
+    const enabled = form.approval_overrides[docType]?.enabled ?? true;
+    setApprovalOverride(docType, { enabled: !enabled });
+  };
+  const resetApprovalOverride = (docType: string) => {
+    const rest = { ...form.approval_overrides };
+    delete rest[docType];
+    set({ approval_overrides: rest });
+  };
+  const recomputeTierMins = (tiers: ApprovalTierEdit[]): ApprovalTierEdit[] => {
+    let prevMax = 0;
+    const out = tiers.map((tr, i) => {
+      const min = i === 0 ? 0 : prevMax;
+      prevMax = tr.max ?? 0;
+      return { ...tr, min };
+    });
+    if (out.length) out[out.length - 1] = { ...out[out.length - 1], max: null }; // only the last band may be open-ended
+    return out;
+  };
+  const updateApprovalTier = (spec: { document_type: string; tiers: any[] }, index: number, patch: Partial<ApprovalTierEdit>) => {
+    const tiers = (form.approval_overrides[spec.document_type]?.tiers ?? scaledSpecTiers(spec)).map((tr, i) => (i === index ? { ...tr, ...patch } : tr));
+    setApprovalOverride(spec.document_type, { tiers: recomputeTierMins(tiers) });
+  };
+  const addApprovalTier = (spec: { document_type: string; tiers: any[] }) => {
+    const tiers = form.approval_overrides[spec.document_type]?.tiers ?? scaledSpecTiers(spec);
+    const last = tiers[tiers.length - 1];
+    const split = { ...last, max: last.min + 100 };
+    const next = { min: 0, max: null, role: last.role };
+    setApprovalOverride(spec.document_type, { tiers: recomputeTierMins([...tiers.slice(0, -1), split, next]) });
+  };
+  const removeApprovalTier = (spec: { document_type: string; tiers: any[] }, index: number) => {
+    const tiers = (form.approval_overrides[spec.document_type]?.tiers ?? scaledSpecTiers(spec)).filter((_, i) => i !== index);
+    setApprovalOverride(spec.document_type, { tiers: recomputeTierMins(tiers) });
+  };
 
   async function proposeFromAi() {
     setAiBusy(true);
@@ -395,19 +457,54 @@ export default function ReadyErpWizard() {
         {step === 6 && (
           <Section icon={ShieldCheck} title={t('readyErp.approvalsHeading')}>
             <p className="text-xs text-slate-400 mb-4">{t('readyErp.approvalsNote')}</p>
-            <div className="space-y-4">
-              {(tpl?.approval_matrix || FALLBACK_APPROVALS).map((p) => (
-                <div key={p.document_type}>
-                  <div className="text-sm font-semibold text-white mb-1.5">{p.name}</div>
-                  <div className="flex flex-wrap gap-2">
-                    {p.tiers.map((tier, i) => (
-                      <span key={i} className="badge badge-cyan">
-                        {tier.max === null ? t('readyErp.approvalOver', { min: tier.min }) : t('readyErp.approvalRange', { min: tier.min, max: tier.max })} → {tier.role}
-                      </span>
-                    ))}
+            <div className="space-y-3">
+              {(tpl?.approval_matrix || FALLBACK_APPROVALS).map((spec) => {
+                const override = form.approval_overrides[spec.document_type];
+                const enabled = override ? override.enabled : true;
+                const tiers = override?.tiers ?? scaledSpecTiers(spec);
+                return (
+                  <div key={spec.document_type} className={`p-3 rounded-xl border transition-colors ${enabled ? 'border-white/10 bg-white/[0.02]' : 'border-white/5 bg-white/[0.01]'}`}>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className={`text-sm font-semibold ${enabled ? 'text-white' : 'text-slate-500'}`}>{spec.name}</div>
+                      <div className="flex items-center gap-3">
+                        {override && (
+                          <button type="button" onClick={() => resetApprovalOverride(spec.document_type)} className="text-[10px] text-slate-500 hover:text-[var(--cy-orange)] uppercase tracking-wider">
+                            {t('readyErp.approvalResetDefault')}
+                          </button>
+                        )}
+                        <button type="button" onClick={() => toggleApprovalEnabled(spec.document_type)}
+                          className={`w-9 h-5 rounded-full relative transition-colors shrink-0 ${enabled ? 'bg-emerald-500/60' : 'bg-white/10'}`}>
+                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${enabled ? 'start-4' : 'start-0.5'}`} />
+                        </button>
+                      </div>
+                    </div>
+                    {enabled ? (
+                      <div className="space-y-1.5">
+                        {tiers.map((tier, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span className="text-[11px] text-slate-500 w-16 shrink-0">{t('readyErp.approvalTierFrom', { min: tier.min })}</span>
+                            <input type="number" min={tier.min} className="input-field py-1.5 text-xs max-w-[110px] shrink-0"
+                              placeholder={t('readyErp.approvalNoLimit')} value={tier.max ?? ''}
+                              onChange={(e) => updateApprovalTier(spec, i, { max: e.target.value === '' ? null : Number(e.target.value) })}
+                              disabled={i === tiers.length - 1} />
+                            <input type="text" className="input-field py-1.5 text-xs flex-1 min-w-0" value={tier.role}
+                              placeholder={t('readyErp.approvalRolePh')}
+                              onChange={(e) => updateApprovalTier(spec, i, { role: e.target.value })} />
+                            {tiers.length > 1 && (
+                              <button type="button" onClick={() => removeApprovalTier(spec, i)} className="text-slate-500 hover:text-rose-400 px-1 text-sm leading-none">×</button>
+                            )}
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => addApprovalTier(spec)} className="text-[11px] text-[var(--cy-orange)] hover:underline pt-0.5">
+                          + {t('readyErp.approvalAddTier')}
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-500">{t('readyErp.approvalDisabledNote')}</p>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Section>
         )}
@@ -449,6 +546,11 @@ export default function ReadyErpWizard() {
               <Row k={t('readyErp.reviewSizeLevel')} v={`${form.size} · ${form.setup_level}`} />
               <Row k={t('readyErp.reviewStructure')} v={t('readyErp.structureSummary', { companies: form.companies, branches: form.branches, warehouses: form.warehouses, projects: form.projects })} />
               <Row k={t('readyErp.reviewOperations')} v={form.business_ops.join(', ') || '—'} />
+              <Row k={t('readyErp.reviewApprovals')} v={
+                Object.keys(form.approval_overrides).length
+                  ? t('readyErp.reviewApprovalsCustomized', { n: Object.keys(form.approval_overrides).length })
+                  : t('readyErp.reviewApprovalsDefault')
+              } />
             </div>
             {error && <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-xs">{error}</div>}
           </Section>

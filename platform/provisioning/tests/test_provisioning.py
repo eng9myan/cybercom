@@ -76,6 +76,54 @@ class ProvisioningFlowTests(TestCase):
         self.assertEqual(top.approver_role, "General Manager")
         self.assertEqual(top.threshold_min, Decimal("5000.00"))
 
+    def test_approval_override_disables_policy(self):
+        bp = self._blueprint()
+        bp.approval_overrides = {"payment": {"enabled": False}}
+        bp.save()
+        ProvisioningService(bp).build()
+        policy = ApprovalPolicy.objects.get(tenant_id=TENANT, document_type="payment")
+        self.assertFalse(policy.is_active)
+        self.assertEqual(policy.tiers.count(), 0)
+        # purchase_request had no override — untouched, still active.
+        pr = ApprovalPolicy.objects.get(tenant_id=TENANT, document_type="purchase_request")
+        self.assertTrue(pr.is_active)
+        self.assertGreater(pr.tiers.count(), 0)
+
+    def test_approval_override_custom_tiers_used_verbatim(self):
+        # Custom tiers are the customer's final numbers — no size multiplier
+        # applied, unlike the template-derived default path.
+        bp = self._blueprint(size=CompanySize.ENTERPRISE)  # 10x multiplier
+        bp.approval_overrides = {
+            "purchase_request": {
+                "enabled": True,
+                "tiers": [
+                    {"min": 0, "max": 1000, "role": "Site Supervisor"},
+                    {"min": 1000, "max": None, "role": "CFO"},
+                ],
+            }
+        }
+        bp.save()
+        ProvisioningService(bp).build()
+        pr = ApprovalPolicy.objects.get(tenant_id=TENANT, document_type="purchase_request")
+        tiers = list(pr.tiers.order_by("sequence"))
+        self.assertEqual(len(tiers), 2)
+        self.assertEqual(tiers[0].threshold_max, Decimal("1000"))
+        self.assertEqual(tiers[0].approver_role, "Site Supervisor")
+        self.assertIsNone(tiers[1].threshold_max)
+        self.assertEqual(tiers[1].approver_role, "CFO")
+
+    def test_approval_override_reenable_on_reprovision(self):
+        bp = self._blueprint()
+        bp.approval_overrides = {"payment": {"enabled": False}}
+        bp.save()
+        ProvisioningService(bp).build()
+        bp.approval_overrides = {}
+        bp.save()
+        ProvisioningService(bp).build()
+        policy = ApprovalPolicy.objects.get(tenant_id=TENANT, document_type="payment")
+        self.assertTrue(policy.is_active)
+        self.assertGreater(policy.tiers.count(), 0)
+
     def test_idempotent(self):
         bp = self._blueprint()
         ProvisioningService(bp).build()
