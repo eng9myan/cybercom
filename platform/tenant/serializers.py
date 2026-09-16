@@ -21,6 +21,7 @@ from .models import (
     TenantSSOConfiguration,
     TenantStoragePolicy,
     TenantSubscription,
+    TenantSubscriptionInvoice,
 )
 
 
@@ -120,6 +121,29 @@ class TenantSubscriptionSerializer(serializers.ModelSerializer):
         model = TenantSubscription
         fields = "__all__"
         read_only_fields = ["id", "created_at", "updated_at", "is_trial", "is_expired"]
+
+
+class TenantSubscriptionInvoiceSerializer(serializers.ModelSerializer):
+    tenant_slug = serializers.CharField(source="subscription.tenant.slug", read_only=True)
+    tenant_name = serializers.CharField(source="subscription.tenant.name", read_only=True)
+
+    class Meta:
+        model = TenantSubscriptionInvoice
+        fields = [
+            "id", "subscription", "tenant_slug", "tenant_name", "invoice_number",
+            "amount", "currency", "payment_method", "status", "provider",
+            "provider_ref", "due_date", "paid_at", "approved_by", "notes",
+            "created_at", "updated_at",
+        ]
+        # status is deliberately read-only here too — the only path to "paid"
+        # is the mark-paid action, which also activates the tenant/subscription;
+        # a bare PATCH must not be able to flip status without those side effects.
+        read_only_fields = [
+            "id", "subscription", "tenant_slug", "tenant_name", "invoice_number",
+            "amount", "currency", "payment_method", "status", "provider",
+            "provider_ref", "due_date", "paid_at", "approved_by",
+            "created_at", "updated_at",
+        ]
 
 
 class TenantLicenseSerializer(serializers.ModelSerializer):

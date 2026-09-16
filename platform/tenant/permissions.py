@@ -79,3 +79,15 @@ class CanTerminateTenant(BasePermission):
         claims = getattr(request, "auth_claims", {})
         realm_roles = set(claims.get("realm_access", {}).get("roles", []))
         return "platform_admin" in realm_roles
+
+
+class CanApprovePayment(BasePermission):
+    """Only platform admins may approve a manual/bank-transfer payment.
+
+    Deliberately excludes tenant_admin (unlike IsPlatformAdmin) — a tenant's
+    own admin must never be able to self-approve their own invoice."""
+
+    def has_permission(self, request, view) -> bool:
+        claims = getattr(request, "auth_claims", {})
+        realm_roles = set(claims.get("realm_access", {}).get("roles", []))
+        return "platform_admin" in realm_roles

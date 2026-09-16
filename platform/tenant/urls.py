@@ -21,6 +21,11 @@ router.register(
 )
 router.register(r"brandings", views.TenantBrandingViewSet, basename="tenant-branding")
 router.register(r"subscriptions", views.TenantSubscriptionViewSet, basename="tenant-subscription")
+router.register(
+    r"subscription-invoices",
+    views.TenantSubscriptionInvoiceViewSet,
+    basename="tenant-subscription-invoice",
+)
 router.register(r"licenses", views.TenantLicenseViewSet, basename="tenant-license")
 router.register(r"environments", views.TenantEnvironmentViewSet, basename="tenant-environment")
 router.register(r"regions", views.TenantRegionViewSet, basename="tenant-region")

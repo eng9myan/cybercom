@@ -37,6 +37,7 @@ from platform.tenant.models import (
     TenantSubscriptionInvoice,
 )
 from platform.tenant.permissions import (
+    CanApprovePayment,
     CanProvisionTenant,
     CanTerminateTenant,
     IsPlatformAdmin,
@@ -63,6 +64,7 @@ from platform.tenant.serializers import (
     TenantRegionSerializer,
     TenantRetentionPolicySerializer,
     TenantSerializer,
+    TenantSubscriptionInvoiceSerializer,
     TenantSSOConfigurationSerializer,
     TenantStoragePolicySerializer,
     TenantSubscriptionSerializer,
@@ -607,6 +609,46 @@ class TenantSubscriptionViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
     queryset = TenantSubscription.objects.all()
     serializer_class = TenantSubscriptionSerializer
     permission_classes = [ReadOnlyOrPlatformAdmin]
+
+
+class TenantSubscriptionInvoiceViewSet(viewsets.ModelViewSet):
+    """
+    Read + mark-paid only for TenantSubscriptionInvoice. No create/delete —
+    invoices are raised only by SubscriptionRegistrationService.
+
+    Not TenantScopedReadMixin: that mixin filters on a field literally named
+    `tenant`, which this model doesn't have (only `subscription.tenant`) — it
+    would silently no-op and leak every tenant's invoices to any authenticated
+    caller. Scoped explicitly here instead.
+    """
+
+    queryset = TenantSubscriptionInvoice.objects.select_related("subscription__tenant").all()
+    serializer_class = TenantSubscriptionInvoiceSerializer
+    permission_classes = [ReadOnlyOrPlatformAdmin]
+    http_method_names = ["get", "patch", "post", "head", "options"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        tenant_id = getattr(self.request, "tenant_id", None)
+        if tenant_id is None:
+            return qs
+        return qs.filter(subscription__tenant_id=tenant_id)
+
+    @action(detail=True, methods=["post"], permission_classes=[CanApprovePayment], url_path="mark-paid")
+    def mark_paid(self, request, pk=None):
+        """Finance confirms a manual/bank-transfer payment landed. Activates
+        the tenant + subscription via the same path a gateway webhook uses."""
+        invoice = self.get_object()
+        if invoice.status == InvoiceStatus.PAID:
+            return Response(
+                {"detail": "Invoice is already paid."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        approved_by = getattr(request, "auth_claims", {}).get("email") or str(
+            getattr(request, "auth_claims", {}).get("sub", "admin")
+        )
+        activate_paid_subscription(invoice, approved_by=f"manual:{approved_by}")
+        invoice.refresh_from_db()
+        return Response(TenantSubscriptionInvoiceSerializer(invoice).data)
 
 
 class TenantLicenseViewSet(TenantScopedReadMixin, viewsets.ModelViewSet):
