@@ -1,4 +1,13 @@
-# CyShop Commerce OS
+# CyShop Commerce OS — ARCHIVED
+
+> **This product is archived.** CyShop's retail/commerce feature set has been
+> harvested into CyCom (see `cycom/products/cycom/`) — most recently the
+> RTL i18n sweep and the purchase-order print/PDF action. No further feature
+> development happens here; this tree is kept for reference and for the still
+> -live production deployment at `cyshop.cy-com.com` only. Do not add new
+> features — port them to CyCom instead. Security/production-incident fixes
+> only, and only via `workflow_dispatch` (the auto-deploy-on-push trigger has
+> been removed, see `.github/workflows/deploy-cyshop.yml`).
 
 Multi-tenant enterprise commerce platform.
 

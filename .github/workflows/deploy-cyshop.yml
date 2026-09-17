@@ -1,11 +1,10 @@
+# CyShop is archived (see cyshop/README.md) — feature work now goes into
+# CyCom. The push trigger is removed on purpose so an incidental edit to
+# this frozen tree can never auto-redeploy production; use workflow_dispatch
+# for a deliberate security/incident fix only.
 name: Validate and deploy CyShop to Oracle Cloud
 
 on:
-  push:
-    branches: [develop]
-    paths:
-      - "cyshop/**"
-      - ".github/workflows/deploy-cyshop.yml"
   workflow_dispatch:
 
 permissions:
