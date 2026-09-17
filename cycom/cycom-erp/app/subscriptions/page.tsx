@@ -161,7 +161,7 @@ export default function SubscriptionsPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="glass-card p-4 space-y-1 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[#E67E22]/30 to-transparent" />
+          <div className="absolute top-0 start-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[#E67E22]/30 to-transparent" />
           <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">{t('subscriptionsPage.mrr')}</span>
           <p className="text-xl font-black text-white">JOD {totalMRR.toLocaleString()}</p>
           <span className="text-[10px] text-emerald-400 font-bold inline-flex items-center gap-0.5">

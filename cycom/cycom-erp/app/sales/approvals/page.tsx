@@ -71,7 +71,7 @@ export default function SalesApprovalsFlow() {
                   <h3 className="text-base font-bold text-white mt-1.5">{item.customer}</h3>
                   <span className="text-xs text-slate-500 block mt-0.5">{t('salesApprovals.submittedBy', { name: item.submittedBy })}</span>
                 </div>
-                <div className="text-right">
+                <div className="text-end">
                   <span className="badge badge-red flex items-center gap-1">
                     <ShieldAlert className="w-3.5 h-3.5" /> {t('salesApprovals.exceptionFlagged')}
                   </span>

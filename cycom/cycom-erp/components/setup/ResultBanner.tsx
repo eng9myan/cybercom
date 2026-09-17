@@ -34,7 +34,7 @@ export function ResultBanner({
             <div className="font-bold flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5" /> {t('setupWizard.warnings')}
             </div>
-            <ul className="list-disc list-inside ml-1">
+            <ul className="list-disc list-inside ms-1">
               {result.warnings.map((w, i) => <li key={i}>{w}</li>)}
             </ul>
           </div>

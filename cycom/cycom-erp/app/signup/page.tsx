@@ -228,7 +228,7 @@ export default function SignupPage() {
                 {Object.entries(result.checkout.instructions || {}).map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-4">
                     <span className="text-white/50 capitalize">{k.replace(/_/g, ' ')}</span>
-                    <span className="font-mono text-right break-all">{String(v)}</span>
+                    <span className="font-mono text-end break-all">{String(v)}</span>
                   </div>
                 ))}
                 <p className="text-xs text-white/40 pt-1">{t('signupPage.bankTransferNote')}</p>

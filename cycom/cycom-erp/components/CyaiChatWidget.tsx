@@ -94,7 +94,7 @@ export default function CyaiChatWidget() {
                   <button
                     key={q}
                     onClick={() => ask(q)}
-                    className="block w-full text-left text-xs px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors"
+                    className="block w-full text-start text-xs px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors"
                   >
                     {q}
                   </button>

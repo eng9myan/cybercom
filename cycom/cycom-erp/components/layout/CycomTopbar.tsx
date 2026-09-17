@@ -58,7 +58,7 @@ export default function CycomTopbar() {
 
         <button className="p-2 rounded-xl hover:bg-white/5 transition-colors text-slate-400 hover:text-white relative">
           <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#EF4444] rounded-full" />
+          <span className="absolute top-1.5 end-1.5 w-1.5 h-1.5 bg-[#EF4444] rounded-full" />
         </button>
 
         <div className="w-px h-5 bg-white/10" />
@@ -67,7 +67,7 @@ export default function CycomTopbar() {
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#E67E22] to-[#5DADE2] flex items-center justify-center text-[10px] font-black text-white">
             AG
           </div>
-          <div className="text-left hidden sm:block">
+          <div className="text-start hidden sm:block">
             <p className="text-xs font-bold text-slate-200">Admin User</p>
             <p className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">{activeCompany.name}</p>
           </div>

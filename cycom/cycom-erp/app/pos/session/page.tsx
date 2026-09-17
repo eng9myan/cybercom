@@ -93,7 +93,7 @@ export default function POSRegisterSession() {
                   <span className="font-bold text-slate-200 block">{tx.type} ({tx.amount})</span>
                   <span className="text-slate-500 block">{t('posSession.reasonLine', { reason: tx.reason })}</span>
                 </div>
-                <div className="text-right">
+                <div className="text-end">
                   <span className="badge badge-purple">{tx.user}</span>
                 </div>
               </div>

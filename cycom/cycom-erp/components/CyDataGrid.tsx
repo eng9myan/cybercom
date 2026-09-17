@@ -43,7 +43,7 @@ export function CyDataGrid<T extends { id: any }>({
     >
       <div style={{ height: totalHeight, width: '100%', position: 'relative' }}>
         {/* Virtualized Table Container */}
-        <table className="w-full text-left text-xs border-collapse" style={{ tableLayout: 'fixed' }}>
+        <table className="w-full text-start text-xs border-collapse" style={{ tableLayout: 'fixed' }}>
           <thead className="sticky top-0 bg-[#0A0D16] border-b border-white/10 text-slate-400 font-bold z-10">
             <tr style={{ height: rowHeight }}>
               {columns.map((col, idx) => (

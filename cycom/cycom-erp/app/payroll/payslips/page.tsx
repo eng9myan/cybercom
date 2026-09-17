@@ -72,7 +72,7 @@ export default function PayslipBatches() {
                 <p className="text-xs text-slate-400 mt-0.5">{t('payslips.payDate', { date: b.date })} • {t('payslips.employeesIncluded', { n: b.count })}</p>
               </div>
             </div>
-            <div className="flex flex-col md:items-end gap-2 text-right">
+            <div className="flex flex-col md:items-end gap-2 text-end">
               <div>
                 <span className="text-xs text-slate-500 block">{t('payslips.grossRollup')}</span>
                 <span className="text-lg font-black text-white">{b.totalGross}</span>

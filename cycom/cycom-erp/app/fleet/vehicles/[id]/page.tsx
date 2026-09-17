@@ -319,7 +319,7 @@ export default function VehicleLogsDetail() {
                         <div className="text-[10px] text-slate-500">{t('fleetVehicleDetail.odometerDate', { km: m.odometer_km.toLocaleString(), date: m.maintenance_date })}</div>
                         {m.notes && <p className="text-slate-400 text-xs mt-1 italic">"{m.notes}"</p>}
                       </div>
-                      <div className="text-right">
+                      <div className="text-end">
                         <div className="text-sm font-bold text-white">{m.cost.toLocaleString()} JOD</div>
                         {m.next_service_km && <div className="text-[10px] text-slate-500 mt-1">{t('fleetVehicleDetail.nextService', { km: m.next_service_km.toLocaleString() })}</div>}
                       </div>
@@ -343,7 +343,7 @@ export default function VehicleLogsDetail() {
                         <div className="text-[10px] text-slate-500">{t('fleetVehicleDetail.odometerDate', { km: f.odometer_km.toLocaleString(), date: f.log_date })}</div>
                         <div className="text-[10px] text-slate-400 mt-1">{t('fleetVehicleDetail.litersAt', { liters: f.liters, price: f.price_per_liter })}</div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-end">
                         <div className="text-sm font-bold text-emerald-400">{f.total_cost.toLocaleString()} JOD</div>
                       </div>
                     </div>

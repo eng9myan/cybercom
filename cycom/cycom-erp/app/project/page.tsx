@@ -191,7 +191,7 @@ export default function ProjectPage() {
                     <span className="text-[11px] font-bold text-white uppercase">{stageLabel[stage]}</span>
                     <span className="text-[9px] bg-white/5 px-2 py-0.5 rounded font-mono font-bold text-slate-400">{stageTasks.length}</span>
                   </div>
-                  <div className="space-y-2 flex-1 overflow-y-auto pr-1">
+                  <div className="space-y-2 flex-1 overflow-y-auto pe-1">
                     {stageTasks.map((tk) => (
                       <div key={tk.rawId} className="p-3 rounded-xl bg-[#0B0F19]/90 border border-white/5 hover:border-white/12 shadow-sm space-y-2 group transition-all">
                         <div className="flex justify-between items-start gap-2">

@@ -215,7 +215,7 @@ export default function DiscussPage() {
             />
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-5 pr-1">
+          <div className="flex-1 overflow-y-auto space-y-5 pe-1">
             {/* Channels Section */}
             <div className="space-y-1.5">
               <span className="text-[10px] font-bold text-slate-500 tracking-wider uppercase block px-2">{t('discussDash.channels')}</span>
@@ -314,7 +314,7 @@ export default function DiscussPage() {
           </div>
 
           {/* Message History */}
-          <div className="flex-1 overflow-y-auto space-y-4 pr-1 mb-4 select-text">
+          <div className="flex-1 overflow-y-auto space-y-4 pe-1 mb-4 select-text">
             <AnimatePresence initial={false}>
               {currentMessages.map((msg) => (
                 <motion.div

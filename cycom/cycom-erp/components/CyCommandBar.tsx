@@ -71,7 +71,7 @@ export function CyCommandBar() {
                   key={idx}
                   onClick={() => navigateTo(cmd.path)}
                   className="
-                    w-full text-left text-xs p-2.5 rounded-xl hover:bg-white/5
+                    w-full text-start text-xs p-2.5 rounded-xl hover:bg-white/5
                     flex items-center gap-3 transition-all hover:translate-x-0.5
                   "
                 >

@@ -230,7 +230,7 @@ export default function QualityPage() {
         {/* Right Column - Audits grid list */}
         <div className="lg:col-span-2 glass-card p-5 space-y-4">
           <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-3">{t('qualityPage.logsHeading')}</h2>
-          <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-[460px] overflow-y-auto pe-1">
             {checks.map(c => (
               <div key={c.id} className="p-4 rounded-xl bg-white/3 border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">

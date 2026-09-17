@@ -142,7 +142,7 @@ export default function CycomSidebar() {
           <div className="flex items-baseline gap-0.5">
             <span className="text-[14px] font-black text-[#E67E22] tracking-wide">CY</span>
             <span className="text-[14px] font-black text-white tracking-wide">COM</span>
-            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-orange-500/20 text-[#E67E22] ml-2 border border-orange-500/30">ERP</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-orange-500/20 text-[#E67E22] ms-2 border border-orange-500/30">ERP</span>
           </div>
           <div className="text-[9px] text-[#5DADE2] font-semibold uppercase tracking-wider mt-0.5">
             Cycom
@@ -165,7 +165,7 @@ export default function CycomSidebar() {
       <div className="px-3 pt-2 pb-1 flex-shrink-0">
         <button 
           onClick={() => setCompanySwitcherOpen(!companySwitcherOpen)}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/3 border border-white/8 hover:border-white/12 transition-all text-left group"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white/3 border border-white/8 hover:border-white/12 transition-all text-start group"
         >
           <span className="text-base">{activeCompany.icon}</span>
           <div className="flex-1 min-w-0">
@@ -182,7 +182,7 @@ export default function CycomSidebar() {
               <button
                 key={company.id}
                 onClick={() => { setActiveCompany(company); setCompanySwitcherOpen(false); }}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all ${
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-start transition-all ${
                   activeCompany.id === company.id 
                     ? 'bg-orange-500/10 text-white' 
                     : 'text-slate-400 hover:bg-white/5 hover:text-white'

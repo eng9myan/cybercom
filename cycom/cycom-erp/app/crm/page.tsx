@@ -237,7 +237,7 @@ export default function CRMPage() {
                       </div>
                       <p className="text-[10px] text-slate-500 mt-1 font-bold">JOD {stageRevenueSum.toLocaleString()}</p>
                     </div>
-                    <div className="space-y-2 flex-1 overflow-y-auto pr-1">
+                    <div className="space-y-2 flex-1 overflow-y-auto pe-1">
                       {stageLeads.map((ld) => (
                         <div key={ld.id} className="p-3 rounded-xl bg-[#0B0F19]/90 border border-white/5 hover:border-white/12 shadow-sm space-y-2 group transition-all">
                           <div className="flex justify-between items-start">

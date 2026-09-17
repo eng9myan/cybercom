@@ -368,7 +368,7 @@ export default function PosDashboard() {
                 <button
                   key={product.id}
                   onClick={() => addToOrder(product)}
-                  className="p-3 rounded-xl bg-white/3 border border-white/5 hover:border-[#E67E22]/30 hover:bg-[#E67E22]/5 transition-all text-left group"
+                  className="p-3 rounded-xl bg-white/3 border border-white/5 hover:border-[#E67E22]/30 hover:bg-[#E67E22]/5 transition-all text-start group"
                 >
                   <div className="text-2xl mb-2">{product.image}</div>
                   <p className="text-[11px] font-bold text-white group-hover:text-[#E67E22] transition-colors leading-tight">{product.name}</p>
@@ -414,7 +414,7 @@ export default function PosDashboard() {
                           <p className="text-[11px] font-bold text-white truncate">{line.product.name}</p>
                           <p className="text-[9px] text-slate-500">JOD {line.product.price.toFixed(2)} × {line.qty}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-end">
                           <p className="text-xs font-bold text-white">JOD {lineTotal.toFixed(2)}</p>
                           <button onClick={() => removeFromOrder(line.product.id)} className="text-red-400/60 hover:text-red-400 mt-0.5">
                             <Trash2 className="w-3 h-3" />
@@ -571,7 +571,7 @@ export default function PosDashboard() {
                   disabled={paymentMethod === 'cash' && parseFloat(cashTendered) < roundedTotal}
                   className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <CheckCircle className="w-4 h-4 inline mr-2" />
+                  <CheckCircle className="w-4 h-4 inline me-2" />
                   Confirm Payment
                 </button>
               </motion.div>
@@ -757,7 +757,7 @@ export default function PosDashboard() {
             <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-3">{t('pos.advancePledgeRegistry')}</h2>
             <div className="overflow-x-auto">
               <table className="data-table">
-                <thead><tr><th>ID</th><th>Customer</th><th>Type</th><th>Total</th><th>Deposit</th><th>Deadline</th><th>Status</th><th className="text-right">Action</th></tr></thead>
+                <thead><tr><th>ID</th><th>Customer</th><th>Type</th><th>Total</th><th>Deposit</th><th>Deadline</th><th>Status</th><th className="text-end">Action</th></tr></thead>
                 <tbody>
                   {orders.map(ord => (
                     <tr key={ord.id}>
@@ -768,7 +768,7 @@ export default function PosDashboard() {
                       <td className="text-emerald-400">JOD {ord.deposit}</td>
                       <td>{ord.deadlineDate}</td>
                       <td><span className={`badge text-[9px] ${ord.status === 'Fulfilled' ? 'badge-green' : ord.status === 'Overdue' ? 'badge-red' : 'badge-yellow'}`}>{ord.status}</span></td>
-                      <td className="text-right">{ord.status === 'Pending' && (
+                      <td className="text-end">{ord.status === 'Pending' && (
                         <button onClick={() => setFulfilledIds(prev => [...prev, ord.id])} className="p-1 px-2 text-[10px] font-bold rounded bg-emerald-500/10 border border-emerald-500/25 text-[#10B981]">Fulfill</button>
                       )}</td>
                     </tr>

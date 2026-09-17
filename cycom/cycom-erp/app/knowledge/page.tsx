@@ -129,7 +129,7 @@ export default function KnowledgePage() {
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+          <div className="flex-1 overflow-y-auto space-y-3 pe-1">
             {categories.map(cat => {
               const catArticles = articles.filter(a => a.category === cat);
               const isExpanded = expandedFolders[cat];
@@ -153,7 +153,7 @@ export default function KnowledgePage() {
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden pl-3 space-y-0.5"
+                        className="overflow-hidden ps-3 space-y-0.5"
                       >
                         {catArticles.map(art => (
                           <button
@@ -169,7 +169,7 @@ export default function KnowledgePage() {
                             }`}
                           >
                             <FileText className="w-3.5 h-3.5 flex-shrink-0" />
-                            <span className="truncate text-left">{art.title}</span>
+                            <span className="truncate text-start">{art.title}</span>
                           </button>
                         ))}
                       </motion.div>
@@ -253,7 +253,7 @@ export default function KnowledgePage() {
                     return <h3 key={index} className="text-xs font-black text-slate-200 mt-3">{line.replace('### ', '')}</h3>;
                   }
                   if (line.startsWith('- ')) {
-                    return <li key={index} className="ml-4 list-disc text-xs leading-relaxed mt-1">{line.replace('- ', '')}</li>;
+                    return <li key={index} className="ms-4 list-disc text-xs leading-relaxed mt-1">{line.replace('- ', '')}</li>;
                   }
                   if (line.trim() === '') {
                     return <div key={index} className="h-2" />;
