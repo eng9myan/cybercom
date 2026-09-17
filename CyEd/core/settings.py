@@ -97,6 +97,7 @@ PLATFORM_APPS = [
     # checks are inert unless something imports them.
     "core.apps.CoreConfig",
     "platform.common",
+    "platform.canonical",
     "platform.tenant",
     "platform.audit",
     "platform.cyidentity",
