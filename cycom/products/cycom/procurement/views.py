@@ -7,6 +7,7 @@ from platform.tenant.permissions import IsPlatformAdmin
 from products.cycom.access.approvals import require_approval_authority
 from products.cycom.procurement.models import PurchaseOrder, PurchaseOrderLine, PurchaseRequest
 from products.cycom.procurement.serializers import PurchaseOrderSerializer, PurchaseRequestSerializer
+from products.cycom.procurement.printing import render_purchase_order
 from products.cycom.procurement.services import receive_purchase_order
 
 
@@ -101,3 +102,8 @@ class PurchaseOrderViewSet(TenantScopedModelViewSet):
         receive_purchase_order(order, receipts=receipts)
         order.refresh_from_db()
         return Response(PurchaseOrderSerializer(order).data)
+
+    @action(detail=True, methods=["get"], url_path="print")
+    def print_view(self, request, pk=None):
+        """Print-ready HTML (Ctrl+P -> PDF, no PDF library needed)."""
+        return render_purchase_order(self.get_object())
