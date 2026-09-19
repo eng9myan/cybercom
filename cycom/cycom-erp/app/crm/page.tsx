@@ -34,6 +34,17 @@ type CycomLead = {
 
 const STAGES: StageKey[] = ['new', 'qualified', 'proposition', 'won', 'lost'];
 
+// Mirrors lib/cycomServer.ts's STAGE_UI_TO_BACKEND (same targets, this map's
+// keys are the frontend's own lowercase StageKey rather than the Odoo-style
+// capitalized label that adapter uses internally).
+const STAGE_TO_BACKEND: Record<StageKey, string> = {
+  new: 'new',
+  qualified: 'qualified',
+  proposition: 'proposal',
+  won: 'won',
+  lost: 'lost',
+};
+
 const STAGE_BG_STYLES: Record<StageKey, string> = {
   new: 'border-slate-500/25 bg-slate-500/3',
   qualified: 'border-cyan-500/25 bg-cyan-500/3',
@@ -126,7 +137,14 @@ export default function CRMPage() {
     const newStage = STAGES[nextIdx];
     const newProb = newStage === 'won' ? 100 : newStage === 'lost' ? 0 : newStage === 'proposition' ? 75 : ld.probability;
     setLeads(leads.map((l) => (l.rawId === rawId ? { ...l, stage: newStage, probability: newProb } : l)));
-    try { await write('crm.lead', [rawId], { probability: newProb }); } catch { /* swallow */ }
+    try {
+      await write('crm.lead', [rawId], { probability: newProb, stage: STAGE_TO_BACKEND[newStage] });
+    } catch (err) {
+      // Revert the optimistic move — the board must not show a stage the
+      // backend never actually saved (a refresh would silently undo it).
+      setLeads((prev) => prev.map((l) => (l.rawId === rawId ? { ...l, stage: ld.stage, probability: ld.probability } : l)));
+      setError(err instanceof Error ? err.message : 'Failed to move lead');
+    }
   };
 
   const demoteLead = async (rawId: number) => {
@@ -136,7 +154,12 @@ export default function CRMPage() {
     const newStage = STAGES[nextIdx];
     const newProb = newStage === 'new' ? 10 : newStage === 'qualified' ? 40 : ld.probability;
     setLeads(leads.map((l) => (l.rawId === rawId ? { ...l, stage: newStage, probability: newProb } : l)));
-    try { await write('crm.lead', [rawId], { probability: newProb }); } catch { /* swallow */ }
+    try {
+      await write('crm.lead', [rawId], { probability: newProb, stage: STAGE_TO_BACKEND[newStage] });
+    } catch (err) {
+      setLeads((prev) => prev.map((l) => (l.rawId === rawId ? { ...l, stage: ld.stage, probability: ld.probability } : l)));
+      setError(err instanceof Error ? err.message : 'Failed to move lead');
+    }
   };
 
   const deleteLead = async (rawId: number) => {
