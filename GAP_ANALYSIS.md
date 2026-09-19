@@ -11,11 +11,11 @@
 
 | Odoo module | CyCom app(s) | Status | Priority | Notes |
 |---|---|---|---|---|
-| CRM | `crm` | Partial | P1 | Lead only; no Opportunity/pipeline/activities. Thin. |
+| CRM | `crm` | Present | — | Staged pipeline (Lead.stage, funnel/weighted-value aggregation) + Activity log, tested, Kanban UI. Multi-currency rate table (row 12) is separate. |
 | Sales | `sales` | Present | — | SalesOrder + lines, quotations, retail/wholesale, invoice bridge. Verified. |
 | Inventory | `inventory` | Present | — | Warehouse, Product, StockItem (valuation), StockMove, InternalOrder. Core solid. |
 | Purchase | `procurement` | Present | — | PurchaseRequest→PO→GoodsReceipt. Approval workflow present. |
-| Accounting | `accounting` + `ar_ap` | Present (core) | P1 | Real journal posting, AR/AP, invoices, partners. **Missing**: tax reports, P&L/BS statements, bank recon. |
+| Accounting | `accounting` + `ar_ap` | Present | — | Real journal posting, AR/AP, invoices, partners, trial balance/P&L/balance sheet/VAT return, bank reconciliation. All tested. No frontend statements viewer yet. |
 | HR | `hr` + `leave` + `recruitment` | Present (core) | — | Employee, Contract, Leave, Applicant. |
 | Payroll | `payroll` | Partial | P1 | PayrollRun, Payslip, attendance, JO social-security. Only JO localized; other countries missing. |
 | Project | `project` | Partial | P2 | Basic; no Gantt/timesheet depth. |
@@ -57,8 +57,15 @@
 
 **P1 — for a credible commercial CyCom (Commerce):**
 3. Hosting/provisioning platform (git-branch envs, one-click tenant instance) — prompt §8.
-4. Accounting reports (P&L, Balance Sheet, tax return) + multi-currency rate table.
-5. CRM pipeline (Opportunity/stages/activities).
+4. ~~Accounting reports~~ — **done 2026-09-19**: trial balance/P&L/balance sheet/VAT return
+   already existed (now test-covered) and bank reconciliation was built and tested
+   (`products/cycom/accounting/{reports,bank_reconciliation}.py`). Still open: multi-currency
+   rate table / revaluation, and a frontend page to actually view these statements (the
+   `/reports/*` endpoints have no UI consumer yet).
+5. ~~CRM pipeline~~ — **done 2026-09-19**: the backend already had a full staged pipeline
+   (Lead.stage, funnel/weighted-value aggregation, Activity log) and a Kanban frontend —
+   the real bug was the Kanban's stage-move buttons never persisting `stage` to the backend
+   (fixed in `cycom-erp/app/crm/page.tsx`).
 6. RTL/Arabic audit + fixes.
 7. Payroll beyond JO (SA/AE localizations).
 
