@@ -14,6 +14,12 @@ class ProviderPortalProfileViewSet(viewsets.ModelViewSet):
     queryset = ProviderPortalProfile.objects.all()
     serializer_class = ProviderPortalProfileSerializer
 
+    def get_queryset(self):
+        tenant_id = getattr(self.request, "tenant_id", None)
+        if tenant_id:
+            return self.queryset.filter(tenant_id=tenant_id)
+        return self.queryset.none()
+
     @action(detail=True, methods=["post"], url_path="toggle-on-call")
     def toggle_on_call(self, request, pk=None):
         profile = self.get_object()
@@ -33,10 +39,22 @@ class ProviderPortalActivityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ProviderPortalActivity.objects.all()
     serializer_class = ProviderPortalActivitySerializer
 
+    def get_queryset(self):
+        tenant_id = getattr(self.request, "tenant_id", None)
+        if tenant_id:
+            return self.queryset.filter(tenant_id=tenant_id)
+        return self.queryset.none()
+
 
 class ProviderCredentialingStatusViewSet(viewsets.ModelViewSet):
     queryset = ProviderCredentialingStatus.objects.all()
     serializer_class = ProviderCredentialingStatusSerializer
+
+    def get_queryset(self):
+        tenant_id = getattr(self.request, "tenant_id", None)
+        if tenant_id:
+            return self.queryset.filter(tenant_id=tenant_id)
+        return self.queryset.none()
 
     @action(detail=True, methods=["post"], url_path="verify")
     def verify(self, request, pk=None):

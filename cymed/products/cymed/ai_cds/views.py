@@ -27,6 +27,12 @@ class CDSAlertViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = CDSAlert.objects.all()
     serializer_class = CDSAlertSerializer
 
+    def get_queryset(self):
+        tenant_id = getattr(self.request, "tenant_id", None)
+        if tenant_id:
+            return self.queryset.filter(tenant_id=tenant_id)
+        return self.queryset.none()
+
     @action(detail=True, methods=["post"], url_path="acknowledge")
     def acknowledge(self, request, pk=None):
         from django.utils import timezone
@@ -44,10 +50,22 @@ class RiskScoreViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = RiskScore.objects.all()
     serializer_class = RiskScoreSerializer
 
+    def get_queryset(self):
+        tenant_id = getattr(self.request, "tenant_id", None)
+        if tenant_id:
+            return self.queryset.filter(tenant_id=tenant_id)
+        return self.queryset.none()
+
 
 class ICDSuggestionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ICDCodeSuggestion.objects.all()
     serializer_class = ICDCodeSuggestionSerializer
+
+    def get_queryset(self):
+        tenant_id = getattr(self.request, "tenant_id", None)
+        if tenant_id:
+            return self.queryset.filter(tenant_id=tenant_id)
+        return self.queryset.none()
 
 
 # ── One-shot compute endpoints ────────────────────────────────────────

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from products.cymed.core.patients.models import Patient
 from products.cymed.core.providers.models import (
     Provider,
     ProviderAvailability,
@@ -7,6 +8,20 @@ from products.cymed.core.providers.models import (
     ProviderRole,
     ProviderSpecialty,
 )
+
+
+class PatientRosterSerializer(serializers.ModelSerializer):
+    """Lean roster row — deliberately not the full PatientSerializer (no
+    identifiers/contacts/addresses nesting), since a roster list is read many
+    times per session and each PHI field decrypts on access."""
+
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
+    mrn = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Patient
+        fields = ["id", "first_name", "last_name", "mrn", "dob", "gender", "is_active"]
 
 
 class ProviderSpecialtySerializer(serializers.ModelSerializer):
