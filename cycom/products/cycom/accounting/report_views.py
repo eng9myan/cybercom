@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.permissions import IsAuthenticatedViaClaims
+from products.cycom.accounting.bank_reconciliation import reconciliation_summary
 from products.cycom.accounting.reports import (
     balance_sheet,
     profit_and_loss,
@@ -57,4 +58,20 @@ class VatReturnView(APIView):
             request.tenant_id,
             date_from=_date(request.query_params, "date_from"),
             date_to=_date(request.query_params, "date_to"),
+        ))
+
+
+class BankReconciliationSummaryView(APIView):
+    permission_classes = [IsAuthenticatedViaClaims]
+
+    def get(self, request):
+        bank_account_id = request.query_params.get("bank_account")
+        if not bank_account_id:
+            return Response({"detail": "bank_account is required."}, status=400)
+        ending_balance = request.query_params.get("statement_ending_balance")
+        return Response(reconciliation_summary(
+            request.tenant_id,
+            bank_account_id=bank_account_id,
+            date_to=_date(request.query_params, "date_to"),
+            statement_ending_balance=ending_balance,
         ))

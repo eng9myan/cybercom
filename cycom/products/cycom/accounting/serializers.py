@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from products.cycom.accounting.models import Account, JournalEntry, JournalLine
+from products.cycom.accounting.models import Account, BankStatementLine, JournalEntry, JournalLine
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -43,3 +43,11 @@ class JournalEntrySerializer(serializers.ModelSerializer):
                 entry=entry, tenant_id=validated_data["tenant_id"], **line_data
             )
         return entry
+
+
+class BankStatementLineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BankStatementLine
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "matched_line", "is_reconciled",
+                             "reconciled_at", "created_at", "updated_at"]

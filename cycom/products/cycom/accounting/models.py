@@ -89,6 +89,40 @@ class JournalLine(BaseModel):
         ordering = ["id"]
 
 
+class BankStatementLine(BaseModel):
+    """One row of an imported bank statement, to be matched against a posted
+    JournalLine on the same (bank/cash) account.
+
+    Sign convention matches JournalLine's debit-normal asset balance: positive
+    `amount` = a deposit/increase, negative = a withdrawal/decrease — so a
+    matched pair always has statement_line.amount == journal_line.debit -
+    journal_line.credit, with no unit conversion needed.
+    """
+
+    bank_account = models.ForeignKey(
+        Account, on_delete=models.PROTECT, related_name="bank_statement_lines"
+    )
+    statement_date = models.DateField()
+    description = models.CharField(max_length=255, blank=True)
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    # The bank's own reference (cheque #, transaction id) — used to skip
+    # re-importing the same line if a statement is uploaded twice.
+    external_ref = models.CharField(max_length=100, blank=True)
+    matched_line = models.ForeignKey(
+        JournalLine, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="bank_statement_matches",
+    )
+    is_reconciled = models.BooleanField(default=False)
+    reconciled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "cycom_accounting_bank_statement_lines"
+        ordering = ["-statement_date", "-id"]
+
+    def __str__(self):
+        return f"{self.statement_date} {self.amount} ({self.description})"
+
+
 class DocumentSequence(BaseModel):
     """Per-tenant, per-document-type gapless counter (audit A-4).
 
