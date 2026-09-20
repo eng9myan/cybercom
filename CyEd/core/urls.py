@@ -42,6 +42,7 @@ urlpatterns = [
     # /api/v1/public/ through, so the webhook must live here.
     path("api/v1/public/payments/", include("products.cyed.payments.public_urls")),
     path("api/v1/sif/", include("products.cyed.sif.urls")),
+    path("api/v1/learning-bridge/", include("products.cyed.learning_bridge.urls")),
     path("api/v1/wellbeing/", include("products.cyed.wellbeing.urls")),
     path("api/v1/fees/", include("products.cyed.fees.urls")),
     path("api/v1/analytics/", include("products.cyed.analytics.urls")),

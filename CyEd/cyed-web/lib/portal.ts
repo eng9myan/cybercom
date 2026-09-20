@@ -241,3 +241,48 @@ export type SignableDocument = {
   pending_count: number;
   signatories: Signatory[];
 };
+
+export type AssignmentAlert = {
+  id: string;
+  title: string;
+  class_section: string;
+  due_at: string;
+  curriculum_code: string | null;
+};
+
+export type LearningProgressRow = {
+  assessment: string;
+  class_section: string;
+  curriculum_code: string | null;
+  score: string | null;
+  max_score: string;
+  achievement_level: string | null;
+};
+
+export type FamilyResource = {
+  id: string;
+  title: string;
+  subject: string;
+  description: string;
+  body: string;
+  external_url: string;
+  language: string;
+};
+
+export type OfflineActivityPack = {
+  id: string;
+  title: string;
+  subject: string;
+  description: string;
+  content: string;
+};
+
+export type LearningBridgeSummary = {
+  student: string;
+  student_name: string;
+  missed_assignments: AssignmentAlert[];
+  upcoming_assignments: AssignmentAlert[];
+  learning_progress: LearningProgressRow[];
+  resources: FamilyResource[];
+  offline_packs: OfflineActivityPack[];
+};

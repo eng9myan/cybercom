@@ -116,6 +116,7 @@ PRODUCT_APPS = [
     "products.cyed.security",
     "products.cyed.payments",
     "products.cyed.sif",
+    "products.cyed.learning_bridge",
     "products.cyed.sis",
     "products.cyed.gradebook",
     "products.cyed.exams",

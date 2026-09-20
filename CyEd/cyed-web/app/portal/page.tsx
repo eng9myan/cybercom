@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, FileSignature, FileText, MessageSquare, Receipt } from "lucide-react";
+import { BookOpenCheck, CalendarDays, FileSignature, FileText, MessageSquare, Receipt } from "lucide-react";
 import { cyed } from "@/lib/cyed";
 import { PageHeader, ErrorNote, SkeletonRows, Empty } from "@/components/ui";
 import { Panel, Badge } from "@/components/kit";
@@ -33,6 +33,7 @@ export default function PortalHome() {
   const [statement, setStatement] = useState<FamilyStatement | null>(null);
   const [threads, setThreads] = useState<PortalThread[]>([]);
   const [pendingConsents, setPendingConsents] = useState(0);
+  const [missedAssignments, setMissedAssignments] = useState(0);
   const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,6 +49,16 @@ export default function PortalHome() {
         setDetailError(null);
       } catch (e) {
         setDetailError(e instanceof Error ? e.message : "Could not load your child's day");
+      }
+    })();
+    (async () => {
+      try {
+        const bridge = await cyed.get<{ missed_assignments: unknown[] }>(
+          `learning-bridge/summary/?student=${selected}`,
+        );
+        setMissedAssignments(bridge.missed_assignments.length);
+      } catch {
+        // Shown properly on the Learning Bridge page itself.
       }
     })();
   }, [selected]);
@@ -143,6 +154,13 @@ export default function PortalHome() {
           label="Consents"
           value={pendingConsents ? `${pendingConsents} to sign` : "Up to date"}
           tone={pendingConsents ? "warn" : "ok"}
+        />
+        <QuickLink
+          href="/portal/learning-bridge"
+          icon={<BookOpenCheck size={18} />}
+          label="Learning Bridge"
+          value={missedAssignments ? `${missedAssignments} missed` : "On track"}
+          tone={missedAssignments ? "bad" : "ok"}
         />
       </div>
 
