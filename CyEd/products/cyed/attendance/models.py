@@ -247,3 +247,52 @@ class AbsenceExplanation(BaseModel):
 
     def __str__(self):
         return f"{self.student_id} {self.start_date}–{self.end_date} ({self.status})"
+
+
+class LatePass(BaseModel):
+    """
+    A printed slip a late-arriving student carries to class — issued at
+    reception/the front-office kiosk, not folded into the period-based
+    RollCall/AttendanceMark model. A student signing in late at the office
+    is not walking into a specific in-progress roll call a clerk has
+    context for, so this is deliberately its own lightweight record rather
+    than forcing a RollCall to exist for the moment they arrive.
+    """
+
+    REASON_CHOICES = [
+        ("transport", "Transport / traffic"),
+        ("medical", "Medical appointment"),
+        ("family", "Family reason"),
+        ("overslept", "Overslept"),
+        ("other", "Other"),
+    ]
+
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="late_passes")
+    arrival_date = models.DateField(default=timezone.localdate)
+    arrival_time = models.TimeField(default=timezone.localtime)
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES, default="other")
+    reason_detail = models.CharField(max_length=255, blank=True)
+    # Where the student is heading, if known — printed on the slip so the
+    # receiving teacher doesn't have to ask.
+    class_section = models.ForeignKey(
+        ClassSection, on_delete=models.SET_NULL, null=True, blank=True, related_name="late_passes"
+    )
+    issued_by = models.CharField(max_length=255, blank=True)
+    printed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "cyed_late_passes"
+        ordering = ["-arrival_date", "-arrival_time"]
+        indexes = [
+            models.Index(fields=["tenant_id", "arrival_date"], name="idx_late_pass_by_date"),
+        ]
+
+    @property
+    def pass_number(self) -> str:
+        # Not a gapless sequence (a late pass has no accounting/statutory
+        # weight) — a short, readable label derived from the row itself,
+        # same convention as CyCom's PO print numbers.
+        return f"LP-{self.arrival_date:%Y%m%d}-{str(self.id)[:6].upper()}"
+
+    def __str__(self):
+        return f"{self.pass_number} — {self.student_id} @ {self.arrival_time}"

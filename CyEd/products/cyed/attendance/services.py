@@ -26,7 +26,7 @@ recorded with `default_status`. Sending nothing marks the whole class present.
 from django.db import transaction
 from django.utils import timezone
 
-from products.cyed.attendance.models import AttendanceMark, RollCall
+from products.cyed.attendance.models import AttendanceMark, LatePass, RollCall
 from products.cyed.sis.models import Enrolment
 
 MARK_FIELDS = ("status", "minutes_late", "note")
@@ -342,3 +342,25 @@ def notify_absences(tenant_id, roll_call_id, student_ids):
     for mark in marks:
         sent += len(notify_guardians_of_absence(mark))
     return sent
+
+
+def issue_late_pass(
+    tenant_id, *, student, arrival_time, reason="other", reason_detail="",
+    class_section=None, issued_by="", arrival_date=None,
+):
+    """
+    Front-office kiosk: record a late arrival and hand the student a printed
+    slip. Deliberately does not touch RollCall/AttendanceMark — see LatePass's
+    own docstring for why a front-desk sign-in and a period roll call are not
+    the same event.
+    """
+    return LatePass.objects.create(
+        tenant_id=tenant_id,
+        student=student,
+        arrival_date=arrival_date or timezone.localdate(),
+        arrival_time=arrival_time,
+        reason=reason,
+        reason_detail=reason_detail,
+        class_section=class_section,
+        issued_by=issued_by,
+    )

@@ -224,6 +224,22 @@ export type AtRiskResponse = {
   students: AtRiskRow[];
 };
 
+export type LatePass = {
+  id: string;
+  student: string;
+  student_name: string;
+  arrival_date: string;
+  arrival_time: string;
+  reason: string;
+  reason_display: string;
+  reason_detail: string;
+  class_section: string | null;
+  class_section_name: string;
+  issued_by: string;
+  pass_number: string;
+  printed_at: string | null;
+};
+
 export type DunningAction = {
   id: string;
   stage: number;

@@ -4,6 +4,7 @@ from products.cyed.attendance.models import (
     AbsenceExplanation,
     AttendanceMark,
     EmergencyDrill,
+    LatePass,
     RollCall,
 )
 
@@ -104,6 +105,21 @@ class AttendanceMarkSerializer(serializers.ModelSerializer):
         model = AttendanceMark
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
+    def get_student_name(self, obj) -> str:
+        return f"{obj.student.first_name} {obj.student.last_name}".strip()
+
+
+class LatePassSerializer(serializers.ModelSerializer):
+    student_name = serializers.SerializerMethodField()
+    reason_display = serializers.CharField(source="get_reason_display", read_only=True)
+    class_section_name = serializers.CharField(source="class_section.name", read_only=True, default="")
+    pass_number = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = LatePass
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "created_at", "updated_at", "printed_at"]
 
     def get_student_name(self, obj) -> str:
         return f"{obj.student.first_name} {obj.student.last_name}".strip()

@@ -5,6 +5,7 @@ from products.cyed.attendance.views import (
     AbsenceExplanationViewSet,
     AttendanceMarkViewSet,
     EmergencyDrillViewSet,
+    LatePassViewSet,
     RollCallViewSet,
 )
 
@@ -13,5 +14,6 @@ router.register("roll-calls", RollCallViewSet)
 router.register("marks", AttendanceMarkViewSet)
 router.register("explanations", AbsenceExplanationViewSet)
 router.register("emergency-drills", EmergencyDrillViewSet)
+router.register("late-passes", LatePassViewSet)
 
 urlpatterns = [path("", include(router.urls))]

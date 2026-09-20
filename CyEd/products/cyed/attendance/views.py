@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,12 +11,15 @@ from products.cyed.attendance.models import (
     AttendanceMark,
     EmergencyDrill,
     EmergencyRollEntry,
+    LatePass,
     RollCall,
 )
+from products.cyed.attendance.printing import render_late_pass
 from products.cyed.attendance.serializers import (
     AbsenceExplanationSerializer,
     AttendanceMarkSerializer,
     EmergencyDrillSerializer,
+    LatePassSerializer,
     RollCallSerializer,
 )
 from products.cyed.governance.access import (
@@ -337,3 +341,37 @@ class AttendanceMarkViewSet(TenantScopedModelViewSet):
         if student:
             qs = qs.filter(student_id=student)
         return qs
+
+
+class LatePassViewSet(TenantScopedModelViewSet):
+    """
+    Front-office kiosk: reception issues a slip when a student signs in
+    late. Staff-only (a front-desk terminal is operated by reception, not
+    self-service) — a parent/student wanting their own late-arrival history
+    reads it through AttendanceMark's `note`/status, not this app.
+    """
+
+    queryset = LatePass.objects.select_related("student", "class_section").all()
+    serializer_class = LatePassSerializer
+    permission_classes = [IsStaff]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        params = self.request.query_params
+        if params.get("date"):
+            qs = qs.filter(arrival_date=params["date"])
+        if params.get("student"):
+            qs = qs.filter(student_id=params["student"])
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(tenant_id=self.request.tenant_id, issued_by=_email(self.request))
+
+    @action(detail=True, methods=["get"])
+    def print_view(self, request, pk=None):
+        """Print-ready HTML (Ctrl+P -> PDF, no PDF library needed)."""
+        late_pass = self.get_object()
+        if late_pass.printed_at is None:
+            late_pass.printed_at = timezone.now()
+            late_pass.save(update_fields=["printed_at", "updated_at"])
+        return render_late_pass(late_pass)
