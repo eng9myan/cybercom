@@ -94,6 +94,17 @@ export type Application = {
   status: string;
   guardian_name?: string;
   enrolled_student_id?: string | null;
+  residential_suburb?: string;
+  residential_postcode?: string;
+};
+
+export type CatchmentVerdict = {
+  checked: boolean;
+  in_catchment: boolean | null;
+  zone: string | null;
+  zone_name?: string;
+  is_priority: boolean;
+  reason: string;
 };
 
 export type Invoice = {
@@ -211,4 +222,33 @@ export type AtRiskRow = {
 export type AtRiskResponse = {
   summary: { high: number; medium: number; low: number };
   students: AtRiskRow[];
+};
+
+export type DunningAction = {
+  id: string;
+  stage: number;
+  stage_display: string;
+  action_on: string;
+  performed_by: string;
+  balance_at_action: string;
+  notification_id?: string | null;
+  note?: string;
+};
+
+export type DunningCase = {
+  id: string;
+  family: string;
+  family_name: string;
+  stage: number;
+  stage_display: string;
+  status: string;
+  opened_on: string | null;
+  opening_balance: string;
+  last_action_on: string | null;
+  paused_until: string | null;
+  pause_reason?: string;
+  resolved_on: string | null;
+  resolution_note?: string;
+  current_overdue: string;
+  actions: DunningAction[];
 };

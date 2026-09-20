@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { UserPlus, Inbox, CheckCircle2, Clock } from "lucide-react";
+import { UserPlus, Inbox, CheckCircle2, Clock, MapPin } from "lucide-react";
 import { cyed } from "@/lib/cyed";
 import { PageHeader, ErrorNote, Field, SkeletonRows } from "@/components/ui";
 import { StatCard } from "@/components/StatCard";
 import { DataTable, type Column } from "@/components/table";
 import { Panel, Badge } from "@/components/kit";
 import { useToast } from "@/components/Toast";
-import type { Application } from "@/lib/types";
+import type { Application, CatchmentVerdict } from "@/lib/types";
 
 export default function AdmissionsPage() {
   const [rows, setRows] = useState<Application[]>([]);
@@ -18,7 +18,10 @@ export default function AdmissionsPage() {
   const [last, setLast] = useState("");
   const [year, setYear] = useState("7");
   const [guardian, setGuardian] = useState("");
+  const [suburb, setSuburb] = useState("");
+  const [postcode, setPostcode] = useState("");
   const [saving, setSaving] = useState(false);
+  const [zones, setZones] = useState<Record<string, CatchmentVerdict | "loading">>({});
   const toast = useToast();
 
   const load = async () => {
@@ -52,17 +55,36 @@ export default function AdmissionsPage() {
         applicant_last_name: last,
         year_level_applying: parseInt(year) || 7,
         guardian_name: guardian,
+        residential_suburb: suburb,
+        residential_postcode: postcode,
         status: "submitted",
       });
       setFirst("");
       setLast("");
       setGuardian("");
+      setSuburb("");
+      setPostcode("");
       toast.push("Application submitted");
       await load();
     } catch (e) {
       toast.push(e instanceof Error ? e.message : "Failed to create application", "bad");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const checkZone = async (id: string) => {
+    setZones((z) => ({ ...z, [id]: "loading" }));
+    try {
+      const verdict = await cyed.get<CatchmentVerdict>(`admissions/applications/${id}/catchment/`);
+      setZones((z) => ({ ...z, [id]: verdict }));
+    } catch (e) {
+      toast.push(e instanceof Error ? e.message : "Catchment check failed", "bad");
+      setZones((z) => {
+        const next = { ...z };
+        delete next[id];
+        return next;
+      });
     }
   };
 
@@ -80,6 +102,35 @@ export default function AdmissionsPage() {
     { key: "applicant", header: "Applicant", render: (a) => <span style={{ fontWeight: 600 }}>{a.applicant_first_name} {a.applicant_last_name}</span> },
     { key: "year", header: "Year", render: (a) => `Y${a.year_level_applying}`, width: 80 },
     { key: "status", header: "Status", render: (a) => <Badge value={a.status} />, width: 130 },
+    {
+      key: "zone",
+      header: "Zone",
+      width: 160,
+      render: (a) => {
+        const v = zones[a.id];
+        if (v === "loading") return <span className="muted">Checking…</span>;
+        if (!v) {
+          return (
+            <button
+              className="btn btn-ghost"
+              style={{ fontSize: 12, padding: "2px 8px" }}
+              onClick={() => checkZone(a.id)}
+              disabled={!a.residential_suburb && !a.residential_postcode}
+              title={!a.residential_suburb && !a.residential_postcode ? "No address on this application" : undefined}
+            >
+              <MapPin size={12} /> Check
+            </button>
+          );
+        }
+        if (!v.checked) return <span className="muted" title={v.reason}>Unchecked</span>;
+        if (!v.in_catchment) return <span className="status status-warn">Out of zone</span>;
+        return (
+          <span className="status status-ok" title={v.zone_name}>
+            {v.is_priority ? "Priority zone" : "In zone"}
+          </span>
+        );
+      },
+    },
     {
       key: "action",
       header: "",
@@ -119,6 +170,12 @@ export default function AdmissionsPage() {
             </Field>
             <Field label="Guardian">
               <input className="input" value={guardian} onChange={(e) => setGuardian(e.target.value)} />
+            </Field>
+            <Field label="Residential suburb">
+              <input className="input" value={suburb} onChange={(e) => setSuburb(e.target.value)} placeholder="e.g. Richmond" />
+            </Field>
+            <Field label="Residential postcode">
+              <input className="input" value={postcode} onChange={(e) => setPostcode(e.target.value)} placeholder="e.g. 3121" />
             </Field>
             <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} type="submit" disabled={saving}>
               {saving ? "Submitting…" : "Add application"}

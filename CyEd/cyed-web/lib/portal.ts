@@ -215,3 +215,29 @@ export type PortalThread = {
   is_closed: boolean;
   participants: string[];
 };
+
+export type Signatory = {
+  id: string;
+  document: string;
+  name: string;
+  email: string;
+  role: string;
+  order: number;
+  status: string;
+  signed_at: string | null;
+  typed_signature: string;
+  decline_reason: string;
+};
+
+export type SignableDocument = {
+  id: string;
+  title: string;
+  doc_type: string;
+  body: string;
+  status: string;
+  due_date: string | null;
+  student?: string | null;
+  signed_count: number;
+  pending_count: number;
+  signatories: Signatory[];
+};

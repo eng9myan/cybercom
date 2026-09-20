@@ -47,6 +47,7 @@ import {
   Building2,
   Network,
   GraduationCap as Alumni,
+  AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -70,6 +71,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/students", label: "Students", icon: Users, keywords: "sis roster pupils" },
       { href: "/fees", label: "Fees", icon: Receipt, keywords: "invoice payment" },
       { href: "/billing", label: "Billing", icon: CreditCard, keywords: "installments plan" },
+      { href: "/billing/collections", label: "Collections", icon: AlertTriangle, keywords: "dunning defaulter overdue escalation reminder" },
       { href: "/messages", label: "Messages", icon: MessageSquare, keywords: "parent teacher conversation reply inbox thread two-way contact family" },
       { href: "/newsletters", label: "Newsletters", icon: Mail, keywords: "bulk message broadcast community email push parents communication" },
       { href: "/visitors", label: "Visitors", icon: DoorOpen, keywords: "sign in out front desk reception badge contractor volunteer wwc kiosk" },

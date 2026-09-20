@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, FileText, MessageSquare, Receipt } from "lucide-react";
+import { CalendarDays, FileSignature, FileText, MessageSquare, Receipt } from "lucide-react";
 import { cyed } from "@/lib/cyed";
 import { PageHeader, ErrorNote, SkeletonRows, Empty } from "@/components/ui";
 import { Panel, Badge } from "@/components/kit";
@@ -16,6 +16,7 @@ import {
   useMyChildren,
   type FamilyStatement,
   type PortalThread,
+  type SignableDocument,
   type TimetableSlot,
 } from "@/lib/portal";
 
@@ -31,6 +32,7 @@ export default function PortalHome() {
   const [slots, setSlots] = useState<TimetableSlot[]>([]);
   const [statement, setStatement] = useState<FamilyStatement | null>(null);
   const [threads, setThreads] = useState<PortalThread[]>([]);
+  const [pendingConsents, setPendingConsents] = useState(0);
   const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,6 +64,14 @@ export default function PortalHome() {
       } catch {
         // Fees are shown on their own page with a proper error; a failure
         // here should not blank the whole home screen.
+      }
+    })();
+    (async () => {
+      try {
+        const docs = await cyed.list<SignableDocument>("docsign/documents/");
+        setPendingConsents(docs.filter((d) => d.status === "sent" || d.status === "partially_signed").length);
+      } catch {
+        // Same reasoning as the statement fetch above — its own page shows the real error.
       }
     })();
   }, []);
@@ -126,6 +136,13 @@ export default function PortalHome() {
           icon={<FileText size={18} />}
           label="Reports"
           value="View & download"
+        />
+        <QuickLink
+          href="/portal/consents"
+          icon={<FileSignature size={18} />}
+          label="Consents"
+          value={pendingConsents ? `${pendingConsents} to sign` : "Up to date"}
+          tone={pendingConsents ? "warn" : "ok"}
         />
       </div>
 
