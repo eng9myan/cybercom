@@ -166,14 +166,25 @@ Ordered by what unblocks the most, soonest.
 14. **CRT/relief booking**: register, availability, offer/accept, cost tracking.
 15. **Catchment/zone validation** at enrolment.
 16. **Fee defaulter escalation ladder** with staged actions and audit.
+17. **School-Home Learning Bridge.** Problem: inconsistency between school data,
+    student progress, and home support, especially in underserved communities.
+    A cross-school, parent-teacher portal synchronizing learning goals,
+    assignments, attendance, and progress with family-facing insights and
+    recommended at-home activities. Key features: cross-platform data sync
+    (where allowed) showing learning targets/progress; culturally responsive
+    micro-lessons and family resources; alerts for missed assignments or
+    upcoming assessments; teacher-approved offline activity packs for
+    low-connectivity areas. Must-have: elevates student outcomes and parental
+    engagement across the country. Builds directly on the Parent Portal (#11)
+    and Curriculum/gradebook data already in place — not a separate system.
 
 ### Tier 4 — Operational completeness
 
-17. Late-arrival passes and print/kiosk paths.
-18. Exam operations (hall tickets, seating).
-19. Alumni archiving and Transfer Certificates.
-20. Merit/demerit points on the existing behaviour records.
-21. **Seed a full academic year and load-test** — the system has never run at
+18. Late-arrival passes and print/kiosk paths.
+19. Exam operations (hall tickets, seating).
+20. Alumni archiving and Transfer Certificates.
+21. Merit/demerit points on the existing behaviour records.
+22. **Seed a full academic year and load-test** — the system has never run at
     realistic volume; several endpoints aggregate in Python rather than SQL and
     are unmeasured.
 
