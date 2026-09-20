@@ -1,0 +1,249 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/* ─── CyMed Provider Portal — Design System ─── */
+/* Brand: Teal #14B8A6 · Blue #3B82F6 · Dark Background #050a14 */
+/* Ported from cycom-erp's globals.css (same visual language across the
+   monorepo's frontends), reskinned clinical teal/blue. .stat-card is
+   defined here (cycom-erp uses it on ~13 pages but never defines it). */
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --radius-md: var(--radius);
+}
+
+:root {
+  color-scheme: dark;
+  --background: oklch(0.09 0.015 250);
+  --foreground: oklch(0.94 0.008 240);
+  --card: oklch(0.13 0.018 248);
+  --border: oklch(1 0 0 / 0.08);
+  --radius: 0.75rem;
+
+  /* Brand colors */
+  --cy-teal: #14B8A6;
+  --cy-teal-deep: #0d9488;
+  --cy-teal-glow: rgba(20, 184, 166, 0.25);
+
+  --cy-blue: #3B82F6;
+  --cy-blue-deep: #2563eb;
+  --cy-blue-glow: rgba(59, 130, 246, 0.25);
+
+  --accent-teal: #14B8A6;
+  --accent-blue: #3B82F6;
+  --accent-green: #10B981;
+  --accent-red: #EF4444;
+  --accent-purple: #A855F7;
+  --accent-yellow: #F59E0B;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: oklch(1 0 0 / 0.12); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: oklch(1 0 0 / 0.22); }
+
+::selection {
+  background: rgba(59, 130, 246, 0.25);
+  color: var(--foreground);
+}
+
+/* Glass UI Elements */
+.glass-card {
+  background: oklch(1 0 0 / 0.03);
+  border: 1px solid oklch(1 0 0 / 0.08);
+  border-radius: calc(var(--radius) * 1.5);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 0 oklch(1 0 0 / 0.05) inset, 0 16px 36px -12px oklch(0 0 0 / 0.4);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(59, 130, 246, 0.22);
+  box-shadow: 0 1px 0 0 oklch(1 0 0 / 0.08) inset, 0 24px 48px -12px oklch(0 0 0 / 0.5), 0 0 0 1px rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Stat tile — used by dashboard summary cards. (Genuinely defined, unlike
+   cycom-erp's same-named class.) */
+.stat-card {
+  background: oklch(1 0 0 / 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+}
+
+/* Navigation items */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: oklch(0.55 0.02 240);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.nav-item:hover {
+  background: oklch(1 0 0 / 0.05);
+  color: oklch(0.92 0.01 240);
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.12), rgba(59, 130, 246, 0.08));
+  color: var(--cy-teal);
+  border-color: rgba(20, 184, 166, 0.25);
+  box-shadow: 0 0 16px -4px rgba(20, 184, 166, 0.2);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+.badge-teal { background: rgba(20, 184, 166, 0.08); color: #14B8A6; border: 1px solid rgba(20, 184, 166, 0.2); }
+.badge-green { background: rgba(16, 185, 129, 0.08); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.badge-red { background: rgba(239, 68, 68, 0.08); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.badge-yellow { background: rgba(245, 158, 11, 0.08); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.2); }
+.badge-purple { background: rgba(168, 85, 247, 0.08); color: #A855F7; border: 1px solid rgba(168, 85, 247, 0.2); }
+.badge-blue { background: rgba(59, 130, 246, 0.08); color: #3B82F6; border: 1px solid rgba(59, 130, 246, 0.2); }
+/* Severity aliases so alert-severity strings ("high"/"critical"/etc.) map
+   straight to a badge modifier without a lookup table in every page. */
+.badge-info { background: rgba(59, 130, 246, 0.08); color: #3B82F6; border: 1px solid rgba(59, 130, 246, 0.2); }
+.badge-low { background: rgba(16, 185, 129, 0.08); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.badge-medium { background: rgba(245, 158, 11, 0.08); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.2); }
+.badge-high { background: rgba(239, 68, 68, 0.08); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.badge-critical { background: rgba(239, 68, 68, 0.16); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.35); }
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(135deg, var(--cy-teal), var(--cy-teal-deep));
+  color: white;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(20, 184, 166, 0.35);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--foreground);
+  font-weight: 500;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Tables */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: oklch(0.55 0.02 240);
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid oklch(1 0 0 / 0.03);
+  font-size: 0.875rem;
+  color: oklch(0.85 0.01 240);
+}
+.data-table tr:hover td {
+  background: oklch(1 0 0 / 0.02);
+}
+
+/* Form controls */
+.input-field {
+  background: oklch(1 0 0 / 0.03);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  color: var(--foreground);
+  font-size: 0.875rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.input-field:focus {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.02);
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  font-size: 0.8rem;
+  color: oklch(0.55 0.02 240);
+  margin-top: 0.2rem;
+}
