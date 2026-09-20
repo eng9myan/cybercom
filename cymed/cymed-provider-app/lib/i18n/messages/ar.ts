@@ -14,6 +14,7 @@ const ar = {
     patients: "مرضاي",
     schedule: "الجدول",
     orders: "الطلبات والنتائج",
+    telemedicine: "الطب عن بُعد",
   },
   auth: {
     signInTitle: "سجّل الدخول لعرض هذا",
@@ -88,6 +89,23 @@ const ar = {
     empty: "لا توجد طلبات حديثة.",
     loadFailed: "تعذّر تحميل الطلبات",
     count: "{n} طلب",
+  },
+  telemedicine: {
+    title: "الطب عن بُعد",
+    subtitle: "زياراتك الافتراضية",
+    patient: "المريض",
+    status: "الحالة",
+    scheduledFor: "موعدها",
+    join: "الانضمام للمكالمة",
+    startSession: "بدء الجلسة",
+    notStarted: "لم تبدأ بعد",
+    empty: "لا توجد زيارات افتراضية.",
+    loadFailed: "تعذّر تحميل زيارات الطب عن بُعد",
+    count: "{n} زيارة",
+    filterAll: "الكل",
+    filterScheduled: "مجدولة",
+    filterInProgress: "جارية",
+    filterCompleted: "مكتملة",
   },
 } as const;
 

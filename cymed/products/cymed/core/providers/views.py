@@ -200,3 +200,36 @@ class ProviderViewSet(viewsets.ModelViewSet):
             r["created_at"] = r["created_at"].isoformat()
 
         return Response({"orders": rows})
+
+    @action(detail=False, methods=["get"], url_path="me/telemedicine")
+    def me_telemedicine(self, request):
+        from products.cymed.clinic.telemedicine.models import VirtualVisit
+
+        tenant_id = request.tenant_id
+        provider = self._current_provider(request)
+        status_param = request.query_params.get("status")
+
+        qs = VirtualVisit.objects.filter(
+            tenant_id=tenant_id, provider_id=provider.id
+        ).select_related("patient")
+        if status_param:
+            qs = qs.filter(status=status_param)
+        qs = qs.order_by("-scheduled_start")[:50]
+
+        visits = []
+        for v in qs:
+            # VirtualSession is an optional OneToOne — a visit not yet
+            # started has none. hasattr() safely absorbs the
+            # RelatedObjectDoesNotExist Django raises on direct attribute
+            # access, rather than a fragile try/except per row.
+            has_session = hasattr(v, "session")
+            visits.append({
+                "id": str(v.id),
+                "patient_name": f"{v.patient.first_name} {v.patient.last_name}",
+                "patient_mrn": v.patient.mrn,
+                "status": v.status,
+                "scheduled_start": v.scheduled_start.isoformat(),
+                "connection_url": v.session.connection_url if has_session else None,
+            })
+
+        return Response({"visits": visits})

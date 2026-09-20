@@ -14,6 +14,7 @@ const en = {
     patients: "My Patients",
     schedule: "Schedule",
     orders: "Orders & Results",
+    telemedicine: "Telemedicine",
   },
   auth: {
     signInTitle: "Sign in to see this",
@@ -88,6 +89,23 @@ const en = {
     empty: "No recent orders.",
     loadFailed: "Couldn't load orders",
     count: "{n} orders",
+  },
+  telemedicine: {
+    title: "Telemedicine",
+    subtitle: "Your virtual visits",
+    patient: "Patient",
+    status: "Status",
+    scheduledFor: "Scheduled for",
+    join: "Join call",
+    startSession: "Start session",
+    notStarted: "Not started yet",
+    empty: "No virtual visits.",
+    loadFailed: "Couldn't load telemedicine visits",
+    count: "{n} visits",
+    filterAll: "All",
+    filterScheduled: "Scheduled",
+    filterInProgress: "In Progress",
+    filterCompleted: "Completed",
   },
 } as const;
 

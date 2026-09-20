@@ -419,3 +419,98 @@ def test_orders_is_tenant_isolated(mint_token, mock_jwks):
     )
     assert resp.status_code == 200
     assert resp.data["orders"] == []
+
+
+@pytest.mark.django_db
+def test_telemedicine_lists_this_providers_visits(mint_token, mock_jwks):
+    from products.cymed.clinic.telemedicine.models import VirtualSession, VirtualVisit
+
+    tenant_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    provider = Provider.objects.create(
+        tenant_id=tenant_id, user_id=user_id, first_name="A", last_name="B",
+        provider_type=ProviderType.PHYSICIAN, npi="NPI-TM-1",
+    )
+    other_provider_id = uuid.uuid4()
+    patient = _patient(tenant_id)
+
+    with_session = VirtualVisit.objects.create(
+        tenant_id=tenant_id, patient=patient, provider_id=provider.id,
+        scheduled_start=timezone.now(), status="in_progress",
+    )
+    VirtualSession.objects.create(
+        tenant_id=tenant_id, visit=with_session, session_token="tok",
+        connection_url="https://meet.example/abc",
+    )
+    no_session = VirtualVisit.objects.create(
+        tenant_id=tenant_id, patient=patient, provider_id=provider.id,
+        scheduled_start=timezone.now(), status="scheduled",
+    )
+    # a different provider's visit must not show up
+    VirtualVisit.objects.create(
+        tenant_id=tenant_id, patient=patient, provider_id=other_provider_id,
+        scheduled_start=timezone.now(), status="scheduled",
+    )
+
+    resp = _auth_client(tenant_id, str(user_id), mint_token, mock_jwks).get(
+        "/api/v1/providers/me/telemedicine/"
+    )
+    assert resp.status_code == 200
+    visits = {v["id"]: v for v in resp.data["visits"]}
+    assert set(visits.keys()) == {str(with_session.id), str(no_session.id)}
+    assert visits[str(with_session.id)]["connection_url"] == "https://meet.example/abc"
+    assert visits[str(no_session.id)]["connection_url"] is None
+
+
+@pytest.mark.django_db
+def test_telemedicine_status_filter(mint_token, mock_jwks):
+    from products.cymed.clinic.telemedicine.models import VirtualVisit
+
+    tenant_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    provider = Provider.objects.create(
+        tenant_id=tenant_id, user_id=user_id, first_name="A", last_name="B",
+        provider_type=ProviderType.PHYSICIAN, npi="NPI-TM-2",
+    )
+    patient = _patient(tenant_id)
+    VirtualVisit.objects.create(
+        tenant_id=tenant_id, patient=patient, provider_id=provider.id,
+        scheduled_start=timezone.now(), status="completed",
+    )
+    scheduled = VirtualVisit.objects.create(
+        tenant_id=tenant_id, patient=patient, provider_id=provider.id,
+        scheduled_start=timezone.now(), status="scheduled",
+    )
+
+    resp = _auth_client(tenant_id, str(user_id), mint_token, mock_jwks).get(
+        "/api/v1/providers/me/telemedicine/?status=scheduled"
+    )
+    assert resp.status_code == 200
+    assert len(resp.data["visits"]) == 1
+    assert resp.data["visits"][0]["id"] == str(scheduled.id)
+
+
+@pytest.mark.django_db
+def test_telemedicine_is_tenant_isolated(mint_token, mock_jwks):
+    from products.cymed.clinic.telemedicine.models import VirtualVisit
+
+    tenant_a, tenant_b = uuid.uuid4(), uuid.uuid4()
+    user_id = uuid.uuid4()
+    provider_a = Provider.objects.create(
+        tenant_id=tenant_a, user_id=user_id, first_name="A", last_name="B",
+        provider_type=ProviderType.PHYSICIAN, npi="NPI-TM-3A",
+    )
+    patient_b = Patient.objects.create(
+        tenant_id=tenant_b, first_name="X", last_name="Y", dob=date(1980, 1, 1),
+        gender=GenderType.MALE, mrn=f"MRN-{uuid.uuid4().hex[:8]}",
+    )
+    VirtualVisit.objects.create(
+        tenant_id=tenant_b, patient=patient_b, provider_id=provider_a.id,
+        scheduled_start=timezone.now(), status="scheduled",
+    )
+
+    resp = _auth_client(tenant_a, str(user_id), mint_token, mock_jwks).get(
+        "/api/v1/providers/me/telemedicine/"
+    )
+    assert resp.status_code == 200
+    assert resp.data["visits"] == []

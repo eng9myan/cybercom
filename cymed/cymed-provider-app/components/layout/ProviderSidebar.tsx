@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Calendar, FlaskConical, Stethoscope } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, FlaskConical, Video, Stethoscope } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
 const LINKS = [
@@ -10,6 +10,7 @@ const LINKS = [
   { href: '/patients', icon: Users, key: 'nav.patients' },
   { href: '/schedule', icon: Calendar, key: 'nav.schedule' },
   { href: '/orders', icon: FlaskConical, key: 'nav.orders' },
+  { href: '/telemedicine', icon: Video, key: 'nav.telemedicine' },
 ] as const;
 
 export default function ProviderSidebar() {
