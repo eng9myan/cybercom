@@ -41,6 +41,22 @@ const ar = {
     npi: "الرقم الوطني للمزوّد",
     loadFailed: "تعذّر تحميل لوحة المعلومات",
   },
+  patients: {
+    title: "مرضاي",
+    subtitle: "المرضى الذين لديك زيارة معهم",
+    searchPlaceholder: "ابحث بالاسم أو رقم الملف الطبي…",
+    name: "الاسم",
+    mrn: "رقم الملف الطبي",
+    dob: "تاريخ الميلاد",
+    gender: "الجنس",
+    status: "الحالة",
+    active: "نشط",
+    inactive: "غير نشط",
+    noResults: "لا يوجد مرضى مطابقون لبحثك.",
+    empty: "لا يوجد مرضى في قائمتك بعد.",
+    loadFailed: "تعذّر تحميل قائمة مرضاك",
+    count: "{n} مريض",
+  },
 } as const;
 
 export default ar;

@@ -41,6 +41,22 @@ const en = {
     npi: "NPI",
     loadFailed: "Couldn't load the dashboard",
   },
+  patients: {
+    title: "My Patients",
+    subtitle: "Patients you've had an encounter with",
+    searchPlaceholder: "Search by name or MRN…",
+    name: "Name",
+    mrn: "MRN",
+    dob: "Date of Birth",
+    gender: "Gender",
+    status: "Status",
+    active: "Active",
+    inactive: "Inactive",
+    noResults: "No patients match your search.",
+    empty: "No patients in your roster yet.",
+    loadFailed: "Couldn't load your patient roster",
+    count: "{n} patients",
+  },
 } as const;
 
 export default en;
