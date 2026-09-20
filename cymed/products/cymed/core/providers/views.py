@@ -143,3 +143,60 @@ class ProviderViewSet(viewsets.ModelViewSet):
             "date": target_date.isoformat(),
             "appointments": ScheduleAppointmentSerializer(qs, many=True).data,
         })
+
+    @action(detail=False, methods=["get"], url_path="me/orders")
+    def me_orders(self, request):
+        """
+        Unified recent orders/results across lab, imaging and pharmacy —
+        three separate apps with three separate models, none of which share
+        a base serializer, so this returns plain normalized dicts rather
+        than forcing an artificial common serializer on them.
+
+        Lab and imaging orders carry a real `ordered_by` provider UUID;
+        pharmacy's MedicationOrder is inpatient-only (requires admission_id)
+        and carries `prescriber_id` instead — included on the same terms so
+        an inpatient-facing provider sees their med orders here too.
+        """
+        from products.cymed.imaging.orders.models import ImagingOrder
+        from products.cymed.laboratory.orders.models import LabOrder
+        from products.cymed.pharmacy.prescriptions.models import MedicationOrder
+
+        tenant_id = request.tenant_id
+        provider = self._current_provider(request)
+        limit = 50
+
+        lab = LabOrder.objects.filter(tenant_id=tenant_id, ordered_by=provider.id)
+        imaging = ImagingOrder.objects.filter(tenant_id=tenant_id, ordered_by=provider.id)
+        medication = MedicationOrder.objects.filter(tenant_id=tenant_id, prescriber_id=provider.id)
+
+        rows = []
+        for kind, qs, label_field in (
+            ("lab", lab, None),
+            ("imaging", imaging, None),
+            ("medication", medication, "drug_name"),
+        ):
+            for o in qs.order_by("-created_at")[:limit]:
+                rows.append({
+                    "id": str(o.id),
+                    "kind": kind,
+                    "order_number": o.order_number,
+                    "patient_id": str(o.patient_id),
+                    "label": getattr(o, label_field) if label_field else None,
+                    "status": o.status,
+                    "priority": o.priority,
+                    "created_at": o.created_at,
+                })
+
+        rows.sort(key=lambda r: r["created_at"], reverse=True)
+        rows = rows[:limit]
+
+        patient_ids = {r["patient_id"] for r in rows}
+        patients = {
+            str(p.id): f"{p.first_name} {p.last_name}"
+            for p in Patient.objects.filter(tenant_id=tenant_id, id__in=patient_ids)
+        }
+        for r in rows:
+            r["patient_name"] = patients.get(r["patient_id"], "")
+            r["created_at"] = r["created_at"].isoformat()
+
+        return Response({"orders": rows})

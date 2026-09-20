@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Calendar, Stethoscope } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, FlaskConical, Stethoscope } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
 const LINKS = [
   { href: '/', icon: LayoutDashboard, key: 'nav.overview' },
   { href: '/patients', icon: Users, key: 'nav.patients' },
   { href: '/schedule', icon: Calendar, key: 'nav.schedule' },
+  { href: '/orders', icon: FlaskConical, key: 'nav.orders' },
 ] as const;
 
 export default function ProviderSidebar() {

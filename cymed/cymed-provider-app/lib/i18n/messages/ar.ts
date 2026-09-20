@@ -13,6 +13,7 @@ const ar = {
     overview: "نظرة عامة",
     patients: "مرضاي",
     schedule: "الجدول",
+    orders: "الطلبات والنتائج",
   },
   auth: {
     signInTitle: "سجّل الدخول لعرض هذا",
@@ -70,6 +71,23 @@ const ar = {
     empty: "لا توجد مواعيد في هذا اليوم.",
     loadFailed: "تعذّر تحميل الجدول",
     count: "{n} موعد",
+  },
+  orders: {
+    title: "الطلبات والنتائج",
+    subtitle: "طلبات المختبر والتصوير والأدوية التي أصدرتها",
+    kind: "النوع",
+    order: "الطلب",
+    patient: "المريض",
+    status: "الحالة",
+    priority: "الأولوية",
+    placed: "تاريخ الطلب",
+    all: "الكل",
+    lab: "مختبر",
+    imaging: "تصوير",
+    medication: "دواء",
+    empty: "لا توجد طلبات حديثة.",
+    loadFailed: "تعذّر تحميل الطلبات",
+    count: "{n} طلب",
   },
 } as const;
 

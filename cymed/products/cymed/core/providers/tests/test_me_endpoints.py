@@ -322,3 +322,100 @@ def test_schedule_excludes_other_providers_appointments(mint_token, mock_jwks):
     )
     assert resp.status_code == 200
     assert resp.data["appointments"] == []
+
+
+@pytest.mark.django_db
+def test_orders_aggregates_lab_and_imaging_for_this_provider(mint_token, mock_jwks):
+    from products.cymed.imaging.orders.models import ImagingOrder
+    from products.cymed.laboratory.orders.models import LabOrder
+
+    tenant_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    provider = Provider.objects.create(
+        tenant_id=tenant_id, user_id=user_id, first_name="A", last_name="B",
+        provider_type=ProviderType.PHYSICIAN, npi="NPI-ORD-1",
+    )
+    other_provider_id = uuid.uuid4()
+    patient = _patient(tenant_id)
+
+    LabOrder.objects.create(
+        tenant_id=tenant_id, order_number=f"LAB-{uuid.uuid4().hex[:8]}", patient_id=patient.id,
+        ordered_by=provider.id, status="submitted", priority="routine", clinical_notes="rule out anemia",
+    )
+    ImagingOrder.objects.create(
+        tenant_id=tenant_id, order_number=f"IMG-{uuid.uuid4().hex[:8]}", patient_id=patient.id,
+        ordered_by=provider.id, status="pending", priority="stat", order_type="outpatient",
+        clinical_indication="suspected fracture",
+    )
+    # a different provider's lab order must not show up
+    LabOrder.objects.create(
+        tenant_id=tenant_id, order_number=f"LAB-{uuid.uuid4().hex[:8]}", patient_id=patient.id,
+        ordered_by=other_provider_id, status="submitted", priority="routine", clinical_notes="n/a",
+    )
+
+    resp = _auth_client(tenant_id, str(user_id), mint_token, mock_jwks).get(
+        "/api/v1/providers/me/orders/"
+    )
+    assert resp.status_code == 200
+    orders = resp.data["orders"]
+    assert len(orders) == 2
+    kinds = {o["kind"] for o in orders}
+    assert kinds == {"lab", "imaging"}
+    for o in orders:
+        assert o["patient_name"] == "Jane Doe"
+
+
+@pytest.mark.django_db
+def test_orders_includes_medication_orders_by_prescriber(mint_token, mock_jwks):
+    from products.cymed.pharmacy.prescriptions.models import MedicationOrder
+
+    tenant_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    provider = Provider.objects.create(
+        tenant_id=tenant_id, user_id=user_id, first_name="A", last_name="B",
+        provider_type=ProviderType.PHYSICIAN, npi="NPI-ORD-2",
+    )
+    patient = _patient(tenant_id)
+
+    MedicationOrder.objects.create(
+        tenant_id=tenant_id, order_number=f"RX-{uuid.uuid4().hex[:8]}", patient_id=patient.id,
+        admission_id=uuid.uuid4(), prescriber_id=provider.id, status="active", priority="routine",
+        drug_code="RXN-1", drug_name="Amoxicillin", dose="500", dose_unit="mg", route="oral",
+        frequency="tid",
+    )
+
+    resp = _auth_client(tenant_id, str(user_id), mint_token, mock_jwks).get(
+        "/api/v1/providers/me/orders/"
+    )
+    assert resp.status_code == 200
+    orders = resp.data["orders"]
+    assert len(orders) == 1
+    assert orders[0]["kind"] == "medication"
+    assert orders[0]["label"] == "Amoxicillin"
+
+
+@pytest.mark.django_db
+def test_orders_is_tenant_isolated(mint_token, mock_jwks):
+    from products.cymed.laboratory.orders.models import LabOrder
+
+    tenant_a, tenant_b = uuid.uuid4(), uuid.uuid4()
+    user_id = uuid.uuid4()
+    provider_a = Provider.objects.create(
+        tenant_id=tenant_a, user_id=user_id, first_name="A", last_name="B",
+        provider_type=ProviderType.PHYSICIAN, npi="NPI-ORD-3A",
+    )
+    patient_b = Patient.objects.create(
+        tenant_id=tenant_b, first_name="X", last_name="Y", dob=date(1980, 1, 1),
+        gender=GenderType.MALE, mrn=f"MRN-{uuid.uuid4().hex[:8]}",
+    )
+    # same provider id reused under tenant B on purpose — must not leak across tenants
+    LabOrder.objects.create(
+        tenant_id=tenant_b, order_number=f"LAB-{uuid.uuid4().hex[:8]}", patient_id=patient_b.id,
+        ordered_by=provider_a.id, status="submitted", priority="routine", clinical_notes="n/a",
+    )
+
+    resp = _auth_client(tenant_a, str(user_id), mint_token, mock_jwks).get(
+        "/api/v1/providers/me/orders/"
+    )
+    assert resp.status_code == 200
+    assert resp.data["orders"] == []

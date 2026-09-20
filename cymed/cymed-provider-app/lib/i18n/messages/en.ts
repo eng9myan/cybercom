@@ -13,6 +13,7 @@ const en = {
     overview: "Overview",
     patients: "My Patients",
     schedule: "Schedule",
+    orders: "Orders & Results",
   },
   auth: {
     signInTitle: "Sign in to see this",
@@ -70,6 +71,23 @@ const en = {
     empty: "No appointments on this day.",
     loadFailed: "Couldn't load the schedule",
     count: "{n} appointments",
+  },
+  orders: {
+    title: "Orders & Results",
+    subtitle: "Lab, imaging and medication orders you've placed",
+    kind: "Kind",
+    order: "Order",
+    patient: "Patient",
+    status: "Status",
+    priority: "Priority",
+    placed: "Placed",
+    all: "All",
+    lab: "Lab",
+    imaging: "Imaging",
+    medication: "Medication",
+    empty: "No recent orders.",
+    loadFailed: "Couldn't load orders",
+    count: "{n} orders",
   },
 } as const;
 
