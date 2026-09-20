@@ -8,6 +8,24 @@ from products.cymed.core.providers.models import (
     ProviderRole,
     ProviderSpecialty,
 )
+from products.cymed.core.scheduling.models import Appointment
+
+
+class ScheduleAppointmentSerializer(serializers.ModelSerializer):
+    """Lean, provider-schedule-view shape — the generic AppointmentSerializer
+    (scheduling/serializers.py) exposes `patient` as a bare FK id, not enough
+    for a clinician glancing at their day."""
+
+    patient_name = serializers.SerializerMethodField()
+    patient_mrn = serializers.CharField(source="patient.mrn", read_only=True)
+
+    class Meta:
+        model = Appointment
+        fields = ["id", "patient", "patient_name", "patient_mrn", "appointment_type",
+                  "status", "start_time", "end_time", "description"]
+
+    def get_patient_name(self, obj) -> str:
+        return f"{obj.patient.first_name} {obj.patient.last_name}"
 
 
 class PatientRosterSerializer(serializers.ModelSerializer):

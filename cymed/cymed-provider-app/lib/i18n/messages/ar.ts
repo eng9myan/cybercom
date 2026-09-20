@@ -57,6 +57,20 @@ const ar = {
     loadFailed: "تعذّر تحميل قائمة مرضاك",
     count: "{n} مريض",
   },
+  schedule: {
+    title: "الجدول",
+    subtitle: "مواعيدك",
+    today: "اليوم",
+    previousDay: "اليوم السابق",
+    nextDay: "اليوم التالي",
+    time: "الوقت",
+    patient: "المريض",
+    type: "النوع",
+    status: "الحالة",
+    empty: "لا توجد مواعيد في هذا اليوم.",
+    loadFailed: "تعذّر تحميل الجدول",
+    count: "{n} موعد",
+  },
 } as const;
 
 export default ar;

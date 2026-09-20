@@ -229,3 +229,96 @@ def test_my_patients_roster(mint_token, mock_jwks):
     rows = resp.data.get("results", resp.data)
     assert len(rows) == 1
     assert rows[0]["mrn"] == my_patient.mrn
+
+
+def _appointment_with_participant(tenant_id, patient, provider_id, start_time):
+    appt = Appointment.objects.create(
+        tenant_id=tenant_id, patient=patient, appointment_type="follow-up",
+        start_time=start_time, end_time=start_time + timedelta(minutes=30),
+    )
+    AppointmentParticipant.objects.create(
+        tenant_id=tenant_id, appointment=appt, actor_id=provider_id,
+        actor_type=AppointmentParticipantType.PROVIDER,
+    )
+    return appt
+
+
+@pytest.mark.django_db
+def test_schedule_defaults_to_today(mint_token, mock_jwks):
+    tenant_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    provider = Provider.objects.create(
+        tenant_id=tenant_id, user_id=user_id, first_name="A", last_name="B",
+        provider_type=ProviderType.PHYSICIAN, npi="NPI-SCHED-1",
+    )
+    patient = _patient(tenant_id)
+    now = timezone.now()
+    today_appt = _appointment_with_participant(tenant_id, patient, provider.id, now)
+    _appointment_with_participant(tenant_id, patient, provider.id, now + timedelta(days=1))
+
+    resp = _auth_client(tenant_id, str(user_id), mint_token, mock_jwks).get(
+        "/api/v1/providers/me/schedule/"
+    )
+    assert resp.status_code == 200
+    assert resp.data["date"] == str(date.today())
+    assert len(resp.data["appointments"]) == 1
+    assert resp.data["appointments"][0]["id"] == str(today_appt.id)
+    assert resp.data["appointments"][0]["patient_name"] == "Jane Doe"
+
+
+@pytest.mark.django_db
+def test_schedule_respects_explicit_date(mint_token, mock_jwks):
+    tenant_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    provider = Provider.objects.create(
+        tenant_id=tenant_id, user_id=user_id, first_name="A", last_name="B",
+        provider_type=ProviderType.PHYSICIAN, npi="NPI-SCHED-2",
+    )
+    patient = _patient(tenant_id)
+    target = timezone.make_aware(timezone.datetime(2026, 8, 1, 9, 0))
+    _appointment_with_participant(tenant_id, patient, provider.id, target)
+    _appointment_with_participant(tenant_id, patient, provider.id, timezone.now())
+
+    resp = _auth_client(tenant_id, str(user_id), mint_token, mock_jwks).get(
+        "/api/v1/providers/me/schedule/?date=2026-08-01"
+    )
+    assert resp.status_code == 200
+    assert resp.data["date"] == "2026-08-01"
+    assert len(resp.data["appointments"]) == 1
+
+
+@pytest.mark.django_db
+def test_schedule_rejects_bad_date(mint_token, mock_jwks):
+    tenant_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    Provider.objects.create(
+        tenant_id=tenant_id, user_id=user_id, first_name="A", last_name="B",
+        provider_type=ProviderType.PHYSICIAN, npi="NPI-SCHED-3",
+    )
+    resp = _auth_client(tenant_id, str(user_id), mint_token, mock_jwks).get(
+        "/api/v1/providers/me/schedule/?date=not-a-date"
+    )
+    assert resp.status_code == 400
+
+
+@pytest.mark.django_db
+def test_schedule_excludes_other_providers_appointments(mint_token, mock_jwks):
+    tenant_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    provider = Provider.objects.create(
+        tenant_id=tenant_id, user_id=user_id, first_name="A", last_name="B",
+        provider_type=ProviderType.PHYSICIAN, npi="NPI-SCHED-4",
+    )
+    other_provider = Provider.objects.create(
+        tenant_id=tenant_id, user_id=uuid.uuid4(), first_name="X", last_name="Y",
+        provider_type=ProviderType.PHYSICIAN, npi="NPI-SCHED-5",
+    )
+    patient = _patient(tenant_id)
+    now = timezone.now()
+    _appointment_with_participant(tenant_id, patient, other_provider.id, now)
+
+    resp = _auth_client(tenant_id, str(user_id), mint_token, mock_jwks).get(
+        "/api/v1/providers/me/schedule/"
+    )
+    assert resp.status_code == 200
+    assert resp.data["appointments"] == []

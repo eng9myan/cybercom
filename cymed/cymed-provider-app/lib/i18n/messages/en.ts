@@ -57,6 +57,20 @@ const en = {
     loadFailed: "Couldn't load your patient roster",
     count: "{n} patients",
   },
+  schedule: {
+    title: "Schedule",
+    subtitle: "Your appointments",
+    today: "Today",
+    previousDay: "Previous day",
+    nextDay: "Next day",
+    time: "Time",
+    patient: "Patient",
+    type: "Type",
+    status: "Status",
+    empty: "No appointments on this day.",
+    loadFailed: "Couldn't load the schedule",
+    count: "{n} appointments",
+  },
 } as const;
 
 export default en;

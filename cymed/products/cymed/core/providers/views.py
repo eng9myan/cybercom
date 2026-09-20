@@ -2,14 +2,18 @@ from datetime import date
 
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from platform.api.permissions import IsAuthenticatedClinicalStaff as IsAuthenticated  # M-7: staff-role gate
 
 from products.cymed.core.orders.models import Order, OrderStatus, OrderType
 from products.cymed.core.patients.models import Patient
 from products.cymed.core.providers.models import Provider
-from products.cymed.core.providers.serializers import PatientRosterSerializer, ProviderSerializer
+from products.cymed.core.providers.serializers import (
+    PatientRosterSerializer,
+    ProviderSerializer,
+    ScheduleAppointmentSerializer,
+)
 from products.cymed.core.scheduling.models import Appointment, AppointmentParticipantType
 
 
@@ -114,3 +118,28 @@ class ProviderViewSet(viewsets.ModelViewSet):
         if page is not None:
             return self.get_paginated_response(serializer.data)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], url_path="me/schedule")
+    def me_schedule(self, request):
+        tenant_id = request.tenant_id
+        provider = self._current_provider(request)
+        date_param = request.query_params.get("date")
+        if date_param:
+            try:
+                target_date = date.fromisoformat(date_param)
+            except ValueError:
+                raise ValidationError({"date": "Must be YYYY-MM-DD."})
+        else:
+            target_date = date.today()
+
+        qs = Appointment.objects.filter(
+            tenant_id=tenant_id,
+            start_time__date=target_date,
+            participants__actor_type=AppointmentParticipantType.PROVIDER,
+            participants__actor_id=provider.id,
+        ).distinct().select_related("patient").order_by("start_time")
+
+        return Response({
+            "date": target_date.isoformat(),
+            "appointments": ScheduleAppointmentSerializer(qs, many=True).data,
+        })
