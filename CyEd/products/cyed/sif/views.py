@@ -28,6 +28,9 @@ SOURCES = {
     "StaffPersonal": lambda tenant: _staff(tenant),
     "SchoolInfo": lambda tenant: _campuses(tenant),
     "StudentAttendance": lambda tenant: _attendance(tenant),
+    "NAPLANParticipation": lambda tenant: _naplan_cohort(tenant),
+    "NCCDDisabilityStatus": lambda tenant: _nccd_records(tenant),
+    "StudentStatisticalReturn": lambda tenant: _enrolled_students(tenant),
 }
 
 
@@ -55,6 +58,27 @@ def _attendance(tenant_id):
     return AttendanceMark.objects.filter(tenant_id=tenant_id).select_related(
         "student", "student__campus", "roll_call"
     )
+
+
+def _naplan_cohort(tenant_id):
+    from products.cyed.compliance.services import NAPLAN_YEARS
+    from products.cyed.sis.models import Student
+
+    return Student.objects.filter(
+        tenant_id=tenant_id, year_level__in=NAPLAN_YEARS, enrolment_status="enrolled",
+    ).select_related("campus")
+
+
+def _nccd_records(tenant_id):
+    from products.cyed.compliance.models import NCCDRecord
+
+    return NCCDRecord.objects.filter(tenant_id=tenant_id).select_related("student", "student__campus")
+
+
+def _enrolled_students(tenant_id):
+    from products.cyed.sis.models import Student
+
+    return Student.objects.filter(tenant_id=tenant_id, enrolment_status="enrolled").select_related("campus")
 
 
 class SifObjectView(APIView):
@@ -174,6 +198,7 @@ def _reload_object(tenant_id, row):
     a scan that re-derives hashes looking for a match.
     """
     from products.cyed.attendance.models import AttendanceMark
+    from products.cyed.compliance.models import NCCDRecord
     from products.cyed.hr.models import Staff
     from products.cyed.org.models import Campus
     from products.cyed.sis.models import Student
@@ -185,6 +210,9 @@ def _reload_object(tenant_id, row):
         "StaffPersonal": Staff,
         "SchoolInfo": Campus,
         "StudentAttendance": AttendanceMark,
+        "NAPLANParticipation": Student,
+        "NCCDDisabilityStatus": NCCDRecord,
+        "StudentStatisticalReturn": Student,
     }.get(row.object_type)
     if lookup is None:
         return None
@@ -194,6 +222,8 @@ def _reload_object(tenant_id, row):
         queryset = queryset.select_related("campus")
     elif lookup is AttendanceMark:
         queryset = queryset.select_related("student", "student__campus", "roll_call")
+    elif lookup is NCCDRecord:
+        queryset = queryset.select_related("student", "student__campus")
     return queryset.first()
 
 

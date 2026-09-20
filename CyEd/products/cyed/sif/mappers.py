@@ -311,6 +311,144 @@ def student_attendance(mark):
     }
 
 
+# ── statutory collections (NAPLAN / NCCD / STATS) ───────────────────────────
+# These three previously left the codebase entirely (bespoke CSV/JSON from
+# products/cyed/compliance/services.py, no SIF envelope at all). Wrapping them
+# here does not certify the shape against an official published SIF AU
+# statutory-collection schema — no such single canonical schema was available
+# to verify against — so, consistent with every other object in this module,
+# what's real is stated plainly and what's approximated is named as a gap.
+
+NAPLAN_PARTICIPATION_GAPS = [
+    {
+        "element": "ParticipationStatus withdrawal/exemption codes",
+        "reason": (
+            "CyEd always reports the expected-participation code 'P'; a "
+            "withdrawal or exemption is recorded downstream in the NAP portal "
+            "itself, not in CyEd, so this object cannot reflect it."
+        ),
+    },
+    {
+        "element": "TestDomainList",
+        "reason": "CyEd tracks cohort eligibility, not per-domain (reading/writing/numeracy) results.",
+    },
+]
+
+
+def naplan_participation(student):
+    """Derived: one student's NAPLAN participation record for the current cycle."""
+    from products.cyed.compliance.services import NAPLAN_YEARS
+
+    local_id = synthetic_local_id("NAPLANParticipation", student.id, "current")
+    refid = get_or_create_refid(
+        student.tenant_id, "NAPLANParticipation", local_id,
+        source_local_id=student.id,
+        description=f"NAPLAN participation for student {student.id}",
+    )
+    return {
+        "@RefId": str(refid),
+        "StudentPersonalRefId": str(
+            get_or_create_refid(student.tenant_id, "StudentPersonal", student.id)
+        ),
+        "SchoolLocalId": _campus_local_id(student),
+        "YearLevel": {"Code": _year_level_code(student.year_level)},
+        "ElectronicIdList": (
+            {"ElectronicId": [{"@Type": "USI", "#text": student.usi}]} if student.usi else None
+        ),
+        "Eligible": student.year_level in NAPLAN_YEARS,
+        "ParticipationStatus": {"CodeSet": "Local", "Code": "P"},
+        "LBOTE": bool(student.lbote),
+        "IndigenousStatus": student.indigenous_status or None,
+    }
+
+
+NCCD_GAPS = [
+    {
+        "element": "EducationSupport/DisabilityStandard",
+        "reason": (
+            "SIF's disability-standards vocabulary is not modelled in CyEd; "
+            "NCCDRecord.category/level_of_adjustment use CyEd's own coded "
+            "values (see cyed_governance.NCCDRecord), carried here verbatim "
+            "rather than translated to an unverified external code set."
+        ),
+    },
+]
+
+
+def nccd_disability_status(record):
+    """Derived: one NCCDRecord for one student for one collection year."""
+    local_id = synthetic_local_id("NCCDDisabilityStatus", record.student_id, record.collection_year)
+    refid = get_or_create_refid(
+        record.tenant_id, "NCCDDisabilityStatus", local_id,
+        source_local_id=record.id,
+        description=f"NCCD {record.collection_year} for student {record.student_id}",
+    )
+    student = record.student
+    return {
+        "@RefId": str(refid),
+        "StudentPersonalRefId": str(
+            get_or_create_refid(record.tenant_id, "StudentPersonal", student.id)
+        ),
+        "SchoolLocalId": _campus_local_id(student),
+        "CollectionYear": record.collection_year,
+        "DisabilityCategory": {"CodeSet": "Local", "Code": record.category},
+        "LevelOfAdjustment": {"CodeSet": "Local", "Code": record.level_of_adjustment},
+        "Imputed": record.imputed_disability,
+        "EvidenceNote": record.evidence_note or None,
+    }
+
+
+STATISTICAL_RETURN_GAPS = [
+    {
+        "element": "AddressList",
+        "reason": "Same gap as StudentPersonal — address is held on the household, not the student.",
+    },
+    {
+        "element": "ParentEducation/Occupation coded values",
+        "reason": (
+            "CyEd stores parent1/parent2 school-education and occupation-group "
+            "as its own free values (matching the ABS census intake form), not "
+            "a SIF-coded vocabulary — carried verbatim, not translated."
+        ),
+    },
+]
+
+
+def student_statistical_return(student):
+    """Derived: one student's row in the national/ABS census-style statistical return."""
+    local_id = synthetic_local_id("StudentStatisticalReturn", student.id, "current")
+    refid = get_or_create_refid(
+        student.tenant_id, "StudentStatisticalReturn", local_id,
+        source_local_id=student.id,
+        description=f"Statistical return for student {student.id}",
+    )
+    return {
+        "@RefId": str(refid),
+        "StudentPersonalRefId": str(
+            get_or_create_refid(student.tenant_id, "StudentPersonal", student.id)
+        ),
+        "SchoolLocalId": _campus_local_id(student),
+        "StateProvinceId": student.state_student_number or None,
+        "Demographics": {
+            "Sex": student.gender or None,
+            "BirthDate": _sif_date(student.date_of_birth),
+            "IndigenousStatus": student.indigenous_status or None,
+            "CountryOfBirth": student.country_of_birth or None,
+            "LanguageList": (
+                {"Language": [{"Code": student.language_at_home, "LanguageType": "4"}]}
+                if student.language_at_home else None
+            ),
+            "LBOTE": bool(student.lbote),
+        },
+        "ParentEducationOccupation": {
+            "Parent1SchoolEducation": student.parent1_school_education or None,
+            "Parent1OccupationGroup": student.parent1_occupation_group or None,
+            "Parent2SchoolEducation": student.parent2_school_education or None,
+            "Parent2OccupationGroup": student.parent2_occupation_group or None,
+        },
+    }
+
+
 # ── registry ─────────────────────────────────────────────────────────────────
 OBJECTS = {
     "StudentPersonal": {
@@ -337,5 +475,20 @@ OBJECTS = {
         "mapper": student_attendance,
         "gaps": STUDENT_ATTENDANCE_GAPS,
         "collection": "StudentAttendances",
+    },
+    "NAPLANParticipation": {
+        "mapper": naplan_participation,
+        "gaps": NAPLAN_PARTICIPATION_GAPS,
+        "collection": "NAPLANParticipations",
+    },
+    "NCCDDisabilityStatus": {
+        "mapper": nccd_disability_status,
+        "gaps": NCCD_GAPS,
+        "collection": "NCCDDisabilityStatuses",
+    },
+    "StudentStatisticalReturn": {
+        "mapper": student_statistical_return,
+        "gaps": STATISTICAL_RETURN_GAPS,
+        "collection": "StudentStatisticalReturns",
     },
 }

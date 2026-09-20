@@ -299,3 +299,103 @@ def test_coverage_lists_element_gaps_per_object(staff_client):
     # stated, not quietly omitted.
     assert any("ACARAId" in g["element"] for g in gaps["SchoolInfo"])
     assert all(g["reason"] for object_gaps in gaps.values() for g in object_gaps)
+
+
+# ── statutory collections (NAPLAN / NCCD / STATS) ───────────────────────────
+# Previously these left the codebase as bespoke CSV/JSON with no SIF envelope
+# at all (products.cyed.compliance.services). This section proves they're now
+# reachable through the same RefId-stable, gap-honest object pipeline as
+# StudentPersonal etc. — not that they match an external certified schema
+# (no such schema was available to verify against; see each mapper's GAPS).
+
+@pytest.mark.django_db
+def test_naplan_participation_only_covers_eligible_years(tenant_id, campus):
+    eligible = Student.objects.create(
+        tenant_id=tenant_id, campus=campus, first_name="A", last_name="B",
+        year_level=7, enrolment_status="enrolled", usi="X1", indigenous_status="4",
+    )
+    ineligible = Student.objects.create(
+        tenant_id=tenant_id, campus=campus, first_name="C", last_name="D",
+        year_level=8, enrolment_status="enrolled",
+    )
+    obj = mappers.naplan_participation(eligible)
+    assert obj["Eligible"] is True
+    assert obj["ParticipationStatus"]["Code"] == "P"
+
+    not_eligible_obj = mappers.naplan_participation(ineligible)
+    assert not_eligible_obj["Eligible"] is False
+
+
+@pytest.mark.django_db
+def test_naplan_endpoint_scopes_to_eligible_cohort(staff_client, tenant_id, campus):
+    Student.objects.create(
+        tenant_id=tenant_id, campus=campus, first_name="A", last_name="B",
+        year_level=3, enrolment_status="enrolled",
+    )
+    Student.objects.create(
+        tenant_id=tenant_id, campus=campus, first_name="C", last_name="D",
+        year_level=1, enrolment_status="enrolled",  # not a NAPLAN year
+    )
+    resp = staff_client.get("/api/v1/sif/objects/NAPLANParticipation/?format=json")
+    assert resp.status_code == 200
+    assert resp.data["total"] == 1
+
+
+@pytest.mark.django_db
+def test_nccd_disability_status_is_stable_and_carries_the_record(tenant_id, student):
+    from products.cyed.compliance.models import NCCDRecord
+
+    record = NCCDRecord.objects.create(
+        tenant_id=tenant_id, student=student, collection_year=2026,
+        category="cognitive", level_of_adjustment="supplementary",
+    )
+    first = mappers.nccd_disability_status(record)
+    second = mappers.nccd_disability_status(record)
+    assert first["@RefId"] == second["@RefId"]
+    assert first["DisabilityCategory"]["Code"] == "cognitive"
+    assert first["LevelOfAdjustment"]["Code"] == "supplementary"
+    assert first["StudentPersonalRefId"] == mappers.student_personal(student)["@RefId"]
+
+
+@pytest.mark.django_db
+def test_nccd_endpoint_returns_records(staff_client, tenant_id, student):
+    from products.cyed.compliance.models import NCCDRecord
+
+    NCCDRecord.objects.create(
+        tenant_id=tenant_id, student=student, collection_year=2026,
+        category="physical", level_of_adjustment="substantial",
+    )
+    resp = staff_client.get("/api/v1/sif/objects/NCCDDisabilityStatus/?format=json")
+    assert resp.status_code == 200
+    assert resp.data["total"] == 1
+    assert resp.data["NCCDDisabilityStatuses"][0]["DisabilityCategory"]["Code"] == "physical"
+
+
+@pytest.mark.django_db
+def test_statistical_return_excludes_unenrolled_students(staff_client, tenant_id, campus):
+    Student.objects.create(
+        tenant_id=tenant_id, campus=campus, first_name="A", last_name="B",
+        year_level=5, enrolment_status="enrolled",
+    )
+    Student.objects.create(
+        tenant_id=tenant_id, campus=campus, first_name="C", last_name="D",
+        year_level=6, enrolment_status="withdrawn",
+    )
+    resp = staff_client.get("/api/v1/sif/objects/StudentStatisticalReturn/?format=json")
+    assert resp.status_code == 200
+    assert resp.data["total"] == 1
+
+
+@pytest.mark.django_db
+def test_new_statutory_objects_round_trip_by_refid(staff_client, tenant_id, student):
+    from products.cyed.compliance.models import NCCDRecord
+
+    NCCDRecord.objects.create(
+        tenant_id=tenant_id, student=student, collection_year=2026,
+        category="sensory", level_of_adjustment="extensive",
+    )
+    listing = staff_client.get("/api/v1/sif/objects/NCCDDisabilityStatus/?format=json")
+    refid = listing.data["NCCDDisabilityStatuses"][0]["@RefId"]
+    resolved = staff_client.get(f"/api/v1/sif/refid/{refid}/")
+    assert resolved.status_code == 200
+    assert resolved.data["object"] == "NCCDDisabilityStatus"
