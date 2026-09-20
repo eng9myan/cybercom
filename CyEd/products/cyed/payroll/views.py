@@ -13,6 +13,7 @@ from products.cyed.payroll.serializers import (
     PayrollRunSerializer, PayslipSerializer, SalaryComponentSerializer,
 )
 from products.cyed.payroll.services import attendance_for_period, compute_payslip
+from products.cyed.security.stepup import RequiresRecentMfa
 
 
 class PayrollRunViewSet(TenantScopedModelViewSet):
@@ -61,7 +62,8 @@ class PayrollRunViewSet(TenantScopedModelViewSet):
         data["skipped"] = skipped  # never silently drop staff — surface who and why
         return Response(data)
 
-    @action(detail=True, methods=["post"], url_path="mark-paid")
+    @action(detail=True, methods=["post"], url_path="mark-paid",
+            permission_classes=[IsFinanceOrLeadership, RequiresRecentMfa])
     def mark_paid(self, request, pk=None):
         """Record payment of every payslip in the run (payment history)."""
         run = self.get_object()
@@ -131,7 +133,8 @@ class PayslipViewSet(TenantScopedModelViewSet):
             qs = qs.filter(payment_status=self.request.query_params["payment_status"])
         return qs
 
-    @action(detail=True, methods=["post"], url_path="mark-paid")
+    @action(detail=True, methods=["post"], url_path="mark-paid",
+            permission_classes=[IsFinanceOrLeadership, RequiresRecentMfa])
     def mark_paid(self, request, pk=None):
         slip = self.get_object()
         slip.payment_status = "paid"

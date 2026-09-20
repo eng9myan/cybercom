@@ -16,6 +16,7 @@ from products.cyed.finance.serializers import (
     BudgetLineSerializer, BudgetSerializer, JournalEntrySerializer,
 )
 from products.cyed.governance.access import IsFinanceOrLeadership, _email
+from products.cyed.security.stepup import RequiresRecentMfa
 
 
 class AccountViewSet(TenantScopedModelViewSet):
@@ -108,7 +109,7 @@ class BudgetViewSet(TenantScopedModelViewSet):
     def vs_actual(self, request, pk=None):
         return Response(services.budget_vs_actual(self.get_object()))
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], permission_classes=[IsFinanceOrLeadership, RequiresRecentMfa])
     def approve(self, request, pk=None):
         budget = self.get_object()
         if budget.status != "draft":
@@ -192,7 +193,7 @@ class BankStatementViewSet(TenantScopedModelViewSet):
         """Exception report: unexplained items in both directions."""
         return Response(bankrec.reconciliation_report(self.get_object()))
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], permission_classes=[IsFinanceOrLeadership, RequiresRecentMfa])
     def finalise(self, request, pk=None):
         """
         Close the period. Refuses unless every line is matched, nothing on the

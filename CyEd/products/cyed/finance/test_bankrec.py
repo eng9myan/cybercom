@@ -4,9 +4,21 @@ import uuid
 from decimal import Decimal
 
 import pytest
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from products.cyed.finance.models import Account, BankStatement, BankStatementLine
+from products.cyed.security.models import MfaSession
+
+
+def _grant_recent_mfa(tenant_id, email="fin@cyed.edu.au"):
+    # finalise() requires step-up MFA (products.cyed.security.stepup) —
+    # these tests exercise its business rules, not the permission layer,
+    # so give the caller a fresh session rather than asserting around it.
+    MfaSession.objects.create(
+        tenant_id=tenant_id, user_email=email,
+        verified_at=timezone.now(), expires_at=timezone.now() + timezone.timedelta(minutes=15),
+    )
 
 CSV = (
     "date,description,amount,reference\n"
@@ -183,6 +195,7 @@ def test_report_flags_both_directions(client_for, books, tenant_id):
 @pytest.mark.django_db
 def test_finalise_refuses_while_anything_is_unexplained(client_for, books, tenant_id):
     fin = client_for(["finance"])
+    _grant_recent_mfa(tenant_id)
     sid = _statement(fin, books, tenant_id, closing="100")
     BankStatementLine.objects.create(tenant_id=tenant_id, statement_id=sid, date="2026-03-04",
                                      description="Unmatched", amount=Decimal("100"))
@@ -194,6 +207,7 @@ def test_finalise_refuses_while_anything_is_unexplained(client_for, books, tenan
 @pytest.mark.django_db
 def test_finalise_succeeds_when_everything_reconciles(client_for, books, tenant_id):
     fin = client_for(["finance"])
+    _grant_recent_mfa(tenant_id)
     sid = _statement(fin, books, tenant_id, closing="700")
     BankStatementLine.objects.create(tenant_id=tenant_id, statement_id=sid, date="2026-03-04",
                                      description="Fee", amount=Decimal("700"), bank_reference="INV-7")
