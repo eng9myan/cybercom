@@ -222,6 +222,29 @@ IMAGING_NATIONAL_FEATURES = [
     "imaging.public_health_reporting",
 ]
 
+# Pharmacy Edition Feature Maps
+PHARMACY_RETAIL_FEATURES = [
+    "pharmacy.prescriptions",
+    "pharmacy.dispensing",
+    "pharmacy.formulary",
+    "pharmacy.inventory",
+]
+
+PHARMACY_CHAIN_FEATURES = [
+    *PHARMACY_RETAIL_FEATURES,
+    "pharmacy.procurement",
+    "pharmacy.automation",
+    "pharmacy.analytics",
+]
+
+PHARMACY_HOSPITAL_FEATURES = [
+    *PHARMACY_CHAIN_FEATURES,
+    "pharmacy.clinical",
+    "pharmacy.interactions",
+    "pharmacy.reconciliation",
+    "pharmacy.hospital",
+]
+
 EDITION_FEATURE_MAP = {
     "cymed_clinic:starter": CLINIC_STARTER_FEATURES,
     "cymed_clinic:professional": CLINIC_PROFESSIONAL_FEATURES,
@@ -237,4 +260,7 @@ EDITION_FEATURE_MAP = {
     "cymed_imaging:enterprise": IMAGING_ENTERPRISE_FEATURES,
     "cymed_imaging:teleradiology": IMAGING_TELERADIOLOGY_FEATURES,
     "cymed_imaging:national": IMAGING_NATIONAL_FEATURES,
+    "cymed_pharmacy:retail": PHARMACY_RETAIL_FEATURES,
+    "cymed_pharmacy:chain": PHARMACY_CHAIN_FEATURES,
+    "cymed_pharmacy:hospital_pharmacy": PHARMACY_HOSPITAL_FEATURES,
 }
