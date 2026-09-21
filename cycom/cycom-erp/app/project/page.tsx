@@ -32,6 +32,37 @@ type CycomTask = {
   state?: string;
 };
 
+type CycomTimesheetLine = {
+  id: number;
+  name?: string;
+  date?: string;
+  unit_amount?: number;
+  employee_name?: string;
+  task_id?: Many2One | false;
+};
+
+interface TimesheetRow {
+  rawId: number;
+  taskId: number | null;
+  taskLabel: string;
+  employeeName: string;
+  date: string;
+  hours: number;
+  description: string;
+}
+
+function mapTimesheetLine(l: CycomTimesheetLine): TimesheetRow {
+  return {
+    rawId: l.id,
+    taskId: l.task_id ? l.task_id[0] : null,
+    taskLabel: l.task_id ? m2oName(l.task_id) : 'No task',
+    employeeName: l.employee_name || '',
+    date: l.date || '',
+    hours: Number(l.unit_amount ?? 0),
+    description: l.name || '',
+  };
+}
+
 const STAGES: StageKey[] = ['backlog', 'inProgress', 'review', 'done'];
 
 const STAGE_COLORS: Record<StageKey, string> = {
@@ -74,32 +105,90 @@ export default function ProjectPage() {
   const [assignee] = useState('Cycom User');
   const [estHours, setEstHours] = useState('8');
 
+  const [timesheetRows, setTimesheetRows] = useState<TimesheetRow[]>([]);
+  const [timesheetsLoading, setTimesheetsLoading] = useState(true);
+  const [tsTaskId, setTsTaskId] = useState('');
+  const [tsEmployee, setTsEmployee] = useState('');
+  const [tsDate, setTsDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [tsHours, setTsHours] = useState('1');
+  const [tsDescription, setTsDescription] = useState('');
+
+  const loadTimesheets = async () => {
+    setTimesheetsLoading(true);
+    try {
+      const raw = await searchRead<CycomTimesheetLine>(
+        'account.analytic.line',
+        [],
+        ['name', 'date', 'unit_amount', 'employee_name', 'task_id'],
+        { limit: 200, order: 'id desc' },
+      );
+      setTimesheetRows(raw.map(mapTimesheetLine));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load timesheets');
+    } finally {
+      setTimesheetsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const raw = await searchRead<CycomTask>(
-          'project.task',
-          [],
-          ['name', 'project_id', 'user_ids', 'allocated_hours', 'planned_hours', 'effective_hours', 'stage_id', 'state'],
-          { limit: 200, order: 'id desc' },
-        );
-        const userIds = Array.from(new Set(raw.flatMap((tk) => tk.user_ids || [])));
-        const users = userIds.length
-          ? await searchRead<{ id: number; name: string }>('res.users', [['id', 'in', userIds]], ['name'], { limit: userIds.length })
-          : [];
-        const userMap: Record<number, string> = {};
-        users.forEach((u) => { userMap[u.id] = u.name; });
-        if (cancelled) return;
-        setTasks(raw.map((r) => mapTask(r, userMap)));
-      } catch (e) {
-        if (cancelled) return;
-        setError(e instanceof Error ? e.message : 'Failed to load project.task');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
+    loadTimesheets();
+  }, []);
+
+  const handleLogHours = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const hours = parseFloat(tsHours);
+    if (!hours || hours <= 0) return;
+    try {
+      await create('account.analytic.line', {
+        name: tsDescription,
+        date: tsDate,
+        unit_amount: hours,
+        employee_name: tsEmployee,
+        task_id: tsTaskId ? Number(tsTaskId) : false,
+      });
+      setTsDescription('');
+      setTsHours('1');
+      await Promise.all([loadTimesheets(), loadTasks()]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to log hours');
+    }
+  };
+
+  const deleteTimesheetEntry = async (rawId: number) => {
+    setTimesheetRows((rows) => rows.filter((r) => r.rawId !== rawId));
+    try {
+      await unlink('account.analytic.line', [rawId]);
+    } catch {
+      /* swallow, matches deleteTask's optimistic-delete convention below */
+    } finally {
+      loadTasks();
+    }
+  };
+
+  const loadTasks = async () => {
+    try {
+      const raw = await searchRead<CycomTask>(
+        'project.task',
+        [],
+        ['name', 'project_id', 'user_ids', 'allocated_hours', 'planned_hours', 'effective_hours', 'stage_id', 'state'],
+        { limit: 200, order: 'id desc' },
+      );
+      const userIds = Array.from(new Set(raw.flatMap((tk) => tk.user_ids || [])));
+      const users = userIds.length
+        ? await searchRead<{ id: number; name: string }>('res.users', [['id', 'in', userIds]], ['name'], { limit: userIds.length })
+        : [];
+      const userMap: Record<number, string> = {};
+      users.forEach((u) => { userMap[u.id] = u.name; });
+      setTasks(raw.map((r) => mapTask(r, userMap)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load project.task');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTasks();
   }, []);
 
   const stageLabel: Record<StageKey, string> = {
@@ -221,6 +310,65 @@ export default function ProjectPage() {
           </div>
         </div>
       )}
+
+      <div id="timesheets" className="glass-card p-6 space-y-5 scroll-mt-6">
+        <div>
+          <h2 className="text-sm font-bold text-white">{t('projectBoard.timesheetsHeading')}</h2>
+          <p className="text-xs text-slate-400">{t('projectBoard.timesheetsSubtitle')}</p>
+        </div>
+
+        <form onSubmit={handleLogHours} className="grid grid-cols-1 md:grid-cols-6 gap-3 text-xs items-end">
+          <div className="space-y-1 md:col-span-2">
+            <label className="text-[10px] font-bold text-slate-500 uppercase">{t('projectBoard.fieldTask')}</label>
+            <select value={tsTaskId} onChange={(e) => setTsTaskId(e.target.value)} className="input-field">
+              <option value="">{t('projectBoard.fieldTaskNone')}</option>
+              {tasks.map((tk) => (
+                <option key={tk.rawId} value={tk.rawId}>{tk.title}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-500 uppercase">{t('projectBoard.fieldEmployee')}</label>
+            <input type="text" placeholder={t('projectBoard.employeePlaceholder')} value={tsEmployee} onChange={(e) => setTsEmployee(e.target.value)} className="input-field" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-500 uppercase">{t('projectBoard.fieldDate')}</label>
+            <input type="date" required value={tsDate} onChange={(e) => setTsDate(e.target.value)} className="input-field font-mono" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-500 uppercase">{t('projectBoard.fieldHours')}</label>
+            <input type="number" min="0.25" step="0.25" required value={tsHours} onChange={(e) => setTsHours(e.target.value)} className="input-field font-mono" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-500 uppercase">{t('projectBoard.fieldDescription')}</label>
+            <input type="text" placeholder={t('projectBoard.descriptionPlaceholder')} value={tsDescription} onChange={(e) => setTsDescription(e.target.value)} className="input-field" />
+          </div>
+          <button type="submit" className="btn-primary py-2 md:col-span-6">{t('projectBoard.logEntry')}</button>
+        </form>
+
+        {timesheetsLoading ? (
+          <p className="text-xs text-slate-500 italic">{t('projectBoard.timesheetsLoading')}</p>
+        ) : timesheetRows.length === 0 ? (
+          <p className="text-xs text-slate-500 italic">{t('projectBoard.timesheetsEmpty')}</p>
+        ) : (
+          <div className="space-y-2">
+            {timesheetRows.map((row) => (
+              <div key={row.rawId} className="p-3 rounded-xl bg-white/3 border border-white/5 flex items-center justify-between gap-3 text-xs">
+                <div className="space-y-0.5 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-white">{t('projectBoard.entryRow', { hours: row.hours, task: row.taskLabel })}</span>
+                    <span className="text-[10px] text-slate-500">{row.date}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 truncate">{row.employeeName}{row.description ? ` · ${row.description}` : ''}</div>
+                </div>
+                <button onClick={() => deleteTimesheetEntry(row.rawId)} className="p-1 rounded hover:bg-red-500/10 text-slate-600 hover:text-red-400">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

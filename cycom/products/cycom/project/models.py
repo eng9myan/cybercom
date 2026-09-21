@@ -43,3 +43,45 @@ class Task(BaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.stage})"
+
+
+class TimesheetEntry(BaseModel):
+    """A logged block of work. Rolls up into Task.effective_hours on save/delete."""
+
+    task = models.ForeignKey(
+        Task, on_delete=models.CASCADE, related_name="timesheet_entries", null=True, blank=True
+    )
+    employee_name = models.CharField(max_length=255, blank=True)
+    date = models.DateField()
+    hours = models.DecimalField(max_digits=6, decimal_places=2)
+    description = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "cycom_project_timesheet_entries"
+        ordering = ["-date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.employee_name or 'unassigned'} — {self.date} ({self.hours}h)"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.task_id:
+            self._recalc_task_hours(self.task_id)
+
+    def delete(self, *args, **kwargs):
+        task_id = self.task_id
+        super().delete(*args, **kwargs)
+        if task_id:
+            self._recalc_task_hours(task_id)
+
+    @staticmethod
+    def _recalc_task_hours(task_id):
+        from django.db.models import Sum
+
+        total = (
+            TimesheetEntry.objects.filter(task_id=task_id).aggregate(total=Sum("hours"))["total"]
+            or 0
+        )
+        # .update() (not task.save()) — avoids re-triggering Task's own save
+        # path for a field it doesn't otherwise own the value of.
+        Task.objects.filter(pk=task_id).update(effective_hours=total)

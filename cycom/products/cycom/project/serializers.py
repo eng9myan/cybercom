@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from products.cycom.project.models import Project, Task
+from products.cycom.project.models import Project, Task, TimesheetEntry
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -15,5 +15,14 @@ class TaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Task
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
+
+class TimesheetEntrySerializer(serializers.ModelSerializer):
+    task_name = serializers.CharField(source="task.name", read_only=True, default="")
+
+    class Meta:
+        model = TimesheetEntry
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]

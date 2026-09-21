@@ -727,6 +727,32 @@ const MODEL_ADAPTERS: Record<string, ModelAdapter> = {
     },
   },
 
+  // Odoo's real internal model name for a logged timesheet line. Backend
+  // has no employee m2o yet (see products.cycom.project.models —
+  // employee_name is a plain string, same looseness as Task.assignee),
+  // so employee_id is faked as [0, name] rather than a real relation.
+  'account.analytic.line': {
+    basePath: '/api/v1/project/timesheets/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.description = src.name;
+      if ('date' in src) out.date = src.date;
+      if ('unit_amount' in src) out.hours = src.unit_amount;
+      if ('employee_name' in src) out.employee_name = src.employee_name;
+      if ('task_id' in src) out.task = Array.isArray(src.task_id) ? src.task_id[0] : src.task_id;
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      name: r.description || '',
+      date: r.date,
+      unit_amount: Number(r.hours || 0),
+      employee_name: r.employee_name || '',
+      task_id: r.task ? [r.task, (r.task_name as string) || 'Task'] : false,
+    }),
+  },
+
   'mass.mailing': {
     basePath: '/api/v1/marketing/campaigns/',
     toBackend: (f) => {
