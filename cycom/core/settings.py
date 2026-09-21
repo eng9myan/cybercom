@@ -105,6 +105,7 @@ PRODUCT_APPS = [
     "products.cycom.leave",
     "products.cycom.project",
     "products.cycom.marketing",
+    "products.cycom.events",
     "products.cycom.planning",
     "products.cycom.plm",
     "products.cycom.discuss",
