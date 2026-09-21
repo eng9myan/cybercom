@@ -78,6 +78,7 @@ urlpatterns = [
     path("api/v1/project/", include("products.cycom.project.urls")),
     path("api/v1/marketing/", include("products.cycom.marketing.urls")),
     path("api/v1/events/", include("products.cycom.events.urls")),
+    path("api/v1/appointments/", include("products.cycom.appointments.urls")),
     path("api/v1/planning/", include("products.cycom.planning.urls")),
     path("api/v1/plm/", include("products.cycom.plm.urls")),
     path("api/v1/discuss/", include("products.cycom.discuss.urls")),
