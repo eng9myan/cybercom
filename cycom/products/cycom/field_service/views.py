@@ -3,13 +3,19 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from core.viewsets import TenantScopedModelViewSet
-from products.cycom.field_service.models import ServiceTask
-from products.cycom.field_service.serializers import ServiceTaskSerializer
+from products.cycom.field_service.models import ServiceContract, ServiceTask
+from products.cycom.field_service.serializers import ServiceContractSerializer, ServiceTaskSerializer
 from products.cycom.field_service.services import complete_worksheet, transition
 
 
+class ServiceContractViewSet(TenantScopedModelViewSet):
+    queryset = ServiceContract.objects.all()
+    serializer_class = ServiceContractSerializer
+    filterset_fields = ["is_active"]
+
+
 class ServiceTaskViewSet(TenantScopedModelViewSet):
-    queryset = ServiceTask.objects.all()
+    queryset = ServiceTask.objects.select_related("contract").all()
     serializer_class = ServiceTaskSerializer
 
     @action(detail=True, methods=["post"], url_path="transition")
