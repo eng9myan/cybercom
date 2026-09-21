@@ -14,11 +14,12 @@ All three statements tie out:
 
 from __future__ import annotations
 
+from datetime import timedelta
 from decimal import Decimal
 
 from django.db.models import DecimalField, F, Sum
 
-from products.cycom.accounting.models import Account, JournalLine
+from products.cycom.accounting.models import Account, JournalEntry, JournalLine
 
 # Reports are stated in the tenant's base/reporting currency. Each journal line
 # carries `exchange_rate` = base-currency units per unit of the line currency
@@ -166,4 +167,103 @@ def balance_sheet(tenant_id, *, date_to=None):
         "total_equity_and_earnings": _q(equity_with_earnings),
         "total_liabilities_and_equity": _q(l_total + equity_with_earnings),
         "balanced": _q(a_total) == _q(l_total + equity_with_earnings),
+    }
+
+
+def cash_flow_statement(tenant_id, *, date_from=None, date_to=None):
+    """
+    Direct-method statement of cash flows. Accounts tagged
+    cash_flow_type='cash' are the accounts being reconciled; every posted
+    entry that touches one is classified by its OTHER lines' cash_flow_type
+    (operating/investing/financing). An entry whose counter-accounts are
+    unclassified or mixed lands in 'uncategorized' rather than being guessed
+    at — tag your accounts to get a real breakdown.
+    """
+    cash_account_ids = set(
+        Account.objects.filter(tenant_id=tenant_id, cash_flow_type="cash").values_list("id", flat=True)
+    )
+    if not cash_account_ids:
+        return {
+            "opening_balance": Z, "operating_activities": Z, "investing_activities": Z,
+            "financing_activities": Z, "uncategorized": Z, "net_change": Z, "closing_balance": Z,
+            "warning": "No accounts tagged cash_flow_type='cash' — nothing to report.",
+            "period": {"from": str(date_from) if date_from else None, "to": str(date_to) if date_to else None},
+        }
+
+    account_category = dict(
+        Account.objects.filter(tenant_id=tenant_id).values_list("id", "cash_flow_type")
+    )
+
+    opening = Z
+    if date_from:
+        opening_rows = _account_balances(tenant_id, date_to=date_from - timedelta(days=1))
+        opening = sum(
+            _signed_balance(r) for aid, r in opening_rows.items() if aid in cash_account_ids
+        )
+
+    totals = {"operating": Z, "investing": Z, "financing": Z, "uncategorized": Z}
+
+    entries = JournalEntry.objects.filter(
+        tenant_id=tenant_id, status="posted", lines__account_id__in=cash_account_ids
+    ).distinct()
+    if date_from:
+        entries = entries.filter(date__gte=date_from)
+    if date_to:
+        entries = entries.filter(date__lte=date_to)
+
+    for entry in entries.prefetch_related("lines"):
+        lines = list(entry.lines.all())
+        cash_net = sum(
+            (l.debit - l.credit) * l.exchange_rate for l in lines if l.account_id in cash_account_ids
+        )
+        if cash_net == 0:
+            continue
+        other_categories = {
+            account_category.get(l.account_id) for l in lines if l.account_id not in cash_account_ids
+        } - {None, "", "cash"}
+        category = other_categories.pop() if len(other_categories) == 1 else "uncategorized"
+        totals[category] += cash_net
+
+    net_change = totals["operating"] + totals["investing"] + totals["financing"] + totals["uncategorized"]
+    return {
+        "opening_balance": _q(opening),
+        "operating_activities": _q(totals["operating"]),
+        "investing_activities": _q(totals["investing"]),
+        "financing_activities": _q(totals["financing"]),
+        "uncategorized": _q(totals["uncategorized"]),
+        "net_change": _q(net_change),
+        "closing_balance": _q(opening + net_change),
+        "period": {"from": str(date_from) if date_from else None, "to": str(date_to) if date_to else None},
+    }
+
+
+def budget_vs_actual(budget):
+    """budget: a Budget instance. Reuses the same account-balance engine as
+    every other statement so 'actual' always ties to the GL."""
+    balances = _account_balances(budget.tenant_id, date_from=budget.date_from, date_to=budget.date_to)
+    lines = []
+    total_planned = total_actual = Z
+    for bl in budget.lines.select_related("account").all():
+        row = balances.get(bl.account_id) or {
+            "code": bl.account.code, "name": bl.account.name,
+            "type": bl.account.account_type, "debit": Z, "credit": Z,
+        }
+        actual = _signed_balance(row)
+        total_planned += bl.planned_amount
+        total_actual += actual
+        lines.append({
+            "account_code": row["code"],
+            "account_name": row["name"],
+            "planned": _q(bl.planned_amount),
+            "actual": _q(actual),
+            "variance": _q(actual - bl.planned_amount),
+        })
+    return {
+        "budget": budget.name,
+        "fiscal_year": budget.fiscal_year,
+        "lines": lines,
+        "total_planned": _q(total_planned),
+        "total_actual": _q(total_actual),
+        "total_variance": _q(total_actual - total_planned),
+        "period": {"from": str(budget.date_from), "to": str(budget.date_to)},
     }

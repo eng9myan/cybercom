@@ -7,8 +7,11 @@ from rest_framework.views import APIView
 
 from core.permissions import IsAuthenticatedViaClaims
 from products.cycom.accounting.bank_reconciliation import reconciliation_summary
+from products.cycom.accounting.models import Budget
 from products.cycom.accounting.reports import (
     balance_sheet,
+    budget_vs_actual,
+    cash_flow_statement,
     profit_and_loss,
     trial_balance,
     vat_return,
@@ -59,6 +62,28 @@ class VatReturnView(APIView):
             date_from=_date(request.query_params, "date_from"),
             date_to=_date(request.query_params, "date_to"),
         ))
+
+
+class CashFlowStatementView(APIView):
+    permission_classes = [IsAuthenticatedViaClaims]
+
+    def get(self, request):
+        return Response(cash_flow_statement(
+            request.tenant_id,
+            date_from=_date(request.query_params, "date_from"),
+            date_to=_date(request.query_params, "date_to"),
+        ))
+
+
+class BudgetVsActualView(APIView):
+    permission_classes = [IsAuthenticatedViaClaims]
+
+    def get(self, request, pk):
+        try:
+            budget = Budget.objects.get(pk=pk, tenant_id=request.tenant_id)
+        except Budget.DoesNotExist:
+            return Response({"detail": "Not found."}, status=404)
+        return Response(budget_vs_actual(budget))
 
 
 class BankReconciliationSummaryView(APIView):

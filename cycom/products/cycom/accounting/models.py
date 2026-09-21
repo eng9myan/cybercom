@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 
 from platform.common.models import BaseModel
@@ -30,6 +32,18 @@ class Account(BaseModel):
     # rejects any line whose account.is_postable is False. Default True so
     # existing single-level charts keep working.
     is_postable = models.BooleanField(default=True)
+
+    CASH_FLOW_CHOICES = [
+        ("operating", "Operating"),
+        ("investing", "Investing"),
+        ("financing", "Financing"),
+        ("cash", "Cash & Equivalents"),
+    ]
+    # Drives reports.cash_flow_statement — accounts tagged "cash" are the
+    # accounts being reconciled; every other account's tag classifies which
+    # section a movement paired with it falls into. Blank = not yet
+    # classified (excluded from the statement rather than guessed at).
+    cash_flow_type = models.CharField(max_length=20, choices=CASH_FLOW_CHOICES, blank=True)
 
     class Meta:
         db_table = "cycom_accounting_accounts"
@@ -163,3 +177,103 @@ class DocumentSequence(BaseModel):
 
     def __str__(self):
         return f"{self.doc_type} @ {self.period_key or 'continuous'} → next {self.next_value}"
+
+
+class FixedAsset(BaseModel):
+    """Tracks straight-line depreciation against an asset already recorded
+    on the books — this does not post the acquisition entry itself, only
+    the recurring depreciation."""
+
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("running", "Running"),
+        ("fully_depreciated", "Fully Depreciated"),
+        ("disposed", "Disposed"),
+    ]
+
+    name = models.CharField(max_length=255)
+    asset_account = models.ForeignKey(
+        Account, on_delete=models.PROTECT, related_name="fixed_assets"
+    )
+    depreciation_expense_account = models.ForeignKey(
+        Account, on_delete=models.PROTECT, related_name="+"
+    )
+    accumulated_depreciation_account = models.ForeignKey(
+        Account, on_delete=models.PROTECT, related_name="+"
+    )
+    acquisition_date = models.DateField()
+    acquisition_cost = models.DecimalField(max_digits=14, decimal_places=2)
+    salvage_value = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    useful_life_months = models.PositiveIntegerField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    disposed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "cycom_accounting_fixed_assets"
+        ordering = ["-acquisition_date"]
+
+    def __str__(self):
+        return f"{self.name} ({self.status})"
+
+    @property
+    def depreciable_base(self):
+        return self.acquisition_cost - self.salvage_value
+
+    @property
+    def monthly_depreciation(self):
+        if not self.useful_life_months:
+            return Decimal("0.00")
+        return (self.depreciable_base / self.useful_life_months).quantize(Decimal("0.01"))
+
+    @property
+    def accumulated_depreciation(self):
+        return sum((e.amount for e in self.depreciation_entries.all()), Decimal("0.00"))
+
+    @property
+    def net_book_value(self):
+        return self.acquisition_cost - self.accumulated_depreciation
+
+
+class DepreciationEntry(BaseModel):
+    asset = models.ForeignKey(FixedAsset, on_delete=models.CASCADE, related_name="depreciation_entries")
+    period = models.DateField(help_text="First day of the depreciation month.")
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    journal_entry = models.ForeignKey(
+        JournalEntry, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+
+    class Meta:
+        db_table = "cycom_accounting_depreciation_entries"
+        unique_together = [("asset", "period")]
+        ordering = ["period"]
+
+    def __str__(self):
+        return f"{self.asset} — {self.period} ({self.amount})"
+
+
+class Budget(BaseModel):
+    STATUS_CHOICES = [("draft", "Draft"), ("confirmed", "Confirmed")]
+
+    name = models.CharField(max_length=255)
+    fiscal_year = models.PositiveIntegerField()
+    date_from = models.DateField()
+    date_to = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+
+    class Meta:
+        db_table = "cycom_accounting_budgets"
+        ordering = ["-fiscal_year"]
+
+    def __str__(self):
+        return f"{self.name} ({self.fiscal_year})"
+
+
+class BudgetLine(BaseModel):
+    budget = models.ForeignKey(Budget, on_delete=models.CASCADE, related_name="lines")
+    account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="budget_lines")
+    planned_amount = models.DecimalField(max_digits=14, decimal_places=2)
+
+    class Meta:
+        db_table = "cycom_accounting_budget_lines"
+        unique_together = [("budget", "account")]
+        ordering = ["account__code"]

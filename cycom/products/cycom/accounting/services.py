@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 from rest_framework.exceptions import ValidationError as _DRFValidationError
 
-from products.cycom.accounting.models import JournalEntry, JournalLine
+from products.cycom.accounting.models import DepreciationEntry, FixedAsset, JournalEntry, JournalLine
 
 
 class UnbalancedEntryError(_DRFValidationError):
@@ -66,3 +66,41 @@ def post_journal_entry(*, tenant_id, date, reference, lines, currency="JOD", nar
             description=line.get("description", ""),
         )
     return entry
+
+
+@transaction.atomic
+def run_depreciation(asset: FixedAsset, *, period) -> DepreciationEntry:
+    """Post one month's straight-line depreciation for `asset`. `period` is
+    any date within the target month — stored normalized to its first day."""
+    if asset.status != "running":
+        raise _DRFValidationError(f"Asset is '{asset.status}', must be 'running' to depreciate.")
+
+    period = period.replace(day=1)
+    if DepreciationEntry.objects.filter(asset=asset, period=period).exists():
+        raise _DRFValidationError(f"Depreciation for {period} already recorded.")
+
+    remaining = asset.depreciable_base - asset.accumulated_depreciation
+    if remaining <= 0:
+        raise _DRFValidationError("Asset is already fully depreciated.")
+
+    amount = min(asset.monthly_depreciation, remaining)
+
+    entry = post_journal_entry(
+        tenant_id=asset.tenant_id,
+        date=period,
+        reference=f"DEPR-{asset.name}-{period.isoformat()}",
+        lines=[
+            {"account": asset.depreciation_expense_account, "debit": amount, "credit": 0},
+            {"account": asset.accumulated_depreciation_account, "debit": 0, "credit": amount},
+        ],
+        narration=f"Monthly depreciation — {asset.name}",
+    )
+    dep_entry = DepreciationEntry.objects.create(
+        tenant_id=asset.tenant_id, asset=asset, period=period, amount=amount, journal_entry=entry
+    )
+
+    if amount >= remaining:
+        asset.status = "fully_depreciated"
+        asset.save(update_fields=["status", "updated_at"])
+
+    return dep_entry

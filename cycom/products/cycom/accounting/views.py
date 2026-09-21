@@ -1,4 +1,7 @@
+from datetime import date
+
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from core.viewsets import TenantScopedModelViewSet
@@ -8,13 +11,23 @@ from products.cycom.accounting.bank_reconciliation import (
     match_line,
     unmatch_line,
 )
-from products.cycom.accounting.models import Account, BankStatementLine, JournalEntry, JournalLine
+from products.cycom.accounting.models import (
+    Account,
+    BankStatementLine,
+    Budget,
+    FixedAsset,
+    JournalEntry,
+    JournalLine,
+)
 from products.cycom.accounting.serializers import (
     AccountSerializer,
     BankStatementLineSerializer,
+    BudgetSerializer,
+    FixedAssetSerializer,
     JournalEntrySerializer,
     JournalLineSerializer,
 )
+from products.cycom.accounting.services import run_depreciation
 
 
 class AccountViewSet(TenantScopedModelViewSet):
@@ -30,6 +43,50 @@ class JournalEntryViewSet(TenantScopedModelViewSet):
 class JournalLineViewSet(TenantScopedModelViewSet):
     queryset = JournalLine.objects.all()
     serializer_class = JournalLineSerializer
+
+
+class FixedAssetViewSet(TenantScopedModelViewSet):
+    queryset = FixedAsset.objects.select_related(
+        "asset_account", "depreciation_expense_account", "accumulated_depreciation_account"
+    ).prefetch_related("depreciation_entries").all()
+    serializer_class = FixedAssetSerializer
+    filterset_fields = ["status"]
+
+    @action(detail=True, methods=["post"])
+    def activate(self, request, pk=None):
+        asset = self.get_object()
+        if asset.status != "draft":
+            raise ValidationError(f"Asset is '{asset.status}', can only activate a draft asset.")
+        asset.status = "running"
+        asset.save(update_fields=["status", "updated_at"])
+        return Response(FixedAssetSerializer(asset).data)
+
+    @action(detail=True, methods=["post"], url_path="run-depreciation")
+    def run_depreciation_action(self, request, pk=None):
+        asset = self.get_object()
+        period_str = request.data.get("period")
+        period = date.fromisoformat(period_str) if period_str else date.today()
+        run_depreciation(asset, period=period)
+        asset.refresh_from_db()
+        return Response(FixedAssetSerializer(asset).data)
+
+    @action(detail=True, methods=["post"])
+    def dispose(self, request, pk=None):
+        from django.utils import timezone
+
+        asset = self.get_object()
+        if asset.status == "disposed":
+            raise ValidationError("Already disposed.")
+        asset.status = "disposed"
+        asset.disposed_at = timezone.now()
+        asset.save(update_fields=["status", "disposed_at", "updated_at"])
+        return Response(FixedAssetSerializer(asset).data)
+
+
+class BudgetViewSet(TenantScopedModelViewSet):
+    queryset = Budget.objects.prefetch_related("lines__account").all()
+    serializer_class = BudgetSerializer
+    filterset_fields = ["fiscal_year", "status"]
 
 
 class BankStatementLineViewSet(TenantScopedModelViewSet):
