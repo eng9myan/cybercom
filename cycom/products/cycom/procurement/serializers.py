@@ -5,6 +5,9 @@ from products.cycom.procurement.models import (
     PurchaseOrderLine,
     PurchaseRequest,
     PurchaseRequestLine,
+    RequestForQuotation,
+    VendorBid,
+    VendorBidLine,
 )
 
 
@@ -66,3 +69,42 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             )
         order.refresh_from_db()
         return order
+
+
+class VendorBidLineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorBidLine
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "bid", "created_at", "updated_at"]
+
+
+class VendorBidSerializer(serializers.ModelSerializer):
+    lines = VendorBidLineSerializer(many=True, required=False)
+    vendor_name = serializers.CharField(source="vendor.name", read_only=True)
+    total_amount = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VendorBid
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "rfq", "status", "created_at", "updated_at"]
+
+    def get_total_amount(self, obj):
+        from decimal import Decimal
+        return sum((l.quantity * l.unit_cost for l in obj.lines.all()), Decimal("0"))
+
+    def create(self, validated_data):
+        lines_data = validated_data.pop("lines", [])
+        bid = VendorBid.objects.create(**validated_data)
+        for line_data in lines_data:
+            VendorBidLine.objects.create(bid=bid, tenant_id=validated_data["tenant_id"], **line_data)
+        bid.refresh_from_db()
+        return bid
+
+
+class RequestForQuotationSerializer(serializers.ModelSerializer):
+    bids = VendorBidSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = RequestForQuotation
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "status", "created_at", "updated_at"]

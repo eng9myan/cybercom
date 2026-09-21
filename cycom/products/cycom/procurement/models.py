@@ -93,3 +93,67 @@ class PurchaseOrderLine(BaseModel):
     @property
     def quantity_remaining(self):
         return self.quantity - self.quantity_received
+
+
+class RequestForQuotation(BaseModel):
+    """Sent to several vendors for the same purchase request; each vendor's
+    reply becomes a VendorBid. Awarding one bid creates the real
+    PurchaseOrder and marks the rest lost — RFQs never become POs any
+    other way."""
+
+    STATUS_CHOICES = [
+        ("open", "Open"),
+        ("awarded", "Awarded"),
+        ("cancelled", "Cancelled"),
+    ]
+
+    source_request = models.ForeignKey(
+        PurchaseRequest, on_delete=models.CASCADE, related_name="rfqs"
+    )
+    due_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
+
+    class Meta:
+        db_table = "cycom_procurement_rfqs"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"RFQ-{str(self.id)[:8]} ({self.status})"
+
+
+class VendorBid(BaseModel):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("submitted", "Submitted"),
+        ("won", "Won"),
+        ("lost", "Lost"),
+    ]
+
+    rfq = models.ForeignKey(RequestForQuotation, on_delete=models.CASCADE, related_name="bids")
+    vendor = models.ForeignKey(Partner, on_delete=models.PROTECT, related_name="vendor_bids")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "cycom_procurement_vendor_bids"
+        ordering = ["-created_at"]
+        unique_together = [("rfq", "vendor")]
+
+    def __str__(self):
+        return f"{self.vendor} bid on {self.rfq}"
+
+    @property
+    def total_amount(self):
+        return sum((l.quantity * l.unit_cost for l in self.lines.all()), Decimal("0"))
+
+
+class VendorBidLine(BaseModel):
+    bid = models.ForeignKey(VendorBid, on_delete=models.CASCADE, related_name="lines")
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="vendor_bid_lines")
+    quantity = models.DecimalField(max_digits=12, decimal_places=4)
+    unit_cost = models.DecimalField(max_digits=14, decimal_places=4, default=0)
+    lead_time_days = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "cycom_procurement_vendor_bid_lines"
+        ordering = ["id"]
