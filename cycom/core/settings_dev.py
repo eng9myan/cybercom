@@ -46,6 +46,10 @@ CACHES = {
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
+# No real SMTP server in no-Docker dev — prints outbound mail to the
+# runserver console instead of hanging/failing against localhost:25.
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 # No Keycloak cluster in no-Docker dev. The cyidentity services already ship an
 # in-process fake store (_FAKE_KEYCLOAK_STORE) that activates when this is False,
 # so realm/client/user provisioning runs fully offline and synchronously. The

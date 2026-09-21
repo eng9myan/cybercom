@@ -25,3 +25,7 @@ CACHES = {
 
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
+
+# No real SMTP in tests — captures sent mail in django.core.mail.outbox
+# instead of attempting a real network connection.
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"

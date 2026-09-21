@@ -33,3 +33,26 @@ class Campaign(BaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.state})"
+
+
+class MarketingRecipient(BaseModel):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("sent", "Sent"),
+        ("failed", "Failed"),
+    ]
+
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="recipients")
+    # An email address (email/newsletter campaigns) or phone number (sms).
+    contact = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    error_message = models.TextField(blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "cycom_marketing_recipients"
+        unique_together = [("campaign", "contact")]
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.contact} ({self.status})"
