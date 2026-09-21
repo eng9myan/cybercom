@@ -46,6 +46,13 @@ class TenantIsolationMiddleware:
             request.tenant_id = None
             return self.get_response(request)
 
+        # Public storefront — an anonymous shopper has no login and no
+        # tenant header; the view resolves the tenant itself from the
+        # slug in the URL.
+        if request.path.startswith("/api/store/"):
+            request.tenant_id = None
+            return self.get_response(request)
+
         if not tenant_id and hasattr(request, "user_session"):
             tenant_id = request.user_session.get("tenant_id")
 

@@ -141,6 +141,10 @@ class Product(CatalogModel):
     pos_available = models.BooleanField(default=True)
     pos_category_sequence = models.PositiveIntegerField(default=0)
 
+    # Storefront visibility — explicit opt-in, default False, so nothing
+    # goes public just by existing in the catalog.
+    is_published_online = models.BooleanField(default=False)
+
     # S-3: catalog.Product is the single product master (absorbed from the
     # formerly-separate inventory.Product, retired). `inventory_account` is the
     # GL account stock moves post against — required for anything that actually

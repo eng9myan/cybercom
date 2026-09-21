@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
         source: '/api/sign/:path*',
         destination: `${process.env.CYCOM_BACKEND_URL || 'http://localhost:8000'}/api/sign/:path*`,
       },
+      {
+        source: '/api/store/:path*',
+        destination: `${process.env.CYCOM_BACKEND_URL || 'http://localhost:8000'}/api/store/:path*`,
+      },
     ];
   },
 };

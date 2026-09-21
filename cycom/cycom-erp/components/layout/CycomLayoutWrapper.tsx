@@ -9,8 +9,10 @@ import CyaiChatWidget from '../CyaiChatWidget';
 export default function CycomLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  // Conditionally hide sidebar/topbar for full-screen routes (landing, login, public signing portal)
-  const isFullScreen = pathname === '/' || pathname === '/login' || pathname?.startsWith('/sign/public/');
+  // Conditionally hide sidebar/topbar for full-screen routes (landing, login, public signing portal,
+  // public storefront — customers browsing/checking out never see the internal admin shell)
+  const isFullScreen =
+    pathname === '/' || pathname === '/login' || pathname?.startsWith('/sign/public/') || pathname?.startsWith('/store/');
 
   if (isFullScreen) {
     return <main className="min-h-screen w-full">{children}</main>;

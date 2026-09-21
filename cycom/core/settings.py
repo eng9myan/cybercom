@@ -109,6 +109,7 @@ PRODUCT_APPS = [
     "products.cycom.events",
     "products.cycom.appointments",
     "products.cycom.rental",
+    "products.cycom.storefront",
     "products.cycom.planning",
     "products.cycom.plm",
     "products.cycom.discuss",
@@ -139,9 +140,12 @@ MIDDLEWARE = [
 
 # Per-product public (AllowAny) surfaces — see shared/auth/auth_middleware.py.
 # The e-signature public portal has no login: a signer only has the
-# unguessable token in the link, never a bearer token.
+# unguessable token in the link, never a bearer token. The storefront has
+# no login either: an anonymous shopper only has their cart token, and the
+# tenant is resolved from the slug in the URL, not from a session.
 AUTH_PUBLIC_PATH_PREFIXES = [
     "/api/sign/requests/public/",
+    "/api/store/",
 ]
 
 ROOT_URLCONF = "core.urls"
