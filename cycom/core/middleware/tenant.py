@@ -39,6 +39,13 @@ class TenantIsolationMiddleware:
             request.tenant_id = None
             return self.get_response(request)
 
+        # Public e-signature portal — a signer has no login, only the
+        # unguessable token in the link, and the view resolves the request
+        # (and its tenant) cross-tenant by that token, not by header/claim.
+        if request.path.startswith("/api/sign/requests/public/"):
+            request.tenant_id = None
+            return self.get_response(request)
+
         if not tenant_id and hasattr(request, "user_session"):
             tenant_id = request.user_session.get("tenant_id")
 

@@ -82,6 +82,7 @@ PRODUCT_APPS = [
     "products.cycom.cyai_analytics",
     "products.cycom.cyai_platform",
     "products.cycom.documents",
+    "products.cycom.esign",
     "products.cycom.expenses",
     "products.cycom.scheduler",
     "products.cycom.notes",
@@ -128,6 +129,13 @@ MIDDLEWARE = [
     # publishes request.tenant_id into the ambient tenant context so
     # TenantScopedMixin.save() can fill tenant_id when a caller forgets it
     "platform.common.middleware.TenantContextMiddleware",
+]
+
+# Per-product public (AllowAny) surfaces — see shared/auth/auth_middleware.py.
+# The e-signature public portal has no login: a signer only has the
+# unguessable token in the link, never a bearer token.
+AUTH_PUBLIC_PATH_PREFIXES = [
+    "/api/sign/requests/public/",
 ]
 
 ROOT_URLCONF = "core.urls"

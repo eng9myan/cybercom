@@ -1,0 +1,8 @@
+from django.apps import AppConfig
+
+
+class EsignConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "products.cycom.esign"
+    label = "cycom_esign"
+    verbose_name = "Cycom — E-Signature"
