@@ -1,7 +1,7 @@
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from products.cycom.quality.models import QualityCheckpoint
+from products.cycom.quality.models import NonConformance, QualityCheckpoint
 
 
 def record_result(checkpoint: QualityCheckpoint, *, result: str, checked_by: str, notes: str = "") -> QualityCheckpoint:
@@ -14,4 +14,6 @@ def record_result(checkpoint: QualityCheckpoint, *, result: str, checked_by: str
     checkpoint.checked_at = timezone.now()
     checkpoint.notes = notes
     checkpoint.save(update_fields=["result", "checked_by", "checked_at", "notes", "updated_at"])
+    if result == "fail":
+        NonConformance.objects.create(tenant_id=checkpoint.tenant_id, checkpoint=checkpoint)
     return checkpoint
