@@ -39,7 +39,7 @@ class SubscriptionService:
         months = cls.CYCLE_MONTHS.get(plan.billing_cycle, 12)
         period_end = today + relativedelta(months=months) - relativedelta(days=1)
 
-        return Subscription.objects.create(
+        subscription = Subscription.objects.create(
             tenant_id=tenant_id,
             plan=plan,
             customer_id=customer_id,
@@ -51,6 +51,26 @@ class SubscriptionService:
             contracted_users=contracted_users,
             contracted_beds=contracted_beds,
         )
+        cls._grant_edition_features(plan, tenant_id)
+        return subscription
+
+    @staticmethod
+    def _grant_edition_features(plan: SubscriptionPlan, tenant_id: uuid.UUID) -> None:
+        """Turn on the tenant features the subscribed plan's edition entitles it to.
+
+        Without this, a subscription is a billing record only — the tenant's
+        product/edition (e.g. cymed_laboratory:basic) never actually gets
+        enabled, so every gated ViewSet keeps rejecting it.
+        """
+        from products.cymed.commercial.feature_flags.services import (
+            EDITION_FEATURE_MAP,
+            FeatureFlagService,
+        )
+
+        edition_key = f"{plan.product_code}:{plan.edition_code}"
+        features = EDITION_FEATURE_MAP.get(edition_key, [])
+        if features:
+            FeatureFlagService.bulk_enable_edition_features(tenant_id, features)
 
     @classmethod
     def renew_subscription(cls, subscription: Subscription) -> Subscription:
