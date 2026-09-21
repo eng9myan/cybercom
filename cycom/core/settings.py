@@ -100,6 +100,8 @@ PRODUCT_APPS = [
     "products.cycom.sales",
     "products.cycom.helpdesk",
     "products.cycom.recruitment",
+    "products.cycom.appraisals",
+    "products.cycom.referrals",
     "products.cycom.leave",
     "products.cycom.project",
     "products.cycom.marketing",

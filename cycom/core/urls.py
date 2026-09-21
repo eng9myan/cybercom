@@ -71,6 +71,8 @@ urlpatterns = [
     path("api/v1/sales/", include("products.cycom.sales.urls")),
     path("api/v1/helpdesk/", include("products.cycom.helpdesk.urls")),
     path("api/v1/recruitment/", include("products.cycom.recruitment.urls")),
+    path("api/v1/appraisals/", include("products.cycom.appraisals.urls")),
+    path("api/v1/referrals/", include("products.cycom.referrals.urls")),
     path("api/v1/leave/", include("products.cycom.leave.urls")),
     # ── Collaboration / project / planning / plm / marketing (Step 8) ───────
     path("api/v1/project/", include("products.cycom.project.urls")),
