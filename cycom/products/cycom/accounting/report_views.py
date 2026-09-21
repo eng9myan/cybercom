@@ -16,6 +16,7 @@ from products.cycom.accounting.reports import (
     trial_balance,
     vat_return,
 )
+from products.cycom.company.models import Company
 
 
 def _date(qp, key):
@@ -28,11 +29,27 @@ def _date(qp, key):
         return None
 
 
+def _company(request):
+    """Optional ?company=<id> — omitted means consolidated across all
+    companies (or the tenant's only implicit company, if none exist)."""
+    company_id = request.query_params.get("company")
+    if not company_id:
+        return None
+    try:
+        return Company.objects.get(pk=company_id, tenant_id=request.tenant_id)
+    except Company.DoesNotExist:
+        return None
+
+
 class TrialBalanceView(APIView):
     permission_classes = [IsAuthenticatedViaClaims]
 
     def get(self, request):
-        return Response(trial_balance(request.tenant_id, date_to=_date(request.query_params, "date_to")))
+        return Response(trial_balance(
+            request.tenant_id,
+            date_to=_date(request.query_params, "date_to"),
+            company=_company(request),
+        ))
 
 
 class ProfitAndLossView(APIView):
@@ -43,6 +60,7 @@ class ProfitAndLossView(APIView):
             request.tenant_id,
             date_from=_date(request.query_params, "date_from"),
             date_to=_date(request.query_params, "date_to"),
+            company=_company(request),
         ))
 
 
@@ -50,7 +68,11 @@ class BalanceSheetView(APIView):
     permission_classes = [IsAuthenticatedViaClaims]
 
     def get(self, request):
-        return Response(balance_sheet(request.tenant_id, date_to=_date(request.query_params, "date_to")))
+        return Response(balance_sheet(
+            request.tenant_id,
+            date_to=_date(request.query_params, "date_to"),
+            company=_company(request),
+        ))
 
 
 class VatReturnView(APIView):
@@ -61,6 +83,7 @@ class VatReturnView(APIView):
             request.tenant_id,
             date_from=_date(request.query_params, "date_from"),
             date_to=_date(request.query_params, "date_to"),
+            company=_company(request),
         ))
 
 
@@ -72,6 +95,7 @@ class CashFlowStatementView(APIView):
             request.tenant_id,
             date_from=_date(request.query_params, "date_from"),
             date_to=_date(request.query_params, "date_to"),
+            company=_company(request),
         ))
 
 

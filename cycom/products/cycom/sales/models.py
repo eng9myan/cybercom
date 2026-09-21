@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db import models
 
 from platform.common.models import BaseModel
+from products.cycom.company.models import Company
 from products.cycom.esign.models import SignRequest
 from products.cycom.inventory.models import Product
 
@@ -79,6 +80,9 @@ class SalesOrder(BaseModel):
     # status to be "Signed" before the quotation can become an order.
     sign_request = models.ForeignKey(
         SignRequest, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    company = models.ForeignKey(
+        Company, on_delete=models.PROTECT, null=True, blank=True, related_name="sales_orders"
     )
 
     class Meta:

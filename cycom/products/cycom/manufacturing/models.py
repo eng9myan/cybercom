@@ -2,6 +2,7 @@ from django.db import models
 
 from platform.common.models import BaseModel
 from products.cycom.accounting.models import Account
+from products.cycom.company.models import Company
 from products.cycom.inventory.models import Product, Warehouse
 
 
@@ -114,6 +115,9 @@ class ManufacturingOrder(BaseModel):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     scheduled_date = models.DateField()
     reference = models.CharField(max_length=100, blank=True)
+    company = models.ForeignKey(
+        Company, on_delete=models.PROTECT, null=True, blank=True, related_name="manufacturing_orders"
+    )
 
     class Meta:
         db_table = "cycom_manufacturing_orders"

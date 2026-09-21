@@ -5,6 +5,7 @@ from django.db import models
 from platform.common.models import BaseModel
 from products.cycom.accounting.models import Account
 from products.cycom.ar_ap.models import Partner
+from products.cycom.company.models import Company
 from products.cycom.inventory.models import Product, Warehouse
 
 
@@ -62,6 +63,9 @@ class PurchaseOrder(BaseModel):
     )
     currency = models.CharField(max_length=10, default="JOD")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    company = models.ForeignKey(
+        Company, on_delete=models.PROTECT, null=True, blank=True, related_name="purchase_orders"
+    )
 
     class Meta:
         db_table = "cycom_procurement_orders"

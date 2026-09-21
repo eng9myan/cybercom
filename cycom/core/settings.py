@@ -66,6 +66,7 @@ PLATFORM_APPS = [
 ]
 
 PRODUCT_APPS = [
+    "products.cycom.company",
     "products.cycom.accounting",
     "products.cycom.ar_ap",
     "products.cycom.hr",

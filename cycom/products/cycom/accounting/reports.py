@@ -37,13 +37,21 @@ def _q(x) -> Decimal:
     return (x or Z).quantize(Decimal("0.01"))
 
 
-def _account_balances(tenant_id, *, date_from=None, date_to=None):
-    """Return {account_id: {code,name,type,debit,credit}} over posted lines."""
+def _account_balances(tenant_id, *, date_from=None, date_to=None, company=None):
+    """Return {account_id: {code,name,type,debit,credit}} over posted lines.
+
+    `company` is optional (multi-company is opt-in, see products.cycom.company)
+    — omitted, this is every posted line for the tenant regardless of which
+    company (if any) they're tagged with, i.e. the consolidated view across
+    all companies. Pass a Company to scope to just that entity's books.
+    """
     lines = JournalLine.objects.filter(tenant_id=tenant_id, entry__status="posted")
     if date_from:
         lines = lines.filter(entry__date__gte=date_from)
     if date_to:
         lines = lines.filter(entry__date__lte=date_to)
+    if company is not None:
+        lines = lines.filter(entry__company=company)
 
     agg = lines.values("account").annotate(
         d=Sum(F("debit") * F("exchange_rate"), output_field=_CONVERTED),
@@ -64,8 +72,8 @@ def _signed_balance(row) -> Decimal:
     return net if row["type"] in DEBIT_NORMAL else -net
 
 
-def trial_balance(tenant_id, *, date_to=None):
-    rows = _account_balances(tenant_id, date_to=date_to)
+def trial_balance(tenant_id, *, date_to=None, company=None):
+    rows = _account_balances(tenant_id, date_to=date_to, company=company)
     lines, td, tc = [], Z, Z
     for r in sorted(rows.values(), key=lambda x: x["code"]):
         d, c = r["debit"], r["credit"]
@@ -87,8 +95,8 @@ def trial_balance(tenant_id, *, date_to=None):
     }
 
 
-def profit_and_loss(tenant_id, *, date_from=None, date_to=None):
-    rows = _account_balances(tenant_id, date_from=date_from, date_to=date_to)
+def profit_and_loss(tenant_id, *, date_from=None, date_to=None, company=None):
+    rows = _account_balances(tenant_id, date_from=date_from, date_to=date_to, company=company)
     income, expense = [], []
     inc_total = exp_total = Z
     for r in sorted(rows.values(), key=lambda x: x["code"]):
@@ -110,14 +118,14 @@ def profit_and_loss(tenant_id, *, date_from=None, date_to=None):
 
 
 def vat_return(tenant_id, *, date_from=None, date_to=None,
-               output_code="2120", input_code="1150"):
+               output_code="2120", input_code="1150", company=None):
     """
     VAT/GST return for a period.
       output_tax = tax collected on sales   (Sales Tax Payable, credit-normal)
       input_tax  = tax paid on purchases    (Sales Tax Receivable, debit-normal)
       net_payable = output_tax - input_tax  (positive = owed to authority)
     """
-    rows = _account_balances(tenant_id, date_from=date_from, date_to=date_to)
+    rows = _account_balances(tenant_id, date_from=date_from, date_to=date_to, company=company)
     out_tax = inp_tax = Z
     for r in rows.values():
         if r["code"] == output_code:
@@ -132,8 +140,8 @@ def vat_return(tenant_id, *, date_from=None, date_to=None,
     }
 
 
-def balance_sheet(tenant_id, *, date_to=None):
-    rows = _account_balances(tenant_id, date_to=date_to)
+def balance_sheet(tenant_id, *, date_to=None, company=None):
+    rows = _account_balances(tenant_id, date_to=date_to, company=company)
     assets, liabilities, equity = [], [], []
     a_total = l_total = e_total = Z
     inc_total = exp_total = Z
@@ -170,7 +178,7 @@ def balance_sheet(tenant_id, *, date_to=None):
     }
 
 
-def cash_flow_statement(tenant_id, *, date_from=None, date_to=None):
+def cash_flow_statement(tenant_id, *, date_from=None, date_to=None, company=None):
     """
     Direct-method statement of cash flows. Accounts tagged
     cash_flow_type='cash' are the accounts being reconciled; every posted
@@ -196,7 +204,9 @@ def cash_flow_statement(tenant_id, *, date_from=None, date_to=None):
 
     opening = Z
     if date_from:
-        opening_rows = _account_balances(tenant_id, date_to=date_from - timedelta(days=1))
+        opening_rows = _account_balances(
+            tenant_id, date_to=date_from - timedelta(days=1), company=company
+        )
         opening = sum(
             _signed_balance(r) for aid, r in opening_rows.items() if aid in cash_account_ids
         )
@@ -210,6 +220,8 @@ def cash_flow_statement(tenant_id, *, date_from=None, date_to=None):
         entries = entries.filter(date__gte=date_from)
     if date_to:
         entries = entries.filter(date__lte=date_to)
+    if company is not None:
+        entries = entries.filter(company=company)
 
     for entry in entries.prefetch_related("lines"):
         lines = list(entry.lines.all())

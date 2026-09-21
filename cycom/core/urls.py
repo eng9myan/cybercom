@@ -25,6 +25,7 @@ urlpatterns = [
     path("api/v1/provisioning/", include("platform.provisioning.urls")),
     # ── Multi-tenant registry + public self-serve signup (demo/ + register/) ─
     path("api/v1/tenants/", include("platform.tenant.urls")),
+    path("api/v1/company/", include("products.cycom.company.urls")),
     # ── Cycom accounting API v1 (Step 1) ────────────────────────────────────
     path("api/v1/accounting/", include("products.cycom.accounting.urls")),
     # ── Cycom AR/AP + invoicing API v1 (Step 2) ─────────────────────────────

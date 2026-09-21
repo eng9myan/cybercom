@@ -21,13 +21,18 @@ class NonPostableAccountError(_DRFValidationError):
 
 
 @transaction.atomic
-def post_journal_entry(*, tenant_id, date, reference, lines, currency="JOD", narration="", created_by=""):
+def post_journal_entry(
+    *, tenant_id, date, reference, lines, currency="JOD", narration="", created_by="", company=None
+):
     """
     lines: iterable of dicts {account, debit, credit, description(optional)}
     Creates a posted JournalEntry + JournalLines. Raises UnbalancedEntryError
     if debits != credits, or NonPostableAccountError if a line targets a
     group/header account — every GL posting in this system goes through here
     so double-entry integrity can't be bypassed by a sub-app forgetting to check.
+
+    `company` is optional (multi-company is opt-in) — every existing caller
+    that omits it keeps posting unscoped entries exactly as before.
     """
     lines = list(lines)
 
@@ -54,6 +59,7 @@ def post_journal_entry(*, tenant_id, date, reference, lines, currency="JOD", nar
         status="posted",
         created_by=created_by,
         narration=narration,
+        company=company,
     )
     for line in lines:
         JournalLine.objects.create(

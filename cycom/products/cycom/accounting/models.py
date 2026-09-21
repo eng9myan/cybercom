@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db import models
 
 from platform.common.models import BaseModel
+from products.cycom.company.models import Company
 
 
 class Account(BaseModel):
@@ -78,6 +79,11 @@ class JournalEntry(BaseModel):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
     created_by = models.CharField(max_length=255, blank=True)
     narration = models.TextField(blank=True)
+    # Opt-in multi-company: null means "unscoped" — a tenant that never
+    # creates a Company sees no change at all in behavior or reports.
+    company = models.ForeignKey(
+        Company, on_delete=models.PROTECT, null=True, blank=True, related_name="journal_entries"
+    )
 
     class Meta:
         db_table = "cycom_accounting_journal_entries"
