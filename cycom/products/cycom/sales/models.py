@@ -3,7 +3,41 @@ from decimal import Decimal
 from django.db import models
 
 from platform.common.models import BaseModel
+from products.cycom.esign.models import SignRequest
 from products.cycom.inventory.models import Product
+
+
+class QuotationTemplate(BaseModel):
+    """Reusable line-item set for speeding up quote creation — applying one
+    to a draft SalesOrder replaces its lines with the template's."""
+
+    name = models.CharField(max_length=255)
+    terms = models.TextField(blank=True)
+    validity_days = models.PositiveIntegerField(default=30)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "cycom_sales_quotation_templates"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class QuotationTemplateLine(BaseModel):
+    template = models.ForeignKey(QuotationTemplate, on_delete=models.CASCADE, related_name="lines")
+    product = models.ForeignKey(
+        Product, on_delete=models.PROTECT, null=True, blank=True, related_name="quotation_template_lines"
+    )
+    description = models.CharField(max_length=255, blank=True)
+    quantity = models.DecimalField(max_digits=12, decimal_places=4, default=1)
+    unit_price = models.DecimalField(max_digits=14, decimal_places=2, default=0)
+    discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    tax_percent = models.DecimalField(max_digits=5, decimal_places=2, default=16)
+
+    class Meta:
+        db_table = "cycom_sales_quotation_template_lines"
+        ordering = ["id"]
 
 
 class SalesOrder(BaseModel):
@@ -40,6 +74,11 @@ class SalesOrder(BaseModel):
     notes = models.TextField(blank=True)
     invoice = models.ForeignKey(
         "cycom_ar_ap.Invoice", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    # Set by request_signature — confirm() then requires this request's
+    # status to be "Signed" before the quotation can become an order.
+    sign_request = models.ForeignKey(
+        SignRequest, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
 
     class Meta:
