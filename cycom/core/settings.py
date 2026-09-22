@@ -110,6 +110,7 @@ PRODUCT_APPS = [
     "products.cycom.appointments",
     "products.cycom.rental",
     "products.cycom.storefront",
+    "products.cycom.blog",
     "products.cycom.planning",
     "products.cycom.plm",
     "products.cycom.discuss",
@@ -146,6 +147,7 @@ MIDDLEWARE = [
 AUTH_PUBLIC_PATH_PREFIXES = [
     "/api/sign/requests/public/",
     "/api/store/",
+    "/api/blog/",
 ]
 
 ROOT_URLCONF = "core.urls"

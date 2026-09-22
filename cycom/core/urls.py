@@ -58,6 +58,9 @@ urlpatterns = [
     path("api/sign/", include("products.cycom.esign.urls")),
     # ── Public storefront (no login, tenant resolved by slug in the URL) ──
     path("api/store/", include("products.cycom.storefront.urls")),
+    path("api/v1/blog/", include("products.cycom.blog.urls")),
+    # ── Public blog (no login, tenant resolved by slug in the URL) ─────────
+    path("api/blog/", include("products.cycom.blog.public_urls")),
     path("api/v1/expenses/", include("products.cycom.expenses.urls")),
     path("api/v1/calendar/", include("products.cycom.scheduler.urls")),
     path("api/v1/notes/", include("products.cycom.notes.urls")),

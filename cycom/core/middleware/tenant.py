@@ -53,6 +53,13 @@ class TenantIsolationMiddleware:
             request.tenant_id = None
             return self.get_response(request)
 
+        # Public blog reader — same posture: no login, tenant resolved
+        # from the slug in the URL. (/api/v1/blog/ — the authenticated
+        # staff CRUD — is a different prefix and stays gated normally.)
+        if request.path.startswith("/api/blog/"):
+            request.tenant_id = None
+            return self.get_response(request)
+
         if not tenant_id and hasattr(request, "user_session"):
             tenant_id = request.user_session.get("tenant_id")
 
