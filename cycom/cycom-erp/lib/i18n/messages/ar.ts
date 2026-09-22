@@ -2450,6 +2450,17 @@ const ar: Messages = {
     orderNumberLabel: "رقم الطلب:",
     continueShopping: "متابعة التسوق",
   },
+  blog: {
+    title: "المدونة",
+    loading: "جارٍ التحميل…",
+    loadFailed: "فشل التحميل. حاول مرة أخرى.",
+    empty: "لا توجد مقالات منشورة بعد.",
+    noImage: "لا توجد صورة",
+    readMore: "اقرأ المزيد",
+    backToBlog: "العودة إلى المدونة",
+    postNotFound: "المقال غير موجود.",
+    byAuthor: "بقلم {author}",
+  },
   salesOrders: {
     title: "إنشاء أمر بيع بالجملة",
     subtitle: "تجميع توزيعات الجملة وتعديل أسعار بنود الأمر وتقييم ضوابط هامش التسعير.",

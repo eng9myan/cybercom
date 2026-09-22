@@ -2464,6 +2464,17 @@ const en = {
     orderNumberLabel: "Order #",
     continueShopping: "Continue Shopping",
   },
+  blog: {
+    title: "Blog",
+    loading: "Loading…",
+    loadFailed: "Failed to load. Please try again.",
+    empty: "No posts published yet.",
+    noImage: "No image",
+    readMore: "Read more",
+    backToBlog: "Back to Blog",
+    postNotFound: "Post not found.",
+    byAuthor: "By {author}",
+  },
   salesOrders: {
     title: "Create Wholesale Sales Order",
     subtitle:

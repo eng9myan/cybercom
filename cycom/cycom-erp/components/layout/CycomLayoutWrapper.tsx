@@ -10,9 +10,9 @@ export default function CycomLayoutWrapper({ children }: { children: React.React
   const pathname = usePathname();
   
   // Conditionally hide sidebar/topbar for full-screen routes (landing, login, public signing portal,
-  // public storefront — customers browsing/checking out never see the internal admin shell)
+  // public storefront, public blog — visitors never see the internal admin shell)
   const isFullScreen =
-    pathname === '/' || pathname === '/login' || pathname?.startsWith('/sign/public/') || pathname?.startsWith('/store/');
+    pathname === '/' || pathname === '/login' || pathname?.startsWith('/sign/public/') || pathname?.startsWith('/store/') || pathname?.startsWith('/blog/');
 
   if (isFullScreen) {
     return <main className="min-h-screen w-full">{children}</main>;

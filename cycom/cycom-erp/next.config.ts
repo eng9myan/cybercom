@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
         source: '/api/store/:path*',
         destination: `${process.env.CYCOM_BACKEND_URL || 'http://localhost:8000'}/api/store/:path*`,
       },
+      {
+        source: '/api/blog/:path*',
+        destination: `${process.env.CYCOM_BACKEND_URL || 'http://localhost:8000'}/api/blog/:path*`,
+      },
     ];
   },
 };
