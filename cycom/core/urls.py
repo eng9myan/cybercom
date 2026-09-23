@@ -71,6 +71,9 @@ urlpatterns = [
     # ── Public course catalog (no login, tenant resolved by slug in URL) ───
     path("api/learn/", include("products.cycom.elearning.public_urls")),
     path("api/v1/reporting/", include("products.cycom.reporting.urls")),
+    path("api/v1/cms/", include("products.cycom.cms.urls")),
+    # ── Public site renderer (no login, tenant resolved by slug in URL) ────
+    path("api/site/", include("products.cycom.cms.public_urls")),
     path("api/v1/expenses/", include("products.cycom.expenses.urls")),
     path("api/v1/calendar/", include("products.cycom.scheduler.urls")),
     path("api/v1/notes/", include("products.cycom.notes.urls")),
