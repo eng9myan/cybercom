@@ -2506,6 +2506,14 @@ const en = {
     threadLockedNotice: "This thread is locked and no longer accepting replies.",
     noReplies: "No replies yet.",
   },
+  liveChat: {
+    title: "Live Chat",
+    open: "Open live chat",
+    close: "Close live chat",
+    greeting: "Hi! Send us a message and we'll get back to you.",
+    inputPlaceholder: "Type a message…",
+    closedNotice: "This chat has been closed.",
+  },
   salesOrders: {
     title: "Create Wholesale Sales Order",
     subtitle:
