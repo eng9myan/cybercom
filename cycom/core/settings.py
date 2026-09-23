@@ -113,6 +113,7 @@ PRODUCT_APPS = [
     "products.cycom.blog",
     "products.cycom.forum",
     "products.cycom.livechat",
+    "products.cycom.elearning",
     "products.cycom.planning",
     "products.cycom.plm",
     "products.cycom.discuss",
@@ -152,6 +153,7 @@ AUTH_PUBLIC_PATH_PREFIXES = [
     "/api/blog/",
     "/api/forum/",
     "/api/chat/",
+    "/api/learn/",
 ]
 
 ROOT_URLCONF = "core.urls"

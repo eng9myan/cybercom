@@ -67,6 +67,9 @@ urlpatterns = [
     path("api/v1/livechat/", include("products.cycom.livechat.urls")),
     # ── Public live chat widget (polling, no login — see livechat/views.py) ─
     path("api/chat/", include("products.cycom.livechat.public_urls")),
+    path("api/v1/elearning/", include("products.cycom.elearning.urls")),
+    # ── Public course catalog (no login, tenant resolved by slug in URL) ───
+    path("api/learn/", include("products.cycom.elearning.public_urls")),
     path("api/v1/expenses/", include("products.cycom.expenses.urls")),
     path("api/v1/calendar/", include("products.cycom.scheduler.urls")),
     path("api/v1/notes/", include("products.cycom.notes.urls")),
