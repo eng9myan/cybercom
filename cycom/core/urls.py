@@ -61,6 +61,9 @@ urlpatterns = [
     path("api/v1/blog/", include("products.cycom.blog.urls")),
     # ── Public blog (no login, tenant resolved by slug in the URL) ─────────
     path("api/blog/", include("products.cycom.blog.public_urls")),
+    path("api/v1/forum/", include("products.cycom.forum.urls")),
+    # ── Public forum (no login, tenant resolved by slug in the URL) ────────
+    path("api/forum/", include("products.cycom.forum.public_urls")),
     path("api/v1/expenses/", include("products.cycom.expenses.urls")),
     path("api/v1/calendar/", include("products.cycom.scheduler.urls")),
     path("api/v1/notes/", include("products.cycom.notes.urls")),
