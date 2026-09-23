@@ -30,6 +30,10 @@ const nextConfig: NextConfig = {
         source: '/api/chat/:path*',
         destination: `${process.env.CYCOM_BACKEND_URL || 'http://localhost:8000'}/api/chat/:path*`,
       },
+      {
+        source: '/api/learn/:path*',
+        destination: `${process.env.CYCOM_BACKEND_URL || 'http://localhost:8000'}/api/learn/:path*`,
+      },
     ];
   },
 };

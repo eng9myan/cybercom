@@ -7,13 +7,13 @@ import CycomTopbar from './CycomTopbar';
 import CyaiChatWidget from '../CyaiChatWidget';
 import PublicChatWidget from '../PublicChatWidget';
 
-const PUBLIC_SITE_PREFIXES = ['/store/', '/blog/', '/forum/'];
+const PUBLIC_SITE_PREFIXES = ['/store/', '/blog/', '/forum/', '/learn/'];
 
 export default function CycomLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   // Conditionally hide sidebar/topbar for full-screen routes (landing, login, public signing portal,
-  // public storefront, public blog, public forum — visitors never see the internal admin shell)
+  // public storefront, public blog, public forum, public course catalog — visitors never see the internal admin shell)
   const publicSitePrefix = PUBLIC_SITE_PREFIXES.find((p) => pathname?.startsWith(p));
   const isFullScreen =
     pathname === '/' || pathname === '/login' || pathname?.startsWith('/sign/public/') || !!publicSitePrefix;
