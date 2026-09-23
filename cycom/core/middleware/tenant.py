@@ -68,6 +68,13 @@ class TenantIsolationMiddleware:
             request.tenant_id = None
             return self.get_response(request)
 
+        # Public live chat widget — polling, no login; tenant resolved from
+        # the slug in the URL same as the others. (/api/v1/livechat/ —
+        # staff moderation — is a different prefix and stays gated.)
+        if request.path.startswith("/api/chat/"):
+            request.tenant_id = None
+            return self.get_response(request)
+
         if not tenant_id and hasattr(request, "user_session"):
             tenant_id = request.user_session.get("tenant_id")
 
