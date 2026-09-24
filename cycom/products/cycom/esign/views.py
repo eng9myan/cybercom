@@ -1,9 +1,10 @@
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from core.throttling import PublicWriteRateThrottle
 from core.viewsets import TenantScopedModelViewSet
 from products.cycom.esign.models import SignRequest, SignTemplate
 from products.cycom.esign.serializers import (
@@ -58,6 +59,7 @@ def public_sign_detail(request, token):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def public_sign_submit(request, token):
     try:
         sign_request = SignRequest.objects.get(token=token)

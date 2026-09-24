@@ -7,11 +7,12 @@ same way platform.tenant's register/demo signup endpoints already are —
 see core/middleware/tenant.py and shared/auth/auth_middleware.py.
 """
 
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from core.throttling import PublicWriteRateThrottle
 from platform.tenant.models import Tenant
 from products.cycom.catalog.models import Product
 from products.cycom.storefront.serializers import CartSerializer, StorefrontProductSerializer
@@ -36,6 +37,7 @@ def product_list(request, slug):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def create_cart(request, slug):
     tenant = _get_tenant(slug)
     cart = Cart.objects.create(tenant_id=tenant.id)
@@ -52,6 +54,7 @@ def cart_detail(request, slug, token):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def cart_add_item(request, slug, token):
     tenant = _get_tenant(slug)
     cart = get_open_cart_or_404(tenant.id, token)
@@ -71,6 +74,7 @@ def cart_add_item(request, slug, token):
 
 @api_view(["DELETE"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def cart_remove_item(request, slug, token, product_id):
     tenant = _get_tenant(slug)
     cart = get_open_cart_or_404(tenant.id, token)
@@ -85,6 +89,7 @@ def cart_remove_item(request, slug, token, product_id):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def cart_checkout(request, slug, token):
     tenant = _get_tenant(slug)
     cart = get_open_cart_or_404(tenant.id, token)

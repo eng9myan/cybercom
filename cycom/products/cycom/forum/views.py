@@ -9,11 +9,12 @@ way esign/storefront/blog already are — see core/middleware/tenant.py.
 """
 
 from django.db.models import Count
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from core.throttling import PublicWriteRateThrottle
 from core.viewsets import TenantScopedModelViewSet
 from platform.tenant.models import Tenant
 from products.cycom.forum.models import ForumReply, ForumThread
@@ -112,6 +113,7 @@ def public_thread_detail(request, slug, thread_slug):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def public_thread_create(request, slug):
     tenant = _get_tenant(slug)
     serializer = PublicThreadCreateSerializer(data=request.data)
@@ -122,6 +124,7 @@ def public_thread_create(request, slug):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def public_reply_create(request, slug, thread_slug):
     tenant = _get_tenant(slug)
     thread = _get_thread_or_404(tenant.id, thread_slug)

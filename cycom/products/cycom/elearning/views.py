@@ -10,12 +10,13 @@ core/middleware/tenant.py.
 
 from django.db.models import Count
 from rest_framework import viewsets
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from core.permissions import IsAuthenticatedViaClaims
+from core.throttling import PublicWriteRateThrottle
 from core.viewsets import TenantScopedModelViewSet
 from platform.tenant.models import Tenant
 from products.cycom.elearning.models import Course, Enrollment, Lesson, LessonProgress
@@ -111,6 +112,7 @@ def public_course_detail(request, slug, course_slug):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def public_enroll(request, slug, course_slug):
     tenant = _get_tenant(slug)
     course = _get_published_course_or_404(tenant.id, course_slug)
@@ -134,6 +136,7 @@ def public_lesson_detail(request, slug, course_slug, lesson_slug):
 
 @api_view(["GET", "POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def public_lesson_progress(request, slug, course_slug, lesson_slug):
     """GET checks completion for `?token=<enrollment token>`; POST with
     `{"token": ...}` in the body marks it complete (idempotent)."""

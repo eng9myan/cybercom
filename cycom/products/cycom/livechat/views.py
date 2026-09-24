@@ -9,11 +9,12 @@ as esign/storefront/blog/forum. Mounted paths are exempted from the
 tenant/auth middleware — see core/middleware/tenant.py.
 """
 
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from core.throttling import PublicWriteRateThrottle
 from core.viewsets import TenantScopedModelViewSet
 from platform.tenant.models import Tenant
 from products.cycom.livechat.models import ChatMessage, ChatSession
@@ -70,6 +71,7 @@ def _get_session_or_404(tenant_id, token):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def public_session_create(request, slug):
     tenant = _get_tenant(slug)
     session = ChatSession.objects.create(
@@ -82,6 +84,7 @@ def public_session_create(request, slug):
 
 @api_view(["GET", "POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def public_messages(request, slug, token):
     """GET polls for messages (optionally `?since=<ISO timestamp>` to fetch
     only what's new); POST sends a visitor message. One URL, one session
