@@ -1,8 +1,8 @@
 from django.db import models
 from django.utils import timezone
-from django.utils.text import slugify
 
 from platform.common.models import BaseModel
+from platform.common.slugs import unique_slugify
 
 
 class BlogPost(BaseModel):
@@ -25,7 +25,9 @@ class BlogPost(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            self.slug = unique_slugify(
+                BlogPost.objects.filter(tenant_id=self.tenant_id), self.title, exclude_pk=self.pk
+            )
         if self.is_published and self.published_at is None:
             self.published_at = timezone.now()
         super().save(*args, **kwargs)

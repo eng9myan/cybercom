@@ -1,7 +1,7 @@
 from django.db import models
-from django.utils.text import slugify
 
 from platform.common.models import BaseModel
+from platform.common.slugs import unique_slugify
 
 BLOCK_TYPE_CHOICES = [
     ("section", "Section"),
@@ -38,7 +38,9 @@ class Page(BaseModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            self.slug = unique_slugify(
+                Page.objects.filter(tenant_id=self.tenant_id), self.title, exclude_pk=self.pk
+            )
         super().save(*args, **kwargs)
         if self.is_homepage:
             # Only one homepage per tenant — demoting the others is cheaper

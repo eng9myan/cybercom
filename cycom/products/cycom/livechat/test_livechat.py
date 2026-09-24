@@ -71,6 +71,12 @@ def test_poll_since_only_returns_new_messages(public_client, tenant):
     assert resp.data["messages"][0]["body"] == "new"
 
 
+def test_poll_rejects_malformed_since(public_client, tenant):
+    session = ChatSession.objects.create(tenant_id=tenant.id)
+    resp = public_client.get(f"/api/chat/{tenant.slug}/sessions/{session.token}/messages/?since=not-a-date")
+    assert resp.status_code == 400
+
+
 def test_agent_reply_via_staff_api(admin_client, tenant_id):
     session = ChatSession.objects.create(tenant_id=tenant_id)
     resp = admin_client.post(f"/api/v1/livechat/sessions/{session.id}/reply/", {"body": "How can I help?"})

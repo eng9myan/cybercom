@@ -32,6 +32,12 @@ def reorder_blocks(page, moves, tenant_id):
     container (section/columns) can never itself be nested inside
     another block -- both checked before anything is written, so a
     partial/invalid batch never applies half its moves."""
+    for move in moves:
+        if not isinstance(move, dict) or "id" not in move or "order" not in move:
+            raise ValidationError("Each move requires 'id' and 'order'.")
+        if not isinstance(move["order"], int) or isinstance(move["order"], bool):
+            raise ValidationError("'order' must be an integer.")
+
     block_ids = [m["id"] for m in moves]
     blocks_by_id = {
         str(b.id): b for b in PageBlock.objects.filter(id__in=block_ids, page=page, tenant_id=tenant_id)

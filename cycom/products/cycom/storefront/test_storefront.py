@@ -64,6 +64,28 @@ def test_create_cart_and_add_item(client, store):
     assert resp.data["lines"][0]["quantity"] == 2
 
 
+def test_add_item_rejects_non_numeric_quantity(client, store):
+    resp = client.post(f"/api/store/{store['tenant'].slug}/carts/")
+    token = resp.data["token"]
+    resp = client.post(
+        f"/api/store/{store['tenant'].slug}/carts/{token}/items/",
+        {"product": str(store["published"].id), "quantity": "not-a-number"},
+        format="json",
+    )
+    assert resp.status_code == 400
+
+
+def test_add_item_rejects_zero_or_negative_quantity(client, store):
+    resp = client.post(f"/api/store/{store['tenant'].slug}/carts/")
+    token = resp.data["token"]
+    resp = client.post(
+        f"/api/store/{store['tenant'].slug}/carts/{token}/items/",
+        {"product": str(store["published"].id), "quantity": 0},
+        format="json",
+    )
+    assert resp.status_code == 400
+
+
 def test_cannot_add_unpublished_product(client, store):
     resp = client.post(f"/api/store/{store['tenant'].slug}/carts/")
     token = resp.data["token"]

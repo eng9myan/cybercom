@@ -97,6 +97,25 @@ def test_reorder_persists_drag_drop_move(admin_client, tenant_id):
     assert text_block.order == 0
 
 
+def test_reorder_rejects_malformed_move(admin_client, tenant_id):
+    page = Page.objects.create(tenant_id=tenant_id, title="Landing")
+    block = PageBlock.objects.create(tenant_id=tenant_id, page=page, block_type="text", order=0)
+
+    resp = admin_client.post(
+        "/api/v1/cms/blocks/reorder/",
+        {"page": str(page.id), "moves": [{"parent": None}]},
+        format="json",
+    )
+    assert resp.status_code == 400
+
+    resp = admin_client.post(
+        "/api/v1/cms/blocks/reorder/",
+        {"page": str(page.id), "moves": [{"id": str(block.id), "order": "not-a-number"}]},
+        format="json",
+    )
+    assert resp.status_code == 400
+
+
 def test_reorder_rejects_nesting_container_via_drag(admin_client, tenant_id):
     page = Page.objects.create(tenant_id=tenant_id, title="Landing")
     columns = PageBlock.objects.create(tenant_id=tenant_id, page=page, block_type="columns", order=0)

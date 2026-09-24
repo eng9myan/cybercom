@@ -6,8 +6,12 @@ import { cycomBackendProxy } from '@/lib/cycomServer';
 
 function target(req: NextRequest, path: string[]): string {
   const suffix = path.join('/');
-  const qs = req.nextUrl.search || '';
-  return `/api/v1/provisioning/${suffix}${suffix.endsWith('/') || qs ? '' : '/'}${qs}`;
+  // Always land on exactly one trailing slash before the query string --
+  // see app/api/cycom/rest/[...path]/route.ts's target() for why (the
+  // previous `|| qs` check dropped the slash whenever a query string was
+  // present, breaking non-GET requests via Django's APPEND_SLASH redirect).
+  const withSlash = suffix.endsWith('/') ? suffix : `${suffix}/`;
+  return `/api/v1/provisioning/${withSlash}${req.nextUrl.search || ''}`;
 }
 
 async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {

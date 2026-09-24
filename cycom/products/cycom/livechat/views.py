@@ -9,6 +9,7 @@ as esign/storefront/blog/forum. Mounted paths are exempted from the
 tenant/auth middleware — see core/middleware/tenant.py.
 """
 
+from rest_framework import serializers
 from rest_framework.decorators import action, api_view, permission_classes, throttle_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
@@ -103,7 +104,12 @@ def public_messages(request, slug, token):
     messages = session.messages.all()
     since = request.query_params.get("since")
     if since:
-        messages = messages.filter(created_at__gt=since)
+        # DRF's own field parses/validates rather than handing the raw
+        # client string straight to a DateTimeField filter -- a malformed
+        # `since` used to raise an unhandled 500 on this endpoint, and the
+        # widget polls it every few seconds.
+        parsed = serializers.DateTimeField().to_internal_value(since)
+        messages = messages.filter(created_at__gt=parsed)
     return Response(
         {
             "status": session.status,

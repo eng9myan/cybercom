@@ -95,10 +95,22 @@ def _get_thread_or_404(tenant_id, thread_slug):
         raise ValidationError("Thread not found.")
 
 
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 @permission_classes([AllowAny])
+@throttle_classes([PublicWriteRateThrottle])
 def public_thread_list(request, slug):
+    """GET lists threads; POST creates one. One URL for both — a separate
+    `threads/create/` route previously collided with the dynamic thread-slug
+    route below it: a thread titled "Create" would slugify to "create" and
+    become permanently unreachable through its own detail view, since the
+    static "create" route matched first."""
     tenant = _get_tenant(slug)
+    if request.method == "POST":
+        serializer = PublicThreadCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        thread = serializer.save(tenant_id=tenant.id)
+        return Response(PublicThreadDetailSerializer(thread).data, status=201)
+
     threads = ForumThread.objects.filter(tenant_id=tenant.id).annotate(reply_count=Count("replies"))
     return Response(PublicThreadListSerializer(threads, many=True).data)
 
@@ -109,17 +121,6 @@ def public_thread_detail(request, slug, thread_slug):
     tenant = _get_tenant(slug)
     thread = _get_thread_or_404(tenant.id, thread_slug)
     return Response(PublicThreadDetailSerializer(thread).data)
-
-
-@api_view(["POST"])
-@permission_classes([AllowAny])
-@throttle_classes([PublicWriteRateThrottle])
-def public_thread_create(request, slug):
-    tenant = _get_tenant(slug)
-    serializer = PublicThreadCreateSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    thread = serializer.save(tenant_id=tenant.id)
-    return Response(PublicThreadDetailSerializer(thread).data, status=201)
 
 
 @api_view(["POST"])

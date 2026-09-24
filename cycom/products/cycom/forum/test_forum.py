@@ -39,13 +39,42 @@ def public_client():
 
 def test_guest_can_create_thread(public_client, tenant):
     resp = public_client.post(
-        f"/api/forum/{tenant.slug}/threads/create/",
+        f"/api/forum/{tenant.slug}/threads/",
         {"title": "How do I export invoices?", "body": "Looking for a bulk export.", "author_name": "Sam"},
         format="json",
     )
     assert resp.status_code == 201, resp.data
     assert resp.data["slug"] == "how-do-i-export-invoices"
     assert resp.data["replies"] == []
+
+
+def test_duplicate_title_gets_a_disambiguated_slug(public_client, tenant):
+    """Two guests posting the same title used to raise an unhandled
+    IntegrityError on the tenant_id+slug unique constraint."""
+    for _ in range(2):
+        resp = public_client.post(
+            f"/api/forum/{tenant.slug}/threads/",
+            {"title": "Hello World", "body": "..."},
+            format="json",
+        )
+        assert resp.status_code == 201, resp.data
+    resp = public_client.get(f"/api/forum/{tenant.slug}/threads/")
+    slugs = {t["slug"] for t in resp.data}
+    assert slugs == {"hello-world", "hello-world-2"}
+
+
+def test_thread_titled_create_is_still_reachable(public_client, tenant):
+    """A thread slugifying to "create" used to be permanently shadowed by
+    the (now-removed) separate threads/create/ route."""
+    resp = public_client.post(
+        f"/api/forum/{tenant.slug}/threads/", {"title": "Create", "body": "..."}, format="json"
+    )
+    assert resp.status_code == 201, resp.data
+    assert resp.data["slug"] == "create"
+
+    resp = public_client.get(f"/api/forum/{tenant.slug}/threads/create/")
+    assert resp.status_code == 200
+    assert resp.data["title"] == "Create"
 
 
 def test_guest_can_reply_to_thread(public_client, tenant):

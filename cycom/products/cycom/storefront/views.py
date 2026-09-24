@@ -59,9 +59,14 @@ def cart_add_item(request, slug, token):
     tenant = _get_tenant(slug)
     cart = get_open_cart_or_404(tenant.id, token)
     product_id = request.data.get("product")
-    quantity = int(request.data.get("quantity", 1))
     if not product_id:
         raise ValidationError("product is required.")
+    try:
+        quantity = int(request.data.get("quantity", 1))
+    except (TypeError, ValueError):
+        raise ValidationError("quantity must be a whole number.")
+    if quantity < 1:
+        raise ValidationError("quantity must be at least 1.")
     try:
         product = Product.objects.get(pk=product_id, tenant_id=tenant.id)
     except Product.DoesNotExist:

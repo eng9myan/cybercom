@@ -9,9 +9,14 @@ import { cycomBackendProxy } from '@/lib/cycomServer';
 
 function target(req: NextRequest, path: string[]): string {
   const suffix = path.join('/');
-  const qs = req.nextUrl.search || '';
-  const trailing = suffix.endsWith('/') || qs ? '' : '/';
-  return `/api/v1/${suffix}${trailing}${qs}`;
+  // Always land on exactly one trailing slash before the query string --
+  // Django's APPEND_SLASH needs it regardless of whether a `?...` follows.
+  // (A prior version dropped the slash whenever a query string was
+  // present, so e.g. PATCH .../products/123?warehouse=main lost its slash,
+  // triggering Django's redirect -- which drops the request body on a
+  // non-GET method -- so the mutation silently no-opped.)
+  const withSlash = suffix.endsWith('/') ? suffix : `${suffix}/`;
+  return `/api/v1/${withSlash}${req.nextUrl.search || ''}`;
 }
 
 async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
