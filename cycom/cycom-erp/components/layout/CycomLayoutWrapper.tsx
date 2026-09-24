@@ -7,7 +7,7 @@ import CycomTopbar from './CycomTopbar';
 import CyaiChatWidget from '../CyaiChatWidget';
 import PublicChatWidget from '../PublicChatWidget';
 
-const PUBLIC_SITE_PREFIXES = ['/store/', '/blog/', '/forum/', '/learn/'];
+const PUBLIC_SITE_PREFIXES = ['/store/', '/blog/', '/forum/', '/learn/', '/site/'];
 
 export default function CycomLayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
