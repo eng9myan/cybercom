@@ -92,7 +92,7 @@ export default function CourseDetailPage() {
     <div className="min-h-screen bg-[#030712] text-white p-4 md:p-8 font-sans">
       <div className="max-w-3xl mx-auto space-y-6">
         <Link href={`/learn/${slug}`} className="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white">
-          <ArrowLeft className="w-4 h-4" /> {t('elearning.backToCourses')}
+          <ArrowLeft className="w-4 h-4 rtl:-scale-x-100" /> {t('elearning.backToCourses')}
         </Link>
 
         {loading && <p className="text-slate-500 text-sm">{t('elearning.loading')}</p>}

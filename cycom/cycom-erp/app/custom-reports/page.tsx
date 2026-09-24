@@ -224,7 +224,7 @@ export default function CustomReportsPage() {
             {activeReport && !running && rows.length > 0 && activeReport.chart_type === 'table' && (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-slate-500 text-xs uppercase border-b border-white/5">
+                  <tr className="text-start text-slate-500 text-xs uppercase border-b border-white/5">
                     <th className="pb-2 font-bold">{t('customReports.colLabel')}</th>
                     <th className="pb-2 font-bold text-end">{t('customReports.colValue')}</th>
                   </tr>

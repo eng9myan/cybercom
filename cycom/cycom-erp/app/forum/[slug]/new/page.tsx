@@ -24,7 +24,7 @@ export default function NewThreadPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/forum/${slug}/threads/create/`, {
+      const res = await fetch(`/api/forum/${slug}/threads/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, body, author_name: authorName, author_email: authorEmail }),
@@ -43,7 +43,7 @@ export default function NewThreadPage() {
     <div className="min-h-screen bg-[#030712] text-white p-4 md:p-8 font-sans">
       <div className="max-w-xl mx-auto space-y-6">
         <Link href={`/forum/${slug}`} className="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white">
-          <ArrowLeft className="w-4 h-4" /> {t('forum.backToForum')}
+          <ArrowLeft className="w-4 h-4 rtl:-scale-x-100" /> {t('forum.backToForum')}
         </Link>
 
         <form onSubmit={submit} className="glass-card p-6 space-y-4">
