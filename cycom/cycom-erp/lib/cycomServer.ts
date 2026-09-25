@@ -557,6 +557,41 @@ const MODEL_ADAPTERS: Record<string, ModelAdapter> = {
     }),
   },
 
+  'hr.payslip.run': {
+    basePath: '/api/v1/payroll/runs/',
+    toBackend: () => ({}),
+    fromBackend: (r) => {
+      const payslips = (r.payslips as Array<{ gross_pay?: string | number }>) || [];
+      return {
+        id: r.id,
+        name: r.number || `Payroll run ${r.id}`,
+        date_start: r.period_start,
+        date_end: r.period_end,
+        state: r.status,
+        slip_count: payslips.length,
+        gross_total: payslips.reduce((sum, p) => sum + Number(p.gross_pay || 0), 0),
+      };
+    },
+  },
+  'pos.order': {
+    // No listQuery -- the callers' `state in [...]` domain filters use
+    // Odoo-era status names ('done'/'invoiced') that don't exist in the
+    // real STATUS_CHOICES (draft/paid/void) anyway, so there's nothing
+    // correct to translate; both pages get the full list unfiltered,
+    // same as every other adapter here with no listQuery.
+    basePath: '/api/v1/pos/orders/',
+    toBackend: () => ({}),
+    fromBackend: (r) => ({
+      id: r.id,
+      name: r.order_number,
+      session_id: false,
+      date_order: r.created_at,
+      partner_id: r.customer_name ? [1, r.customer_name as string] : false,
+      amount_total: Number(r.amount_total ?? 0),
+      amount_tax: Number(r.amount_tax ?? 0),
+      state: r.status,
+    }),
+  },
   'pos.session': {
     basePath: '/api/v1/pos/sessions/',
     toBackend: () => ({}),

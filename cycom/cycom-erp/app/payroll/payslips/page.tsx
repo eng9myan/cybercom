@@ -13,6 +13,7 @@ type CycomPayslipRun = {
   date_end?: string;
   state?: string;
   slip_count?: number;
+  gross_total?: number;
 };
 
 interface PayslipBatch {
@@ -30,8 +31,9 @@ const mapRun = (r: CycomPayslipRun): PayslipBatch => ({
   id: fmtCode('BATCH', r.id, 6),
   name: r.name || `Payroll batch ${r.id}`,
   count: r.slip_count ?? 0,
-  completed: r.state === 'close',
-  totalGross: fmtMoney(0, 'JOD'),
+  // Real PayrollRun.status is draft/posted, not Odoo's draft/verify/close.
+  completed: r.state === 'posted',
+  totalGross: fmtMoney(r.gross_total ?? 0, 'JOD'),
   date: fmtDate(r.date_end || r.date_start),
 });
 
@@ -40,7 +42,7 @@ export default function PayslipBatches() {
   const { rows: batches, loading, error } = useCycomList<CycomPayslipRun, PayslipBatch>(
     'hr.payslip.run',
     [],
-    ['name', 'date_start', 'date_end', 'state', 'slip_count'],
+    ['name', 'date_start', 'date_end', 'state', 'slip_count', 'gross_total'],
     mapRun,
     { limit: 100, order: 'date_end desc' },
   );
