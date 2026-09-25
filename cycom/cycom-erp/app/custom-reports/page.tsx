@@ -19,6 +19,29 @@ interface SourceMeta {
   measures: { key: string; label: string }[];
 }
 
+// The backend's source/dimension/measure `label` strings (products/cycom/
+// reporting/registry.py) are plain English — they're identifiers for a
+// finite, backend-owned whitelist, not user content, so translating them
+// belongs here rather than in Django's own i18n. Keyed by "sourceKey" or
+// "sourceKey.itemKey" so the same server key (e.g. "count") can carry a
+// different label per source ("Order Count" vs "Invoice Count"). Any
+// future backend source without an entry here just falls back to the
+// server's English label instead of breaking.
+const META_LABEL_KEYS: Record<string, string> = {
+  sales_orders: 'sourceSalesOrders',
+  invoices: 'sourceInvoices',
+  'sales_orders.status': 'dimStatus',
+  'sales_orders.customer': 'dimCustomer',
+  'sales_orders.salesperson': 'dimSalesperson',
+  'sales_orders.count': 'measureOrderCount',
+  'sales_orders.amount_total': 'measureAmountTotal',
+  'invoices.status': 'dimStatus',
+  'invoices.invoice_type': 'dimInvoiceType',
+  'invoices.count': 'measureInvoiceCount',
+  'invoices.amount_total': 'measureAmountTotal',
+  'invoices.amount_paid': 'measureAmountPaid',
+};
+
 interface SavedReport {
   id: string;
   name: string;
@@ -38,6 +61,8 @@ const PIE_COLORS = ['#00F0FF', '#7C3AED', '#F59E0B', '#10B981', '#EF4444', '#3B8
 
 export default function CustomReportsPage() {
   const t = useT();
+  const metaLabel = (path: string, fallback: string) =>
+    META_LABEL_KEYS[path] ? t(`customReports.${META_LABEL_KEYS[path]}`) : fallback;
   const [sources, setSources] = useState<SourceMeta[]>([]);
   const [reports, setReports] = useState<SavedReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,7 +173,7 @@ export default function CustomReportsPage() {
             className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/30"
           >
             {sources.map((s) => (
-              <option key={s.key} value={s.key}>{s.label}</option>
+              <option key={s.key} value={s.key}>{metaLabel(s.key, s.label)}</option>
             ))}
           </select>
           <select
@@ -157,7 +182,7 @@ export default function CustomReportsPage() {
             className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/30"
           >
             {selectedSource?.dimensions.map((d) => (
-              <option key={d.key} value={d.key}>{d.label}</option>
+              <option key={d.key} value={d.key}>{metaLabel(`${source}.${d.key}`, d.label)}</option>
             ))}
           </select>
           <select
@@ -166,7 +191,7 @@ export default function CustomReportsPage() {
             className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-white/30"
           >
             {selectedSource?.measures.map((m) => (
-              <option key={m.key} value={m.key}>{m.label}</option>
+              <option key={m.key} value={m.key}>{metaLabel(`${source}.${m.key}`, m.label)}</option>
             ))}
           </select>
           <select
