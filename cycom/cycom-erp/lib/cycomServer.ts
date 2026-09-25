@@ -299,6 +299,60 @@ const vehicleFilterQuery = (domain: Array<[string, string, unknown]>) => {
 };
 
 const MODEL_ADAPTERS: Record<string, ModelAdapter> = {
+  // app/hr/documents/page.tsx's expiry-tracking table. The generic
+  // products.cycom.documents.Document store has no document_type/
+  // expiry_date fields (expiry tracking is this feature's entire
+  // purpose), so this is a real, dedicated EmployeeDocument model, not
+  // the shared document store.
+  'hr.document': {
+    basePath: '/api/v1/hr/documents/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('employee_id' in src) out.employee = Array.isArray(src.employee_id) ? src.employee_id[0] : src.employee_id;
+      if ('document_type' in src) out.document_type = src.document_type;
+      if ('name' in src) out.number = src.name;
+      if ('expiry_date' in src) out.expiry_date = src.expiry_date;
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      employee_id: r.employee ? [1, (r.employee_name as string) || ''] : false,
+      name: r.number || '',
+      document_type: r.document_type,
+      expiry_date: r.expiry_date || false,
+      state: 'valid',
+    }),
+  },
+  // app/hr/insurance/page.tsx. Scoped to the fields that page's own
+  // mapper actually reads (employee, plan/grade name, provider, dates,
+  // status) -- dependentCount/premium/companyShare/employeeDeduction are
+  // hardcoded placeholders in the page's mapper itself, not read from
+  // any field, so there's nothing to wire those to yet.
+  'hr.employee.insurance': {
+    basePath: '/api/v1/hr/insurance/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('employee_id' in src) out.employee = Array.isArray(src.employee_id) ? src.employee_id[0] : src.employee_id;
+      if ('name' in src) out.plan_name = src.name;
+      if ('insurance_provider' in src) out.provider = src.insurance_provider;
+      if ('policy_number' in src) out.policy_number = src.policy_number;
+      if ('date_start' in src) out.start_date = src.date_start;
+      if ('date_end' in src) out.end_date = src.date_end;
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      employee_id: r.employee ? [1, (r.employee_name as string) || ''] : false,
+      name: r.plan_name || '',
+      policy_number: r.policy_number || false,
+      insurance_provider: r.provider || false,
+      date_start: r.start_date || false,
+      date_end: r.end_date || false,
+      state: r.status,
+    }),
+  },
   // Onboarding's Company Setup wizard (app/api/cycom/setup/company/route.ts)
   // -- the real Company model is much flatter than Odoo's res.company (no
   // country_id/currency_id FKs, currency is a plain code string, no city).
@@ -1017,6 +1071,127 @@ async function handleInventoryProductSearch(
   });
 }
 
+// app/inventory/transfers/page.tsx expects Odoo's stock.picking -- a
+// shipment HEADER over multiple stock.move.line rows. The real
+// StockMove (products.cycom.inventory) is already flat: one row per
+// product moved, no header entity to group under. Rather than fake a
+// grouping heuristic (StockMove.reference is optional free text, not a
+// reliable shipment key), each transfer-type StockMove maps to its own
+// "picking" 1:1 -- less like Odoo's UI, but every row is real data, not
+// an invented aggregation. Read-only: the real create/approve/reject
+// flow for a move lives on StockMoveViewSet directly, not through this
+// legacy shim.
+async function handleStockPickingSearch(sessionId: string): Promise<NextResponse> {
+  const [movesRes, warehousesRes] = await Promise.all([
+    backendFetch('/api/v1/inventory/moves/', sessionId, { method: 'GET' }),
+    backendFetch('/api/v1/inventory/warehouses/', sessionId, { method: 'GET' }),
+  ]);
+  const movesPayload = await movesRes.json();
+  if (!movesRes.ok) return jsonError(movesPayload.detail || 'Fetch failed', movesRes.status);
+  const warehousesPayload = await warehousesRes.json();
+
+  const moves = (movesPayload.results || movesPayload) as Array<Record<string, unknown>>;
+  const warehouses = (warehousesPayload.results || warehousesPayload) as Array<{ id: string; name: string }>;
+  const warehouseName = (id: unknown) => warehouses.find((w) => w.id === id)?.name || '';
+
+  // StockMove.status: draft/pending_approval/approved/done/rejected ->
+  // the closest Odoo stock.picking state the page's TRANSFER_STATE map
+  // (lib/status.ts) actually recognizes.
+  const STATE_MAP: Record<string, string> = {
+    draft: 'draft',
+    pending_approval: 'confirmed',
+    approved: 'assigned',
+    done: 'done',
+    rejected: 'cancel',
+  };
+
+  const rows = moves
+    .filter((m) => m.move_type === 'transfer')
+    .map((m) => ({
+      id: m.id,
+      name: m.reference || `MOVE-${String(m.id).slice(0, 8)}`,
+      location_id: m.warehouse ? [1, warehouseName(m.warehouse)] : false,
+      location_dest_id: m.destination_warehouse ? [1, warehouseName(m.destination_warehouse)] : false,
+      scheduled_date: m.date,
+      date_done: m.status === 'done' ? m.date : false,
+      state: STATE_MAP[m.status as string] || m.status,
+      move_ids_without_package: [m.id],
+    }));
+  return NextResponse.json({ result: rows });
+}
+
+// app/inventory/page.tsx's dashboard. Real Product has no stored
+// qty_available/virtual_available -- on-hand quantity lives on StockItem
+// (one row per product/warehouse), so this aggregates it the same way
+// the real backend's own reports do, just client-side across the two
+// list endpoints. category_name/unit_name are already exposed directly
+// by ProductSerializer, no extra join needed for those.
+async function handleProductProductSearch(sessionId: string): Promise<NextResponse> {
+  const [productsRes, stockItemsRes] = await Promise.all([
+    backendFetch('/api/v1/inventory/products/', sessionId, { method: 'GET' }),
+    backendFetch('/api/v1/inventory/stock-items/', sessionId, { method: 'GET' }),
+  ]);
+  const productsPayload = await productsRes.json();
+  if (!productsRes.ok) return jsonError(productsPayload.detail || 'Fetch failed', productsRes.status);
+  const stockItemsPayload = await stockItemsRes.json();
+
+  const products = (productsPayload.results || productsPayload) as Array<Record<string, unknown>>;
+  const stockItems = (stockItemsPayload.results || stockItemsPayload) as Array<{
+    product: string;
+    quantity_on_hand: string;
+  }>;
+
+  const qtyByProduct = new Map<string, number>();
+  for (const si of stockItems) {
+    qtyByProduct.set(si.product, (qtyByProduct.get(si.product) || 0) + Number(si.quantity_on_hand || 0));
+  }
+
+  const rows = products
+    .filter((p) => p.product_type === 'STORABLE' || p.product_type === 'CONSUMABLE')
+    .map((p) => {
+      const qty = qtyByProduct.get(p.id as string) || 0;
+      return {
+        id: p.id,
+        name: p.name,
+        default_code: p.internal_ref || '',
+        qty_available: qty,
+        virtual_available: qty,
+        uom_id: p.unit_name ? [1, p.unit_name as string] : false,
+        categ_id: p.category_name ? [1, p.category_name as string] : false,
+      };
+    });
+  return NextResponse.json({ result: rows });
+}
+
+// app/payroll/deductions/page.tsx wants a per-deduction-TYPE breakdown
+// (LATE/ABSENCE/general codes). Real Payslip only has one matching
+// column, late_deduction -- no separate absence or generic-deduction
+// field exists. Partial, honest coverage: only payslips whose
+// late_deduction is actually non-zero produce a synthetic 'LATE' line;
+// nothing is fabricated for the ABSENCE/DED codes there's no real data
+// behind. A plain field-mapping adapter can't do this (it maps every
+// row 1:1, so a payslip with zero lateness would still show a fake
+// "$0.00 LATE deduction" row), hence a real handler that filters first.
+async function handlePayslipLineSearch(sessionId: string): Promise<NextResponse> {
+  const upstream = await backendFetch('/api/v1/payroll/payslips/', sessionId, { method: 'GET' });
+  const payload = await upstream.json();
+  if (!upstream.ok) return jsonError(payload.detail || 'Fetch failed', upstream.status);
+
+  const payslips = (payload.results || payload) as Array<Record<string, unknown>>;
+  const rows = payslips
+    .filter((p) => Number(p.late_deduction || 0) > 0)
+    .map((p) => ({
+      id: p.id,
+      employee_id: p.employee ? [1, (p.employee_name as string) || ''] : false,
+      name: 'Lateness deduction',
+      amount: -Math.abs(Number(p.late_deduction || 0)),
+      date: p.period_end || false,
+      slip_id: [1, ''],
+      code: 'LATE',
+    }));
+  return NextResponse.json({ result: rows });
+}
+
 // Legacy internal-order pages never expose warehouse selection — they only
 // ever operated against one implicit "central warehouse -> branch" pair.
 // Cache resolution per request; first two warehouses by code, deterministic.
@@ -1270,6 +1445,18 @@ export async function cycomCallKw(
 
   if (body.model === 'inventory.product') {
     return handleInventoryProductSearch(sessionId, body);
+  }
+
+  if (body.model === 'stock.picking') {
+    return handleStockPickingSearch(sessionId);
+  }
+
+  if (body.model === 'product.product') {
+    return handleProductProductSearch(sessionId);
+  }
+
+  if (body.model === 'hr.payslip.line') {
+    return handlePayslipLineSearch(sessionId);
   }
 
   // Employee bulk import — real endpoint returns a rich payload (imported

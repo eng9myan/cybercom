@@ -3,8 +3,13 @@ from rest_framework.response import Response
 
 from core.viewsets import TenantScopedModelViewSet
 from products.cycom.hr.imports import run_import
-from products.cycom.hr.models import Contract, Employee
-from products.cycom.hr.serializers import ContractSerializer, EmployeeSerializer
+from products.cycom.hr.models import Contract, Employee, EmployeeDocument, EmployeeInsurance
+from products.cycom.hr.serializers import (
+    ContractSerializer,
+    EmployeeDocumentSerializer,
+    EmployeeInsuranceSerializer,
+    EmployeeSerializer,
+)
 
 
 class EmployeeViewSet(TenantScopedModelViewSet):
@@ -28,3 +33,15 @@ class EmployeeViewSet(TenantScopedModelViewSet):
 class ContractViewSet(TenantScopedModelViewSet):
     queryset = Contract.objects.select_related("employee").all()
     serializer_class = ContractSerializer
+
+
+class EmployeeDocumentViewSet(TenantScopedModelViewSet):
+    queryset = EmployeeDocument.objects.select_related("employee").all()
+    serializer_class = EmployeeDocumentSerializer
+    filterset_fields = ["employee", "document_type"]
+
+
+class EmployeeInsuranceViewSet(TenantScopedModelViewSet):
+    queryset = EmployeeInsurance.objects.select_related("employee").all()
+    serializer_class = EmployeeInsuranceSerializer
+    filterset_fields = ["employee", "status"]

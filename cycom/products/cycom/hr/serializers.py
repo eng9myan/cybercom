@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from products.cycom.hr.models import Contract, Employee
+from products.cycom.hr.models import Contract, Employee, EmployeeDocument, EmployeeInsurance
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
@@ -26,3 +26,27 @@ class ContractSerializer(serializers.ModelSerializer):
         model = Contract
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
+
+class EmployeeDocumentSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EmployeeDocument
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
+    def get_employee_name(self, obj):
+        return f"{obj.employee.first_name} {obj.employee.last_name}"
+
+
+class EmployeeInsuranceSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EmployeeInsurance
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
+    def get_employee_name(self, obj):
+        return f"{obj.employee.first_name} {obj.employee.last_name}"

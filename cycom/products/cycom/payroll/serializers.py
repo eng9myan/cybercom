@@ -16,6 +16,9 @@ class AttendanceRecordSerializer(serializers.ModelSerializer):
 
 
 class PayslipSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    period_end = serializers.DateField(source="payroll_run.period_end", read_only=True)
+
     class Meta:
         model = Payslip
         fields = "__all__"
@@ -23,6 +26,9 @@ class PayslipSerializer(serializers.ModelSerializer):
             "id", "tenant_id", "base_salary", "allowances_total", "overtime_amount",
             "late_deduction", "gross_pay", "net_pay", "status", "created_at", "updated_at",
         ]
+
+    def get_employee_name(self, obj):
+        return f"{obj.employee.first_name} {obj.employee.last_name}"
 
 
 class PayrollRunSerializer(serializers.ModelSerializer):

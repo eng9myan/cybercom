@@ -81,3 +81,65 @@ class Contract(BaseModel):
 
     def __str__(self):
         return f"{self.employee} — {self.contract_type}"
+
+
+class EmployeeDocument(BaseModel):
+    """A compliance document on file for an employee (Iqama/work permit,
+    passport, driving license, ...) with an expiry an HR officer needs to
+    track. Deliberately its own model rather than reusing the generic
+    products.cycom.documents.Document store: that one has no
+    document_type/expiry_date fields, and expiry tracking is this
+    feature's entire purpose."""
+
+    DOCUMENT_TYPES = [
+        ("passport", "Passport"),
+        ("iqama", "Iqama / Work Permit"),
+        ("visa", "Visa"),
+        ("license", "Driving License"),
+        ("health_certificate", "Health Certificate"),
+        ("other", "Other"),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="documents")
+    document_type = models.CharField(max_length=30, choices=DOCUMENT_TYPES)
+    number = models.CharField(max_length=100, blank=True)
+    expiry_date = models.DateField(null=True, blank=True)
+
+    class Meta:
+        db_table = "cycom_hr_employee_documents"
+        ordering = ["expiry_date"]
+
+    def __str__(self):
+        return f"{self.employee} — {self.get_document_type_display()}"
+
+
+class EmployeeInsurance(BaseModel):
+    """A health-insurance enrollment for an employee. Scoped to what
+    app/hr/insurance/page.tsx's table actually reads (employee, plan
+    name/tier, provider, policy number, coverage dates, status) — the
+    page's dependent-count/premium/company-share/employee-deduction
+    columns are hardcoded placeholders in its own mapper function, not
+    read from any backend field, so there's nothing there yet to wire a
+    real field to; that's a frontend gap as much as a backend one, and
+    adding that depth is a natural follow-up once the page itself reads it."""
+
+    STATUS_CHOICES = [
+        ("active", "Active"),
+        ("expired", "Expired"),
+        ("cancelled", "Cancelled"),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="insurance_enrollments")
+    plan_name = models.CharField(max_length=150, blank=True)
+    provider = models.CharField(max_length=150, blank=True)
+    policy_number = models.CharField(max_length=100, blank=True)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
+
+    class Meta:
+        db_table = "cycom_hr_employee_insurance"
+        ordering = ["-start_date"]
+
+    def __str__(self):
+        return f"{self.employee} — {self.plan_name or self.provider}"
