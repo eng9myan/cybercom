@@ -15,9 +15,9 @@ Ported from CyShop `apps.catalog`. Adapted to Cycom conventions:
 
 from django.db import models
 from django.db.models import Q
-from django.utils.text import slugify
 
 from platform.common.models import BaseModel, SoftDeleteMixin
+from platform.common.slugs import unique_slugify
 from products.cycom.accounting.models import Account
 
 
@@ -46,7 +46,9 @@ class Category(CatalogModel):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = unique_slugify(
+                Category.objects.filter(tenant_id=self.tenant_id), self.name, exclude_pk=self.pk
+            )
         super().save(*args, **kwargs)
 
     def __str__(self):

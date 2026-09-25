@@ -16,6 +16,14 @@ class CatalogModelTests(TestCase):
         cat = Category.objects.create(tenant_id=self.tenant_id, name="Beverages")
         self.assertEqual(cat.slug, "beverages")
 
+    def test_duplicate_category_name_gets_disambiguated_slug(self):
+        """A bare slugify(name) with no collision check used to raise an
+        unhandled IntegrityError on the tenant_id+slug unique constraint."""
+        first = Category.objects.create(tenant_id=self.tenant_id, name="Beverages")
+        second = Category.objects.create(tenant_id=self.tenant_id, name="Beverages")
+        self.assertEqual(first.slug, "beverages")
+        self.assertEqual(second.slug, "beverages-2")
+
     def test_product_and_kit_bom(self):
         kit = Product.objects.create(
             tenant_id=self.tenant_id, name="Combo Meal", product_type="KIT"
