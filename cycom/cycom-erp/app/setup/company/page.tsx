@@ -58,7 +58,7 @@ export default function CompanySetupWizard() {
   // Apply state
   const [applying, setApplying] = useState(false);
   const [result, setResult] = useState<
-    | { ok: true; summary: string[]; warnings: string[]; parentCompanyId: number; branchIds: number[] }
+    | { ok: true; summary: string[]; warnings: string[]; parentCompanyId: string; branchIds: string[] }
     | { ok: false; error: string; warnings?: string[] }
     | null
   >(null);

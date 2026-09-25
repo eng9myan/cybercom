@@ -37,64 +37,43 @@ export async function getParam(req: NextRequest, key: string): Promise<string | 
 }
 
 /**
- * Install an Cycom module if it isn't already installed. Returns one of:
- *   { installed: true, alreadyInstalled }      — success
- *   { installed: false, notFound: true }       — module name doesn't exist
- *   { installed: false, error: string }        — install failed
+ * Odoo-era holdover: onboarding used to "install a module" per tenant
+ * (ir.module.module.button_immediate_install) to turn a feature on. The
+ * rewritten backend has no such concept at all -- Django serves one shared
+ * INSTALLED_APPS list to every tenant, so every app/model is already
+ * available to everyone unconditionally. There is nothing to install.
  *
- * Idempotent — safe to call repeatedly.
+ * `ir.module.module` was never migrated (confirmed: zero entries in
+ * lib/cycomServer.ts's MODEL_ADAPTERS), so every one of these calls
+ * unconditionally threw -- and since payroll/pos/procurement/sales/
+ * warehouse/hr all marked their core "module" `required: true`,
+ * `installModules()` re-threw and hard-failed the whole onboarding step
+ * with a 500, for every tenant, on every attempt. Rather than route each
+ * of those ~30 module names to something real (there is nothing real for
+ * most of them to route to), this now honestly reports "already
+ * available" without any backend call -- the wizard's actual job (saving
+ * the tenant's chosen preferences via ir.config_parameter, which IS real)
+ * still happens exactly as before.
  */
 export async function installModule(
   req: NextRequest,
   technicalName: string,
-): Promise<
-  | { installed: true; alreadyInstalled: boolean; shortdesc?: string }
-  | { installed: false; notFound: true }
-  | { installed: false; error: string }
-> {
-  try {
-    const rows = await cycomRpc<Array<{ id: number; state: string; shortdesc?: string }>>(
-      req,
-      'ir.module.module',
-      'search_read',
-      [[['name', '=', technicalName]], ['id', 'state', 'shortdesc']],
-      { limit: 1 },
-    );
-    if (!rows.length) return { installed: false, notFound: true };
-    const mod = rows[0];
-    if (mod.state === 'installed' || mod.state === 'to upgrade') {
-      return { installed: true, alreadyInstalled: true, shortdesc: mod.shortdesc };
-    }
-    await cycomRpc(req, 'ir.module.module', 'button_immediate_install', [[mod.id]]);
-    return { installed: true, alreadyInstalled: false, shortdesc: mod.shortdesc };
-  } catch (e) {
-    return { installed: false, error: e instanceof Error ? e.message : 'unknown error' };
-  }
+): Promise<{ installed: true; alreadyInstalled: true }> {
+  void req;
+  void technicalName;
+  return { installed: true, alreadyInstalled: true };
 }
 
-/** Install several modules, accumulate summary+warning lines. Order matters — earlier first. */
+/** See installModule() -- every entry reports "already available", nothing is called. */
 export async function installModules(
   req: NextRequest,
   modules: Array<{ name: string; required?: boolean }>,
   summary: string[],
   warnings: string[],
 ): Promise<void> {
+  void warnings;
   for (const m of modules) {
-    const r = await installModule(req, m.name);
-    if ('alreadyInstalled' in r && r.installed) {
-      summary.push(
-        r.alreadyInstalled
-          ? `Module "${r.shortdesc ?? m.name}" already installed.`
-          : `Installed "${r.shortdesc ?? m.name}".`,
-      );
-    } else if ('notFound' in r) {
-      const msg = `Module "${m.name}" is not available in this Cycom instance.`;
-      if (m.required) throw new Error(msg + ' Update Apps List in Cycom and retry.');
-      warnings.push(msg);
-    } else {
-      const msg = `Failed to install "${m.name}": ${r.error}`;
-      if (m.required) throw new Error(msg);
-      warnings.push(msg);
-    }
+    await installModule(req, m.name);
+    summary.push(`"${m.name}" is already available (no per-tenant activation needed).`);
   }
 }

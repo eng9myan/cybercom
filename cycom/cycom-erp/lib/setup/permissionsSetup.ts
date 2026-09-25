@@ -10,7 +10,7 @@ export type PermissionsSetupPayload = {
 };
 
 export type PermissionsSetupResult =
-  | { ok: true; summary: string[]; warnings: string[]; groupId: number | null }
+  | { ok: true; summary: string[]; warnings: string[]; groupId: string | null }
   | { ok: false; error: string; warnings?: string[] };
 
 export async function applyPermissionsSetup(p: PermissionsSetupPayload): Promise<PermissionsSetupResult> {

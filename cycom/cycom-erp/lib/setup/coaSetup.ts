@@ -6,7 +6,7 @@ export type CoaSetupPayload = {
 };
 
 export type CoaSetupResult =
-  | { ok: true; summary: string[]; warnings: string[]; l10nModule: string; moduleId: number | null }
+  | { ok: true; summary: string[]; warnings: string[]; l10nModule: string }
   | { ok: false; error: string; warnings?: string[] };
 
 export async function applyCoaSetup(payload: CoaSetupPayload): Promise<CoaSetupResult> {

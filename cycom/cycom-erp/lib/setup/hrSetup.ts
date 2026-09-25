@@ -15,7 +15,7 @@ export type HrSetupPayload = {
 };
 
 export type HrSetupResult =
-  | { ok: true; summary: string[]; warnings: string[]; departmentIds: number[] }
+  | { ok: true; summary: string[]; warnings: string[]; departmentNames: string[] }
   | { ok: false; error: string; warnings?: string[] };
 
 export async function applyHrSetup(p: HrSetupPayload): Promise<HrSetupResult> {

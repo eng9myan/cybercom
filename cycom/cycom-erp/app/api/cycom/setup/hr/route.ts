@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { installModules, cycomRpc, setParam } from '@/lib/setup/serverHelpers';
+import { installModules, setParam } from '@/lib/setup/serverHelpers';
 
 type Payload = {
   orgSize: 'small' | 'medium' | 'large';
@@ -21,7 +21,6 @@ export async function POST(req: NextRequest) {
 
   const summary: string[] = [];
   const warnings: string[] = [];
-  const departmentIds: number[] = [];
 
   try {
     await installModules(req, [
@@ -50,31 +49,22 @@ export async function POST(req: NextRequest) {
       { name: 'cycom_employee_profile' },
     ], summary, warnings);
 
-    // Seed departments idempotently
-    for (const name of p.departments) {
-      if (!name.trim()) continue;
-      const existing = await cycomRpc<Array<{ id: number }>>(
-        req, 'hr.department', 'search_read',
-        [[['name', '=', name.trim()]], ['id']], { limit: 1 },
-      );
-      if (existing.length) {
-        departmentIds.push(existing[0].id);
-        continue;
-      }
-      try {
-        const id = await cycomRpc<number>(req, 'hr.department', 'create', [{ name: name.trim() }]);
-        departmentIds.push(id);
-        summary.push(`Created department "${name}".`);
-      } catch (e) {
-        warnings.push(`Could not create department "${name}": ${e instanceof Error ? e.message : 'unknown'}`);
-      }
-    }
+    // Real Employee.department (products.cycom.hr) is a plain free-text
+    // field, not a separate entity with its own id/hierarchy/manager (that
+    // richer concept -- what app/hr/departments/page.tsx's tree view
+    // actually wants -- doesn't exist in the backend yet; a real one is a
+    // separate feature, not onboarding plumbing). Nothing needs pre-
+    // creating: an employee just gets typed into a department directly.
+    // Persist the chosen names as a preference so the employee-creation
+    // UI can offer them as suggestions.
+    const departmentNames = [...new Set(p.departments.map((d) => d.trim()).filter(Boolean))];
+    await setParam(req, 'cycom.hr.department_names', JSON.stringify(departmentNames));
 
     await setParam(req, 'cycom.hr.org_size', p.orgSize);
     await setParam(req, 'cycom.tenant.setup.hr_done', 'true');
-    summary.push(`Saved HR org size: ${p.orgSize}. Seeded ${departmentIds.length} department(s).`);
+    summary.push(`Saved HR org size: ${p.orgSize}. Saved ${departmentNames.length} department name(s) as a preference.`);
 
-    return NextResponse.json({ ok: true, summary, warnings, departmentIds });
+    return NextResponse.json({ ok: true, summary, warnings, departmentNames });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : 'Setup failed', warnings }, { status: 500 });
   }

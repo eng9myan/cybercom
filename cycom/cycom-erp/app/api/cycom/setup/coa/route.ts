@@ -4,14 +4,22 @@ import { cycomCallKw } from '@/lib/cycomServer';
 /**
  * Chart of Accounts orchestrator.
  *
- * 1. Resolve the requested l10n_<cc> Cycom module
- * 2. If not installed, call ir.module.module.button_immediate_install (this is slow — up to ~60s)
- * 3. After install, adjust the default sales / purchase tax amounts to the user's preference
- * 4. Persist cycom.tenant.setup.coa_done
+ * Used to install a per-country l10n_<cc> module (auto-loads a full chart
+ * of accounts + tax templates) via Odoo's ir.module.module RPC, then
+ * adjust the default sales/purchase tax rate. Neither ir.module.module
+ * nor account.tax has any entry in MODEL_ADAPTERS -- there's no
+ * "localization module" concept in the rewritten backend, and no central
+ * tax-rate registry (products.cycom.sales/ar_ap store tax_percent inline
+ * per line, not against a shared Tax entity). This always threw before
+ * (confirmed live: every submission 500'd).
  *
- * Note: install is synchronous from Cycom's perspective but can take a while. Next.js route handlers
- * have no default timeout in dev. In production behind a reverse proxy, you may need to raise the
- * proxy timeout for this single endpoint.
+ * Building a *real* per-country chart-of-accounts seeder (actual Account
+ * rows per jurisdiction, not just a module-name string) is a genuinely
+ * separate, larger feature -- flagged, not attempted here. What this now
+ * does honestly: persist the tenant's choice (country/localization/tax
+ * rates) via ir.config_parameter, which IS real, so the preference isn't
+ * lost -- and tell the caller plainly that no accounts were created, so
+ * the wizard doesn't claim more than actually happened.
  */
 
 type Payload = {
@@ -36,31 +44,6 @@ async function rpc<T = unknown>(
   return data.result as T;
 }
 
-async function adjustTax(req: NextRequest, taxUse: 'sale' | 'purchase', targetPct: number, warnings: string[], summary: string[]): Promise<void> {
-  if (targetPct <= 0) return;
-  const taxes = await rpc<Array<{ id: number; name: string; amount: number }>>(
-    req,
-    'account.tax',
-    'search_read',
-    [
-      [['type_tax_use', '=', taxUse], ['amount_type', '=', 'percent']],
-      ['id', 'name', 'amount'],
-    ],
-    { limit: 1, order: 'sequence asc' },
-  );
-  if (!taxes.length) {
-    warnings.push(`No default ${taxUse} tax found after installation — set manually under Accounting → Taxes.`);
-    return;
-  }
-  const tax = taxes[0];
-  if (Math.abs((tax.amount ?? 0) - targetPct) < 0.001) {
-    summary.push(`Default ${taxUse} tax "${tax.name}" already at ${targetPct}%.`);
-    return;
-  }
-  await rpc<boolean>(req, 'account.tax', 'write', [[tax.id], { amount: targetPct }]);
-  summary.push(`Set default ${taxUse} tax "${tax.name}" to ${targetPct}%.`);
-}
-
 export async function POST(req: NextRequest) {
   let payload: Payload;
   try {
@@ -74,48 +57,21 @@ export async function POST(req: NextRequest) {
   }
 
   const summary: string[] = [];
-  const warnings: string[] = [];
+  const warnings: string[] = [
+    'No chart of accounts was created automatically -- set up accounts under Accounting → Chart of Accounts.',
+  ];
 
   try {
-    // 1) Look up the module
-    const rows = await rpc<Array<{ id: number; state: string; shortdesc?: string }>>(
-      req,
-      'ir.module.module',
-      'search_read',
-      [[['name', '=', payload.l10nModule]], ['id', 'state', 'shortdesc']],
-      { limit: 1 },
+    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', ['cycom.tenant.setup.coa_done', 'true']);
+    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', ['cycom.tenant.coa_module', payload.l10nModule]);
+    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', ['cycom.tenant.coa_country', payload.countryCode]);
+    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', ['cycom.tenant.coa_sales_tax_pct', String(payload.salesTaxPct)]);
+    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', ['cycom.tenant.coa_purchase_tax_pct', String(payload.purchaseTaxPct)]);
+    summary.push(
+      `Saved chart-of-accounts preference: ${payload.countryCode} (${payload.l10nModule}), sales tax ${payload.salesTaxPct}%, purchase tax ${payload.purchaseTaxPct}%.`,
     );
-    if (!rows.length) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: `Cycom does not expose a module named "${payload.l10nModule}". Click Update Apps List in Cycom, or pick a different localization.`,
-        },
-        { status: 404 },
-      );
-    }
-    const mod = rows[0];
 
-    if (mod.state === 'installed' || mod.state === 'to upgrade') {
-      summary.push(`Localization "${mod.shortdesc ?? payload.l10nModule}" already installed.`);
-    } else {
-      await rpc(req, 'ir.module.module', 'button_immediate_install', [[mod.id]]);
-      summary.push(`Installed localization "${mod.shortdesc ?? payload.l10nModule}".`);
-    }
-
-    // 2) Adjust default taxes
-    await adjustTax(req, 'sale', payload.salesTaxPct, warnings, summary);
-    await adjustTax(req, 'purchase', payload.purchaseTaxPct, warnings, summary);
-
-    // 3) Persist tenant flag
-    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', [
-      'cycom.tenant.setup.coa_done', 'true',
-    ]);
-    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', [
-      'cycom.tenant.coa_module', payload.l10nModule,
-    ]);
-
-    return NextResponse.json({ ok: true, summary, warnings, l10nModule: payload.l10nModule, moduleId: mod.id });
+    return NextResponse.json({ ok: true, summary, warnings, l10nModule: payload.l10nModule });
   } catch (e) {
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : 'Setup failed', warnings },

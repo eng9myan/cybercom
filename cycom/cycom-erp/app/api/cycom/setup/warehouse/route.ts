@@ -25,25 +25,20 @@ export async function POST(req: NextRequest) {
       ...(p.enableDiscrepancyWorkflow ? [{ name: 'stock_transfer_discrepancy_new' }] : []),
     ], summary, warnings);
 
-    // Confirm a warehouse exists per company (stock auto-creates one on install).
-    const companies = await cycomRpc<Array<{ id: number; name: string }>>(
-      req, 'res.company', 'search_read', [[], ['id', 'name']], { limit: 50 },
-    );
-    for (const c of companies) {
-      const wh = await cycomRpc<Array<{ id: number }>>(
-        req, 'stock.warehouse', 'search_read',
-        [[['company_id', '=', c.id]], ['id']], { limit: 1 },
-      );
-      if (!wh.length) {
-        try {
-          await cycomRpc<number>(req, 'stock.warehouse', 'create', [{
-            name: c.name, code: `WH${c.id}`, company_id: c.id,
-          }]);
-          summary.push(`Created warehouse for "${c.name}".`);
-        } catch (e) {
-          warnings.push(`Could not create warehouse for "${c.name}": ${e instanceof Error ? e.message : 'unknown'}`);
-        }
+    // Confirm at least one warehouse exists for the tenant. Real Warehouse
+    // (products.cycom.inventory) has no per-company dimension at all --
+    // unlike Odoo's stock.warehouse, there's nothing to loop "per company"
+    // over, so this just ensures a single tenant-wide default exists.
+    const existing = await cycomRpc<Array<{ id: number }>>(req, 'stock.warehouse', 'search_read', [[], ['id']], { limit: 1 });
+    if (!existing.length) {
+      try {
+        await cycomRpc<number>(req, 'stock.warehouse', 'create', [{ name: 'Main Warehouse', code: 'WH-MAIN' }]);
+        summary.push('Created default warehouse "Main Warehouse".');
+      } catch (e) {
+        warnings.push(`Could not create default warehouse: ${e instanceof Error ? e.message : 'unknown'}`);
       }
+    } else {
+      summary.push('A warehouse already exists for this tenant.');
     }
 
     await setParam(req, 'cycom.warehouse.costing_method', p.costingMethod);

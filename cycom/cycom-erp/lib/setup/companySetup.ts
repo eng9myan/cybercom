@@ -26,8 +26,8 @@ export type CompanySetupPayload = {
 
 export type CompanySetupResult = {
   ok: true;
-  parentCompanyId: number;
-  branchIds: number[];
+  parentCompanyId: string;
+  branchIds: string[];
   warnings: string[];
   summary: string[];
 };

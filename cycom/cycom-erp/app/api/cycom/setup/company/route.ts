@@ -4,18 +4,21 @@ import { cycomCallKw } from '@/lib/cycomServer';
 /**
  * Company Setup orchestrator.
  *
- * Takes the business-language wizard payload and translates it into a sequence of Cycom writes:
- *   1. Look up the country by code → res.country
- *   2. Look up the currency by name → res.currency (activate if inactive)
- *   3. Create or update the primary res.company (parent)
- *   4. Create one child res.company per branch if multiSite is true
- *   5. Persist business-level choices (industry, payment terms, pricing mode) as
- *      ir.config_parameter records keyed `cycom.tenant.*` for later wizards to read.
+ * The real Company model (products.cycom.company) is much flatter than
+ * Odoo's res.company: name, legal_name, tax_id, currency (a plain code
+ * string, not an FK), parent_company, is_active -- no country_id/
+ * currency_id lookups, no city field. Company is also opt-in in this
+ * architecture (a tenant that never creates one is unaffected everywhere
+ * else), so this wizard just creates/updates one if the tenant wants
+ * multi-company; nothing else in Cycom requires it to exist.
  *
- * Errors short-circuit and return partial progress + a clear message. Doctrine: any single failure
- * should leave the tenant in a recoverable state — we don't roll back what already succeeded
- * because Cycom doesn't support cross-call transactions over JSON-RPC, but we tell the user
- * exactly what got created.
+ *   1. Create or update the primary Company
+ *   2. Create one child Company per branch if multiSite is true
+ *   3. Persist business-level choices (industry, country, payment terms,
+ *      pricing mode) as ir.config_parameter records for later wizards to
+ *      read -- this is the only place the tenant's country/currency
+ *      choice is recorded now, since the real model has nowhere to put a
+ *      country FK.
  */
 
 type CompanySetupBranch = { name: string; city?: string };
@@ -51,30 +54,16 @@ async function rpc<T = unknown>(
   return data.result as T;
 }
 
-async function findCountryId(req: NextRequest, code: string): Promise<number> {
-  const rows = await rpc<Array<{ id: number }>>(req, 'res.country', 'search_read', [
-    [['code', '=', code.toUpperCase()]],
-    ['id'],
-  ], { limit: 1 });
-  if (!rows.length) throw new Error(`Country not found: ${code}`);
-  return rows[0].id;
-}
-
-async function findCurrencyId(req: NextRequest, name: string): Promise<number> {
-  // Currencies may be deactivated by default — search all, then activate if needed.
-  const rows = await rpc<Array<{ id: number; active: boolean }>>(req, 'res.currency', 'search_read', [
-    [['name', '=', name.toUpperCase()]],
-    ['id', 'active'],
-  ], { limit: 1, context: { active_test: false } });
-  if (!rows.length) throw new Error(`Currency not found in Cycom: ${name}`);
-  if (!rows[0].active) {
-    await rpc<boolean>(req, 'res.currency', 'write', [[rows[0].id], { active: true }]);
-  }
-  return rows[0].id;
-}
-
 async function setConfigParam(req: NextRequest, key: string, value: string): Promise<void> {
   await rpc<boolean>(req, 'ir.config_parameter', 'set_param', [key, value]);
+}
+
+async function findCompanyIdByName(req: NextRequest, name: string): Promise<string | null> {
+  // res.company's adapter has no server-side name filter (Company has no
+  // "name" django-filter field) -- the list is small (a handful of
+  // companies per tenant), so filter client-side after fetching it all.
+  const all = await rpc<Array<{ id: string; name: string }>>(req, 'res.company', 'search_read', [[], ['id', 'name']]);
+  return all.find((c) => c.name === name)?.id ?? null;
 }
 
 export async function POST(req: NextRequest) {
@@ -99,37 +88,30 @@ export async function POST(req: NextRequest) {
   const summary: string[] = [];
 
   try {
-    const countryId = await findCountryId(req, payload.countryCode);
-    const currencyId = await findCurrencyId(req, payload.currency);
-
     // 1) Create or update the primary company.
     const parentVals: Record<string, unknown> = {
       name: payload.legalName.trim(),
-      country_id: countryId,
-      currency_id: currencyId,
+      currency: payload.currency.toUpperCase(),
     };
     if (payload.taxRegistrationNumber) {
-      parentVals.vat = payload.taxRegistrationNumber.trim();
+      parentVals.tax_id = payload.taxRegistrationNumber.trim();
     }
 
     // If a company with the same name already exists, update it instead of creating a duplicate.
-    const existing = await rpc<Array<{ id: number }>>(req, 'res.company', 'search_read', [
-      [['name', '=', payload.legalName.trim()]],
-      ['id'],
-    ], { limit: 1 });
+    const existingId = await findCompanyIdByName(req, payload.legalName.trim());
 
-    let parentCompanyId: number;
-    if (existing.length) {
-      parentCompanyId = existing[0].id;
+    let parentCompanyId: string;
+    if (existingId) {
+      parentCompanyId = existingId;
       await rpc<boolean>(req, 'res.company', 'write', [[parentCompanyId], parentVals]);
-      summary.push(`Updated existing company "${payload.legalName}" (id ${parentCompanyId}).`);
+      summary.push(`Updated existing company "${payload.legalName}".`);
     } else {
-      parentCompanyId = await rpc<number>(req, 'res.company', 'create', [parentVals]);
-      summary.push(`Created company "${payload.legalName}" (id ${parentCompanyId}).`);
+      parentCompanyId = await rpc<string>(req, 'res.company', 'create', [parentVals]);
+      summary.push(`Created company "${payload.legalName}".`);
     }
 
     // 2) Create branches as child companies if multi-site.
-    const branchIds: number[] = [];
+    const branchIds: string[] = [];
     if (payload.multiSite) {
       for (const branch of payload.branches) {
         if (!branch.name?.trim()) {
@@ -138,15 +120,13 @@ export async function POST(req: NextRequest) {
         }
         const branchVals: Record<string, unknown> = {
           name: `${payload.legalName.trim()} — ${branch.name.trim()}`,
-          parent_id: parentCompanyId,
-          country_id: countryId,
-          currency_id: currencyId,
+          parent_company: parentCompanyId,
+          currency: payload.currency.toUpperCase(),
         };
-        if (branch.city) branchVals.city = branch.city.trim();
         try {
-          const id = await rpc<number>(req, 'res.company', 'create', [branchVals]);
+          const id = await rpc<string>(req, 'res.company', 'create', [branchVals]);
           branchIds.push(id);
-          summary.push(`Created branch company "${branch.name}" (id ${id}).`);
+          summary.push(`Created branch company "${branch.name}".`);
         } catch (e) {
           warnings.push(`Could not create branch "${branch.name}": ${e instanceof Error ? e.message : 'unknown error'}`);
         }

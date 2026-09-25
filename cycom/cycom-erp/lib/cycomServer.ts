@@ -299,6 +299,58 @@ const vehicleFilterQuery = (domain: Array<[string, string, unknown]>) => {
 };
 
 const MODEL_ADAPTERS: Record<string, ModelAdapter> = {
+  // Onboarding's Company Setup wizard (app/api/cycom/setup/company/route.ts)
+  // -- the real Company model is much flatter than Odoo's res.company (no
+  // country_id/currency_id FKs, currency is a plain code string, no city).
+  // The caller passes these exact field names directly; there's no other
+  // res.company caller in the app to keep an Odoo-shaped facade for.
+  'res.company': {
+    basePath: '/api/v1/company/companies/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      const direct = ['name', 'legal_name', 'tax_id', 'currency', 'parent_company', 'is_active'];
+      for (const key of direct) if (key in src) out[key] = src[key];
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      name: r.name,
+      legal_name: r.legal_name || '',
+      tax_id: r.tax_id || '',
+      currency: r.currency,
+      parent_company: r.parent_company || null,
+      is_active: r.is_active,
+    }),
+  },
+  // Onboarding's Warehouse Setup wizard -- real Warehouse has no company
+  // dimension at all (no per-company warehouses in this architecture), so
+  // the caller ensures one tenant-wide default rather than "one per company".
+  'stock.warehouse': {
+    basePath: '/api/v1/inventory/warehouses/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.name = src.name;
+      if ('code' in src) out.code = src.code;
+      return out;
+    },
+    fromBackend: (r) => ({ id: r.id, name: r.name, code: r.code }),
+  },
+  // Onboarding's Permissions Setup wizard -- Odoo's res.groups (with a
+  // category_id) maps to the real, much simpler Role (name + description,
+  // no category concept).
+  'res.groups': {
+    basePath: '/api/v1/access/roles/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.name = src.name;
+      if ('description' in src) out.description = src.description;
+      return out;
+    },
+    fromBackend: (r) => ({ id: r.id, name: r.name, description: r.description || '' }),
+  },
   'fleet.vehicle': {
     basePath: '/api/v1/fleet/vehicles/',
     toBackend: (f) => {

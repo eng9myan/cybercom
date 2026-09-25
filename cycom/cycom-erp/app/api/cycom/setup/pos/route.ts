@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { installModules, cycomRpc, setParam } from '@/lib/setup/serverHelpers';
+import { installModules, setParam } from '@/lib/setup/serverHelpers';
 
 type Payload = {
   paymentMix: 'cash_heavy' | 'card_heavy' | 'split';
@@ -31,27 +31,9 @@ export async function POST(req: NextRequest) {
       ...(p.dailyCashCloseout ? [{ name: 'pos_opening_cash_zero' }] : []),
     ], summary, warnings);
 
-    // Ensure one pos.config per company.
-    const companies = await cycomRpc<Array<{ id: number; name: string }>>(
-      req, 'res.company', 'search_read', [[], ['id', 'name']], { limit: 50 },
-    );
-    for (const c of companies) {
-      const cfg = await cycomRpc<Array<{ id: number }>>(
-        req, 'pos.config', 'search_read',
-        [[['company_id', '=', c.id]], ['id']], { limit: 1 },
-      );
-      if (!cfg.length) {
-        try {
-          await cycomRpc<number>(req, 'pos.config', 'create', [{
-            name: `${c.name} — Main Terminal`, company_id: c.id,
-          }]);
-          summary.push(`Created POS terminal for "${c.name}".`);
-        } catch (e) {
-          warnings.push(`Could not create POS terminal for "${c.name}": ${e instanceof Error ? e.message : 'unknown'}`);
-        }
-      }
-    }
-
+    // No pre-provisioned "terminal" row is needed -- real POS orders
+    // (products.cycom.pos) are created directly against a warehouse/
+    // tenant, unlike Odoo's pos.config which every order must reference.
     await setParam(req, 'cycom.pos.payment_mix', p.paymentMix);
     await setParam(req, 'cycom.pos.daily_cash_closeout', p.dailyCashCloseout ? 'true' : 'false');
     await setParam(req, 'cycom.tenant.setup.pos_done', 'true');

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   const summary: string[] = [];
   const warnings: string[] = [];
-  let groupId: number | null = null;
+  let groupId: string | null = null;
 
   try {
     // Warehouse-user restriction lives in the Cycom module — install if any restriction is on
@@ -26,27 +26,23 @@ export async function POST(req: NextRequest) {
     }
 
     if (p.createCycomManagerGroup) {
-      // Idempotent: only create if one with the same name doesn't exist.
-      const existing = await cycomRpc<Array<{ id: number }>>(
-        req, 'res.groups', 'search_read',
-        [[['name', '=', 'Cycom Manager']], ['id']], { limit: 1 },
-      );
-      if (existing.length) {
-        groupId = existing[0].id;
-        summary.push('Group "Cycom Manager" already exists.');
+      // res.groups -> the real, much simpler Role (name + description, no
+      // category concept). Role has a real unique_together(tenant_id, name)
+      // too, but the adapter has no server-side name filter, so check
+      // client-side first the same way company/route.ts does for res.company.
+      const allRoles = await cycomRpc<Array<{ id: string; name: string }>>(req, 'res.groups', 'search_read', [[], ['id', 'name']]);
+      const existing = allRoles.find((r) => r.name === 'Cycom Manager');
+      if (existing) {
+        groupId = existing.id;
+        summary.push('Role "Cycom Manager" already exists.');
       } else {
-        // Try to find a sensible category (Administration) — fallback to null
-        const cat = await cycomRpc<Array<{ id: number }>>(
-          req, 'ir.module.category', 'search_read',
-          [[['name', '=', 'Administration']], ['id']], { limit: 1 },
-        );
         try {
-          const vals: Record<string, unknown> = { name: 'Cycom Manager' };
-          if (cat.length) vals.category_id = cat[0].id;
-          groupId = await cycomRpc<number>(req, 'res.groups', 'create', [vals]);
-          summary.push('Created group "Cycom Manager".');
+          groupId = await cycomRpc<string>(req, 'res.groups', 'create', [
+            { name: 'Cycom Manager', description: 'Created by the Permissions setup wizard.' },
+          ]);
+          summary.push('Created role "Cycom Manager".');
         } catch (e) {
-          warnings.push(`Could not create group: ${e instanceof Error ? e.message : 'unknown'}`);
+          warnings.push(`Could not create role: ${e instanceof Error ? e.message : 'unknown'}`);
         }
       }
     }

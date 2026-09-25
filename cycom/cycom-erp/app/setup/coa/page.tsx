@@ -28,7 +28,7 @@ export default function CoaWizard() {
 
   const [applying, setApplying] = useState(false);
   const [result, setResult] = useState<
-    | { ok: true; summary: string[]; warnings: string[]; l10nModule: string; moduleId: number | null }
+    | { ok: true; summary: string[]; warnings: string[]; l10nModule: string }
     | { ok: false; error: string; warnings?: string[] }
     | null
   >(null);
