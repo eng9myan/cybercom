@@ -9,6 +9,20 @@ from products.cycom.inventory.services import apply_stock_move
 from products.cycom.procurement.models import PurchaseOrder, PurchaseOrderLine
 
 
+def approve_purchase_order(order: PurchaseOrder):
+    """Raw status transition only -- callers (the direct procurement
+    approve action and the HITL queue's approve endpoint) do their own
+    status-guard + require_approval_authority() check first, since that
+    check needs the request, not just the order."""
+    order.status = "approved"
+    order.save(update_fields=["status", "updated_at"])
+
+
+def reject_purchase_order(order: PurchaseOrder):
+    order.status = "rejected"
+    order.save(update_fields=["status", "updated_at"])
+
+
 @transaction.atomic
 def receive_purchase_order(order: PurchaseOrder, receipts: dict | None = None):
     """

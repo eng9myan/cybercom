@@ -56,6 +56,10 @@ urlpatterns = [
     # ── E-Signature (mounted at api/sign/, matching the frontend's
     #    pre-existing next.config.ts rewrite, not the api/v1/ convention) ──
     path("api/sign/", include("products.cycom.esign.urls")),
+    # ── HITL approvals (mounted at api/hitl/, matching the frontend's
+    #    pre-existing app/api/cycom/hitl/ proxy — same bare-prefix pattern
+    #    as e-signature above) ──
+    path("api/hitl/", include("products.cycom.hitl.urls")),
     # ── Public storefront (no login, tenant resolved by slug in the URL) ──
     path("api/store/", include("products.cycom.storefront.urls")),
     path("api/v1/blog/", include("products.cycom.blog.urls")),

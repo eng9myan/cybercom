@@ -52,6 +52,7 @@ class PurchaseOrder(BaseModel):
     STATUS_CHOICES = [
         ("draft", "Draft"),
         ("approved", "Approved"),
+        ("rejected", "Rejected"),
         ("received", "Received"),
         ("partially_received", "Partially Received"),
     ]

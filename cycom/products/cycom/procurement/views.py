@@ -19,7 +19,7 @@ from products.cycom.procurement.serializers import (
     VendorBidSerializer,
 )
 from products.cycom.procurement.printing import render_purchase_order
-from products.cycom.procurement.services import receive_purchase_order
+from products.cycom.procurement.services import approve_purchase_order, receive_purchase_order, reject_purchase_order
 
 
 class PurchaseRequestViewSet(TenantScopedModelViewSet):
@@ -101,8 +101,16 @@ class PurchaseOrderViewSet(TenantScopedModelViewSet):
         # HR-4: value-based approval (falls back to the purchase_request chain
         # when no purchase_order-specific policy is provisioned).
         require_approval_authority(request, order.tenant_id, "purchase_order", order.total_amount)
-        order.status = "approved"
-        order.save(update_fields=["status"])
+        approve_purchase_order(order)
+        return Response(PurchaseOrderSerializer(order).data)
+
+    @action(detail=True, methods=["post"], url_path="reject")
+    def reject(self, request, pk=None):
+        order = self.get_object()
+        if order.status != "draft":
+            raise ValidationError(f"PO is '{order.status}', cannot reject.")
+        require_approval_authority(request, order.tenant_id, "purchase_order", order.total_amount)
+        reject_purchase_order(order)
         return Response(PurchaseOrderSerializer(order).data)
 
     @action(detail=True, methods=["post"], url_path="receive")

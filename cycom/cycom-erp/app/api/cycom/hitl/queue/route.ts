@@ -1,15 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { cycomBackendProxy } from '@/lib/cycomServer';
 
-const CYCOM_BACKEND_URL = process.env.CYCOM_BACKEND_URL || 'http://localhost:8000';
-
+// Authenticated proxy -- the HITL queue is per-user (which items the caller
+// is entitled to approve), so it needs the same session -> Bearer token
+// forwarding every other internal page uses, not a bare unauthenticated
+// fetch (which also silently 401s in real auth once dev mode's default
+// grant isn't there to paper over it).
 export async function GET(req: NextRequest) {
-  try {
-    const upstream = await fetch(`${CYCOM_BACKEND_URL}/api/hitl/queue`, {
-      cache: 'no-store',
-    });
-    const data = await upstream.json();
-    return NextResponse.json(data);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Failed to fetch queue' }, { status: 500 });
-  }
+  return cycomBackendProxy(req, '/api/hitl/queue/');
 }

@@ -116,6 +116,7 @@ PRODUCT_APPS = [
     "products.cycom.elearning",
     "products.cycom.reporting",
     "products.cycom.cms",
+    "products.cycom.hitl",
     "products.cycom.planning",
     "products.cycom.plm",
     "products.cycom.discuss",
