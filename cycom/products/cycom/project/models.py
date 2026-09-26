@@ -37,6 +37,20 @@ class Task(BaseModel):
     priority = models.CharField(max_length=20, default="normal")
     due_date = models.DateField(null=True, blank=True)
 
+    # ── Scheduling (Gantt / critical path) ──────────────────────────────
+    # CPM schedules on duration_days; due_date stays the human-set target,
+    # so the two can disagree -- and surfacing that disagreement is the
+    # point of the schedule view.
+    start_date = models.DateField(null=True, blank=True)
+    duration_days = models.PositiveIntegerField(default=1)
+    depends_on = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        related_name="dependents",
+        blank=True,
+        help_text="Tasks that must finish before this one can start (finish-to-start).",
+    )
+
     class Meta:
         db_table = "cycom_project_tasks"
         ordering = ["-created_at"]

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Plus, Trash2, ArrowRight, ArrowLeft, Clock } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, Trash2, ArrowRight, ArrowLeft, Clock, GanttChartSquare } from 'lucide-react';
 import { create, unlink, searchRead } from '@/lib/cycom';
 import { fmtCode, m2oName, type Many2One } from '@/lib/cycomModels';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/CycomEmptyStates';
@@ -241,6 +242,12 @@ export default function ProjectPage() {
           <h1 className="page-title text-white">{t('projectBoard.title')}</h1>
           <p className="page-subtitle">{t('projectBoard.subtitle')}</p>
         </div>
+        <Link
+          href="/project/gantt"
+          className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 rounded-lg transition text-xs font-semibold"
+        >
+          <GanttChartSquare className="w-4 h-4 text-cyan-400" /> {t('gantt.title')}
+        </Link>
       </div>
 
       {loading && <LoadingCard label={t('projectBoard.loading')} />}
