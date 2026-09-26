@@ -13,6 +13,7 @@ from products.cycom.inventory.models import (
     StockItem,
     StockLot,
     StockMove,
+    StorageLocation,
     Warehouse,
 )
 from products.cycom.inventory.serializers import (
@@ -23,8 +24,10 @@ from products.cycom.inventory.serializers import (
     StockItemSerializer,
     StockLotSerializer,
     StockMoveSerializer,
+    StorageLocationSerializer,
     WarehouseSerializer,
 )
+from products.cycom.inventory.layout import build_layout
 from products.cycom.inventory.services import (
     allocate_internal_order,
     apply_stock_move,
@@ -44,6 +47,28 @@ class WarehouseViewSet(TenantScopedModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         return restrict_to_accessible_warehouses(qs, self.request)
+
+    @action(detail=True, methods=["get"])
+    def layout(self, request, pk=None):
+        """Location tree for this warehouse with stock rolled up from bins
+        to their parents, plus whatever stock isn't assigned to a location
+        yet (which is all of it until someone models the layout)."""
+        warehouse = self.get_object()
+        locations = StorageLocation.objects.filter(
+            tenant_id=request.tenant_id, warehouse=warehouse,
+        ).select_related("parent")
+        stock = StockItem.objects.filter(
+            tenant_id=request.tenant_id, warehouse=warehouse,
+        ).select_related("product")
+        data = build_layout(locations, stock)
+        data["warehouse"] = {"id": str(warehouse.id), "code": warehouse.code, "name": warehouse.name}
+        return Response(data)
+
+
+class StorageLocationViewSet(TenantScopedModelViewSet):
+    queryset = StorageLocation.objects.select_related("warehouse", "parent").all()
+    serializer_class = StorageLocationSerializer
+    filterset_fields = ["warehouse", "location_type", "parent", "is_active"]
 
 
 class ProductViewSet(TenantScopedModelViewSet):

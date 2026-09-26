@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCycomList, m2oName, type Many2One } from '@/lib/cycomModels';
 import {
   Package, ShieldAlert, AlertTriangle,
-  RefreshCw, Lock, FileSpreadsheet, PackageCheck
+  RefreshCw, Lock, FileSpreadsheet, PackageCheck, Warehouse
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
@@ -178,6 +178,9 @@ export default function InventoryDashboard() {
           </Link>
           <Link href="/inventory/warehouse-requests" className="btn-secondary flex items-center gap-2">
             <PackageCheck className="w-4 h-4 text-indigo-400" /> {t('invDash.warehouseFulfillment')}
+          </Link>
+          <Link href="/inventory/warehouse-map" className="btn-secondary flex items-center gap-2">
+            <Warehouse className="w-4 h-4 text-amber-400" /> {t('warehouseMap.title')}
           </Link>
           <Link href="/inventory/import" className="btn-secondary flex items-center gap-2">
             <FileSpreadsheet className="w-4 h-4 text-emerald-500" /> {t('invDash.importProducts')}

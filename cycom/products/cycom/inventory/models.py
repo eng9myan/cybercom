@@ -48,6 +48,64 @@ class Warehouse(BaseModel):
         return f"{self.code} — {self.name}"
 
 
+class StorageLocation(BaseModel):
+    """
+    Physical layout inside a warehouse: zone > aisle > rack > shelf > bin.
+
+    A self-nesting tree rather than five tables, because real warehouses
+    don't all use the same number of levels -- a small stockroom may be
+    zone > bin while a DC uses all five.
+
+    Deliberately a *map*, not a second source of truth for stock: valuation
+    stays on StockItem (product x warehouse). Assigning stock to a bin is an
+    optional refinement (StockItem.location is nullable), so warehouses that
+    never model locations behave exactly as before and the FEFO / serial /
+    valuation paths are untouched.
+    """
+
+    LOCATION_TYPES = [
+        ("zone", "Zone"),
+        ("aisle", "Aisle"),
+        ("rack", "Rack"),
+        ("shelf", "Shelf"),
+        ("bin", "Bin"),
+    ]
+
+    warehouse = models.ForeignKey(
+        Warehouse, on_delete=models.CASCADE, related_name="locations"
+    )
+    parent = models.ForeignKey(
+        "self", on_delete=models.CASCADE, null=True, blank=True, related_name="children"
+    )
+    location_type = models.CharField(max_length=20, choices=LOCATION_TYPES)
+    code = models.CharField(max_length=50)
+    name = models.CharField(max_length=255, blank=True)
+    # Capacity is advisory: it drives occupancy colouring on the map and
+    # nothing blocks on it. A hard cap would need volumetric data per
+    # product that this model doesn't carry, so it isn't pretended.
+    capacity = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "cycom_inventory_storage_locations"
+        ordering = ["warehouse", "sort_order", "code"]
+        unique_together = [("tenant_id", "warehouse", "code")]
+        indexes = [models.Index(fields=["tenant_id", "warehouse", "location_type"])]
+
+    def __str__(self):
+        return self.path
+
+    @property
+    def path(self) -> str:
+        parts, node, guard = [], self, 0
+        while node is not None and guard < 10:   # guard: a bad tree can't hang a render
+            parts.append(node.code)
+            node = node.parent
+            guard += 1
+        return " / ".join(reversed(parts))
+
+
 class StockItem(BaseModel):
     """Valuation ledger balance: quantity + weighted-average cost per product/warehouse."""
 
@@ -55,6 +113,13 @@ class StockItem(BaseModel):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name="stock_items")
     quantity_on_hand = models.DecimalField(max_digits=14, decimal_places=4, default=0)
     average_cost = models.DecimalField(max_digits=14, decimal_places=4, default=0)
+    # Optional put-away position. Nullable on purpose: the valuation key
+    # stays (product, warehouse), so adding locations never splits a
+    # balance or changes what anything already computes.
+    location = models.ForeignKey(
+        StorageLocation, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="stock_items",
+    )
 
     class Meta:
         db_table = "cycom_inventory_stock_items"

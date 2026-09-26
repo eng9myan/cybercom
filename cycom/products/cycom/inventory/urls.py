@@ -9,6 +9,7 @@ from products.cycom.inventory.views import (
     StockItemViewSet,
     StockLotViewSet,
     StockMoveViewSet,
+    StorageLocationViewSet,
     WarehouseViewSet,
 )
 
@@ -16,6 +17,7 @@ router = DefaultRouter()
 router.register("warehouses", WarehouseViewSet)
 router.register("products", ProductViewSet)
 router.register("stock-items", StockItemViewSet)
+router.register("storage-locations", StorageLocationViewSet)
 router.register("stock-lots", StockLotViewSet)
 router.register("serial-units", SerialUnitViewSet)
 router.register("moves", StockMoveViewSet)

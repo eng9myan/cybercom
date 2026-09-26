@@ -8,6 +8,7 @@ from products.cycom.inventory.models import (
     StockItem,
     StockLot,
     StockMove,
+    StorageLocation,
     Warehouse,
 )
 
@@ -17,6 +18,32 @@ class WarehouseSerializer(serializers.ModelSerializer):
         model = Warehouse
         fields = "__all__"
         read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
+
+class StorageLocationSerializer(serializers.ModelSerializer):
+    path = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = StorageLocation
+        fields = "__all__"
+        read_only_fields = ["id", "tenant_id", "created_at", "updated_at"]
+
+    def validate(self, attrs):
+        parent = attrs.get("parent") or getattr(self.instance, "parent", None)
+        warehouse = attrs.get("warehouse") or getattr(self.instance, "warehouse", None)
+        if parent and warehouse and parent.warehouse_id != warehouse.id:
+            raise serializers.ValidationError(
+                {"parent": "A location's parent must be in the same warehouse."}
+            )
+        # Walking up the ancestors is cheap (trees are <=5 deep) and stops a
+        # cycle being stored, which would otherwise hang the layout roll-up.
+        node, guard = parent, 0
+        while node is not None and guard < 20:
+            if self.instance is not None and node.pk == self.instance.pk:
+                raise serializers.ValidationError({"parent": "A location cannot contain itself."})
+            node = node.parent
+            guard += 1
+        return attrs
 
 
 class ProductSerializer(serializers.ModelSerializer):
