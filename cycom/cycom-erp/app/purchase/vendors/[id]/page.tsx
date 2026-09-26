@@ -12,7 +12,7 @@ import { LoadingCard } from '@/components/CycomEmptyStates';
 import { useT } from '@/lib/i18n';
 
 interface VendorDetails {
-  id: number;
+  id: string;
   legal_name: string;
   legal_name_ar?: string;
   trade_name?: string;
@@ -35,7 +35,7 @@ interface VendorDetails {
   approval_status: string;
   rejection_reason?: string;
   documents: Array<{
-    id: number;
+    id: string;
     doc_type: string;
     original_filename: string;
     storage_path: string;
@@ -48,8 +48,10 @@ export default function VendorApprovalDetail() {
   const t = useT();
   const router = useRouter();
   const params = useParams();
-  const idStr = params?.id as string;
-  const vendorId = parseInt(idStr);
+  // Real cy.vendor ids are UUIDs (backed by /api/v1/ar-ap/partners/), not
+  // numeric -- parseInt used to truncate them (e.g. "3fa85f64-..." -> 3),
+  // fetching the wrong record.
+  const vendorId = params?.id as string;
 
   const [vendor, setVendor] = useState<VendorDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -249,7 +251,7 @@ export default function VendorApprovalDetail() {
                       <p className="text-[10px] text-slate-500 mt-0.5 truncate">{d.original_filename}</p>
                     </div>
                     <a
-                      href={`http://localhost:8888${d.storage_path}`}
+                      href={d.storage_path}
                       target="_blank" rel="noopener noreferrer"
                       className="p-2 bg-slate-900 hover:bg-slate-800 rounded-lg transition"
                     >

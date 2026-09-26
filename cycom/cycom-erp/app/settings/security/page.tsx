@@ -1,52 +1,88 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, ShieldCheck, Key, ShieldAlert
+  ArrowLeft, ShieldCheck, Key, ShieldAlert, RefreshCw
 } from 'lucide-react';
+import { call } from '@/lib/cycom';
 import { useT } from '@/lib/i18n';
+
+interface ChainResult {
+  valid: boolean;
+  chain_key: string;
+  checked?: number;
+  errors?: unknown[];
+  error?: string;
+}
+
+const SSO_ENABLED_KEY = 'cycom.security.sso_required';
+const SSO_PROVIDER_KEY = 'cycom.security.sso_provider';
 
 export default function SecuritySettings() {
   const t = useT();
   const router = useRouter();
 
-  // SSO Integrations State
-  const [ssoActive, setSsoActive] = useState(false);
+  // SSO preference -- a real, persisted tenant preference (ir.config_parameter),
+  // not a live gate. Actually enforcing SSO login requires wiring a real
+  // identity provider into this tenant's Keycloak realm, which is external
+  // setup, not something a toggle in this UI can do on its own.
+  const [ssoRequired, setSsoRequired] = useState(false);
   const [ssoProvider, setSsoProvider] = useState('okta');
+  const [ssoStatus, setSsoStatus] = useState<string | null>(null);
 
-  // Audit Logs Chain Verification State
+  // Real audit-chain verification against platform.audit's actual SHA-256
+  // hash chain (products.cycom writes go through AuditService; see
+  // platform/audit/services.py::AuditChainVerifier).
   const [verifying, setVerifying] = useState(false);
-  const [chainValid, setChainValid] = useState<boolean | null>(null);
+  const [results, setResults] = useState<ChainResult[] | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
 
-  // Mock logs for chain test (correct and tampered)
-  const mockValidLogs = [
-    { id: 1, prev_hash: 'GENESIS_HASH', user_email: 'admin@cycom.com', action: 'CREATE', model: 'finance.invoice', created_at: '2026-07-14 01:00:00', current_hash: '6562b1ebb7345c5a46f6a922ce13f84265d4bf72b91415d1820d20bff3fae83b' },
-    { id: 2, prev_hash: '6562b1ebb7345c5a46f6a922ce13f84265d4bf72b91415d1820d20bff3fae83b', user_email: 'admin@cycom.com', action: 'UPDATE', model: 'finance.invoice', created_at: '2026-07-14 01:05:00', current_hash: 'ebcfae806291d7fa8b05cf102aa5955e58d88bae724e418b6c6ac35162a51dd9' }
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const enabled = await call<string | false>({ model: 'ir.config_parameter', method: 'get_param', args: [SSO_ENABLED_KEY, false] });
+        const provider = await call<string | false>({ model: 'ir.config_parameter', method: 'get_param', args: [SSO_PROVIDER_KEY, false] });
+        setSsoRequired(enabled === 'true');
+        if (provider) setSsoProvider(provider);
+      } catch {
+        // No preference saved yet -- defaults stand.
+      }
+    })();
+  }, []);
 
-  const mockTamperedLogs = [
-    { id: 1, prev_hash: 'GENESIS_HASH', user_email: 'admin@cycom.com', action: 'CREATE', model: 'finance.invoice', created_at: '2026-07-14 01:00:00', current_hash: '6562b1ebb7345c5a46f6a922ce13f84265d4bf72b91415d1820d20bff3fae83b' },
-    { id: 2, prev_hash: '6562b1ebb7345c5a46f6a922ce13f84265d4bf72b91415d1820d20bff3fae83b', user_email: 'hacker@malicious.com', action: 'DELETE', model: 'finance.invoice', created_at: '2026-07-14 01:05:00', current_hash: 'ebcfae806291d7fa8b05cf102aa5955e58d88bae724e418b6c6ac35162a51dd9' } // Tampered payload
-  ];
-
-  const handleVerifyChain = async (tamper: boolean) => {
-    setVerifying(true);
-    setChainValid(null);
+  const saveSso = async (nextRequired: boolean, nextProvider: string) => {
+    setSsoStatus(null);
     try {
-      const res = await fetch('http://localhost:8888/api/enterprise/audit/verify', {
+      await call({ model: 'ir.config_parameter', method: 'set_param', args: [SSO_ENABLED_KEY, String(nextRequired)] });
+      await call({ model: 'ir.config_parameter', method: 'set_param', args: [SSO_PROVIDER_KEY, nextProvider] });
+      setSsoStatus(t('settingsSecurity.ssoSaved'));
+    } catch (err: any) {
+      setSsoStatus(t('settingsSecurity.ssoSaveFailed', { msg: err.message }));
+    }
+  };
+
+  const handleVerifyChain = async () => {
+    setVerifying(true);
+    setResults(null);
+    setVerifyError(null);
+    try {
+      const res = await fetch('/api/cycom/rest/audit/events/verify_chain/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          logs: tamper ? mockTamperedLogs : mockValidLogs
-        })
+        credentials: 'include',
+        body: JSON.stringify({}),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setChainValid(data.chain_integrity_valid);
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 403) {
+        setVerifyError(t('settingsSecurity.notAuthorized'));
+      } else if (res.ok) {
+        setResults(data as ChainResult[]);
+      } else {
+        setVerifyError(t('settingsSecurity.verifyFailed', { msg: data.detail || res.statusText }));
       }
-    } catch {
-      alert(t('settingsSecurity.verifyFailed'));
+    } catch (err: any) {
+      setVerifyError(t('settingsSecurity.verifyFailed', { msg: err.message }));
     } finally {
       setVerifying(false);
     }
@@ -70,7 +106,7 @@ export default function SecuritySettings() {
       </div>
 
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* SSO Config */}
+        {/* SSO preference */}
         <div className="glass-card p-6 space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2 border-b border-white/5 pb-2">
             <Key className="w-4 h-4 text-blue-400" /> {t('settingsSecurity.ssoHeading')}
@@ -79,85 +115,80 @@ export default function SecuritySettings() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="font-semibold text-slate-200">{t('settingsSecurity.ssoGate')}</span>
-                <p className="text-[10px] text-slate-500 mt-0.5">{t('settingsSecurity.ssoGateNote')}</p>
+                <p className="text-[10px] text-slate-500 mt-0.5 max-w-[280px]">{t('settingsSecurity.ssoGateNote')}</p>
               </div>
               <button
-                onClick={() => setSsoActive(!ssoActive)}
-                className={`w-11 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out ${
-                  ssoActive ? 'bg-blue-600' : 'bg-slate-800'
+                onClick={() => { const next = !ssoRequired; setSsoRequired(next); saveSso(next, ssoProvider); }}
+                className={`w-11 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out flex-shrink-0 ${
+                  ssoRequired ? 'bg-blue-600' : 'bg-slate-800'
                 }`}
               >
                 <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
-                  ssoActive ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'
+                  ssoRequired ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0'
                 }`} />
               </button>
             </div>
 
-            {ssoActive && (
-              <div className="space-y-1 border-t border-white/5 pt-3">
-                <label className="text-slate-400">{t('settingsSecurity.providerProfile')}</label>
-                <select
-                  value={ssoProvider} onChange={e => setSsoProvider(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
-                >
-                  <option value="okta">Okta Identity Cloud</option>
-                  <option value="azure">Microsoft Azure AD (OIDC)</option>
-                  <option value="google">Google Workspace Enterprise</option>
-                </select>
-              </div>
-            )}
+            <div className="space-y-1 border-t border-white/5 pt-3">
+              <label className="text-slate-400">{t('settingsSecurity.providerProfile')}</label>
+              <select
+                value={ssoProvider}
+                onChange={(e) => { setSsoProvider(e.target.value); saveSso(ssoRequired, e.target.value); }}
+                className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none"
+              >
+                <option value="okta">Okta Identity Cloud</option>
+                <option value="azure">Microsoft Azure AD (OIDC)</option>
+                <option value="google">Google Workspace Enterprise</option>
+              </select>
+            </div>
+            {ssoStatus && <p className="text-[10px] text-slate-500">{ssoStatus}</p>}
           </div>
         </div>
 
-        {/* Audit Log Cryptographic Integrity Chain Checker */}
+        {/* Real audit hash-chain verification */}
         <div className="glass-card p-6 space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2 border-b border-white/5 pb-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400" /> {t('settingsSecurity.auditHeading')}
           </h3>
           <p className="text-xs text-slate-400">{t('settingsSecurity.auditDesc')}</p>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleVerifyChain(false)}
-              disabled={verifying}
-              className="flex-1 py-2 bg-slate-900 border border-slate-800 hover:bg-slate-800 transition rounded-lg text-xs font-semibold text-slate-300"
-            >
-              {t('settingsSecurity.verifyValid')}
-            </button>
-            <button
-              onClick={() => handleVerifyChain(true)}
-              disabled={verifying}
-              className="flex-1 py-2 bg-rose-950/20 border border-rose-500/20 hover:bg-rose-500/10 transition rounded-lg text-xs font-semibold text-rose-400"
-            >
-              {t('settingsSecurity.verifyTampered')}
-            </button>
-          </div>
+          <button
+            onClick={handleVerifyChain}
+            disabled={verifying}
+            className="w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-lg text-white font-semibold transition"
+          >
+            <RefreshCw className={`w-4 h-4 ${verifying ? 'animate-spin' : ''}`} />
+            {verifying ? t('settingsSecurity.verifying') : t('settingsSecurity.verifyChain')}
+          </button>
 
-          {chainValid !== null && (
-            <div className={`p-4 rounded-xl border flex items-center gap-3 transition-all ${
-              chainValid
+          {verifyError && (
+            <div className="p-4 rounded-xl border bg-amber-950/40 border-amber-500/20 text-amber-400 flex items-center gap-3">
+              <ShieldAlert className="w-5 h-5 flex-shrink-0" />
+              <p className="text-xs">{verifyError}</p>
+            </div>
+          )}
+
+          {results && results.length === 0 && (
+            <p className="text-xs text-slate-500 text-center py-4">{t('settingsSecurity.noChains')}</p>
+          )}
+
+          {results && results.map((r) => (
+            <div key={r.chain_key} className={`p-4 rounded-xl border flex items-center gap-3 ${
+              r.valid
                 ? 'bg-emerald-950/40 border-emerald-500/20 text-emerald-400'
                 : 'bg-rose-950/40 border-rose-500/20 text-rose-400'
             }`}>
-              {chainValid ? (
-                <>
-                  <ShieldCheck className="w-5 h-5 flex-shrink-0" />
-                  <div>
-                    <h5 className="font-bold">{t('settingsSecurity.integritySecure')}</h5>
-                    <p className="text-[10px] text-emerald-500/80 mt-0.5">{t('settingsSecurity.integritySecureNote')}</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <ShieldAlert className="w-5 h-5 flex-shrink-0 animate-bounce" />
-                  <div>
-                    <h5 className="font-bold">{t('settingsSecurity.hashMismatch')}</h5>
-                    <p className="text-[10px] text-rose-400/80 mt-0.5">{t('settingsSecurity.hashMismatchNote')}</p>
-                  </div>
-                </>
-              )}
+              {r.valid ? <ShieldCheck className="w-5 h-5 flex-shrink-0" /> : <ShieldAlert className="w-5 h-5 flex-shrink-0 animate-bounce" />}
+              <div className="min-w-0">
+                <h5 className="font-bold truncate">{r.chain_key}</h5>
+                <p className="text-[10px] mt-0.5 opacity-80">
+                  {r.valid
+                    ? t('settingsSecurity.chainValid', { checked: String(r.checked ?? 0) })
+                    : t('settingsSecurity.chainInvalid', { errors: String((r.errors || []).length) })}
+                </p>
+              </div>
             </div>
-          )}
+          ))}
         </div>
       </div>
     </div>

@@ -15,34 +15,41 @@ export default function WorkflowBuilder() {
   const [value, setValue] = useState('1000');
 
   // Test Context
-  const [ctxField] = useState('amount_total');
   const [ctxVal, setCtxVal] = useState('1500');
 
   // Results
   const [evalResult, setEvalResult] = useState<boolean | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  const handleEvaluate = async (e: React.FormEvent) => {
+  // Pure client-side condition evaluation -- no engine anywhere in cycom
+  // actually wires this rule shape into real business events, so this is
+  // a standalone "test a condition" sandbox, not a connected workflow
+  // trigger. Numeric operators compare as numbers when both sides parse
+  // as one, otherwise fall back to string comparison.
+  const handleEvaluate = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch('http://localhost:8888/api/enterprise/workflows/evaluate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rule: { field, operator, value },
-          context: { [ctxField]: ctxVal }
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setEvalResult(data.matched);
-      }
-    } catch {
-      alert(t('settingsWorkflows.evalFailed'));
-    } finally {
-      setLoading(false);
+    const ctx = ctxVal;
+    const numCtx = parseFloat(ctx);
+    const numVal = parseFloat(value);
+    const bothNumeric = !Number.isNaN(numCtx) && !Number.isNaN(numVal);
+
+    let matched: boolean;
+    switch (operator) {
+      case '>':
+        matched = bothNumeric ? numCtx > numVal : ctx > value;
+        break;
+      case '<':
+        matched = bothNumeric ? numCtx < numVal : ctx < value;
+        break;
+      case '==':
+        matched = bothNumeric ? numCtx === numVal : ctx === value;
+        break;
+      case 'contains':
+        matched = ctx.toLowerCase().includes(value.toLowerCase());
+        break;
+      default:
+        matched = false;
     }
+    setEvalResult(matched);
   };
 
   return (
@@ -121,7 +128,7 @@ export default function WorkflowBuilder() {
             </div>
 
             <button
-              type="submit" disabled={loading}
+              type="submit"
               className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-semibold shadow-lg shadow-blue-600/15 transition flex items-center justify-center gap-2"
             >
               <Play className="w-4 h-4" /> {t('settingsWorkflows.evaluateBtn')}

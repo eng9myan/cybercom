@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Percent, Calculator, FileText
+  ArrowLeft, Percent, Calculator
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
@@ -17,33 +17,27 @@ export default function TaxSettings() {
 
   // Result state
   const [calcResult, setCalcResult] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
 
-  const handleCalculate = async (e: React.FormEvent) => {
+  // Plain VAT/WHT arithmetic -- no backend involved. The real JoFotara/ZATCA
+  // UBL XML engine (products.cycom.ar_ap.einvoice) only operates on a real,
+  // posted Invoice with a real seller profile and invoice lines; it isn't
+  // meant to be driven from an arbitrary test amount, so this calculator
+  // doesn't attempt to preview XML -- it's just the payable-total math.
+  const handleCalculate = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch('http://localhost:8888/api/enterprise/tax/calculate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: parseFloat(amount),
-          vat_rate: parseFloat(vatRate),
-          wht_rate: parseFloat(whtRate),
-          apply_wht: applyWht
-        })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCalcResult(data);
-      } else {
-        alert(t('settingsTax.calcError'));
-      }
-    } catch (err: any) {
-      alert('Error: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
+    const baseAmount = parseFloat(amount) || 0;
+    const vat = parseFloat(vatRate) || 0;
+    const wht = parseFloat(whtRate) || 0;
+    const vatAmount = baseAmount * vat;
+    const whtAmount = applyWht ? baseAmount * wht : 0;
+    setCalcResult({
+      base_amount: baseAmount,
+      vat_rate: vat,
+      vat_amount: vatAmount,
+      wht_rate: wht,
+      wht_amount: whtAmount,
+      total_amount: baseAmount + vatAmount - whtAmount,
+    });
   };
 
   return (
@@ -101,7 +95,7 @@ export default function TaxSettings() {
             </div>
 
             <button
-              type="submit" disabled={loading}
+              type="submit"
               className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-semibold shadow-lg shadow-blue-600/15 transition flex items-center justify-center gap-2"
             >
               <Calculator className="w-4 h-4" /> {t('settingsTax.calculateBtn')}
@@ -124,16 +118,6 @@ export default function TaxSettings() {
                   <div className="flex justify-between"><span className="text-slate-500">{t('settingsTax.whtLine', { rate: calcResult.wht_rate * 100 })}</span><span className="text-rose-400">-{calcResult.wht_amount.toFixed(2)} JOD</span></div>
                   <div className="flex justify-between border-t border-white/5 pt-2 font-bold text-sm"><span className="text-white">{t('settingsTax.payableTotal')}</span><span className="text-cyan-400">{calcResult.total_amount.toFixed(2)} JOD</span></div>
                 </div>
-              </div>
-
-              {/* JoFotara UBL XML */}
-              <div className="glass-card p-6 space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2 border-b border-white/5 pb-2">
-                  <FileText className="w-4 h-4 text-emerald-400" /> {t('settingsTax.xmlHeading')}
-                </h3>
-                <pre className="bg-slate-950 p-4 border border-slate-850 rounded-lg text-[10px] font-mono text-emerald-400 overflow-x-auto select-all max-h-48 whitespace-pre" dir="ltr">
-                  {calcResult.jofotara_xml}
-                </pre>
               </div>
             </>
           ) : (

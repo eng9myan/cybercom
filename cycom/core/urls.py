@@ -1,7 +1,10 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
+from core.views.apps import InstalledAppsView
 from core.views.health import HealthView, LivenessView, ReadinessView
 
 urlpatterns = [
@@ -11,6 +14,7 @@ urlpatterns = [
     path("health", HealthView.as_view(), name="health-check"),
     path("health/liveness", LivenessView.as_view(), name="liveness-check"),
     path("health/readiness", ReadinessView.as_view(), name="readiness-check"),
+    path("api/v1/common/installed-apps/", InstalledAppsView.as_view(), name="installed-apps"),
     # ── OpenAPI Schema ─────────────────────────────────────────────────────
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
@@ -108,3 +112,9 @@ urlpatterns = [
     path("api/v1/discuss/", include("products.cycom.discuss.urls")),
     path("api/v1/logistics/", include("products.cycom.logistics.urls")),
 ]
+
+# Dev-only: serve uploaded files (e.g. products.cycom.documents.Document's
+# FileField) directly. Production serves MEDIA_ROOT via the real web server
+# / object storage, never through Django itself.
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

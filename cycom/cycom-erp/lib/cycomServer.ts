@@ -235,8 +235,13 @@ export async function cycomBackendProxy(
   const method = req.method.toUpperCase();
   const init: RequestInit = { method };
   if (method !== 'GET' && method !== 'DELETE') {
-    const text = await req.text();
-    if (text) init.body = text;
+    const contentType = req.headers.get('content-type') || '';
+    if (contentType.startsWith('multipart/form-data')) {
+      init.body = await req.formData();
+    } else {
+      const text = await req.text();
+      if (text) init.body = text;
+    }
   }
   try {
     const upstream = await backendFetch(targetPath, sessionId, init);
@@ -790,20 +795,31 @@ const MODEL_ADAPTERS: Record<string, ModelAdapter> = {
     basePath: '/api/v1/ar-ap/partners/',
     toBackend: (f) => {
       const out: Record<string, unknown> = { partner_type: 'vendor' };
+      // Real Partner model: cr_expiry/credit_limit are null=True, every
+      // other optional field here is a plain CharField (blank=True but
+      // NOT null=True) -- sending explicit null for those 400s with "This
+      // field may not be null." Every one of them was blank=null before
+      // this fix, so the vendor wizard's step 1 create failed for any
+      // vendor with ANY optional field left empty -- i.e. almost always.
+      const nullable = ['cr_expiry', 'credit_limit'];
       const direct = [
         'category', 'cr_number', 'cr_expiry', 'bank_name', 'bank_branch',
         'iban', 'swift_code', 'credit_limit', 'payment_terms_days',
         'contact_name', 'address', 'city', 'approval_status',
       ];
+      const orEmpty = (v: unknown) => (v == null ? '' : v);
       for (const key of direct) {
-        if (key in f) out[key] = f[key as keyof typeof f];
+        if (key in f) {
+          const v = f[key as keyof typeof f];
+          out[key] = nullable.includes(key) ? v : orEmpty(v);
+        }
       }
       if ('legal_name' in f) out.name = f.legal_name;
-      if ('legal_name_ar' in f) out.legal_name_ar = f.legal_name_ar;
-      if ('trade_name' in f) out.trade_name = f.trade_name;
-      if ('tax_number' in f) out.tax_id = f.tax_number;
-      if ('contact_email' in f) out.email = f.contact_email;
-      if ('contact_phone' in f) out.phone = f.contact_phone;
+      if ('legal_name_ar' in f) out.legal_name_ar = orEmpty(f.legal_name_ar);
+      if ('trade_name' in f) out.trade_name = orEmpty(f.trade_name);
+      if ('tax_number' in f) out.tax_id = orEmpty(f.tax_number);
+      if ('contact_email' in f) out.email = orEmpty(f.contact_email);
+      if ('contact_phone' in f) out.phone = orEmpty(f.contact_phone);
       return out;
     },
     fromBackend: (r) => ({
@@ -1036,10 +1052,15 @@ function resolveTenantId(token: string): string {
 
 async function backendFetch(path: string, token: string, init: RequestInit = {}) {
   const tenantId = resolveTenantId(token);
+  // A FormData body needs fetch to compute its own multipart Content-Type
+  // (with boundary) -- forcing application/json here would send a
+  // multipart body under a json header and the backend would fail to
+  // parse it.
+  const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
   return fetch(`${CYCOM_BACKEND_URL}${path}`, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       Authorization: `Bearer ${token}`,
       ...(tenantId ? { 'X-Tenant-ID': tenantId } : {}),
       ...(init.headers || {}),
@@ -1369,6 +1390,35 @@ async function handleInternalOrderCall(
   }
 }
 
+// A vendor's CR/tax/bank-letter uploads -- real generic Document store
+// (linked_model/linked_id), filtered server-side by the backend's own
+// query params rather than faking a vendor-document-specific endpoint.
+async function handleVendorDocumentSearch(
+  sessionId: string,
+  body: { args?: unknown[] },
+): Promise<NextResponse> {
+  const domain = (body.args?.[0] as Array<[string, string, unknown]>) || [];
+  const vendorId = domain.find((d) => d[0] === 'vendor_id')?.[2];
+  if (!vendorId) return NextResponse.json({ result: [] });
+
+  const qs = new URLSearchParams({ linked_model: 'cy.vendor', linked_id: String(vendorId) });
+  const upstream = await backendFetch(`/api/v1/documents/documents/?${qs}`, sessionId, { method: 'GET' });
+  const payload = await upstream.json().catch(() => ({}));
+  if (!upstream.ok) return jsonError(payload.detail || 'Fetch failed', upstream.status);
+
+  const rows = (payload.results || payload) as Array<Record<string, unknown>>;
+  return NextResponse.json({
+    result: rows.map((r) => ({
+      id: r.id,
+      doc_type: (Array.isArray(r.tags) && r.tags[0]) || r.title,
+      original_filename: String(r.file || '').split('/').pop() || r.title,
+      storage_path: r.file,
+      file_size_bytes: 0,
+      uploaded_at: r.created_at,
+    })),
+  });
+}
+
 export async function cycomCallKw(
   req: NextRequest,
   body: { model: string; method: string; args?: unknown[]; kwargs?: Record<string, unknown> },
@@ -1378,10 +1428,10 @@ export async function cycomCallKw(
     return NextResponse.json({ error: { message: 'Not authenticated' } }, { status: 401 });
   }
 
-  // No document-storage backend exists — always answer "no documents" rather
-  // than querying an unrelated endpoint or faking attachments.
+  // Real generic Document store (linked_model/linked_id), filtered to this
+  // vendor.
   if (body.model === 'cy.vendor.document') {
-    return NextResponse.json({ result: [] });
+    return handleVendorDocumentSearch(sessionId, body);
   }
 
   // Models with no backend module yet — answer empty (page renders its empty

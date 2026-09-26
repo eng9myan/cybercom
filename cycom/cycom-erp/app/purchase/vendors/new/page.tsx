@@ -6,7 +6,7 @@ import {
   ArrowLeft, Save, Building, ShieldCheck, CreditCard,
   Phone, Upload, FileText, CheckCircle2
 } from 'lucide-react';
-import { create } from '@/lib/cycom';
+import { call, create } from '@/lib/cycom';
 import { useT } from '@/lib/i18n';
 
 export default function RegisterVendor() {
@@ -94,21 +94,26 @@ export default function RegisterVendor() {
     }
   };
 
-  // Upload CR/Tax files
+  // Upload CR/Tax files -- real generic document store (linked_model/
+  // linked_id, built for exactly this: any record in any app attaching
+  // files without its own upload plumbing).
   const handleUploadDocuments = async () => {
     if (!vendorId) return;
     setSaving(true);
     try {
+      let anyFailed = false;
       for (const [docType, file] of Object.entries(docs)) {
         if (!file) continue;
         setUploadProgress(prev => ({ ...prev, [docType]: t('vendorNew.docUploading') }));
 
         const formData = new FormData();
-        formData.append('vendor_id', vendorId.toString());
-        formData.append('doc_type', docType);
+        formData.append('title', docType);
         formData.append('file', file);
+        formData.append('linked_model', 'cy.vendor');
+        formData.append('linked_id', vendorId.toString());
+        formData.append('tags', JSON.stringify([docType]));
 
-        const res = await fetch('http://localhost:8888/api/vendors/upload', {
+        const res = await fetch('/api/cycom/rest/documents/documents/', {
           method: 'POST',
           body: formData,
         });
@@ -116,26 +121,19 @@ export default function RegisterVendor() {
         if (res.ok) {
           setUploadProgress(prev => ({ ...prev, [docType]: t('vendorNew.docCompleted') }));
         } else {
+          anyFailed = true;
           const detail = await res.text();
           setUploadProgress(prev => ({ ...prev, [docType]: t('vendorNew.docFailed', { detail }) }));
         }
       }
-
-      // Submit for review after document uploads
-      const submitRes = await fetch('http://localhost:8888/api/rpc/call', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'cy.vendor',
-          method: 'submit_for_review',
-          args: [vendorId]
-        })
-      });
-      if (submitRes.ok) {
-        setStep(3);
-      } else {
-        alert(t('vendorNew.submitReviewFailed'));
+      if (anyFailed) {
+        setSaving(false);
+        return;
       }
+
+      // Submit for review -- real cy.vendor.submit_for_review action.
+      await call({ model: 'cy.vendor', method: 'submit_for_review', args: [vendorId] });
+      setStep(3);
     } catch (err: any) {
       alert(t('vendorNew.uploadError', { msg: err.message }));
     } finally {
