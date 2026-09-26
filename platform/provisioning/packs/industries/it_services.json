@@ -1,0 +1,174 @@
+{
+  "key": "it_services",
+  "name": "IT Services & Managed Support",
+  "version": "1.0",
+  "description": "MSP operations: support tickets under SLA, recurring managed-service contracts, hardware resale, on-site visits.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "inventory",
+    "hr",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Service Contract"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Service Desk Manager",
+        "description": "Owns SLA performance and escalations."
+      },
+      {
+        "name": "Field Engineer",
+        "description": "Runs on-site work and installs."
+      },
+      {
+        "name": "Account Manager",
+        "description": "Owns contracts and renewals."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "service_contract",
+      "name": "Managed Service Contract",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Account Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "hardware_quote",
+      "name": "Hardware Quotation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10000,
+          "role": "Account Manager"
+        },
+        {
+          "min": 10000,
+          "max": null,
+          "role": "Service Desk Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "sla_credit",
+      "name": "SLA Breach Credit",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Service Desk Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Managed Services",
+    "Hardware",
+    "Licensing",
+    "Cloud",
+    "Cabling",
+    "Support Blocks"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2178",
+        "name": "Deferred Revenue (Support Contracts)",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4280",
+        "name": "Managed Services Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4290",
+        "name": "Hardware Resale Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5190",
+        "name": "Subcontracted Engineering",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "contract": [
+      "sla_hours",
+      "covered_devices",
+      "billing_cycle",
+      "renewal_date"
+    ],
+    "product": [
+      "serial_tracked",
+      "warranty_months",
+      "vendor_sku"
+    ]
+  },
+  "dashboards": [
+    "SLA Compliance",
+    "Ticket Backlog",
+    "Contract Renewals",
+    "Recurring Revenue"
+  ],
+  "reports": [
+    "SLA Breach Report",
+    "Ticket Aging",
+    "Contract Renewal Schedule",
+    "Hardware Margin"
+  ],
+  "doc_templates": [
+    "Service Contract",
+    "Site Visit Report",
+    "Hardware Quotation",
+    "SLA Report"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email",
+        "sla_hours",
+        "covered_devices"
+      ]
+    },
+    {
+      "entity": "devices",
+      "columns": [
+        "client",
+        "asset_tag",
+        "model",
+        "serial",
+        "warranty_end"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Two very different margin profiles live in one business: recurring managed services (high margin, predictable) and hardware resale (thin margin, lumpy). Keep them on separate revenue accounts or blended margin will hide whether the recurring base is actually growing. SLA clocks should pause on customer-hold, or breach stats punish the desk for the client's delay.",
+    "starter_prompts": [
+      "Show SLA compliance by client this month.",
+      "Which contracts renew in the next 60 days?",
+      "Show recurring revenue vs hardware revenue.",
+      "List tickets breaching SLA right now."
+    ]
+  }
+}

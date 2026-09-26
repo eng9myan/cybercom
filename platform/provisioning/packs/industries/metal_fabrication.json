@@ -1,0 +1,179 @@
+{
+  "key": "metal_fabrication",
+  "name": "Metal Fabrication",
+  "version": "1.0",
+  "description": "Job-shop fabrication: cut/bend/weld routing, material nesting and offcuts, welder certification, drawing revisions.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "inventory",
+    "manufacturing",
+    "procurement",
+    "hr"
+  ],
+  "recommended_ops": [
+    "makes_products",
+    "buys_products",
+    "manages_projects"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Works Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Works Manager",
+        "description": "Owns scheduling, routing and quality sign-off."
+      },
+      {
+        "name": "Estimator",
+        "description": "Prices from drawings and material take-off."
+      },
+      {
+        "name": "Welder",
+        "description": "Fabricates to drawing under certification."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "quotation",
+      "name": "Fabrication Quotation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 20000,
+          "role": "Estimator"
+        },
+        {
+          "min": 20000,
+          "max": null,
+          "role": "Works Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "drawing_revision",
+      "name": "Drawing Revision Acceptance",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Works Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "rework",
+      "name": "Rework Authorisation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Works Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Structural Steel",
+    "Sheet Metal",
+    "Welding",
+    "Machining",
+    "Finishing",
+    "Raw Material",
+    "Consumables"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4730",
+        "name": "Fabrication Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5530",
+        "name": "Raw Material (Steel)",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5540",
+        "name": "Consumables (Gas, Wire, Discs)",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5550",
+        "name": "Rework & Scrap",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "works_order": [
+      "drawing_number",
+      "revision",
+      "material_grade",
+      "thickness_mm",
+      "finish",
+      "due_date"
+    ],
+    "employee": [
+      "welding_certification",
+      "certification_expiry"
+    ]
+  },
+  "dashboards": [
+    "Works Order Schedule",
+    "Material Utilization",
+    "Rework Rate",
+    "Certification Expiry"
+  ],
+  "reports": [
+    "Job Costing vs Quote",
+    "Material Yield & Offcuts",
+    "Rework Analysis",
+    "Welder Certification Register",
+    "Capacity Load"
+  ],
+  "doc_templates": [
+    "Fabrication Quotation",
+    "Works Order",
+    "Material Take-off",
+    "Inspection Certificate"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email",
+        "payment_terms_days"
+      ]
+    },
+    {
+      "entity": "works_orders",
+      "columns": [
+        "client",
+        "drawing_number",
+        "revision",
+        "material_grade",
+        "quantity",
+        "due_date"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Material yield decides the margin -- good nesting turns offcuts into usable stock rather than scrap, and steel price moves fast enough that old quotes go underwater. Drawing revision control is critical: fabricating to rev B when the client has moved to rev C is a full remake at your cost. Welder certifications expire and an out-of-date cert can void the job's sign-off.",
+    "starter_prompts": [
+      "Show job costing against quote this month.",
+      "What is material yield and offcut value?",
+      "Which welder certifications expire in 90 days?",
+      "Show rework rate by works order."
+    ]
+  }
+}

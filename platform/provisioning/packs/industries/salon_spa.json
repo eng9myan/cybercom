@@ -1,0 +1,173 @@
+{
+  "key": "salon_spa",
+  "name": "Salon & Spa",
+  "version": "1.0",
+  "description": "Appointment-led beauty services: stylist commissions, walk-ins, packages and prepaid balances, retail product sales.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "hr"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "provides_services",
+    "books_appointments"
+  ],
+  "terminology": {
+    "customer": "Guest",
+    "sale_order": "Appointment"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Salon Manager",
+        "description": "Owns the diary, pricing and staff commissions."
+      },
+      {
+        "name": "Stylist",
+        "description": "Delivers services and sells retail."
+      },
+      {
+        "name": "Receptionist",
+        "description": "Books appointments and takes payment."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "discount",
+      "name": "Service Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 20,
+          "role": "Receptionist"
+        },
+        {
+          "min": 20,
+          "max": null,
+          "role": "Salon Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "refund",
+      "name": "Refund",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Salon Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "commission_payout",
+      "name": "Commission Payout",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Salon Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Hair",
+    "Colour",
+    "Nails",
+    "Skin",
+    "Massage",
+    "Retail Products",
+    "Packages"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2179",
+        "name": "Prepaid Package Liability",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4300",
+        "name": "Service Revenue (Treatments)",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4310",
+        "name": "Retail Product Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5200",
+        "name": "Stylist Commission",
+        "account_type": "expense",
+        "parent": "5200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "service": [
+      "duration_minutes",
+      "commission_percent",
+      "requires_patch_test"
+    ],
+    "employee": [
+      "commission_percent",
+      "specialties"
+    ]
+  },
+  "dashboards": [
+    "Today's Diary",
+    "Stylist Utilization",
+    "Package Balances",
+    "Retail Attach Rate"
+  ],
+  "reports": [
+    "Daily Takings",
+    "Commission Statement",
+    "No-show Report",
+    "Package Liability",
+    "Rebooking Rate"
+  ],
+  "doc_templates": [
+    "Appointment Confirmation",
+    "Service Receipt",
+    "Package Voucher",
+    "Commission Statement"
+  ],
+  "import_templates": [
+    {
+      "entity": "services",
+      "columns": [
+        "name",
+        "category",
+        "price",
+        "duration_minutes",
+        "commission_percent"
+      ]
+    },
+    {
+      "entity": "staff",
+      "columns": [
+        "full_name",
+        "specialties",
+        "commission_percent"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Prepaid packages are a liability until the treatment is delivered -- recognizing them on sale overstates revenue and hides the service obligation. Utilization (booked vs available chair hours) and rebooking rate matter more than raw takings: an empty chair is unrecoverable inventory.",
+    "starter_prompts": [
+      "Show today's diary by stylist.",
+      "What is chair utilization this week?",
+      "Show outstanding package balances.",
+      "Which stylists have the highest retail attach rate?"
+    ]
+  }
+}

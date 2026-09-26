@@ -29,15 +29,42 @@ from uuid import uuid4
 from django.db import transaction
 
 from .clients.jofotara import JoFotaraClient
+from .clients.peppol import PeppolClient
 from .hashing import invoice_hash
 from .models import EInvoiceInteraction, EInvoiceSequence
 from .signing import get_signer
-from .ubl import JoInvoiceData, UblLine, UblParty, build_jo_ubl
+from .ubl import (
+    JoInvoiceData,
+    PeppolInvoiceData,
+    PeppolParty,
+    UblLine,
+    UblParty,
+    build_jo_ubl,
+    build_peppol_ubl,
+)
 
 logger = logging.getLogger("platform.einvoicing.engine")
 
-MODE_BY_COUNTRY = {"JO": "jo_jofotara", "SA": "sa_zatca", "AE": "ae_peppol"}
-_IMPLEMENTED = {"jo_jofotara", "sa_zatca"}
+# One Peppol mode covers every country on the network -- that's the point of
+# a four-corner network, versus a bespoke integration per jurisdiction.
+# Countries whose mandate is a *national* format outside Peppol (IT
+# FatturaPA via SdI, PL KSeF, MX CFDI, BR NF-e) are deliberately absent
+# rather than mapped to Peppol and silently producing the wrong document.
+_PEPPOL_COUNTRIES = [
+    "AE",  # UAE (Peppol-based mandate)
+    "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR",
+    "HU", "IE", "LV", "LT", "LU", "MT", "NL", "PT", "RO", "SK", "SI",
+    "ES", "SE",
+    "GB", "NO", "IS", "CH", "LI",
+    "AU", "NZ", "SG", "MY", "JP",
+]
+
+MODE_BY_COUNTRY = {
+    "JO": "jo_jofotara",
+    "SA": "sa_zatca",
+    **{c: "eu_peppol" for c in _PEPPOL_COUNTRIES},
+}
+_IMPLEMENTED = {"jo_jofotara", "sa_zatca", "eu_peppol"}
 
 
 @dataclass
@@ -119,6 +146,11 @@ def clear_invoice(
                 number, uuid_val, issue_dt, currency, icv, pih,
                 seller, buyer_tin, buyer_name, buyer_city, lines, client, mode,
             )
+        elif mode == "eu_peppol":
+            xml, submit = _build_peppol(
+                number, issue_dt, currency, country_code,
+                seller, buyer_tin, buyer_name, buyer_city, lines, client,
+            )
         else:  # sa_zatca
             xml, submit = _build_sa(
                 number, uuid_val, issue_dt, currency, icv, pih,
@@ -162,6 +194,38 @@ def clear_invoice(
 
 def _norm_status(s: str) -> str:
     return "cleared" if s in ("cleared", "submitted") else s
+
+
+# ── Peppol (EN 16931 / BIS Billing 3.0) ────────────────────────────────────
+def _build_peppol(number, issue_dt, currency, country_code,
+                  seller, buyer_tin, buyer_name, buyer_city, lines, client):
+    """No signing step: Peppol authenticity is the AS4 transport's job (the
+    AP signs), not a document-level signature like ZATCA's."""
+    data = PeppolInvoiceData(
+        number=number, issue_dt=issue_dt, currency=currency,
+        seller=PeppolParty(
+            tin=seller.tin, name=seller.name, country_code=country_code.upper(),
+            city=seller.city, street=getattr(seller, "street", ""),
+            endpoint_id=seller.tin, endpoint_scheme="9930",
+        ),
+        buyer=PeppolParty(
+            tin=buyer_tin, name=buyer_name or "", country_code=country_code.upper(),
+            city=buyer_city, endpoint_id=buyer_tin, endpoint_scheme="9930",
+        ),
+        lines=_mk_lines(lines),
+    )
+    xml = build_peppol_ubl(data)
+    cli = client or PeppolClient()
+
+    def submit():
+        return cli.submit(
+            xml,
+            sender_id=f"9930:{seller.tin}" if seller.tin else "",
+            receiver_id=f"9930:{buyer_tin}" if buyer_tin else "",
+            doc_id=number,
+        )
+
+    return xml, submit
 
 
 # ── JO ─────────────────────────────────────────────────────────────────────

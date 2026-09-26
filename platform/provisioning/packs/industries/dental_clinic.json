@@ -1,0 +1,178 @@
+{
+  "key": "dental_clinic",
+  "name": "Dental Clinic",
+  "version": "1.0",
+  "description": "Dental practice: treatment plans across multiple visits, per-tooth charting, insurance pre-approval, lab work.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "hr"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "books_appointments"
+  ],
+  "terminology": {
+    "customer": "Patient",
+    "sale_order": "Treatment Plan"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Clinical Director",
+        "description": "Approves treatment plans and lab spend."
+      },
+      {
+        "name": "Dentist",
+        "description": "Diagnoses and delivers treatment."
+      },
+      {
+        "name": "Dental Assistant",
+        "description": "Prepares surgery and manages recalls."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "treatment_plan",
+      "name": "Treatment Plan Approval",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 2000,
+          "role": "Dentist"
+        },
+        {
+          "min": 2000,
+          "max": null,
+          "role": "Clinical Director"
+        }
+      ]
+    },
+    {
+      "document_type": "insurance_claim",
+      "name": "Insurance Pre-approval",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Clinical Director"
+        }
+      ]
+    },
+    {
+      "document_type": "lab_order",
+      "name": "Lab Work Order",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Dentist"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Examination",
+    "Hygiene",
+    "Restorative",
+    "Endodontics",
+    "Orthodontics",
+    "Implants",
+    "Cosmetic"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "1170",
+        "name": "Insurance Receivable",
+        "account_type": "asset",
+        "parent": "1100"
+      },
+      {
+        "code": "2181",
+        "name": "Patient Deposits (Treatment Plans)",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4370",
+        "name": "Dental Treatment Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5230",
+        "name": "Dental Laboratory Costs",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "treatment": [
+      "tooth_number",
+      "surface",
+      "plan_stage",
+      "insurance_code",
+      "lab_required"
+    ],
+    "patient": [
+      "insurer",
+      "policy_number",
+      "medical_alerts",
+      "last_recall"
+    ]
+  },
+  "dashboards": [
+    "Chair Utilization",
+    "Treatment Plan Acceptance",
+    "Insurance Receivables",
+    "Recall Due"
+  ],
+  "reports": [
+    "Treatment Plan Status",
+    "Insurance Claim Aging",
+    "Recall Report",
+    "Lab Work Tracker",
+    "Production per Chair"
+  ],
+  "doc_templates": [
+    "Treatment Plan",
+    "Consent Form",
+    "Insurance Claim",
+    "Recall Letter"
+  ],
+  "import_templates": [
+    {
+      "entity": "patients",
+      "columns": [
+        "full_name",
+        "date_of_birth",
+        "phone",
+        "insurer",
+        "policy_number"
+      ]
+    },
+    {
+      "entity": "treatments",
+      "columns": [
+        "patient",
+        "tooth_number",
+        "procedure",
+        "fee",
+        "plan_stage"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "A treatment plan is a multi-visit commitment, not a single sale: deposits taken up front are a liability until the stage is delivered. Plan acceptance rate (proposed vs started) is the practice's real growth metric. Insurance receivables age differently from patient receivables and should be tracked apart.",
+    "starter_prompts": [
+      "Show treatment plan acceptance rate this quarter.",
+      "List patients due for recall.",
+      "Show insurance claims outstanding over 60 days.",
+      "What is production per chair this month?"
+    ]
+  }
+}

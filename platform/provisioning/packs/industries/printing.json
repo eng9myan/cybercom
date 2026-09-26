@@ -1,0 +1,187 @@
+{
+  "key": "printing",
+  "name": "Printing & Signage",
+  "version": "1.0",
+  "description": "Job-shop printing: quoting by substrate and run length, press scheduling, make-ready waste, finishing.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "inventory",
+    "manufacturing",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "makes_products",
+    "buys_products",
+    "manages_projects"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Print Job"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Production Manager",
+        "description": "Owns scheduling, waste and outwork."
+      },
+      {
+        "name": "Estimator",
+        "description": "Prices jobs by substrate, run and finishing."
+      },
+      {
+        "name": "Press Operator",
+        "description": "Runs the press and logs waste."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "quotation",
+      "name": "Print Quotation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10000,
+          "role": "Estimator"
+        },
+        {
+          "min": 10000,
+          "max": null,
+          "role": "Production Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "reprint",
+      "name": "Reprint (quality failure)",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Production Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "outwork",
+      "name": "Outwork / Trade Supplier Order",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Production Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Litho",
+    "Digital",
+    "Large Format",
+    "Signage",
+    "Finishing",
+    "Substrates",
+    "Inks"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4710",
+        "name": "Print Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "4720",
+        "name": "Signage & Installation Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5500",
+        "name": "Substrate & Ink Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5510",
+        "name": "Outwork & Trade Finishing",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5520",
+        "name": "Make-ready Waste",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "job": [
+      "substrate",
+      "run_length",
+      "colours",
+      "finishing",
+      "artwork_approved",
+      "proof_approved",
+      "due_date"
+    ],
+    "product": [
+      "sheet_size",
+      "gsm",
+      "roll_width"
+    ]
+  },
+  "dashboards": [
+    "Press Schedule",
+    "Job Margin",
+    "Waste %",
+    "Outwork Spend"
+  ],
+  "reports": [
+    "Press Utilization",
+    "Job Costing vs Quote",
+    "Waste Analysis",
+    "Outwork Spend",
+    "On-time Delivery"
+  ],
+  "doc_templates": [
+    "Print Quotation",
+    "Job Ticket",
+    "Proof Approval",
+    "Delivery Note"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email",
+        "payment_terms_days"
+      ]
+    },
+    {
+      "entity": "jobs",
+      "columns": [
+        "client",
+        "description",
+        "substrate",
+        "run_length",
+        "colours",
+        "due_date",
+        "quoted_price"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Quoting is the risk point: run length changes unit economics non-linearly because make-ready is a fixed cost spread over the run, so short runs priced off long-run rates lose money every time. Waste has to be logged per job or estimates never improve. Signed proof approval is the defence against a reprint dispute.",
+    "starter_prompts": [
+      "Show job costing against quote for last month.",
+      "What is waste percentage by press?",
+      "Show press schedule for this week.",
+      "Which jobs are awaiting proof approval?"
+    ]
+  }
+}

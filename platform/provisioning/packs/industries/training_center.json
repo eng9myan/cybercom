@@ -1,0 +1,179 @@
+{
+  "key": "training_center",
+  "name": "Training Center",
+  "version": "1.0",
+  "description": "Scheduled public and in-house courses: cohorts with seat limits, trainers, materials, certification issue.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "hr",
+    "documents"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "manages_projects"
+  ],
+  "terminology": {
+    "customer": "Delegate",
+    "sale_order": "Course Booking"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Training Manager",
+        "description": "Owns the schedule, pricing and trainer allocation."
+      },
+      {
+        "name": "Trainer",
+        "description": "Delivers courses and assesses delegates."
+      },
+      {
+        "name": "Course Administrator",
+        "description": "Manages bookings and certificates."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "course_run",
+      "name": "Course Run Confirmation (min numbers)",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Training Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Delegate Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15,
+          "role": "Course Administrator"
+        },
+        {
+          "min": 15,
+          "max": null,
+          "role": "Training Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "certificate",
+      "name": "Certificate Issue",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Trainer"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Public Courses",
+    "In-house",
+    "Certification",
+    "E-learning",
+    "Workshops",
+    "Materials"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2190",
+        "name": "Deferred Course Revenue",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4590",
+        "name": "Course Fees",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4600",
+        "name": "Certification Fees",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5400",
+        "name": "Trainer & Venue Costs",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "course": [
+      "duration_days",
+      "seat_limit",
+      "min_delegates",
+      "trainer",
+      "venue",
+      "certification_body"
+    ],
+    "delegate": [
+      "employer",
+      "attendance_percent",
+      "assessment_result",
+      "certificate_number"
+    ]
+  },
+  "dashboards": [
+    "Upcoming Courses",
+    "Seat Fill Rate",
+    "Course Margin",
+    "Certificates Issued"
+  ],
+  "reports": [
+    "Course Schedule",
+    "Seat Fill Report",
+    "Delegate Register",
+    "Certificate Log",
+    "Course Profitability"
+  ],
+  "doc_templates": [
+    "Booking Confirmation",
+    "Joining Instructions",
+    "Attendance Register",
+    "Certificate"
+  ],
+  "import_templates": [
+    {
+      "entity": "courses",
+      "columns": [
+        "name",
+        "category",
+        "duration_days",
+        "seat_limit",
+        "min_delegates",
+        "price"
+      ]
+    },
+    {
+      "entity": "delegates",
+      "columns": [
+        "full_name",
+        "employer",
+        "email",
+        "course",
+        "booking_date"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "A course run only breaks even above minimum numbers, so the confirm/cancel decision has a deadline and a cost -- cancelling late means refunding delegates and still paying the venue. Fees collected before the course runs are deferred revenue. Certificates are a compliance record that outlives the booking.",
+    "starter_prompts": [
+      "Show seat fill rate for courses in the next 60 days.",
+      "Which course runs are below minimum numbers?",
+      "Show course profitability by category.",
+      "List certificates issued this quarter."
+    ]
+  }
+}

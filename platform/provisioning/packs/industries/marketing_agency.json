@@ -1,0 +1,186 @@
+{
+  "key": "marketing_agency",
+  "name": "Marketing & Creative Agency",
+  "version": "1.0",
+  "description": "Campaigns, retainers, creative production, media buying with pass-through costs and per-client profitability.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "projects",
+    "hr"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "manages_projects"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Campaign",
+    "project": "Campaign"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Account Director",
+        "description": "Owns the client relationship and scope."
+      },
+      {
+        "name": "Creative Lead",
+        "description": "Approves creative output."
+      },
+      {
+        "name": "Media Buyer",
+        "description": "Places and reconciles media spend."
+      },
+      {
+        "name": "Managing Director",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "campaign",
+      "name": "Campaign Approval",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 20000,
+          "role": "Account Director"
+        },
+        {
+          "min": 20000,
+          "max": null,
+          "role": "Managing Director"
+        }
+      ]
+    },
+    {
+      "document_type": "media_spend",
+      "name": "Media Spend Authorisation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 5000,
+          "role": "Media Buyer"
+        },
+        {
+          "min": 5000,
+          "max": null,
+          "role": "Account Director"
+        }
+      ]
+    },
+    {
+      "document_type": "timesheet",
+      "name": "Timesheet Approval",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Account Director"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Brand",
+    "Digital",
+    "Social",
+    "Media Buying",
+    "Production",
+    "SEO",
+    "Retainer"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "1169",
+        "name": "Unbilled WIP (Creative)",
+        "account_type": "asset",
+        "parent": "1100"
+      },
+      {
+        "code": "2177",
+        "name": "Client Media Float",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4270",
+        "name": "Agency Fees",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5180",
+        "name": "Pass-through Media Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "campaign": [
+      "channel",
+      "budget",
+      "media_spend",
+      "start_date",
+      "end_date",
+      "kpi"
+    ],
+    "employee": [
+      "cost_rate",
+      "billable_target_percent"
+    ]
+  },
+  "dashboards": [
+    "Campaign Performance",
+    "Client Profitability",
+    "Utilization",
+    "Media Spend vs Budget"
+  ],
+  "reports": [
+    "Campaign P&L",
+    "Media Reconciliation",
+    "Utilization Report",
+    "Retainer Burn"
+  ],
+  "doc_templates": [
+    "Scope of Work",
+    "Campaign Brief",
+    "Media Plan",
+    "Fee Note"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "industry",
+        "contact_email",
+        "retainer_amount"
+      ]
+    },
+    {
+      "entity": "campaigns",
+      "columns": [
+        "client",
+        "name",
+        "channel",
+        "budget",
+        "start_date",
+        "end_date"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Media spend passed through to clients is not agency revenue -- booking it gross inflates the top line and distorts margin. Keep pass-through cost and agency fee on separate accounts so client profitability is measured on fee, not on turnover. Retainer burn needs watching: unbilled overservice is the classic agency leak.",
+    "starter_prompts": [
+      "Show campaign profitability by client.",
+      "Which retainers are overserviced this month?",
+      "Show media spend vs budget by campaign.",
+      "List campaigns ending in the next 2 weeks."
+    ]
+  }
+}

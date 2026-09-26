@@ -1,0 +1,179 @@
+{
+  "key": "clothing_retail",
+  "name": "Clothing & Fashion Retail",
+  "version": "1.0",
+  "description": "Size/colour variant matrix, seasonal collections, markdown cycles and high return rates.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "buys_products",
+    "operates_branches"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Sale"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Store Manager",
+        "description": "Owns markdowns, stock and staff."
+      },
+      {
+        "name": "Buyer",
+        "description": "Plans collections and reorders."
+      },
+      {
+        "name": "Sales Associate",
+        "description": "Serves customers and processes returns."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "markdown",
+      "name": "Markdown Approval",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 30,
+          "role": "Store Manager"
+        },
+        {
+          "min": 30,
+          "max": null,
+          "role": "Buyer"
+        }
+      ]
+    },
+    {
+      "document_type": "return",
+      "name": "Return / Exchange",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 200,
+          "role": "Sales Associate"
+        },
+        {
+          "min": 200,
+          "max": null,
+          "role": "Store Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "stock_transfer",
+      "name": "Inter-store Transfer",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Store Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Menswear",
+    "Womenswear",
+    "Kidswear",
+    "Footwear",
+    "Accessories",
+    "Sale"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4470",
+        "name": "Clothing Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5310",
+        "name": "Markdown & Shrinkage",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5320",
+        "name": "Seasonal Stock Write-down",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "size",
+      "colour",
+      "season",
+      "style_code",
+      "barcode"
+    ],
+    "sale": [
+      "return_reason",
+      "exchange_reference"
+    ]
+  },
+  "dashboards": [
+    "Sell-through Rate",
+    "Size Curve",
+    "Markdown Exposure",
+    "Returns Rate"
+  ],
+  "reports": [
+    "Sell-through by Style",
+    "Size/Colour Matrix",
+    "Ageing Stock",
+    "Returns Analysis",
+    "Z Report"
+  ],
+  "doc_templates": [
+    "Sales Receipt",
+    "Return Voucher",
+    "Transfer Note",
+    "Price Ticket"
+  ],
+  "import_templates": [
+    {
+      "entity": "products",
+      "columns": [
+        "style_code",
+        "name",
+        "category",
+        "size",
+        "colour",
+        "season",
+        "cost",
+        "retail_price",
+        "barcode"
+      ]
+    },
+    {
+      "entity": "opening_inventory",
+      "columns": [
+        "style_code",
+        "size",
+        "colour",
+        "quantity",
+        "unit_cost"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "One style is many SKUs -- size and colour must be tracked separately or replenishment guesses wrongly and you end up with only XS and XXL left. Sell-through rate against the season clock drives markdown timing: marking down too late is worse than marking down too early. Returns are normal volume here, not exceptions.",
+    "starter_prompts": [
+      "Show sell-through by style this season.",
+      "Which sizes are out of stock across stores?",
+      "Show ageing stock eligible for markdown.",
+      "What is the return rate by category?"
+    ]
+  }
+}

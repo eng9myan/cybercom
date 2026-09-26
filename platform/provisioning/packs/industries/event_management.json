@@ -1,0 +1,180 @@
+{
+  "key": "event_management",
+  "name": "Event Management",
+  "version": "1.0",
+  "description": "Event delivery: per-event budgets, vendor subcontracting, ticketing, staged client payments.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "projects",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "manages_projects",
+    "provides_services"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Event",
+    "project": "Event"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Event Director",
+        "description": "Owns event P&L and client sign-off."
+      },
+      {
+        "name": "Event Producer",
+        "description": "Runs delivery and vendor coordination."
+      },
+      {
+        "name": "Vendor Coordinator",
+        "description": "Books and reconciles suppliers."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "event_budget",
+      "name": "Event Budget Approval",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 25000,
+          "role": "Event Producer"
+        },
+        {
+          "min": 25000,
+          "max": null,
+          "role": "Event Director"
+        }
+      ]
+    },
+    {
+      "document_type": "vendor_order",
+      "name": "Vendor Purchase Order",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 5000,
+          "role": "Vendor Coordinator"
+        },
+        {
+          "min": 5000,
+          "max": null,
+          "role": "Event Producer"
+        }
+      ]
+    },
+    {
+      "document_type": "change_order",
+      "name": "Client Change Order",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Event Director"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Corporate",
+    "Weddings",
+    "Conferences",
+    "Exhibitions",
+    "Concerts",
+    "Private Parties"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "1171",
+        "name": "Event Work in Progress",
+        "account_type": "asset",
+        "parent": "1100"
+      },
+      {
+        "code": "2184",
+        "name": "Client Advances (Events)",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4400",
+        "name": "Event Management Fees",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5240",
+        "name": "Vendor & Production Costs",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "event": [
+      "venue",
+      "event_date",
+      "guest_count",
+      "budget",
+      "deposit_received",
+      "load_in_date"
+    ],
+    "vendor": [
+      "service_type",
+      "rate_basis"
+    ]
+  },
+  "dashboards": [
+    "Upcoming Events",
+    "Event Margin",
+    "Vendor Commitments",
+    "Deposit Status"
+  ],
+  "reports": [
+    "Event P&L",
+    "Vendor Commitment Report",
+    "Deposit & Payment Schedule",
+    "Budget vs Actual"
+  ],
+  "doc_templates": [
+    "Event Proposal",
+    "Run Sheet",
+    "Vendor Purchase Order",
+    "Final Invoice"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email",
+        "phone"
+      ]
+    },
+    {
+      "entity": "events",
+      "columns": [
+        "client",
+        "name",
+        "event_date",
+        "venue",
+        "guest_count",
+        "budget"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Events are cash-flow inverted: client deposits arrive before vendor bills, which makes the bank balance look healthier than the margin. Track committed vendor cost the moment it's ordered, not when invoiced, or an event looks profitable right until the bills land. Change orders are where margin is won or lost.",
+    "starter_prompts": [
+      "Show margin by event this quarter.",
+      "What vendor costs are committed but not yet invoiced?",
+      "List events in the next 30 days and their deposit status.",
+      "Show budget vs actual for the last 5 events."
+    ]
+  }
+}

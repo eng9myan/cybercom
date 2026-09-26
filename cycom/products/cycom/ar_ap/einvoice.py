@@ -35,9 +35,9 @@ def _seller_for(tenant_id) -> tuple[SellerProfile, str]:
 def run_einvoice_clearance(invoice) -> None:
     seller, country = _seller_for(invoice.tenant_id)
     mode = mode_for_country(country)
-    if mode not in ("jo_jofotara", "sa_zatca"):
-        # AE (Peppol) raises NotImplementedError in the engine; everything else
-        # has no e-invoicing mandate. Leave einvoice_status="none".
+    if mode not in ("jo_jofotara", "sa_zatca", "eu_peppol"):
+        # No e-invoicing mandate mapped for this country -- leave
+        # einvoice_status="none" rather than guessing at a format.
         return
 
     # SA: a customer invoice with a buyer VAT number is a standard (B2B) invoice

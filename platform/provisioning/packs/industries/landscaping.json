@@ -1,0 +1,180 @@
+{
+  "key": "landscaping",
+  "name": "Landscaping & Grounds Maintenance",
+  "version": "1.0",
+  "description": "Seasonal grounds contracts plus one-off design-and-build projects, crews, plant material and machinery.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "projects",
+    "hr",
+    "maintenance"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "manages_projects"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Contract"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Contracts Manager",
+        "description": "Owns contracts, schedules and crews."
+      },
+      {
+        "name": "Foreman",
+        "description": "Runs the crew on site."
+      },
+      {
+        "name": "Estimator",
+        "description": "Prices design-and-build work."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "quotation",
+      "name": "Landscaping Quotation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15000,
+          "role": "Estimator"
+        },
+        {
+          "min": 15000,
+          "max": null,
+          "role": "Contracts Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "variation",
+      "name": "Site Variation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 1000,
+          "role": "Foreman"
+        },
+        {
+          "min": 1000,
+          "max": null,
+          "role": "Contracts Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "machinery_hire",
+      "name": "Machinery Hire",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Contracts Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Grounds Maintenance",
+    "Design & Build",
+    "Planting",
+    "Hard Landscaping",
+    "Tree Work",
+    "Seasonal"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4650",
+        "name": "Maintenance Contract Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4660",
+        "name": "Design & Build Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5450",
+        "name": "Plant & Materials",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5460",
+        "name": "Machinery Hire",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "contract": [
+      "site_address",
+      "visits_per_season",
+      "season_start",
+      "season_end",
+      "crew_size"
+    ],
+    "project": [
+      "design_approved",
+      "materials_budget",
+      "machinery_required"
+    ]
+  },
+  "dashboards": [
+    "Seasonal Schedule",
+    "Contract Margin",
+    "Project Progress",
+    "Machinery Utilization"
+  ],
+  "reports": [
+    "Visit Schedule Compliance",
+    "Project Budget vs Actual",
+    "Material Cost by Site",
+    "Seasonal Revenue Curve"
+  ],
+  "doc_templates": [
+    "Quotation",
+    "Site Visit Sheet",
+    "Variation Order",
+    "Planting Schedule"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "site_address",
+        "contact_email",
+        "contract_type"
+      ]
+    },
+    {
+      "entity": "contracts",
+      "columns": [
+        "client",
+        "site_address",
+        "visits_per_season",
+        "season_start",
+        "annual_fee"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Revenue is strongly seasonal while wages are not -- the winter trough is the cash-flow risk that kills landscapers, so annual contracts billed monthly smooth it deliberately. Design-and-build variations must be captured on site as they happen; retrofitting them into an invoice weeks later rarely gets paid.",
+    "starter_prompts": [
+      "Show seasonal revenue curve this year.",
+      "Which contracts are behind on scheduled visits?",
+      "Show project budget vs actual for open builds.",
+      "What is machinery hire cost by project?"
+    ]
+  }
+}

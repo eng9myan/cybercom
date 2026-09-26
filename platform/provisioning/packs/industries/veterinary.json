@@ -1,0 +1,181 @@
+{
+  "key": "veterinary",
+  "name": "Veterinary Clinic",
+  "version": "1.0",
+  "description": "Animal patients under an owner account: consultations, vaccinations with due dates, procedures, dispensed medicines.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "hr"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "books_appointments",
+    "retail_pos"
+  ],
+  "terminology": {
+    "customer": "Owner",
+    "sale_order": "Visit",
+    "patient": "Animal"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Lead Veterinarian",
+        "description": "Approves procedures and controlled medicines."
+      },
+      {
+        "name": "Veterinarian",
+        "description": "Consults, treats and prescribes."
+      },
+      {
+        "name": "Veterinary Nurse",
+        "description": "Assists procedures and runs vaccination recalls."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "procedure",
+      "name": "Surgical Procedure Consent",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Lead Veterinarian"
+        }
+      ]
+    },
+    {
+      "document_type": "controlled_medicine",
+      "name": "Controlled Medicine Dispense",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Lead Veterinarian"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Treatment Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15,
+          "role": "Veterinarian"
+        },
+        {
+          "min": 15,
+          "max": null,
+          "role": "Lead Veterinarian"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Consultation",
+    "Vaccination",
+    "Surgery",
+    "Dental",
+    "Diagnostics",
+    "Medicines",
+    "Pet Food"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4340",
+        "name": "Consultation Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4350",
+        "name": "Procedure Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4360",
+        "name": "Medicine & Food Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5220",
+        "name": "Laboratory & Referral Costs",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "animal": [
+      "species",
+      "breed",
+      "date_of_birth",
+      "microchip_number",
+      "weight_kg",
+      "neutered"
+    ],
+    "vaccination": [
+      "vaccine_name",
+      "batch",
+      "given_date",
+      "due_date"
+    ]
+  },
+  "dashboards": [
+    "Today's Appointments",
+    "Vaccination Recalls",
+    "Revenue per Visit",
+    "Stock Expiry"
+  ],
+  "reports": [
+    "Vaccination Due Report",
+    "Patient History",
+    "Procedure Log",
+    "Medicine Dispense Log",
+    "Expiring Stock"
+  ],
+  "doc_templates": [
+    "Consent Form",
+    "Vaccination Certificate",
+    "Treatment Invoice",
+    "Prescription Label"
+  ],
+  "import_templates": [
+    {
+      "entity": "owners",
+      "columns": [
+        "full_name",
+        "phone",
+        "email",
+        "address"
+      ]
+    },
+    {
+      "entity": "animals",
+      "columns": [
+        "owner",
+        "name",
+        "species",
+        "breed",
+        "date_of_birth",
+        "microchip_number"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "The paying customer is the owner but the clinical record belongs to the animal -- one owner can have many animals and the history must stay attached to the animal, not the invoice. Vaccination due dates drive recall revenue and are the single highest-value automation in a small practice. Medicine batches need expiry tracking like any pharmacy.",
+    "starter_prompts": [
+      "Which vaccinations are due in the next 30 days?",
+      "Show today's appointments by vet.",
+      "List medicines expiring within 60 days.",
+      "Show average revenue per visit this month."
+    ]
+  }
+}

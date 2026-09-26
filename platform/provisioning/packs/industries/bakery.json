@@ -1,0 +1,180 @@
+{
+  "key": "bakery",
+  "name": "Bakery",
+  "version": "1.0",
+  "description": "Daily production against short shelf life: batch baking, wastage tracking, wholesale rounds plus retail counter.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "manufacturing",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "makes_products",
+    "retail_pos",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Bakery Manager",
+        "description": "Owns production plan, pricing and wastage."
+      },
+      {
+        "name": "Head Baker",
+        "description": "Runs batches and recipe yields."
+      },
+      {
+        "name": "Counter Staff",
+        "description": "Serves retail customers."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "production_plan",
+      "name": "Daily Production Plan",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Bakery Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "wastage_writeoff",
+      "name": "Wastage Write-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 100,
+          "role": "Head Baker"
+        },
+        {
+          "min": 100,
+          "max": null,
+          "role": "Bakery Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "wholesale_price",
+      "name": "Wholesale Price Change",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Bakery Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Bread",
+    "Pastry",
+    "Cakes",
+    "Savoury",
+    "Celebration Cakes",
+    "Wholesale",
+    "Ingredients"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4430",
+        "name": "Retail Counter Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "4440",
+        "name": "Wholesale Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5270",
+        "name": "Ingredient Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5280",
+        "name": "Production Wastage",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "shelf_life_hours",
+      "batch_yield",
+      "requires_refrigeration",
+      "allergens"
+    ],
+    "batch": [
+      "bake_date",
+      "quantity_produced",
+      "quantity_wasted"
+    ]
+  },
+  "dashboards": [
+    "Today's Production",
+    "Wastage %",
+    "Wholesale Round Status",
+    "Best Sellers"
+  ],
+  "reports": [
+    "Daily Production Report",
+    "Wastage Analysis",
+    "Recipe Yield Variance",
+    "Wholesale Order Sheet",
+    "Z Report"
+  ],
+  "doc_templates": [
+    "Production Sheet",
+    "Wholesale Delivery Note",
+    "Cake Order Form",
+    "Allergen Sheet"
+  ],
+  "import_templates": [
+    {
+      "entity": "products",
+      "columns": [
+        "sku",
+        "name",
+        "category",
+        "cost",
+        "retail_price",
+        "wholesale_price",
+        "shelf_life_hours",
+        "allergens"
+      ]
+    },
+    {
+      "entity": "recipes",
+      "columns": [
+        "product",
+        "ingredient",
+        "quantity",
+        "unit"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Everything is perishable on a same-day clock, so overproduction is wastage and underproduction is lost sale -- the production plan is the profit lever. Track wastage as its own expense account rather than burying it in cost of sales, or nobody can see what it's costing. Wholesale and retail carry very different prices for the same item.",
+    "starter_prompts": [
+      "Show wastage percentage by product this week.",
+      "What should we produce tomorrow based on last week's sales?",
+      "Show wholesale orders due for delivery today.",
+      "Which products have the best margin?"
+    ]
+  }
+}

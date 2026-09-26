@@ -1,0 +1,182 @@
+{
+  "key": "optical",
+  "name": "Optical & Eyewear",
+  "version": "1.0",
+  "description": "Sight tests, prescription-driven lens fitting, frame retail, lab orders and recall cycles.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "hr"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "provides_services",
+    "books_appointments"
+  ],
+  "terminology": {
+    "customer": "Patient",
+    "sale_order": "Dispense"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Practice Manager",
+        "description": "Owns pricing, lab spend and recalls."
+      },
+      {
+        "name": "Optometrist",
+        "description": "Performs sight tests and issues prescriptions."
+      },
+      {
+        "name": "Dispensing Optician",
+        "description": "Fits frames and orders lenses."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "prescription",
+      "name": "Prescription Issue",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Optometrist"
+        }
+      ]
+    },
+    {
+      "document_type": "lab_order",
+      "name": "Lens Lab Order",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Dispensing Optician"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Dispense Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15,
+          "role": "Dispensing Optician"
+        },
+        {
+          "min": 15,
+          "max": null,
+          "role": "Practice Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Sight Tests",
+    "Frames",
+    "Lenses",
+    "Contact Lenses",
+    "Sunglasses",
+    "Solutions",
+    "Accessories"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4530",
+        "name": "Sight Test Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4540",
+        "name": "Frames & Lens Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "4550",
+        "name": "Contact Lens Subscriptions",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5360",
+        "name": "Lens Laboratory Costs",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "prescription": [
+      "sphere_right",
+      "cylinder_right",
+      "axis_right",
+      "sphere_left",
+      "cylinder_left",
+      "axis_left",
+      "pupillary_distance",
+      "issue_date",
+      "expiry_date"
+    ],
+    "product": [
+      "frame_size",
+      "lens_type",
+      "coating"
+    ]
+  },
+  "dashboards": [
+    "Today's Tests",
+    "Recall Due",
+    "Lab Order Status",
+    "Dispense Rate"
+  ],
+  "reports": [
+    "Recall Report",
+    "Prescription Register",
+    "Lab Turnaround",
+    "Dispense Conversion",
+    "Z Report"
+  ],
+  "doc_templates": [
+    "Prescription",
+    "Dispense Note",
+    "Lab Order",
+    "Recall Letter"
+  ],
+  "import_templates": [
+    {
+      "entity": "patients",
+      "columns": [
+        "full_name",
+        "date_of_birth",
+        "phone",
+        "last_test_date"
+      ]
+    },
+    {
+      "entity": "products",
+      "columns": [
+        "sku",
+        "name",
+        "category",
+        "cost",
+        "retail_price",
+        "frame_size"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "A prescription has a legal expiry and belongs to the patient -- they can take it elsewhere, which makes dispense conversion (tests that turn into glasses) the number that matters. Two-year recall cycles are predictable, recurring revenue that only materialises if someone actually sends the reminder.",
+    "starter_prompts": [
+      "Who is due a recall in the next 60 days?",
+      "Show dispense conversion rate this month.",
+      "List lab orders overdue from the supplier.",
+      "Show revenue split between tests and dispensing."
+    ]
+  }
+}

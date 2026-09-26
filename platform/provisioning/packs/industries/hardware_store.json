@@ -1,0 +1,177 @@
+{
+  "key": "hardware_store",
+  "name": "Hardware & Building Supplies",
+  "version": "1.0",
+  "description": "Trade and retail counters side by side: trade accounts on credit, bulk/break-pack units, heavy delivery.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "buys_products",
+    "operates_branches"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Sale"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Branch Manager",
+        "description": "Owns trade pricing, credit and stock."
+      },
+      {
+        "name": "Trade Counter Staff",
+        "description": "Serves trade accounts."
+      },
+      {
+        "name": "Yard Supervisor",
+        "description": "Manages bulk stock and loading."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "trade_credit",
+      "name": "Trade Credit Limit",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Branch Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "trade_discount",
+      "name": "Trade Price Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15,
+          "role": "Trade Counter Staff"
+        },
+        {
+          "min": 15,
+          "max": null,
+          "role": "Branch Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "bulk_order",
+      "name": "Bulk / Special Order",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Branch Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Timber",
+    "Fixings",
+    "Tools",
+    "Paint",
+    "Plumbing",
+    "Electrical",
+    "Aggregates",
+    "Safety"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4500",
+        "name": "Retail Counter Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "4510",
+        "name": "Trade Account Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5340",
+        "name": "Delivery & Haulage Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "unit_of_sale",
+      "pack_size",
+      "trade_price",
+      "retail_price",
+      "weight_kg",
+      "barcode"
+    ],
+    "customer": [
+      "trade_account",
+      "credit_limit",
+      "payment_terms_days"
+    ]
+  },
+  "dashboards": [
+    "Trade vs Retail Mix",
+    "Credit Exposure",
+    "Stock Turns",
+    "Delivery Schedule"
+  ],
+  "reports": [
+    "Trade Account Statement",
+    "Credit Exposure Report",
+    "Stock Turn by Category",
+    "Delivery Manifest",
+    "Z Report"
+  ],
+  "doc_templates": [
+    "Sales Receipt",
+    "Trade Invoice",
+    "Delivery Note",
+    "Quotation"
+  ],
+  "import_templates": [
+    {
+      "entity": "products",
+      "columns": [
+        "sku",
+        "name",
+        "category",
+        "unit_of_sale",
+        "pack_size",
+        "cost",
+        "trade_price",
+        "retail_price",
+        "barcode"
+      ]
+    },
+    {
+      "entity": "trade_accounts",
+      "columns": [
+        "name",
+        "credit_limit",
+        "payment_terms_days",
+        "contact_email"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Two businesses share a building: cash retail and credit trade. Trade accounts on 30-day terms are where the working capital goes, so credit exposure needs watching as closely as stock. Goods bought by the pallet and sold by the unit need a pack-size conversion or margin maths goes wrong at the till.",
+    "starter_prompts": [
+      "Show trade credit exposure by account.",
+      "Which trade accounts are over their limit?",
+      "Show stock turns by category.",
+      "Compare trade vs retail margin this month."
+    ]
+  }
+}

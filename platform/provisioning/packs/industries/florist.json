@@ -1,0 +1,185 @@
+{
+  "key": "florist",
+  "name": "Florist",
+  "version": "1.0",
+  "description": "Highly perishable stock, arrangement making, occasion-driven demand spikes and timed deliveries.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "makes_products",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Shop Manager",
+        "description": "Owns buying, pricing and wastage."
+      },
+      {
+        "name": "Florist",
+        "description": "Makes arrangements to order."
+      },
+      {
+        "name": "Driver",
+        "description": "Runs timed deliveries."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "wastage_writeoff",
+      "name": "Stem Wastage Write-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 150,
+          "role": "Florist"
+        },
+        {
+          "min": 150,
+          "max": null,
+          "role": "Shop Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Order Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15,
+          "role": "Florist"
+        },
+        {
+          "min": 15,
+          "max": null,
+          "role": "Shop Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "bulk_order",
+      "name": "Event Flower Order",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Shop Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Cut Flowers",
+    "Bouquets",
+    "Arrangements",
+    "Plants",
+    "Funeral Tributes",
+    "Wedding Flowers",
+    "Sundries"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4450",
+        "name": "Shop Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "4460",
+        "name": "Event & Wedding Flowers",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5290",
+        "name": "Flower Purchase Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5300",
+        "name": "Stem Wastage",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "stem_life_days",
+      "seasonal",
+      "colour",
+      "arrival_date"
+    ],
+    "order": [
+      "delivery_date",
+      "delivery_window",
+      "recipient_name",
+      "card_message",
+      "occasion"
+    ]
+  },
+  "dashboards": [
+    "Today's Deliveries",
+    "Stem Wastage",
+    "Occasion Forecast",
+    "Stock Freshness"
+  ],
+  "reports": [
+    "Delivery Run Sheet",
+    "Wastage Report",
+    "Stock Age Report",
+    "Occasion Sales Comparison"
+  ],
+  "doc_templates": [
+    "Order Form",
+    "Delivery Card",
+    "Funeral Tribute Sheet",
+    "Wedding Quotation"
+  ],
+  "import_templates": [
+    {
+      "entity": "products",
+      "columns": [
+        "sku",
+        "name",
+        "category",
+        "cost",
+        "retail_price",
+        "stem_life_days"
+      ]
+    },
+    {
+      "entity": "orders",
+      "columns": [
+        "customer",
+        "delivery_date",
+        "recipient_name",
+        "address",
+        "occasion",
+        "total"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Stem life is measured in days and demand is spiky around occasions (Valentine's, Mother's Day) -- buying is a forecast bet, and unsold stems are a total loss. Delivery windows are a service promise: a late funeral tribute is an unrecoverable failure, not a late parcel.",
+    "starter_prompts": [
+      "Show deliveries scheduled for today by window.",
+      "What is stem wastage this week?",
+      "Compare Valentine's sales to last year.",
+      "List stock older than its stem life."
+    ]
+  }
+}

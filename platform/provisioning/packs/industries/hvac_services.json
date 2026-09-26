@@ -1,0 +1,193 @@
+{
+  "key": "hvac_services",
+  "name": "HVAC & Field Service",
+  "version": "1.0",
+  "description": "Reactive call-outs plus planned maintenance contracts: engineer scheduling, parts vans, warranty on installs.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "inventory",
+    "hr",
+    "maintenance"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Job"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Service Manager",
+        "description": "Owns scheduling, contracts and warranty calls."
+      },
+      {
+        "name": "Field Engineer",
+        "description": "Attends jobs and fits parts."
+      },
+      {
+        "name": "Parts Controller",
+        "description": "Manages van stock and ordering."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "quotation",
+      "name": "Installation Quotation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10000,
+          "role": "Service Manager"
+        },
+        {
+          "min": 10000,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "warranty_job",
+      "name": "Warranty Call (no charge)",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Service Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "parts_order",
+      "name": "Parts Order",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 1000,
+          "role": "Parts Controller"
+        },
+        {
+          "min": 1000,
+          "max": null,
+          "role": "Service Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Installation",
+    "Planned Maintenance",
+    "Reactive Repair",
+    "Parts",
+    "Refrigerant",
+    "Commissioning"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2191",
+        "name": "Deferred Maintenance Contract Revenue",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4630",
+        "name": "Installation Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "4640",
+        "name": "Maintenance Contract Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5430",
+        "name": "Parts & Materials",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5440",
+        "name": "Warranty Rework Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "job": [
+      "site_address",
+      "equipment_model",
+      "fault_code",
+      "engineer",
+      "sla_hours",
+      "warranty_job"
+    ],
+    "contract": [
+      "visits_per_year",
+      "covered_equipment",
+      "renewal_date"
+    ]
+  },
+  "dashboards": [
+    "Today's Jobs",
+    "First-time Fix Rate",
+    "Contract Renewals",
+    "Van Stock"
+  ],
+  "reports": [
+    "Job Schedule",
+    "First-time Fix Report",
+    "Warranty Cost Analysis",
+    "PPM Visit Compliance",
+    "Van Stock Report"
+  ],
+  "doc_templates": [
+    "Job Sheet",
+    "Service Report",
+    "Installation Quotation",
+    "Maintenance Contract"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "site_address",
+        "contact_email",
+        "contract_type"
+      ]
+    },
+    {
+      "entity": "equipment",
+      "columns": [
+        "client",
+        "site_address",
+        "model",
+        "serial",
+        "install_date",
+        "warranty_end"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "First-time fix rate is the profit driver -- a second visit for a part that should have been on the van wipes out the job's margin. Planned maintenance visits are a contractual obligation with a compliance count, and missing them is a breach. Warranty rework is real cost that must be visible, not absorbed silently into service cost.",
+    "starter_prompts": [
+      "Show first-time fix rate by engineer.",
+      "Which PPM visits are overdue this quarter?",
+      "Show warranty rework cost this month.",
+      "List jobs breaching SLA today."
+    ]
+  }
+}

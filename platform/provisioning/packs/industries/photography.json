@@ -1,0 +1,179 @@
+{
+  "key": "photography",
+  "name": "Photography Studio",
+  "version": "1.0",
+  "description": "Shoots sold as packages, deliverables and licensing, second shooters, edit turnaround.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "projects",
+    "documents"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "manages_projects",
+    "books_appointments"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Shoot",
+    "project": "Shoot"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Studio Owner",
+        "description": "Approves pricing, licensing and subcontractors."
+      },
+      {
+        "name": "Photographer",
+        "description": "Shoots and delivers edits."
+      },
+      {
+        "name": "Retoucher",
+        "description": "Edits and prepares deliverables."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "package_discount",
+      "name": "Package Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15,
+          "role": "Photographer"
+        },
+        {
+          "min": 15,
+          "max": null,
+          "role": "Studio Owner"
+        }
+      ]
+    },
+    {
+      "document_type": "licensing",
+      "name": "Commercial Licence Grant",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Studio Owner"
+        }
+      ]
+    },
+    {
+      "document_type": "subcontractor",
+      "name": "Second Shooter Booking",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Studio Owner"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Weddings",
+    "Portrait",
+    "Commercial",
+    "Product",
+    "Events",
+    "Prints",
+    "Licensing"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2188",
+        "name": "Shoot Deposits",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4560",
+        "name": "Photography Fees",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4570",
+        "name": "Licensing Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5370",
+        "name": "Second Shooter & Retouching",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "shoot": [
+      "shoot_date",
+      "location",
+      "package",
+      "deliverable_count",
+      "edit_due_date",
+      "licence_type"
+    ],
+    "deliverable": [
+      "format",
+      "resolution",
+      "delivered_date"
+    ]
+  },
+  "dashboards": [
+    "Upcoming Shoots",
+    "Edit Backlog",
+    "Deposit Status",
+    "Package Mix"
+  ],
+  "reports": [
+    "Shoot Schedule",
+    "Edit Turnaround",
+    "Deposit Register",
+    "Licensing Revenue",
+    "Package Profitability"
+  ],
+  "doc_templates": [
+    "Shoot Contract",
+    "Model Release",
+    "Licence Agreement",
+    "Delivery Note"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email",
+        "phone"
+      ]
+    },
+    {
+      "entity": "shoots",
+      "columns": [
+        "client",
+        "shoot_date",
+        "package",
+        "location",
+        "fee",
+        "deposit"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "The shoot is one day; the edit backlog is the business. Turnaround time drives referrals more than price does. Licensing is separate revenue from the shoot fee -- a commercial client buying usage rights is a different sale from the session, and conflating them leaves money on the table.",
+    "starter_prompts": [
+      "Show shoots booked in the next 30 days.",
+      "What is the current edit backlog by photographer?",
+      "Show package profitability.",
+      "List shoots with outstanding deposits."
+    ]
+  }
+}

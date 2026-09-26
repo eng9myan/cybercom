@@ -1,0 +1,187 @@
+{
+  "key": "law_firm",
+  "name": "Law Firm",
+  "version": "1.0",
+  "description": "Legal practice: matters, retainers held in trust, billable hours, conflict checks, court deadlines.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "projects",
+    "hr",
+    "documents"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "manages_projects"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Matter",
+    "invoice": "Fee Note",
+    "project": "Matter"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Managing Partner",
+        "description": "Approves matters, rates, and write-offs; signs off trust reconciliation."
+      },
+      {
+        "name": "Associate",
+        "description": "Runs matters and logs billable time."
+      },
+      {
+        "name": "Paralegal",
+        "description": "Prepares filings and tracks deadlines."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "matter",
+      "name": "Matter Opening (conflict check)",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Managing Partner"
+        }
+      ]
+    },
+    {
+      "document_type": "trust_withdrawal",
+      "name": "Client Trust Withdrawal",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Managing Partner"
+        }
+      ]
+    },
+    {
+      "document_type": "write_off",
+      "name": "WIP Write-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 1000,
+          "role": "Associate"
+        },
+        {
+          "min": 1000,
+          "max": null,
+          "role": "Managing Partner"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Litigation",
+    "Corporate",
+    "Real Estate",
+    "Family",
+    "Criminal",
+    "IP",
+    "Employment"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "1166",
+        "name": "Unbilled WIP (Legal Time)",
+        "account_type": "asset",
+        "parent": "1100"
+      },
+      {
+        "code": "1168",
+        "name": "Client Trust Account",
+        "account_type": "asset",
+        "parent": "1100"
+      },
+      {
+        "code": "2185",
+        "name": "Client Trust Liability",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4230",
+        "name": "Legal Fees",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4240",
+        "name": "Recovered Disbursements",
+        "account_type": "income",
+        "parent": "4200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "matter": [
+      "practice_area",
+      "court_reference",
+      "opposing_party",
+      "statute_deadline",
+      "billing_type"
+    ],
+    "employee": [
+      "bar_number",
+      "cost_rate",
+      "billable_target_percent"
+    ]
+  },
+  "dashboards": [
+    "Billable Hours",
+    "Matter Profitability",
+    "Trust Balances",
+    "Deadline Calendar"
+  ],
+  "reports": [
+    "Timesheet Summary",
+    "WIP Aging",
+    "Trust Account Reconciliation",
+    "Realization Rate",
+    "Matter Budget vs Actual"
+  ],
+  "doc_templates": [
+    "Engagement Letter",
+    "Fee Note",
+    "Trust Statement",
+    "Power of Attorney"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email",
+        "phone",
+        "payment_terms_days"
+      ]
+    },
+    {
+      "entity": "matters",
+      "columns": [
+        "client",
+        "name",
+        "practice_area",
+        "billing_type",
+        "hourly_rate",
+        "open_date"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Client trust money is legally not firm revenue -- it must sit in a separate trust account and a matching trust liability, and never be recognized as income until billed against. The trust account and trust liability must reconcile to the penny; a mismatch is a bar-complaint-level event, not an accounting nit. Conflict checks belong at matter opening, before any work is logged.",
+    "starter_prompts": [
+      "Show unbilled WIP by matter older than 60 days.",
+      "Which matters are over their budget hours?",
+      "Show trust balances by client.",
+      "List matters with a statutory deadline in the next 14 days.",
+      "What is realization rate by partner this quarter?"
+    ]
+  }
+}

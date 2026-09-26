@@ -1,0 +1,171 @@
+{
+  "key": "accounting_firm",
+  "name": "Accounting & Audit Firm",
+  "version": "1.0",
+  "description": "Audit, tax and bookkeeping practice: engagements, filing deadlines, recurring compliance work, per-client recurring fees.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "projects",
+    "hr",
+    "documents"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "manages_projects"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Engagement",
+    "invoice": "Fee Note"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Partner",
+        "description": "Signs audit opinions and approves engagement acceptance."
+      },
+      {
+        "name": "Audit Manager",
+        "description": "Runs fieldwork, reviews workpapers."
+      },
+      {
+        "name": "Staff Accountant",
+        "description": "Executes testing and bookkeeping."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "engagement",
+      "name": "Engagement Acceptance (independence check)",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Partner"
+        }
+      ]
+    },
+    {
+      "document_type": "audit_opinion",
+      "name": "Audit Opinion Sign-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Partner"
+        }
+      ]
+    },
+    {
+      "document_type": "timesheet",
+      "name": "Timesheet Approval",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Audit Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Audit",
+    "Tax",
+    "Bookkeeping",
+    "Advisory",
+    "Payroll Services",
+    "Company Formation"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "1167",
+        "name": "Unbilled WIP (Engagements)",
+        "account_type": "asset",
+        "parent": "1100"
+      },
+      {
+        "code": "2176",
+        "name": "Deferred Revenue (Retainers)",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4250",
+        "name": "Audit Fees",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4260",
+        "name": "Tax & Compliance Fees",
+        "account_type": "income",
+        "parent": "4200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "engagement": [
+      "service_type",
+      "period_end",
+      "filing_deadline",
+      "recurring",
+      "fee_basis"
+    ],
+    "employee": [
+      "qualification",
+      "cost_rate",
+      "billable_target_percent"
+    ]
+  },
+  "dashboards": [
+    "Deadline Tracker",
+    "Utilization",
+    "Recurring Fee Base",
+    "Engagement Profitability"
+  ],
+  "reports": [
+    "Filing Deadline Report",
+    "WIP Aging",
+    "Recovery by Engagement",
+    "Recurring Revenue Schedule"
+  ],
+  "doc_templates": [
+    "Engagement Letter",
+    "Management Letter",
+    "Fee Note",
+    "Representation Letter"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "tax_id",
+        "year_end",
+        "contact_email"
+      ]
+    },
+    {
+      "entity": "engagements",
+      "columns": [
+        "client",
+        "service_type",
+        "period_end",
+        "filing_deadline",
+        "fee"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Compliance work is deadline-driven and highly recurring: the same client needs the same filing every period, so the schedule -- not the pipeline -- is the real planning tool. Independence and engagement acceptance are gating controls before work starts, not paperwork afterwards.",
+    "starter_prompts": [
+      "Which filings are due in the next 30 days?",
+      "Show recurring fee base by service type.",
+      "List engagements where recovery is below 80%.",
+      "Show WIP by partner."
+    ]
+  }
+}

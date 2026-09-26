@@ -1,0 +1,186 @@
+{
+  "key": "food_distribution",
+  "name": "Food Distribution",
+  "version": "1.0",
+  "description": "Cold-chain wholesale: temperature-controlled stock, batch/expiry traceability, delivery routes, customer-specific pricing.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "buys_products",
+    "operates_branches",
+    "provides_services"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Depot Manager",
+        "description": "Owns stock, cold chain and route planning."
+      },
+      {
+        "name": "Sales Representative",
+        "description": "Manages customer accounts and pricing."
+      },
+      {
+        "name": "Driver",
+        "description": "Runs the delivery route and collects returns."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "credit_limit",
+      "name": "Customer Credit Limit",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Depot Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "price_list",
+      "name": "Customer Price List",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Sales Representative"
+        }
+      ]
+    },
+    {
+      "document_type": "stock_writeoff",
+      "name": "Expired Stock Write-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 500,
+          "role": "Depot Manager"
+        },
+        {
+          "min": 500,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Chilled",
+    "Frozen",
+    "Ambient",
+    "Fresh Produce",
+    "Dairy",
+    "Meat",
+    "Beverages"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4740",
+        "name": "Wholesale Food Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5560",
+        "name": "Cost of Goods (Food)",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5570",
+        "name": "Expired & Damaged Stock",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5580",
+        "name": "Distribution & Fuel",
+        "account_type": "expense",
+        "parent": "5000"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "storage_temp",
+      "batch_tracked",
+      "shelf_life_days",
+      "unit_of_sale",
+      "case_size"
+    ],
+    "delivery": [
+      "route",
+      "drop_sequence",
+      "temperature_log",
+      "returns_collected"
+    ]
+  },
+  "dashboards": [
+    "Today's Routes",
+    "Stock Expiry Watch",
+    "Customer Credit",
+    "Fill Rate"
+  ],
+  "reports": [
+    "Route Manifest",
+    "Expiry Watchlist",
+    "Batch Traceability",
+    "Fill Rate by Customer",
+    "Credit Exposure"
+  ],
+  "doc_templates": [
+    "Delivery Note",
+    "Route Manifest",
+    "Temperature Log",
+    "Customer Price List"
+  ],
+  "import_templates": [
+    {
+      "entity": "customers",
+      "columns": [
+        "name",
+        "delivery_address",
+        "route",
+        "credit_limit",
+        "payment_terms_days"
+      ]
+    },
+    {
+      "entity": "products",
+      "columns": [
+        "sku",
+        "name",
+        "category",
+        "storage_temp",
+        "shelf_life_days",
+        "case_size",
+        "cost",
+        "price"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Batch traceability is a legal requirement, not an optimisation -- a recall means naming every customer who received an affected batch, fast. Cold chain breaks make stock unsaleable and unsafe, so temperature logs belong with the delivery record. Fill rate (ordered vs delivered) is what wholesale customers actually judge you on.",
+    "starter_prompts": [
+      "Show stock expiring within 7 days.",
+      "Trace which customers received a given batch.",
+      "Show fill rate by customer this month.",
+      "What is credit exposure by route?"
+    ]
+  }
+}

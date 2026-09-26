@@ -1,0 +1,187 @@
+{
+  "key": "solar_energy",
+  "name": "Solar Energy Installer",
+  "version": "1.0",
+  "description": "Survey-to-commissioning installs: system design, panel and inverter serials, financing/subsidy, generation warranty.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "projects",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "manages_projects",
+    "buys_products",
+    "provides_services"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Installation"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Installation Manager",
+        "description": "Owns design sign-off, scheduling and commissioning."
+      },
+      {
+        "name": "Surveyor",
+        "description": "Surveys the roof and sizes the system."
+      },
+      {
+        "name": "Installer",
+        "description": "Fits panels and inverters."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "system_design",
+      "name": "System Design Sign-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Installation Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "quotation",
+      "name": "Installation Quotation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 30000,
+          "role": "Installation Manager"
+        },
+        {
+          "min": 30000,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "commissioning",
+      "name": "Commissioning Certificate",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Installation Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Panels",
+    "Inverters",
+    "Batteries",
+    "Mounting",
+    "Installation Labour",
+    "Maintenance",
+    "Monitoring"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2192",
+        "name": "Customer Deposits (Installations)",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4670",
+        "name": "Installation Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "4680",
+        "name": "Monitoring & Maintenance Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5470",
+        "name": "Panels & Equipment Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "installation": [
+      "system_kwp",
+      "panel_count",
+      "inverter_serial",
+      "roof_type",
+      "survey_date",
+      "commissioning_date",
+      "expected_annual_kwh",
+      "subsidy_scheme"
+    ],
+    "product": [
+      "serial_tracked",
+      "warranty_years",
+      "efficiency_percent"
+    ]
+  },
+  "dashboards": [
+    "Pipeline to Install",
+    "Installs Awaiting Commissioning",
+    "Equipment Stock",
+    "Deposit Liability"
+  ],
+  "reports": [
+    "Install Pipeline",
+    "Commissioning Status",
+    "Serial & Warranty Register",
+    "Generation vs Estimate",
+    "Margin per kWp"
+  ],
+  "doc_templates": [
+    "Survey Report",
+    "System Design",
+    "Installation Quotation",
+    "Commissioning Certificate",
+    "Warranty Document"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "site_address",
+        "contact_email",
+        "phone"
+      ]
+    },
+    {
+      "entity": "installations",
+      "columns": [
+        "client",
+        "site_address",
+        "system_kwp",
+        "panel_count",
+        "survey_date",
+        "total_price"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "The quoted annual generation figure is effectively a performance promise -- underestimating shading at survey turns into a complaint years later, so survey quality is a warranty control. Panel and inverter serials must be captured for manufacturer warranty claims, which can run 10-25 years, far longer than most job records are usually kept. Margin is best tracked per kWp, not per job.",
+    "starter_prompts": [
+      "Show installs awaiting commissioning.",
+      "What is margin per kWp by system size?",
+      "List installations where actual generation is below estimate.",
+      "Show equipment stock against the install pipeline."
+    ]
+  }
+}

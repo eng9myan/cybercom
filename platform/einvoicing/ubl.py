@@ -74,6 +74,60 @@ class UblLine:
 
 
 @dataclass
+class PeppolParty(UblParty):
+    """A Peppol party additionally carries the network endpoint that routes
+    the document (EndpointID + its scheme, e.g. 0088 = GLN, 9930 = DE VAT)
+    and, optionally, a legal registration id."""
+
+    endpoint_id: str = ""
+    endpoint_scheme: str = "0088"
+    company_id: str = ""
+    postal_zone: str = ""
+
+
+@dataclass
+class PeppolInvoiceData:
+    """EN 16931 / Peppol BIS Billing 3.0 invoice.
+
+    Unlike the JO/SA documents this one carries no ICV/PIH chain -- Peppol
+    has no clearance-time hash chain; integrity is the AS4 transport's job
+    and the legal trail is the Access Point's. Rounding is 2dp per EN 16931
+    (the Gulf builders use 3dp).
+    """
+
+    number: str
+    issue_dt: datetime
+    currency: str
+    seller: PeppolParty
+    buyer: PeppolParty
+    lines: list[UblLine] = field(default_factory=list)
+    invoice_type_code: str = "380"       # 380 commercial invoice; 381 credit note
+    due_date: date | None = None
+    buyer_reference: str = ""            # BT-10; many EU public buyers mandate it
+    note: str = ""
+
+    @property
+    def line_extension_total(self) -> Decimal:
+        return sum((l.line_extension for l in self.lines), Decimal("0"))
+
+    @property
+    def tax_total(self) -> Decimal:
+        return sum((l.tax_amount for l in self.lines), Decimal("0"))
+
+    @property
+    def tax_inclusive_total(self) -> Decimal:
+        return self.line_extension_total + self.tax_total
+
+    def tax_subtotals(self) -> dict[Decimal, tuple[Decimal, Decimal]]:
+        out: dict[Decimal, list[Decimal]] = {}
+        for l in self.lines:
+            slot = out.setdefault(l.tax_percent, [Decimal("0"), Decimal("0")])
+            slot[0] += l.line_extension
+            slot[1] += l.tax_amount
+        return {r: (a, t) for r, (a, t) in out.items()}
+
+
+@dataclass
 class JoInvoiceData:
     number: str
     uuid: str
@@ -172,6 +226,104 @@ def build_jo_ubl(data: JoInvoiceData) -> str:
         _sub(price, "cbc:PriceAmount", _money(line.unit_price), currencyID=data.currency)
 
     return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(root, encoding="unicode")
+
+
+_PEPPOL_CUSTOMIZATION = (
+    "urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0"
+)
+_PEPPOL_PROFILE = "urn:fdc:peppol.eu:2017:poacc:billing:01:1.0"
+
+
+def _money2(v) -> str:
+    """EN 16931 amounts are 2dp (the Gulf profiles use 3dp)."""
+    return str(Decimal(str(v)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
+def build_peppol_ubl(data: PeppolInvoiceData) -> str:
+    """Return a Peppol BIS Billing 3.0 (EN 16931) UBL 2.1 Invoice.
+
+    One document format covers every Peppol-connected country rather than a
+    bespoke builder per jurisdiction -- which is the whole point of the
+    network. Country-specific rules (e.g. IT FatturaPA, PL KSeF) are
+    national formats *outside* Peppol and are deliberately NOT claimed here.
+    """
+    root = ET.Element(_q("Invoice"))
+
+    _sub(root, "cbc:CustomizationID", _PEPPOL_CUSTOMIZATION)
+    _sub(root, "cbc:ProfileID", _PEPPOL_PROFILE)
+    _sub(root, "cbc:ID", data.number)
+    _sub(root, "cbc:IssueDate", data.issue_dt.date().isoformat())
+    if data.due_date:
+        _sub(root, "cbc:DueDate", data.due_date.isoformat())
+    _sub(root, "cbc:InvoiceTypeCode", data.invoice_type_code)
+    if data.note:
+        _sub(root, "cbc:Note", data.note)
+    _sub(root, "cbc:DocumentCurrencyCode", data.currency)
+    if data.buyer_reference:
+        _sub(root, "cbc:BuyerReference", data.buyer_reference)
+
+    _peppol_party(root, "cac:AccountingSupplierParty", data.seller)
+    _peppol_party(root, "cac:AccountingCustomerParty", data.buyer)
+
+    tax_total_el = _sub(root, "cac:TaxTotal")
+    _sub(tax_total_el, "cbc:TaxAmount", _money2(data.tax_total), currencyID=data.currency)
+    for rate, (taxable, tax) in sorted(data.tax_subtotals().items()):
+        st = _sub(tax_total_el, "cac:TaxSubtotal")
+        _sub(st, "cbc:TaxableAmount", _money2(taxable), currencyID=data.currency)
+        _sub(st, "cbc:TaxAmount", _money2(tax), currencyID=data.currency)
+        cat = _sub(st, "cac:TaxCategory")
+        _sub(cat, "cbc:ID", "S" if rate > 0 else "Z")
+        _sub(cat, "cbc:Percent", str(Decimal(str(rate))))
+        scheme = _sub(cat, "cac:TaxScheme")
+        _sub(scheme, "cbc:ID", "VAT")
+
+    lmt = _sub(root, "cac:LegalMonetaryTotal")
+    _sub(lmt, "cbc:LineExtensionAmount", _money2(data.line_extension_total), currencyID=data.currency)
+    _sub(lmt, "cbc:TaxExclusiveAmount", _money2(data.line_extension_total), currencyID=data.currency)
+    _sub(lmt, "cbc:TaxInclusiveAmount", _money2(data.tax_inclusive_total), currencyID=data.currency)
+    _sub(lmt, "cbc:PayableAmount", _money2(data.tax_inclusive_total), currencyID=data.currency)
+
+    for line in data.lines:
+        il = _sub(root, "cac:InvoiceLine")
+        _sub(il, "cbc:ID", line.line_id)
+        _sub(il, "cbc:InvoicedQuantity", str(line.quantity), unitCode=line.unit_code)
+        _sub(il, "cbc:LineExtensionAmount", _money2(line.line_extension), currencyID=data.currency)
+        item = _sub(il, "cac:Item")
+        _sub(item, "cbc:Name", line.name)
+        itc = _sub(item, "cac:ClassifiedTaxCategory")
+        _sub(itc, "cbc:ID", "S" if line.tax_percent > 0 else "Z")
+        _sub(itc, "cbc:Percent", str(Decimal(str(line.tax_percent))))
+        its = _sub(itc, "cac:TaxScheme")
+        _sub(its, "cbc:ID", "VAT")
+        price = _sub(il, "cac:Price")
+        _sub(price, "cbc:PriceAmount", _money2(line.unit_price), currencyID=data.currency)
+
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(root, encoding="unicode")
+
+
+def _peppol_party(parent: ET.Element, wrapper_tag: str, p: PeppolParty) -> None:
+    w = _sub(parent, wrapper_tag)
+    party = _sub(w, "cac:Party")
+    if p.endpoint_id:
+        _sub(party, "cbc:EndpointID", p.endpoint_id, schemeID=p.endpoint_scheme)
+    addr = _sub(party, "cac:PostalAddress")
+    if p.street:
+        _sub(addr, "cbc:StreetName", p.street)
+    if p.city:
+        _sub(addr, "cbc:CityName", p.city)
+    if p.postal_zone:
+        _sub(addr, "cbc:PostalZone", p.postal_zone)
+    country = _sub(addr, "cac:Country")
+    _sub(country, "cbc:IdentificationCode", p.country_code)
+    if p.tin:
+        pts = _sub(party, "cac:PartyTaxScheme")
+        _sub(pts, "cbc:CompanyID", p.tin)
+        scheme = _sub(pts, "cac:TaxScheme")
+        _sub(scheme, "cbc:ID", "VAT")
+    ent = _sub(party, "cac:PartyLegalEntity")
+    _sub(ent, "cbc:RegistrationName", p.name)
+    if p.company_id:
+        _sub(ent, "cbc:CompanyID", p.company_id)
 
 
 def _party(parent: ET.Element, wrapper_tag: str, p: UblParty) -> None:

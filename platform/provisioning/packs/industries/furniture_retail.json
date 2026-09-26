@@ -1,0 +1,172 @@
+{
+  "key": "furniture_retail",
+  "name": "Furniture Retail",
+  "version": "1.0",
+  "description": "Long lead times, made-to-order and showroom stock, part-payment deposits, two-person delivery and assembly.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Showroom Manager",
+        "description": "Owns pricing, deposits and delivery promises."
+      },
+      {
+        "name": "Sales Consultant",
+        "description": "Sells and configures made-to-order items."
+      },
+      {
+        "name": "Delivery Coordinator",
+        "description": "Schedules delivery and assembly."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "deposit_refund",
+      "name": "Deposit Refund",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Showroom Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Order Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10,
+          "role": "Sales Consultant"
+        },
+        {
+          "min": 10,
+          "max": null,
+          "role": "Showroom Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "special_order",
+      "name": "Made-to-order Confirmation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Showroom Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Living",
+    "Bedroom",
+    "Dining",
+    "Office",
+    "Outdoor",
+    "Mattresses",
+    "Accessories"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2187",
+        "name": "Customer Deposits (Orders)",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4520",
+        "name": "Furniture Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5350",
+        "name": "Delivery & Assembly Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "lead_time_days",
+      "made_to_order",
+      "fabric_options",
+      "assembly_required",
+      "dimensions"
+    ],
+    "order": [
+      "deposit_amount",
+      "promised_date",
+      "delivery_slot"
+    ]
+  },
+  "dashboards": [
+    "Orders Awaiting Delivery",
+    "Deposit Liability",
+    "Lead Time Performance",
+    "Showroom Conversion"
+  ],
+  "reports": [
+    "Outstanding Orders",
+    "Deposit Register",
+    "Promised vs Actual Delivery",
+    "Supplier Lead Time"
+  ],
+  "doc_templates": [
+    "Sales Order",
+    "Deposit Receipt",
+    "Delivery Booking",
+    "Assembly Sheet"
+  ],
+  "import_templates": [
+    {
+      "entity": "products",
+      "columns": [
+        "sku",
+        "name",
+        "category",
+        "cost",
+        "retail_price",
+        "lead_time_days",
+        "made_to_order"
+      ]
+    },
+    {
+      "entity": "orders",
+      "columns": [
+        "customer",
+        "product",
+        "deposit_amount",
+        "promised_date",
+        "total"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Customers pay a deposit months before they get the sofa -- that money is a liability and the promised date is the reputation. Made-to-order items can't be cancelled upstream once cut, so the confirmation step is a real commitment. Track promised vs actual delivery: slipping dates drive the complaints, not the price.",
+    "starter_prompts": [
+      "Show orders awaiting delivery past their promised date.",
+      "What is total customer deposit liability?",
+      "Show supplier lead time performance.",
+      "List made-to-order items in production."
+    ]
+  }
+}

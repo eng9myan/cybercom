@@ -1,0 +1,177 @@
+{
+  "key": "gym_fitness",
+  "name": "Gym & Fitness Studio",
+  "version": "1.0",
+  "description": "Membership-driven fitness: recurring dues, class bookings, personal training, freeze and cancellation handling.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "hr"
+  ],
+  "recommended_ops": [
+    "memberships",
+    "books_appointments",
+    "retail_pos"
+  ],
+  "terminology": {
+    "customer": "Member",
+    "sale_order": "Membership"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Club Manager",
+        "description": "Owns membership pricing, freezes and cancellations."
+      },
+      {
+        "name": "Trainer",
+        "description": "Delivers PT sessions and classes."
+      },
+      {
+        "name": "Front Desk",
+        "description": "Handles sign-ups and check-ins."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "membership_discount",
+      "name": "Membership Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15,
+          "role": "Front Desk"
+        },
+        {
+          "min": 15,
+          "max": null,
+          "role": "Club Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "cancellation",
+      "name": "Membership Cancellation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Club Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "freeze",
+      "name": "Membership Freeze",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Club Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Memberships",
+    "Personal Training",
+    "Classes",
+    "Supplements",
+    "Merchandise",
+    "Day Passes"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2180",
+        "name": "Deferred Membership Revenue",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4320",
+        "name": "Membership Dues",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4330",
+        "name": "Personal Training Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5210",
+        "name": "Trainer Commission",
+        "account_type": "expense",
+        "parent": "5200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "membership": [
+      "plan",
+      "billing_cycle",
+      "start_date",
+      "end_date",
+      "freeze_days_used",
+      "contract_months"
+    ],
+    "class": [
+      "capacity",
+      "instructor",
+      "duration_minutes"
+    ]
+  },
+  "dashboards": [
+    "Active Members",
+    "Churn Rate",
+    "Class Occupancy",
+    "PT Session Balance"
+  ],
+  "reports": [
+    "Membership Roster",
+    "Churn Report",
+    "Class Attendance",
+    "Deferred Revenue Schedule",
+    "PT Utilization"
+  ],
+  "doc_templates": [
+    "Membership Agreement",
+    "Freeze Confirmation",
+    "Class Schedule",
+    "PT Package"
+  ],
+  "import_templates": [
+    {
+      "entity": "members",
+      "columns": [
+        "full_name",
+        "plan",
+        "start_date",
+        "contract_months",
+        "email",
+        "phone"
+      ]
+    },
+    {
+      "entity": "classes",
+      "columns": [
+        "name",
+        "instructor",
+        "capacity",
+        "schedule"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Annual dues paid up front are deferred revenue released monthly, not income on day one. Churn is the number that decides whether the club grows -- a good sales month can hide a bad retention month. Frozen memberships should stop billing but keep the contract clock, or the contract term silently shortens.",
+    "starter_prompts": [
+      "Show active members and churn this month.",
+      "What is class occupancy by time slot?",
+      "List memberships expiring in 30 days.",
+      "Show deferred membership revenue balance."
+    ]
+  }
+}

@@ -118,15 +118,23 @@ def test_engine_failure_does_not_advance_sequence():
     assert EInvoiceInteraction.objects.filter(status="rejected").count() == 1
 
 
-def test_unimplemented_modes_raise():
-    assert mode_for_country("AE") == "ae_peppol"
-    with pytest.raises(NotImplementedError):
-        clear_invoice(
-            tenant_id=T, scope="default", country_code="AE", currency="AED", number="INV-AE",
-            issue_dt=datetime(2026, 7, 5, 12, 0),
-            seller=SellerProfile(tin="1", name="X"), buyer_tin="", buyer_name="Y", buyer_city="",
-            lines=[{"name": "Z", "quantity": 1, "unit_price": "1", "tax_percent": 5}],
-        )
+@pytest.mark.django_db
+def test_peppol_countries_now_clear_through_the_peppol_mode():
+    """AE used to raise NotImplementedError; Peppol BIS 3.0 is implemented
+    now. With no Access Point configured the submit step fails and the
+    interaction is recorded rejected -- but the document is still built and
+    stored, which is the honest split (the UBL is ours, transmission needs
+    a commercial AP subscription)."""
+    assert mode_for_country("AE") == "eu_peppol"
+    result = clear_invoice(
+        tenant_id=T, scope="default", country_code="AE", currency="AED", number="INV-AE",
+        issue_dt=datetime(2026, 7, 5, 12, 0),
+        seller=SellerProfile(tin="1", name="X"), buyer_tin="", buyer_name="Y", buyer_city="",
+        lines=[{"name": "Z", "quantity": 1, "unit_price": "1", "tax_percent": 5}],
+    )
+    assert result.mode == "eu_peppol"
+    assert result.status == "rejected"
+    assert "Access Point" in (result.error or "")
 
 
 def test_unknown_country_raises_valueerror():

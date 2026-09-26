@@ -1,0 +1,198 @@
+{
+  "key": "catering",
+  "name": "Catering",
+  "version": "1.0",
+  "description": "Contract and event catering: per-head costing, menus with recipe costing, delivery logistics, equipment hire.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "inventory",
+    "procurement",
+    "manufacturing"
+  ],
+  "recommended_ops": [
+    "manages_projects",
+    "buys_products",
+    "provides_services"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Catering Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Catering Manager",
+        "description": "Approves menus, pricing and staffing."
+      },
+      {
+        "name": "Head Chef",
+        "description": "Owns recipes, food cost and production."
+      },
+      {
+        "name": "Logistics Lead",
+        "description": "Runs delivery and equipment return."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "quotation",
+      "name": "Catering Quotation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15000,
+          "role": "Catering Manager"
+        },
+        {
+          "min": 15000,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "menu_change",
+      "name": "Menu / Recipe Change",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Head Chef"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Per-head Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10,
+          "role": "Catering Manager"
+        },
+        {
+          "min": 10,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Corporate Lunch",
+    "Weddings",
+    "Buffet",
+    "Canapés",
+    "Beverages",
+    "Equipment Hire",
+    "Staffing"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4410",
+        "name": "Catering Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "4420",
+        "name": "Equipment Hire Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5250",
+        "name": "Food Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5260",
+        "name": "Casual Event Staff",
+        "account_type": "expense",
+        "parent": "5200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "order": [
+      "event_date",
+      "guest_count",
+      "price_per_head",
+      "menu",
+      "delivery_time",
+      "venue"
+    ],
+    "recipe": [
+      "yield_portions",
+      "cost_per_portion",
+      "allergens"
+    ]
+  },
+  "dashboards": [
+    "Upcoming Orders",
+    "Food Cost %",
+    "Per-head Margin",
+    "Equipment Out"
+  ],
+  "reports": [
+    "Order Schedule",
+    "Recipe Costing",
+    "Food Cost Variance",
+    "Equipment Return Tracker",
+    "Per-head Profitability"
+  ],
+  "doc_templates": [
+    "Catering Quotation",
+    "Function Sheet",
+    "Delivery Note",
+    "Equipment Checklist"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email",
+        "phone"
+      ]
+    },
+    {
+      "entity": "menus",
+      "columns": [
+        "name",
+        "category",
+        "cost_per_portion",
+        "price_per_head",
+        "allergens"
+      ]
+    },
+    {
+      "entity": "orders",
+      "columns": [
+        "client",
+        "event_date",
+        "guest_count",
+        "menu",
+        "price_per_head",
+        "venue"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Margin lives in food cost percentage and guaranteed guest numbers -- catering for 200 when 150 turn up is a loss the client should contract to cover. Allergen data on every recipe is a safety requirement, not a nice-to-have. Hired equipment that never comes back is pure silent loss; track it out and in.",
+    "starter_prompts": [
+      "Show food cost percentage by order this month.",
+      "Which orders are scheduled next week?",
+      "Show per-head margin by menu.",
+      "List equipment still out after the event date."
+    ]
+  }
+}

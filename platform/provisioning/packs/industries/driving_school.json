@@ -1,0 +1,179 @@
+{
+  "key": "driving_school",
+  "name": "Driving School",
+  "version": "1.0",
+  "description": "Lesson blocks sold prepaid, instructor diaries, vehicle costs, test pass-rate tracking.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "hr",
+    "maintenance"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "books_appointments"
+  ],
+  "terminology": {
+    "customer": "Learner",
+    "sale_order": "Lesson Block"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "School Manager",
+        "description": "Owns pricing, instructor allocation and vehicles."
+      },
+      {
+        "name": "Instructor",
+        "description": "Delivers lessons and tracks learner progress."
+      },
+      {
+        "name": "Administrator",
+        "description": "Books lessons and tests."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "refund",
+      "name": "Unused Lesson Refund",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "School Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Block Booking Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10,
+          "role": "Administrator"
+        },
+        {
+          "min": 10,
+          "max": null,
+          "role": "School Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "vehicle_repair",
+      "name": "Vehicle Repair Authorisation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 500,
+          "role": "Instructor"
+        },
+        {
+          "min": 500,
+          "max": null,
+          "role": "School Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Manual Lessons",
+    "Automatic Lessons",
+    "Intensive Courses",
+    "Theory Support",
+    "Test Fees",
+    "Refresher"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2189",
+        "name": "Prepaid Lesson Liability",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4580",
+        "name": "Lesson Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5380",
+        "name": "Vehicle Running Costs",
+        "account_type": "expense",
+        "parent": "5000"
+      },
+      {
+        "code": "5390",
+        "name": "Instructor Payments",
+        "account_type": "expense",
+        "parent": "5200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "learner": [
+      "licence_number",
+      "theory_passed",
+      "lessons_remaining",
+      "test_date",
+      "progress_stage"
+    ],
+    "vehicle": [
+      "registration",
+      "transmission",
+      "next_service_due",
+      "dual_controls"
+    ]
+  },
+  "dashboards": [
+    "Instructor Diary",
+    "Lesson Credit Balance",
+    "Pass Rate",
+    "Vehicle Costs"
+  ],
+  "reports": [
+    "Prepaid Lesson Liability",
+    "Instructor Utilization",
+    "Pass Rate by Instructor",
+    "Vehicle Cost per Lesson"
+  ],
+  "doc_templates": [
+    "Lesson Block Agreement",
+    "Progress Record",
+    "Test Booking Confirmation",
+    "Refund Note"
+  ],
+  "import_templates": [
+    {
+      "entity": "learners",
+      "columns": [
+        "full_name",
+        "phone",
+        "licence_number",
+        "transmission",
+        "theory_passed"
+      ]
+    },
+    {
+      "entity": "instructors",
+      "columns": [
+        "full_name",
+        "vehicle_registration",
+        "transmission"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Blocks of lessons are sold up front and delivered over months -- that's a liability that must unwind lesson by lesson, and a refund risk if a learner quits. Pass rate per instructor is the marketing asset. Vehicle running cost per lesson is the hidden margin killer.",
+    "starter_prompts": [
+      "Show prepaid lesson liability by learner.",
+      "What is pass rate by instructor this year?",
+      "Show instructor diary utilization this week.",
+      "Which vehicles are due a service?"
+    ]
+  }
+}

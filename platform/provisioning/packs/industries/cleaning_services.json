@@ -1,0 +1,176 @@
+{
+  "key": "cleaning_services",
+  "name": "Cleaning Services",
+  "version": "1.0",
+  "description": "Recurring site contracts, mobile crews on rotas, consumables per site, quality inspections.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "hr",
+    "inventory"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "operates_branches"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Contract"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Operations Manager",
+        "description": "Owns contracts, rotas and quality."
+      },
+      {
+        "name": "Supervisor",
+        "description": "Runs crews and inspections."
+      },
+      {
+        "name": "Cleaner",
+        "description": "Delivers the scheduled clean."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "contract",
+      "name": "Cleaning Contract",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Operations Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "additional_work",
+      "name": "Ad-hoc Additional Work",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 500,
+          "role": "Supervisor"
+        },
+        {
+          "min": 500,
+          "max": null,
+          "role": "Operations Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "credit_note",
+      "name": "Service Failure Credit",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Operations Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Office Cleaning",
+    "Commercial",
+    "Residential",
+    "Deep Clean",
+    "Window Cleaning",
+    "Consumables"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4610",
+        "name": "Contract Cleaning Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4620",
+        "name": "Ad-hoc Cleaning Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5410",
+        "name": "Cleaning Consumables",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5420",
+        "name": "Crew Wages",
+        "account_type": "expense",
+        "parent": "5200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "contract": [
+      "site_address",
+      "frequency",
+      "hours_per_visit",
+      "crew_size",
+      "start_date",
+      "monthly_fee"
+    ],
+    "inspection": [
+      "score",
+      "inspected_by",
+      "inspection_date"
+    ]
+  },
+  "dashboards": [
+    "Site Coverage Today",
+    "Contract Margin",
+    "Inspection Scores",
+    "Consumable Usage"
+  ],
+  "reports": [
+    "Rota Coverage",
+    "Contract Profitability",
+    "Inspection Score Trend",
+    "Consumable Usage by Site"
+  ],
+  "doc_templates": [
+    "Cleaning Contract",
+    "Site Specification",
+    "Inspection Report",
+    "Monthly Invoice"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "site_address",
+        "contact_email",
+        "monthly_fee"
+      ]
+    },
+    {
+      "entity": "contracts",
+      "columns": [
+        "client",
+        "site_address",
+        "frequency",
+        "hours_per_visit",
+        "crew_size",
+        "monthly_fee"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Margin is hours: a contract priced on two hours a visit that actually takes three is loss-making from day one and nobody notices for months. Track actual hours against contracted hours per site. Inspection scores are the early warning for contract loss, well before the cancellation email.",
+    "starter_prompts": [
+      "Show contract margin by site.",
+      "Which sites are over their contracted hours?",
+      "Show inspection scores below target.",
+      "What is consumable cost per site this month?"
+    ]
+  }
+}

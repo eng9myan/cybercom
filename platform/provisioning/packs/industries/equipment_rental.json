@@ -1,0 +1,195 @@
+{
+  "key": "equipment_rental",
+  "name": "Equipment & Tool Rental",
+  "version": "1.0",
+  "description": "Rental fleet on hire cycles: availability, damage and late fees, servicing between hires, utilization economics.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "maintenance"
+  ],
+  "recommended_ops": [
+    "rents_assets",
+    "retail_pos"
+  ],
+  "terminology": {
+    "customer": "Hirer",
+    "sale_order": "Hire Agreement"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Depot Manager",
+        "description": "Owns fleet, pricing and damage claims."
+      },
+      {
+        "name": "Hire Desk",
+        "description": "Books hires and takes deposits."
+      },
+      {
+        "name": "Fitter",
+        "description": "Services and repairs returned equipment."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "damage_claim",
+      "name": "Damage Charge",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 500,
+          "role": "Hire Desk"
+        },
+        {
+          "min": 500,
+          "max": null,
+          "role": "Depot Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Hire Rate Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15,
+          "role": "Hire Desk"
+        },
+        {
+          "min": 15,
+          "max": null,
+          "role": "Depot Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "write_off",
+      "name": "Fleet Asset Write-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Depot Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Access",
+    "Powered Tools",
+    "Groundcare",
+    "Generators",
+    "Heating",
+    "Consumables",
+    "Transport"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2193",
+        "name": "Hire Deposits",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4690",
+        "name": "Hire Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4700",
+        "name": "Damage & Late Fees",
+        "account_type": "income",
+        "parent": "4300"
+      },
+      {
+        "code": "5480",
+        "name": "Fleet Maintenance",
+        "account_type": "expense",
+        "parent": "5000"
+      },
+      {
+        "code": "5490",
+        "name": "Fleet Depreciation",
+        "account_type": "expense",
+        "parent": "5000"
+      }
+    ]
+  },
+  "industry_fields": {
+    "asset": [
+      "asset_tag",
+      "purchase_date",
+      "purchase_cost",
+      "daily_rate",
+      "weekly_rate",
+      "next_service_due",
+      "condition"
+    ],
+    "hire": [
+      "out_date",
+      "due_date",
+      "returned_date",
+      "condition_out",
+      "condition_in",
+      "deposit"
+    ]
+  },
+  "dashboards": [
+    "Fleet Utilization",
+    "On Hire Now",
+    "Overdue Returns",
+    "Service Due"
+  ],
+  "reports": [
+    "Utilization by Asset",
+    "Overdue Return Report",
+    "Damage Claim Log",
+    "Revenue per Asset",
+    "Service Schedule"
+  ],
+  "doc_templates": [
+    "Hire Agreement",
+    "Condition Report",
+    "Off-hire Note",
+    "Damage Invoice"
+  ],
+  "import_templates": [
+    {
+      "entity": "assets",
+      "columns": [
+        "asset_tag",
+        "name",
+        "category",
+        "purchase_cost",
+        "daily_rate",
+        "weekly_rate"
+      ]
+    },
+    {
+      "entity": "hires",
+      "columns": [
+        "hirer",
+        "asset_tag",
+        "out_date",
+        "due_date",
+        "rate",
+        "deposit"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Utilization is the entire business model: an asset sitting in the yard still depreciates and still has capital tied up in it. Revenue per asset against purchase cost tells you what to buy more of and what to sell. Condition-out versus condition-in is what makes a damage charge defensible rather than a dispute.",
+    "starter_prompts": [
+      "Show fleet utilization by category.",
+      "Which hires are overdue for return?",
+      "Show revenue per asset against purchase cost.",
+      "List equipment due for service."
+    ]
+  }
+}

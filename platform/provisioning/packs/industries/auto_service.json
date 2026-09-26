@@ -1,0 +1,184 @@
+{
+  "key": "auto_service",
+  "name": "Auto Service & Repair Workshop",
+  "version": "1.0",
+  "description": "Vehicle repair orders: diagnosis, labour times, parts markup, courtesy cars, MOT/inspection recalls.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement",
+    "hr"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "buys_products",
+    "books_appointments"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Repair Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Workshop Manager",
+        "description": "Owns scheduling, estimates and warranty decisions."
+      },
+      {
+        "name": "Technician",
+        "description": "Diagnoses and repairs vehicles."
+      },
+      {
+        "name": "Service Advisor",
+        "description": "Books work and explains estimates."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "estimate",
+      "name": "Repair Estimate Authorisation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 1000,
+          "role": "Service Advisor"
+        },
+        {
+          "min": 1000,
+          "max": null,
+          "role": "Workshop Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "additional_work",
+      "name": "Additional Work Authorisation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Service Advisor"
+        }
+      ]
+    },
+    {
+      "document_type": "warranty_repair",
+      "name": "Warranty Repair (no charge)",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Workshop Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Servicing",
+    "Diagnostics",
+    "Brakes",
+    "Tyres",
+    "Engine",
+    "Electrical",
+    "Bodywork",
+    "Parts"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4770",
+        "name": "Labour Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4780",
+        "name": "Parts Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5590",
+        "name": "Parts Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5600",
+        "name": "Warranty Rework",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "vehicle": [
+      "registration",
+      "vin",
+      "make",
+      "model",
+      "year",
+      "mileage",
+      "next_service_due",
+      "mot_due"
+    ],
+    "repair_order": [
+      "labour_hours_sold",
+      "labour_hours_actual",
+      "technician",
+      "courtesy_car"
+    ]
+  },
+  "dashboards": [
+    "Workshop Loading",
+    "Labour Efficiency",
+    "MOT/Service Recalls",
+    "Parts Margin"
+  ],
+  "reports": [
+    "Workshop Load",
+    "Labour Efficiency (sold vs actual)",
+    "Recall Due Report",
+    "Parts Margin",
+    "Technician Productivity"
+  ],
+  "doc_templates": [
+    "Repair Estimate",
+    "Job Card",
+    "Service Invoice",
+    "Vehicle Health Check"
+  ],
+  "import_templates": [
+    {
+      "entity": "customers",
+      "columns": [
+        "full_name",
+        "phone",
+        "email"
+      ]
+    },
+    {
+      "entity": "vehicles",
+      "columns": [
+        "customer",
+        "registration",
+        "vin",
+        "make",
+        "model",
+        "year",
+        "mot_due"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "A workshop sells labour hours at a standard time and pays technicians for actual hours -- the gap between sold and actual is the efficiency number the business lives on. Additional work found mid-job must be authorised before it's done or it becomes an argument at collection. Service and MOT due dates are the most reliable recurring revenue a workshop has.",
+    "starter_prompts": [
+      "Show labour efficiency by technician.",
+      "Which vehicles are due an MOT or service in 30 days?",
+      "Show parts margin this month.",
+      "What is workshop loading for next week?"
+    ]
+  }
+}

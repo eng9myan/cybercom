@@ -1,0 +1,187 @@
+{
+  "key": "property_management",
+  "name": "Property Management",
+  "version": "1.0",
+  "description": "Managed rental portfolio: tenancies and rent runs, arrears chasing, maintenance jobs, landlord statements, deposits.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "maintenance",
+    "documents"
+  ],
+  "recommended_ops": [
+    "manages_properties",
+    "provides_services"
+  ],
+  "terminology": {
+    "customer": "Tenant",
+    "sale_order": "Tenancy"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Portfolio Manager",
+        "description": "Owns landlord relationships and statements."
+      },
+      {
+        "name": "Lettings Negotiator",
+        "description": "Lets units and signs tenancies."
+      },
+      {
+        "name": "Maintenance Coordinator",
+        "description": "Raises and tracks repair jobs."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "tenancy",
+      "name": "Tenancy Agreement",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Portfolio Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "maintenance_job",
+      "name": "Maintenance Spend",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 500,
+          "role": "Maintenance Coordinator"
+        },
+        {
+          "min": 500,
+          "max": null,
+          "role": "Portfolio Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "deposit_deduction",
+      "name": "Deposit Deduction",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Portfolio Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Residential",
+    "Commercial",
+    "Furnished",
+    "Short Let",
+    "Maintenance",
+    "Management Fees"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "1172",
+        "name": "Rent Receivable (Arrears)",
+        "account_type": "asset",
+        "parent": "1100"
+      },
+      {
+        "code": "2194",
+        "name": "Tenant Deposits Held",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "2195",
+        "name": "Landlord Client Account",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4750",
+        "name": "Management Fee Income",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4760",
+        "name": "Letting & Renewal Fees",
+        "account_type": "income",
+        "parent": "4200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "unit": [
+      "address",
+      "bedrooms",
+      "furnished",
+      "monthly_rent",
+      "epc_rating",
+      "gas_safety_due"
+    ],
+    "tenancy": [
+      "tenant_name",
+      "start_date",
+      "end_date",
+      "rent_amount",
+      "deposit_held",
+      "break_clause"
+    ]
+  },
+  "dashboards": [
+    "Occupancy",
+    "Rent Arrears",
+    "Upcoming Renewals",
+    "Open Maintenance"
+  ],
+  "reports": [
+    "Rent Roll",
+    "Arrears Report",
+    "Landlord Statement",
+    "Compliance Due (Gas/EPC)",
+    "Maintenance Spend by Property"
+  ],
+  "doc_templates": [
+    "Tenancy Agreement",
+    "Landlord Statement",
+    "Section Notice",
+    "Inventory & Check-in Report"
+  ],
+  "import_templates": [
+    {
+      "entity": "units",
+      "columns": [
+        "address",
+        "bedrooms",
+        "monthly_rent",
+        "landlord",
+        "furnished"
+      ]
+    },
+    {
+      "entity": "tenancies",
+      "columns": [
+        "unit",
+        "tenant_name",
+        "start_date",
+        "end_date",
+        "rent_amount",
+        "deposit_held"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Rent collected belongs to the landlord, not the agency -- it passes through a client account and only the management fee is revenue; treating gross rent as income is both wrong and, in most jurisdictions, a regulatory breach. Tenant deposits are protected money with statutory rules on deduction. Gas safety and EPC dates are legal deadlines with penalties, so they belong on the same dashboard as arrears.",
+    "starter_prompts": [
+      "Show rent arrears by property.",
+      "Which tenancies are up for renewal in 60 days?",
+      "Show gas safety certificates due in 30 days.",
+      "Produce landlord statements for this month."
+    ]
+  }
+}

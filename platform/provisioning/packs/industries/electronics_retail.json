@@ -1,0 +1,179 @@
+{
+  "key": "electronics_retail",
+  "name": "Electronics Retail",
+  "version": "1.0",
+  "description": "Serial-tracked goods, manufacturer warranties, RMA handling, extended-warranty attach and trade-ins.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "buys_products",
+    "operates_branches"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Sale"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Store Manager",
+        "description": "Owns pricing, RMA decisions and stock."
+      },
+      {
+        "name": "Service Technician",
+        "description": "Handles repairs and RMA diagnostics."
+      },
+      {
+        "name": "Sales Associate",
+        "description": "Sells and registers warranties."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "rma",
+      "name": "RMA / Warranty Claim",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Service Technician"
+        }
+      ]
+    },
+    {
+      "document_type": "price_override",
+      "name": "Price Override",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10,
+          "role": "Sales Associate"
+        },
+        {
+          "min": 10,
+          "max": null,
+          "role": "Store Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "trade_in",
+      "name": "Trade-in Valuation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Store Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Computers",
+    "Mobile",
+    "Audio",
+    "TV & Display",
+    "Gaming",
+    "Accessories",
+    "Extended Warranty"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2186",
+        "name": "Extended Warranty Liability",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4480",
+        "name": "Electronics Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "4490",
+        "name": "Extended Warranty Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5330",
+        "name": "Warranty & RMA Costs",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "serial_tracked",
+      "warranty_months",
+      "model_number",
+      "barcode"
+    ],
+    "sale": [
+      "serial_number",
+      "warranty_end",
+      "trade_in_value"
+    ]
+  },
+  "dashboards": [
+    "Attach Rate",
+    "RMA Backlog",
+    "Serial Lookup",
+    "Stock Ageing"
+  ],
+  "reports": [
+    "Serial Register",
+    "RMA Status Report",
+    "Warranty Liability",
+    "Attach Rate by Associate",
+    "Z Report"
+  ],
+  "doc_templates": [
+    "Sales Receipt",
+    "Warranty Certificate",
+    "RMA Form",
+    "Trade-in Voucher"
+  ],
+  "import_templates": [
+    {
+      "entity": "products",
+      "columns": [
+        "sku",
+        "name",
+        "category",
+        "model_number",
+        "cost",
+        "retail_price",
+        "warranty_months",
+        "barcode"
+      ]
+    },
+    {
+      "entity": "opening_inventory",
+      "columns": [
+        "sku",
+        "quantity",
+        "unit_cost",
+        "serials"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Serial numbers are the spine: warranty validity, RMA eligibility and theft tracing all hang off them, so a sale without a captured serial is a support problem waiting to happen. Extended warranties are revenue earned over the cover period and a liability until then -- not income at point of sale.",
+    "starter_prompts": [
+      "Look up the warranty status for a serial number.",
+      "Show extended warranty attach rate by associate.",
+      "List open RMAs older than 14 days.",
+      "Show stock ageing over 90 days."
+    ]
+  }
+}

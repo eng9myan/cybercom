@@ -1,0 +1,170 @@
+{
+  "key": "coworking",
+  "name": "Coworking Space",
+  "version": "1.0",
+  "description": "Flexible workspace: desk and office memberships, meeting-room bookings, day passes, credits and overage.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "pos"
+  ],
+  "recommended_ops": [
+    "memberships",
+    "books_appointments"
+  ],
+  "terminology": {
+    "customer": "Member",
+    "sale_order": "Membership"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Community Manager",
+        "description": "Owns memberships, contracts and space allocation."
+      },
+      {
+        "name": "Front of House",
+        "description": "Handles day passes and bookings."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "membership",
+      "name": "Membership Contract",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Community Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Membership Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10,
+          "role": "Front of House"
+        },
+        {
+          "min": 10,
+          "max": null,
+          "role": "Community Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "refund",
+      "name": "Refund / Credit Note",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Community Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Hot Desk",
+    "Dedicated Desk",
+    "Private Office",
+    "Meeting Rooms",
+    "Day Pass",
+    "Virtual Office"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2182",
+        "name": "Member Deposits",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "2183",
+        "name": "Deferred Membership Revenue",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4380",
+        "name": "Workspace Membership Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4390",
+        "name": "Meeting Room Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "membership": [
+      "plan",
+      "desk_number",
+      "meeting_credits_monthly",
+      "contract_months",
+      "deposit"
+    ],
+    "room": [
+      "capacity",
+      "hourly_rate",
+      "floor"
+    ]
+  },
+  "dashboards": [
+    "Occupancy",
+    "Meeting Room Utilization",
+    "Credit Overage",
+    "Member Churn"
+  ],
+  "reports": [
+    "Occupancy Report",
+    "Room Utilization",
+    "Credit Usage & Overage",
+    "Deposit Register",
+    "Churn Report"
+  ],
+  "doc_templates": [
+    "Membership Agreement",
+    "Booking Confirmation",
+    "Deposit Receipt",
+    "Monthly Invoice"
+  ],
+  "import_templates": [
+    {
+      "entity": "members",
+      "columns": [
+        "company_name",
+        "contact_name",
+        "plan",
+        "desk_number",
+        "start_date"
+      ]
+    },
+    {
+      "entity": "rooms",
+      "columns": [
+        "name",
+        "capacity",
+        "hourly_rate",
+        "floor"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Occupancy is the whole business model -- an unsold desk-day cannot be recovered. Included meeting-room credits should net off before overage is charged, otherwise members are double-billed for what their plan already covers. Deposits are refundable liabilities, never revenue.",
+    "starter_prompts": [
+      "What is desk occupancy this month?",
+      "Show meeting room utilization by room.",
+      "Which members exceeded their meeting credits?",
+      "List contracts ending in 60 days."
+    ]
+  }
+}

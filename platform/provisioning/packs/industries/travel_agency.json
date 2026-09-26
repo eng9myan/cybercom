@@ -1,0 +1,174 @@
+{
+  "key": "travel_agency",
+  "name": "Travel Agency",
+  "version": "1.0",
+  "description": "Bookings sold on supplier commission or markup: deposits and balance-due dates, supplier settlement, cancellations.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "documents"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "books_appointments"
+  ],
+  "terminology": {
+    "customer": "Traveller",
+    "sale_order": "Booking"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Branch Manager",
+        "description": "Approves refunds, credit and supplier settlement."
+      },
+      {
+        "name": "Travel Consultant",
+        "description": "Sells and services bookings."
+      },
+      {
+        "name": "Accounts Clerk",
+        "description": "Reconciles supplier statements."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "refund",
+      "name": "Booking Refund",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Branch Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Booking Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10,
+          "role": "Travel Consultant"
+        },
+        {
+          "min": 10,
+          "max": null,
+          "role": "Branch Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "supplier_settlement",
+      "name": "Supplier Settlement",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Branch Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Flights",
+    "Hotels",
+    "Packages",
+    "Cruise",
+    "Insurance",
+    "Visas",
+    "Transfers"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2196",
+        "name": "Customer Deposits (Bookings)",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "2197",
+        "name": "Supplier Payable (Trust)",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "4790",
+        "name": "Commission Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4800",
+        "name": "Service & Booking Fees",
+        "account_type": "income",
+        "parent": "4200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "booking": [
+      "destination",
+      "depart_date",
+      "return_date",
+      "pax_count",
+      "supplier",
+      "supplier_reference",
+      "balance_due_date",
+      "gross_amount",
+      "commission_amount"
+    ]
+  },
+  "dashboards": [
+    "Departures This Month",
+    "Balances Due",
+    "Commission Earned",
+    "Supplier Settlement"
+  ],
+  "reports": [
+    "Booking Register",
+    "Balance Due Report",
+    "Commission by Supplier",
+    "Cancellation Analysis",
+    "Supplier Reconciliation"
+  ],
+  "doc_templates": [
+    "Booking Confirmation",
+    "Itinerary",
+    "Invoice",
+    "Cancellation Note"
+  ],
+  "import_templates": [
+    {
+      "entity": "bookings",
+      "columns": [
+        "traveller",
+        "destination",
+        "depart_date",
+        "supplier",
+        "gross_amount",
+        "commission_amount"
+      ]
+    },
+    {
+      "entity": "suppliers",
+      "columns": [
+        "name",
+        "commission_percent",
+        "settlement_terms"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Only the commission or markup is revenue -- the gross booking value is largely money owed to suppliers, so booking gross as income massively overstates the business. Balance-due dates before departure are the operational heartbeat: a missed balance means an auto-cancelled booking and a lost commission.",
+    "starter_prompts": [
+      "Show balances due before departure in the next 14 days.",
+      "What commission was earned by supplier this month?",
+      "Show bookings departing this month.",
+      "Analyse cancellations and their cost."
+    ]
+  }
+}
