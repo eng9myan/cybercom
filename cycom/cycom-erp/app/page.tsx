@@ -6,7 +6,7 @@ import {
   Users, DollarSign, Clock, ShoppingCart, Package,
   TrendingUp, MessageSquare, Layers, UserCheck, HelpCircle,
   FolderOpen, Mail, Wrench, Car, FileSignature, PenTool,
-  Sparkles, FileText, Settings, ChevronDown,
+  Sparkles, FileText, Settings, ChevronDown, Zap,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/lib/i18n';
@@ -36,6 +36,7 @@ export default function AppLauncher() {
     { id: 'plm', label: t('appLauncher.modPlm'), href: '/plm', icon: Wrench, color: 'from-slate-500 to-slate-700' },
     { id: 'fleet', label: t('appLauncher.modFleet'), href: '/fleet', icon: Car, color: 'from-sky-500 to-blue-600' },
     { id: 'documents', label: t('appLauncher.modDocuments'), href: '/documents', icon: FolderOpen, color: 'from-indigo-400 to-purple-500' },
+    { id: 'automation', label: t('appLauncher.modAutomation'), href: '/automation', icon: Zap, color: 'from-violet-500 to-indigo-600' },
     { id: 'settings', label: t('appLauncher.modSettings'), href: '/settings', icon: Settings, color: 'from-gray-600 to-gray-800' },
   ];
 
