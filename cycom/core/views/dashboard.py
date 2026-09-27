@@ -142,6 +142,36 @@ def _alerts(tenant_id) -> list[dict]:
     return alerts[:10]
 
 
+def _kpis(tenant_id, revenue_this_month: float) -> list[dict]:
+    """
+    A compact at-a-glance strip above the fold -- the chart+alerts+pulse
+    layout below required scrolling to see any real number at all. Every
+    figure here is a distinct real aggregate, deliberately not repeating
+    what `_pulse` already shows (headcount/POS sessions/automation rules/
+    pending-approval count) so the two panels don't say the same thing
+    twice.
+    """
+    open_orders = SalesOrder.objects.filter(tenant_id=tenant_id, status="confirmed").count()
+
+    low_stock_count = len([
+        item for item in StockItem.objects.filter(tenant_id=tenant_id, product__min_stock_qty__gt=0)
+        .select_related("product")
+        if item.quantity_on_hand < item.product.min_stock_qty
+    ])
+
+    overdue_invoices = Invoice.objects.filter(
+        tenant_id=tenant_id, status__in=_OPEN_INVOICE_STATUSES, due_date__lt=date.today(),
+    )
+    overdue_total = sum(float(inv.amount_total - inv.amount_paid) for inv in overdue_invoices)
+
+    return [
+        {"label": "Revenue This Month", "value": f"JOD {revenue_this_month:,.0f}", "tone": "ok"},
+        {"label": "Open Sales Orders", "value": str(open_orders), "tone": "ok"},
+        {"label": "Low Stock Items", "value": str(low_stock_count), "tone": "warn" if low_stock_count else "ok"},
+        {"label": "Overdue Invoices", "value": f"JOD {overdue_total:,.0f}", "tone": "warn" if overdue_total else "ok"},
+    ]
+
+
 def _pulse(tenant_id) -> list[dict]:
     headcount = Employee.objects.filter(tenant_id=tenant_id).count()
     open_sessions = POSSession.objects.filter(tenant_id=tenant_id, status="open").count()
@@ -161,8 +191,10 @@ class DashboardSummaryView(APIView):
 
     def get(self, request):
         tenant_id = request.tenant_id
+        trend = _revenue_trend(tenant_id)
         return Response({
-            "revenue_trend": _revenue_trend(tenant_id),
+            "revenue_trend": trend,
             "alerts": _alerts(tenant_id),
             "pulse": _pulse(tenant_id),
+            "kpis": _kpis(tenant_id, trend[-1]["revenue"] if trend else 0.0),
         })

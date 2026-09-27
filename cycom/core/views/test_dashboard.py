@@ -237,6 +237,50 @@ def test_pulse_counts_are_real(admin_client, tenant_id):
     assert pulse["Automation Rules"] == "1 active"
 
 
+def test_kpi_strip_reflects_real_open_orders_low_stock_and_overdue(admin_client, tenant_id):
+    today = date.today()
+    SalesOrder.objects.create(
+        tenant_id=tenant_id, number="SO-1", customer_name="Acme", order_date=today,
+        status="confirmed", amount_total=1000,
+    )
+    SalesOrder.objects.create(
+        tenant_id=tenant_id, number="SO-2", customer_name="Acme", order_date=today,
+        status="delivered", amount_total=500,  # already fulfilled -- not "open"
+    )
+
+    wh = Warehouse.objects.create(tenant_id=tenant_id, code="WH1", name="Main")
+    product = Product.objects.create(
+        tenant_id=tenant_id, name="Widget", internal_ref="W1",
+        product_type="STORABLE", min_stock_qty=10,
+    )
+    StockItem.objects.create(tenant_id=tenant_id, product=product, warehouse=wh, quantity_on_hand=3)
+
+    partner = Partner.objects.create(tenant_id=tenant_id, name="Client Co", partner_type="customer")
+    ar, tax = _ar_accounts(tenant_id)
+    Invoice.objects.create(
+        tenant_id=tenant_id, invoice_type="customer", number="INV-1", partner=partner,
+        date=today - timedelta(days=30), due_date=today - timedelta(days=20),
+        status="posted", amount_total=500, amount_paid=200,
+        control_account=ar, tax_account=tax,
+    )
+
+    resp = admin_client.get("/api/v1/common/dashboard-summary/")
+    kpis = {k["label"]: k["value"] for k in resp.data["kpis"]}
+    assert kpis["Revenue This Month"] == "JOD 1,500"  # confirmed (1000) + delivered (500) both count as revenue
+    assert kpis["Open Sales Orders"] == "1"  # only the still-confirmed one; delivered is no longer "open"
+    assert kpis["Low Stock Items"] == "1"
+    assert kpis["Overdue Invoices"] == "JOD 300"
+
+
+def test_empty_tenant_kpis_are_zero_not_missing(admin_client, tenant_id):
+    resp = admin_client.get("/api/v1/common/dashboard-summary/")
+    kpis = {k["label"]: k["value"] for k in resp.data["kpis"]}
+    assert kpis["Revenue This Month"] == "JOD 0"
+    assert kpis["Open Sales Orders"] == "0"
+    assert kpis["Low Stock Items"] == "0"
+    assert kpis["Overdue Invoices"] == "JOD 0"
+
+
 def test_alerts_are_tenant_isolated(admin_client, tenant_id):
     other_tenant = uuid.uuid4()
     vendor = Partner.objects.create(tenant_id=other_tenant, name="Theirs", partner_type="vendor")

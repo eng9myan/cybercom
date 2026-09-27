@@ -18,7 +18,7 @@ import { useT } from '@/lib/i18n';
 interface RevenuePoint { month: string; revenue: number }
 interface Alert { source: string; type: string; desc: string; urgency: 'high' | 'medium' | 'low'; href: string }
 interface PulseItem { label: string; value: string; tone: 'ok' | 'warn' }
-interface Summary { revenue_trend: RevenuePoint[]; alerts: Alert[]; pulse: PulseItem[] }
+interface Summary { revenue_trend: RevenuePoint[]; alerts: Alert[]; pulse: PulseItem[]; kpis: PulseItem[] }
 
 export default function CommandCenter() {
   const t = useT();
@@ -60,6 +60,22 @@ export default function CommandCenter() {
         </div>
       )}
 
+      {/* At-a-glance KPI strip -- real numbers visible before scrolling into the chart/alerts below. */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {loading && !summary
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="glass-card p-4 h-[70px] animate-pulse" />
+            ))
+          : summary?.kpis.map((kpi) => (
+              <div key={kpi.label} className="glass-card p-4">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">{kpi.label}</p>
+                <p className={`text-lg font-black mt-1 truncate ${kpi.tone === 'warn' ? 'text-amber-400' : 'text-white'}`}>
+                  {kpi.value}
+                </p>
+              </div>
+            ))}
+      </div>
+
       {/* Main Revenue Chart */}
       <div className="glass-card p-6 space-y-4">
         <div className="flex justify-between items-center">
@@ -72,7 +88,7 @@ export default function CommandCenter() {
           </div>
           <span className="badge badge-cyan font-mono text-[10px]">{t('dashboard.realData')}</span>
         </div>
-        <div className="h-[280px] w-full text-slate-300 text-xs">
+        <div className="h-[220px] w-full text-slate-300 text-xs">
           {summary && summary.revenue_trend.every((m) => m.revenue === 0) ? (
             <div className="h-full flex items-center justify-center text-slate-600">
               {t('dashboard.noRevenueYet')}
