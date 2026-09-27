@@ -29,7 +29,14 @@ from platform.provisioning.services import ProvisioningError, ProvisioningServic
 
 
 class CountryPackViewSet(viewsets.ReadOnlyModelViewSet):
+    # Bare-array response: a bounded reference catalog (12 rows) a picker UI
+    # needs in full, not a paginated list. With the project-wide default
+    # page size of 25 this was already silently truncating IndustryTemplate
+    # below (66 rows) before anyone noticed at this catalog's original,
+    # smaller size -- disabling pagination on all three catalog viewsets
+    # here so the same bug can't recur on either of the others.
     permission_classes = [IsAuthenticatedViaClaims]
+    pagination_class = None
     serializer_class = CountryPackSerializer
     queryset = CountryPack.objects.filter(is_active=True)
     lookup_field = "code"
@@ -37,6 +44,7 @@ class CountryPackViewSet(viewsets.ReadOnlyModelViewSet):
 
 class DepartmentPackViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedViaClaims]
+    pagination_class = None
     serializer_class = DepartmentPackSerializer
     queryset = DepartmentPack.objects.filter(is_active=True)
     lookup_field = "key"
@@ -44,6 +52,7 @@ class DepartmentPackViewSet(viewsets.ReadOnlyModelViewSet):
 
 class IndustryTemplateViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedViaClaims]
+    pagination_class = None
     serializer_class = IndustryTemplateSerializer
     queryset = IndustryTemplate.objects.filter(is_active=True)
     lookup_field = "key"

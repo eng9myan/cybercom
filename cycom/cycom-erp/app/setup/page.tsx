@@ -5,16 +5,51 @@ import {
   ArrowRight, ArrowLeft, Check, Loader2, Building2, Globe, Layers,
   Users, ShieldCheck, Upload, ClipboardList, Sparkles, Factory, Store,
   HardHat, Briefcase, Truck, Home, Wrench, GraduationCap, HeartHandshake, Hospital,
-  ShoppingCart, Sandwich, Utensils, ChefHat, Car, Pill,
+  ShoppingCart, Sandwich, Utensils, ChefHat, Car, Pill, Search,
+  Dumbbell, Camera, Scale, Landmark,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
 type IndustryTemplate = {
-  key: string; name: string; department_pack_keys: string[];
+  key: string; name: string; description?: string; department_pack_keys: string[];
   approval_matrix: { document_type: string; name: string; tiers: { min: number; max: number | null; role: string }[] }[];
   import_templates: { entity: string; columns: string[] }[];
   default_config?: { roles?: { name: string; description?: string }[] };
 };
+
+type CountryPack = {
+  code: string; name: string; currency: string; languages: string[];
+  tax_config?: { sales_tax_name?: string; standard_rate?: number; rates_verified?: boolean };
+  einvoicing?: { system?: string; status?: string };
+};
+
+// Packs carry no icon metadata (that's a presentation concern, not catalog
+// data), so this is a small keyword-matched icon picker over the real
+// 66-pack catalog rather than a hardcoded icon per key -- a new pack needs
+// no frontend change to get a reasonable icon.
+const INDUSTRY_ICON_RULES: [RegExp, any][] = [
+  [/retail_(grocery|autoparts)|hardware|farm_supply|toy_store|bookstore|cosmetics|clothing_retail|electronics_retail|furniture_retail/, ShoppingCart],
+  [/fastfood|restaurant|bakery|catering|food_truck|beverage/, Utensils],
+  [/pharmacy|dental|veterinary|optical/, Hospital],
+  [/salon|gym|fitness/, Dumbbell],
+  [/law_firm|accounting_firm|architecture_firm/, Scale],
+  [/construction|electrician|hvac|landscaping|handyman|surveying|woodworking|metal_fabrication|solar/, HardHat],
+  [/manufactur|electronics_assembly|packaging|textile/, Factory],
+  [/logistics|travel_agency|auto_service|bike_shop/, Truck],
+  [/education|training_center|driving_school/, GraduationCap],
+  [/realestate|property_management|coworking/, Home],
+  [/nonprofit/, HeartHandshake],
+  [/healthcare/, Hospital],
+  [/photography/, Camera],
+  [/florist|corporate_gifts|printing/, Sandwich],
+  [/cleaning|equipment_rental|maintenance|facility/, Wrench],
+  [/marketing_agency/, Landmark],
+  [/it_services/, Briefcase],
+];
+function iconForIndustry(key: string) {
+  const hit = INDUSTRY_ICON_RULES.find(([re]) => re.test(key));
+  return hit ? hit[1] : Store;
+}
 
 export default function ReadyErpWizard() {
   const t = useT();
@@ -26,39 +61,8 @@ export default function ReadyErpWizard() {
     { id: 'enterprise', label: t('readyErp.levelEnterpriseLabel'), desc: t('readyErp.levelEnterpriseDesc') },
   ];
 
-  const COUNTRIES = [
-    { code: 'JO', name: t('readyErp.countryJoName'), detail: t('readyErp.countryJoDetail') },
-    { code: 'SA', name: t('readyErp.countrySaName'), detail: t('readyErp.countrySaDetail') },
-    { code: 'AE', name: t('readyErp.countryAeName'), detail: t('readyErp.countryAeDetail') },
-    { code: 'US', name: t('readyErp.countryUsName'), detail: t('readyErp.countryUsDetail') },
-  ];
-
-  const INDUSTRIES = [
-    { key: 'construction', name: t('readyErp.indConstructionName'), icon: HardHat, status: 'ready', desc: t('readyErp.indConstructionDesc') },
-    { key: 'trading', name: t('readyErp.indTradingName'), icon: Store, status: 'ready', desc: t('readyErp.indTradingDesc') },
-    { key: 'manufacturing', name: t('readyErp.indManufacturingName'), icon: Factory, status: 'ready', desc: t('readyErp.indManufacturingDesc') },
-    { key: 'services', name: t('readyErp.indServicesName'), icon: Briefcase, status: 'ready', desc: t('readyErp.indServicesDesc') },
-    { key: 'logistics', name: t('readyErp.indLogisticsName'), icon: Truck, status: 'ready', desc: t('readyErp.indLogisticsDesc') },
-    { key: 'realestate', name: t('readyErp.indRealestateName'), icon: Home, status: 'ready', desc: t('readyErp.indRealestateDesc') },
-    { key: 'facility', name: t('readyErp.indFacilityName'), icon: Wrench, status: 'ready', desc: t('readyErp.indFacilityDesc') },
-    { key: 'education', name: t('readyErp.indEducationName'), icon: GraduationCap, status: 'ready', desc: t('readyErp.indEducationDesc') },
-    { key: 'retail', name: t('readyErp.indRetailCategoryName'), icon: Store, status: 'ready', desc: t('readyErp.indRetailCategoryDesc') },
-    { key: 'healthcare', name: t('readyErp.indHealthcareName'), icon: Hospital, status: 'ready', desc: t('readyErp.indHealthcareDesc') },
-    { key: 'nonprofit', name: t('readyErp.indNonprofitName'), icon: HeartHandshake, status: 'ready', desc: t('readyErp.indNonprofitDesc') },
-  ];
-
-  // Retail is a category, not a real industry_key — picking it reveals these
-  // 6 shop-type tiles; picking one of THESE is what sets form.industry_key.
-  const RETAIL_SUBTYPES = [
-    { key: 'retail_grocery', name: t('readyErp.indRetailGroceryName'), icon: ShoppingCart, status: 'ready', desc: t('readyErp.indRetailGroceryDesc') },
-    { key: 'retail_fastfood', name: t('readyErp.indRetailFastfoodName'), icon: Sandwich, status: 'ready', desc: t('readyErp.indRetailFastfoodDesc') },
-    { key: 'retail_fastfood_tables', name: t('readyErp.indRetailFastfoodTablesName'), icon: Utensils, status: 'ready', desc: t('readyErp.indRetailFastfoodTablesDesc') },
-    { key: 'retail_restaurant', name: t('readyErp.indRetailRestaurantName'), icon: ChefHat, status: 'ready', desc: t('readyErp.indRetailRestaurantDesc') },
-    { key: 'retail_autoparts', name: t('readyErp.indRetailAutopartsName'), icon: Car, status: 'ready', desc: t('readyErp.indRetailAutopartsDesc') },
-    { key: 'retail_pharmacy', name: t('readyErp.indRetailPharmacyName'), icon: Pill, status: 'ready', desc: t('readyErp.indRetailPharmacyDesc') },
-  ];
-  const RETAIL_KEYS = RETAIL_SUBTYPES.map((r) => r.key);
-  const industryLookup = [...INDUSTRIES, ...RETAIL_SUBTYPES];
+  const [countryPacks, setCountryPacks] = useState<CountryPack[]>([]);
+  const [industryFilter, setIndustryFilter] = useState('');
 
   const SIZES = [
     { id: 'micro', label: t('readyErp.sizeMicroLabel'), desc: t('readyErp.sizeMicroDesc') },
@@ -132,10 +136,6 @@ export default function ReadyErpWizard() {
     // ProvisioningService._generate_approvals). Keyed by document_type.
     approval_overrides: {} as Record<string, ApprovalOverride>,
   });
-  // Tracks whether the retail category's sub-type tile grid is showing
-  // (vs. the top-level industry grid) on the Industry step.
-  const [retailOpen, setRetailOpen] = useState(() => RETAIL_KEYS.includes(form.industry_key));
-
   useEffect(() => {
     fetch('/api/cycom/provisioning/industry-templates')
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -146,6 +146,11 @@ export default function ReadyErpWizard() {
         setTemplates(map);
       })
       .catch(() => setTemplates({})); // backend down → previews fall back below
+
+    fetch('/api/cycom/provisioning/country-packs')
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => setCountryPacks((data.results || data) as CountryPack[]))
+      .catch(() => setCountryPacks([]));
   }, []);
 
   const tpl = templates[form.industry_key];
@@ -265,7 +270,7 @@ export default function ReadyErpWizard() {
   // ── Success screen ────────────────────────────────────────────────────────
   if (result) {
     const s = result.summary || {};
-    const industryName = industryLookup.find((i) => i.key === form.industry_key)?.name || form.industry_key;
+    const industryName = templates[form.industry_key]?.name || form.industry_key;
     return (
       <div className="max-w-3xl mx-auto py-10 px-4">
         <div className="glass-card p-8 text-center">
@@ -325,11 +330,28 @@ export default function ReadyErpWizard() {
 
         {step === 1 && (
           <Section icon={Globe} title={t('readyErp.countryHeading')}>
-            <div className="grid gap-3">
-              {COUNTRIES.map((c) => (
-                <Choice key={c.code} active={form.country_code === c.code} onClick={() => set({ country_code: c.code })} title={c.name} desc={c.detail} />
-              ))}
-            </div>
+            {countryPacks.length === 0 ? (
+              <p className="text-xs text-slate-500">{t('readyErp.countriesLoading')}</p>
+            ) : (
+              <div className="grid gap-3 max-h-[420px] overflow-y-auto pe-1">
+                {countryPacks.map((c) => {
+                  const rate = c.tax_config?.standard_rate;
+                  const einv = c.einvoicing?.system && c.einvoicing.system !== 'none' ? c.einvoicing.system : null;
+                  const detail = [
+                    c.currency,
+                    c.languages?.join('/'),
+                    rate != null ? `${c.tax_config?.sales_tax_name || 'Tax'} ${rate}%` : null,
+                    einv,
+                  ].filter(Boolean).join(' · ');
+                  return (
+                    <Choice
+                      key={c.code} active={form.country_code === c.code}
+                      onClick={() => set({ country_code: c.code })} title={c.name} desc={detail}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </Section>
         )}
 
@@ -362,54 +384,46 @@ export default function ReadyErpWizard() {
                 </div>
               )}
             </div>
-            {!retailOpen ? (
-              <div className="grid sm:grid-cols-2 gap-3">
-                {INDUSTRIES.map((ind) => {
-                  const Icon = ind.icon;
-                  const isRetailCategory = ind.key === 'retail';
-                  const active = isRetailCategory ? RETAIL_KEYS.includes(form.industry_key) : form.industry_key === ind.key;
-                  return (
-                    <button key={ind.key} onClick={() => (isRetailCategory ? setRetailOpen(true) : set({ industry_key: ind.key }))}
-                      className={`text-start p-3 rounded-xl border transition-all ${active
-                        ? 'border-[var(--cy-orange)]/40 bg-[var(--cy-orange)]/8' : 'border-white/8 hover:border-white/15 bg-white/[0.02]'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Icon className="w-4 h-4 text-[var(--cy-blue)]" />
-                        <span className="text-sm font-semibold text-white">{ind.name}</span>
-                        {ind.status === 'ready'
-                          ? <span className="badge badge-green">{t('readyErp.statusReady')}</span>
-                          : <span className="badge badge-orange">{t('readyErp.statusPreview')}</span>}
-                      </div>
-                      <p className="text-xs text-slate-400">{ind.desc}</p>
-                    </button>
-                  );
-                })}
-              </div>
+            {Object.keys(templates).length === 0 ? (
+              <p className="text-xs text-slate-500">{t('readyErp.industriesLoading')}</p>
             ) : (
-              <div>
-                <button onClick={() => setRetailOpen(false)}
-                  className="text-xs text-slate-400 hover:text-white mb-3 inline-flex items-center gap-1">
-                  <ArrowLeft className="w-3 h-3 rtl:-scale-x-100" /> {t('readyErp.indRetailBack')}
-                </button>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {RETAIL_SUBTYPES.map((ind) => {
-                    const Icon = ind.icon;
-                    return (
-                      <button key={ind.key} onClick={() => set({ industry_key: ind.key })}
-                        className={`text-start p-3 rounded-xl border transition-all ${form.industry_key === ind.key
-                          ? 'border-[var(--cy-orange)]/40 bg-[var(--cy-orange)]/8' : 'border-white/8 hover:border-white/15 bg-white/[0.02]'}`}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Icon className="w-4 h-4 text-[var(--cy-blue)]" />
-                          <span className="text-sm font-semibold text-white">{ind.name}</span>
-                          {ind.status === 'ready'
-                            ? <span className="badge badge-green">{t('readyErp.statusReady')}</span>
-                            : <span className="badge badge-orange">{t('readyErp.statusPreview')}</span>}
-                        </div>
-                        <p className="text-xs text-slate-400">{ind.desc}</p>
-                      </button>
-                    );
-                  })}
+              <>
+                <div className="relative mb-3">
+                  <Search className="w-3.5 h-3.5 text-slate-500 absolute top-1/2 -translate-y-1/2 start-3" />
+                  <input
+                    className="input-field ps-9" placeholder={t('readyErp.industrySearchPh')}
+                    value={industryFilter} onChange={(e) => setIndustryFilter(e.target.value)}
+                  />
                 </div>
-              </div>
+                {(() => {
+                  const q = industryFilter.trim().toLowerCase();
+                  const rows = Object.values(templates)
+                    .filter((tpl) => !q || tpl.name.toLowerCase().includes(q) || tpl.key.includes(q) || (tpl.description || '').toLowerCase().includes(q))
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                  if (rows.length === 0) {
+                    return <p className="text-xs text-slate-500 py-6 text-center">{t('readyErp.noIndustriesFound', { q: industryFilter })}</p>;
+                  }
+                  return (
+                    <div className="grid sm:grid-cols-2 gap-3 max-h-[380px] overflow-y-auto pe-1">
+                      {rows.map((tpl) => {
+                        const Icon = iconForIndustry(tpl.key);
+                        const active = form.industry_key === tpl.key;
+                        return (
+                          <button key={tpl.key} onClick={() => set({ industry_key: tpl.key })}
+                            className={`text-start p-3 rounded-xl border transition-all ${active
+                              ? 'border-[var(--cy-orange)]/40 bg-[var(--cy-orange)]/8' : 'border-white/8 hover:border-white/15 bg-white/[0.02]'}`}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Icon className="w-4 h-4 text-[var(--cy-blue)] flex-shrink-0" />
+                              <span className="text-sm font-semibold text-white truncate">{tpl.name}</span>
+                            </div>
+                            <p className="text-xs text-slate-400 line-clamp-2">{tpl.description}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </>
             )}
           </Section>
         )}
@@ -541,8 +555,8 @@ export default function ReadyErpWizard() {
           <Section icon={Check} title={t('readyErp.reviewHeading')}>
             <div className="space-y-2 text-sm">
               <Row k={t('readyErp.reviewCompany')} v={form.company_name || '—'} />
-              <Row k={t('readyErp.reviewCountry')} v={COUNTRIES.find((c) => c.code === form.country_code)?.name || form.country_code} />
-              <Row k={t('readyErp.reviewIndustry')} v={industryLookup.find((i) => i.key === form.industry_key)?.name || form.industry_key} />
+              <Row k={t('readyErp.reviewCountry')} v={countryPacks.find((c) => c.code === form.country_code)?.name || form.country_code} />
+              <Row k={t('readyErp.reviewIndustry')} v={templates[form.industry_key]?.name || form.industry_key} />
               <Row k={t('readyErp.reviewSizeLevel')} v={`${form.size} · ${form.setup_level}`} />
               <Row k={t('readyErp.reviewStructure')} v={t('readyErp.structureSummary', { companies: form.companies, branches: form.branches, warehouses: form.warehouses, projects: form.projects })} />
               <Row k={t('readyErp.reviewOperations')} v={form.business_ops.join(', ') || '—'} />
