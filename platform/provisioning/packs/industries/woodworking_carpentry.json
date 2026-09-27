@@ -1,0 +1,177 @@
+{
+  "key": "woodworking_carpentry",
+  "name": "Carpentry & Woodworking",
+  "version": "1.0",
+  "description": "Bespoke joinery and cabinetry: measure-design-build workflow, material yield from sheet stock, on-site fitting.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "inventory",
+    "projects",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "makes_products",
+    "manages_projects",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Job"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Workshop Manager",
+        "description": "Owns quoting, scheduling and material yield."
+      },
+      {
+        "name": "Joiner",
+        "description": "Builds to design in the workshop."
+      },
+      {
+        "name": "Fitter",
+        "description": "Installs on site."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "quotation",
+      "name": "Bespoke Quotation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10000,
+          "role": "Workshop Manager"
+        },
+        {
+          "min": 10000,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "design_change",
+      "name": "Design / Spec Change",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Workshop Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "site_variation",
+      "name": "Site Fitting Variation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 1000,
+          "role": "Fitter"
+        },
+        {
+          "min": 1000,
+          "max": null,
+          "role": "Workshop Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Kitchens",
+    "Fitted Wardrobes",
+    "Furniture",
+    "Doors & Staircases",
+    "Timber & Boards",
+    "Hardware"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4900",
+        "name": "Joinery Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5700",
+        "name": "Timber & Board Material",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5710",
+        "name": "Offcut & Waste",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "job": [
+      "design_approved",
+      "material_list",
+      "site_measure_date",
+      "install_date"
+    ],
+    "material": [
+      "sheet_size",
+      "grain_direction",
+      "cost_per_sheet"
+    ]
+  },
+  "dashboards": [
+    "Jobs in Workshop",
+    "Material Yield",
+    "Install Schedule",
+    "Job Margin"
+  ],
+  "reports": [
+    "Job Costing vs Quote",
+    "Material Yield & Waste",
+    "Install Schedule",
+    "Design Approval Status"
+  ],
+  "doc_templates": [
+    "Bespoke Quotation",
+    "Design Drawing",
+    "Site Measure Sheet",
+    "Installation Sign-off"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "site_address",
+        "contact_email"
+      ]
+    },
+    {
+      "entity": "jobs",
+      "columns": [
+        "client",
+        "description",
+        "quoted_price",
+        "site_measure_date",
+        "install_date"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Sheet-stock yield decides margin on bespoke work more than the labour rate does -- poor cutting layout turns a profitable job into a loss through waste alone. Nothing should be cut before the design is signed off, since a bespoke piece can't be resold if the client changes their mind after the fact.",
+    "starter_prompts": [
+      "Show material yield and waste by job.",
+      "Which jobs are awaiting design approval?",
+      "Show install schedule for next week.",
+      "What is job margin against quote this month?"
+    ]
+  }
+}

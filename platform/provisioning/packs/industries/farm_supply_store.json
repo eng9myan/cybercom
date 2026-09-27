@@ -1,0 +1,159 @@
+{
+  "key": "farm_supply_store",
+  "name": "Agricultural & Farm Supply Store",
+  "version": "1.0",
+  "description": "Farm inputs retail: seasonal seed/fertilizer demand, bulk and bagged units, account customers, delivery to farm.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "buys_products",
+    "operates_branches"
+  ],
+  "terminology": {
+    "customer": "Farmer",
+    "sale_order": "Sale"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Branch Manager",
+        "description": "Owns trade pricing, credit and seasonal buying."
+      },
+      {
+        "name": "Counter Staff",
+        "description": "Serves farm-account and cash customers."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "trade_credit",
+      "name": "Farm Account Credit Limit",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Branch Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "bulk_discount",
+      "name": "Bulk Order Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15,
+          "role": "Counter Staff"
+        },
+        {
+          "min": 15,
+          "max": null,
+          "role": "Branch Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "seasonal_order",
+      "name": "Seasonal Bulk Buy-in",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Branch Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Seed",
+    "Fertilizer",
+    "Animal Feed",
+    "Crop Protection",
+    "Tools & Fencing",
+    "Veterinary Supplies"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4970",
+        "name": "Farm Supply Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "4980",
+        "name": "Delivery Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "unit_of_sale",
+      "bag_size",
+      "season_window",
+      "batch_number"
+    ],
+    "customer": [
+      "farm_account",
+      "credit_limit",
+      "delivery_address"
+    ]
+  },
+  "dashboards": [
+    "Seasonal Demand Curve",
+    "Farm Account Credit",
+    "Delivery Schedule",
+    "Stock by Season"
+  ],
+  "reports": [
+    "Farm Account Statement",
+    "Seasonal Sales Comparison",
+    "Delivery Manifest",
+    "Credit Exposure"
+  ],
+  "doc_templates": [
+    "Sales Receipt",
+    "Farm Account Invoice",
+    "Delivery Note"
+  ],
+  "import_templates": [
+    {
+      "entity": "customers",
+      "columns": [
+        "name",
+        "farm_account",
+        "credit_limit",
+        "delivery_address"
+      ]
+    },
+    {
+      "entity": "products",
+      "columns": [
+        "sku",
+        "name",
+        "category",
+        "unit_of_sale",
+        "bag_size",
+        "cost",
+        "price"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Demand follows the planting and harvest calendar, not the retail calendar -- buying fertilizer and seed stock has to anticipate the season by weeks, and getting it wrong means either a stockout at the only time it matters or dead stock the rest of the year. Farm accounts run on informal trust and real credit risk, so credit exposure needs the same visibility as at any trade counter.",
+    "starter_prompts": [
+      "Show seasonal sales compared to last year.",
+      "Which farm accounts are near their credit limit?",
+      "Show delivery schedule for this week.",
+      "What is stock coverage for the upcoming planting season?"
+    ]
+  }
+}

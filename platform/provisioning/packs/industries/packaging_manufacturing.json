@@ -1,0 +1,176 @@
+{
+  "key": "packaging_manufacturing",
+  "name": "Plastic & Packaging Manufacturing",
+  "version": "1.0",
+  "description": "Injection moulding and packaging production: mould/tooling assets, material regrind, run-based costing, customer specs.",
+  "department_pack_keys": [
+    "finance",
+    "inventory",
+    "manufacturing",
+    "procurement",
+    "maintenance"
+  ],
+  "recommended_ops": [
+    "makes_products",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Production Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Plant Manager",
+        "description": "Owns production scheduling and tooling."
+      },
+      {
+        "name": "Production Supervisor",
+        "description": "Runs the shop floor shift."
+      },
+      {
+        "name": "Quality Inspector",
+        "description": "Checks output against customer spec."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "production_order",
+      "name": "Production Order Release",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Plant Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "tooling_spend",
+      "name": "New Tooling / Mould Spend",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 5000,
+          "role": "Plant Manager"
+        },
+        {
+          "min": 5000,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "spec_deviation",
+      "name": "Customer Spec Deviation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Quality Inspector"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Injection Moulding",
+    "Blow Moulding",
+    "Packaging Film",
+    "Corrugated",
+    "Resin & Regrind",
+    "Tooling"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "1174",
+        "name": "Customer-owned Tooling (Asset Register)",
+        "account_type": "asset",
+        "parent": "1200"
+      },
+      {
+        "code": "4890",
+        "name": "Production Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5680",
+        "name": "Resin & Raw Material",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5690",
+        "name": "Regrind & Scrap",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "production_order": [
+      "mould_reference",
+      "material_grade",
+      "cycle_time_seconds",
+      "cavity_count",
+      "customer_spec"
+    ],
+    "mould": [
+      "owner",
+      "shot_count",
+      "next_maintenance_due"
+    ]
+  },
+  "dashboards": [
+    "Machine Utilization",
+    "Scrap Rate",
+    "Mould Maintenance Due",
+    "Material Cost"
+  ],
+  "reports": [
+    "OEE by Machine",
+    "Scrap & Regrind Analysis",
+    "Mould Shot Count & Maintenance",
+    "Material Cost Variance"
+  ],
+  "doc_templates": [
+    "Production Order",
+    "Certificate of Conformance",
+    "Mould Maintenance Log"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email"
+      ]
+    },
+    {
+      "entity": "production_orders",
+      "columns": [
+        "client",
+        "mould_reference",
+        "material_grade",
+        "quantity",
+        "due_date"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Customer-owned tooling sitting in the plant is often the customer's asset, not the manufacturer's -- tracking it as a separate asset register avoids both under- and over-stating what the plant owns. Mould shot counts predict maintenance and failure; running past the service interval risks a mid-run tooling failure that stops the line and scraps the shot in progress.",
+    "starter_prompts": [
+      "Which moulds are due maintenance based on shot count?",
+      "Show scrap rate by production order.",
+      "What is machine utilization this week?",
+      "List production orders with a customer spec deviation logged."
+    ]
+  }
+}

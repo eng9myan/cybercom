@@ -1,0 +1,178 @@
+{
+  "key": "logistics_3pl",
+  "name": "Third-Party Logistics (3PL)",
+  "version": "1.0",
+  "description": "Contract warehousing and fulfilment for other businesses: client-owned inventory, pick/pack/ship billing, SLA compliance.",
+  "department_pack_keys": [
+    "finance",
+    "inventory",
+    "sales",
+    "maintenance"
+  ],
+  "recommended_ops": [
+    "operates_branches",
+    "provides_services"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Client Contract"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Warehouse Manager",
+        "description": "Owns client SLAs and warehouse operations."
+      },
+      {
+        "name": "Fulfilment Supervisor",
+        "description": "Runs pick/pack/ship shifts."
+      },
+      {
+        "name": "Client Account Manager",
+        "description": "Owns billing and contract terms."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "client_contract",
+      "name": "Client Storage & Fulfilment Contract",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Client Account Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "rate_card_change",
+      "name": "Rate Card Change",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Warehouse Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "damage_claim",
+      "name": "Inventory Damage Claim",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 500,
+          "role": "Warehouse Manager"
+        },
+        {
+          "min": 500,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Storage",
+    "Pick & Pack",
+    "Inbound Receiving",
+    "Outbound Shipping",
+    "Value-added Services"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "2198",
+        "name": "Client-owned Inventory (off-balance memo)",
+        "account_type": "asset",
+        "parent": "1100"
+      },
+      {
+        "code": "4920",
+        "name": "Storage Fee Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4930",
+        "name": "Fulfilment Fee Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5740",
+        "name": "Shipping & Carrier Cost",
+        "account_type": "expense",
+        "parent": "5000"
+      }
+    ]
+  },
+  "industry_fields": {
+    "client": [
+      "billing_model",
+      "storage_rate",
+      "pick_rate",
+      "sla_hours"
+    ],
+    "inventory": [
+      "owner_client",
+      "sku",
+      "location",
+      "received_date"
+    ]
+  },
+  "dashboards": [
+    "SLA Compliance",
+    "Storage Utilization by Client",
+    "Orders Fulfilled Today",
+    "Billing Accuracy"
+  ],
+  "reports": [
+    "Client Billing Statement",
+    "SLA Compliance Report",
+    "Storage Utilization by Client",
+    "Damage & Claims Log"
+  ],
+  "doc_templates": [
+    "Client Contract",
+    "Goods Received Note",
+    "Pick Ticket",
+    "Client Invoice"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "billing_model",
+        "storage_rate",
+        "pick_rate",
+        "contact_email"
+      ]
+    },
+    {
+      "entity": "inventory",
+      "columns": [
+        "client",
+        "sku",
+        "description",
+        "quantity",
+        "location"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Inventory in a 3PL warehouse belongs to the client, not the operator -- it must never appear as the operator's own stock on the balance sheet, only as a tracked memo quantity per client. Billing is activity-based (storage + pick + pack + ship), so accurate activity capture at each step is the entire revenue model, not an afterthought to inventory tracking.",
+    "starter_prompts": [
+      "Show storage utilization by client.",
+      "What is SLA compliance this month?",
+      "Show billing accuracy against logged activity.",
+      "List damage claims outstanding."
+    ]
+  }
+}

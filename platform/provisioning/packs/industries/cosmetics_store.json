@@ -1,0 +1,155 @@
+{
+  "key": "cosmetics_store",
+  "name": "Cosmetics & Beauty Retail",
+  "version": "1.0",
+  "description": "Beauty product retail: shade/batch tracking, expiry dates, testers, loyalty-driven repeat purchase.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Sale"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Store Manager",
+        "description": "Owns buying, pricing and expiry write-offs."
+      },
+      {
+        "name": "Beauty Advisor",
+        "description": "Serves customers and manages testers."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "expiry_writeoff",
+      "name": "Expired Stock Write-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 200,
+          "role": "Store Manager"
+        },
+        {
+          "min": 200,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Loyalty / Promo Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 20,
+          "role": "Beauty Advisor"
+        },
+        {
+          "min": 20,
+          "max": null,
+          "role": "Store Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "tester_replacement",
+      "name": "Tester Replacement",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Beauty Advisor"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Skincare",
+    "Makeup",
+    "Fragrance",
+    "Haircare",
+    "Tools & Accessories",
+    "Gift Sets"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4960",
+        "name": "Beauty Retail Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5770",
+        "name": "Expired Stock & Testers",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "shade",
+      "batch_number",
+      "expiry_date",
+      "is_tester",
+      "barcode"
+    ]
+  },
+  "dashboards": [
+    "Expiry Watchlist",
+    "Loyalty Redemption",
+    "Best Sellers by Shade",
+    "Tester Cost"
+  ],
+  "reports": [
+    "Expiring Stock Report",
+    "Loyalty Program Report",
+    "Shade/Variant Sales Mix",
+    "Z Report"
+  ],
+  "doc_templates": [
+    "Sales Receipt",
+    "Loyalty Statement",
+    "Expiry Write-off Log"
+  ],
+  "import_templates": [
+    {
+      "entity": "products",
+      "columns": [
+        "sku",
+        "name",
+        "category",
+        "shade",
+        "batch_number",
+        "expiry_date",
+        "cost",
+        "retail_price"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Cosmetics carry real expiry dates and batch-level shade variants -- treating a product line as one SKU when it's actually twelve shades with different sell-through rates hides which ones to reorder and which to discontinue. Testers are a real, ongoing cost of selling, not free samples, and should hit their own expense line rather than disappearing into shrinkage.",
+    "starter_prompts": [
+      "Show stock expiring within 60 days.",
+      "What are best sellers by shade this month?",
+      "Show tester replacement cost this quarter.",
+      "What is loyalty program redemption rate?"
+    ]
+  }
+}

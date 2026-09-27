@@ -1,0 +1,170 @@
+{
+  "key": "beverage_distributor",
+  "name": "Beverage Distributor",
+  "version": "1.0",
+  "description": "Wholesale drinks distribution: route sales, deposit-bearing returnable containers, chiller placements, volume rebates.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "buys_products",
+    "operates_branches",
+    "provides_services"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Depot Manager",
+        "description": "Owns stock, route planning and rebate agreements."
+      },
+      {
+        "name": "Route Sales Rep",
+        "description": "Sells and delivers on an assigned route."
+      },
+      {
+        "name": "Driver",
+        "description": "Delivers and collects returnable containers."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "credit_limit",
+      "name": "Customer Credit Limit",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Depot Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "volume_rebate",
+      "name": "Volume Rebate Agreement",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Depot Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "chiller_placement",
+      "name": "Chiller / Equipment Placement",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Route Sales Rep"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Soft Drinks",
+    "Water",
+    "Juice",
+    "Alcoholic Beverages",
+    "Empties & Deposits",
+    "Equipment"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "1175",
+        "name": "Returnable Container Deposits Receivable",
+        "account_type": "asset",
+        "parent": "1100"
+      },
+      {
+        "code": "2199",
+        "name": "Container Deposit Liability",
+        "account_type": "liability",
+        "parent": "2100"
+      },
+      {
+        "code": "5000",
+        "name": "Wholesale Beverage Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5800",
+        "name": "Route Delivery Cost",
+        "account_type": "expense",
+        "parent": "5000"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "container_type",
+      "deposit_amount",
+      "returnable",
+      "case_size"
+    ],
+    "customer": [
+      "route",
+      "credit_limit",
+      "chiller_units_placed",
+      "rebate_tier"
+    ]
+  },
+  "dashboards": [
+    "Route Coverage",
+    "Container Deposit Balance",
+    "Rebate Exposure",
+    "Credit Exposure"
+  ],
+  "reports": [
+    "Route Sales Report",
+    "Container Deposit Reconciliation",
+    "Rebate Accrual Report",
+    "Credit Exposure by Route"
+  ],
+  "doc_templates": [
+    "Delivery Note",
+    "Container Deposit Receipt",
+    "Customer Statement"
+  ],
+  "import_templates": [
+    {
+      "entity": "customers",
+      "columns": [
+        "name",
+        "route",
+        "credit_limit",
+        "chiller_units_placed"
+      ]
+    },
+    {
+      "entity": "products",
+      "columns": [
+        "sku",
+        "name",
+        "category",
+        "container_type",
+        "deposit_amount",
+        "case_size"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Deposits on returnable bottles/crates are a real liability, refundable when the container comes back -- counting deposit cash as revenue overstates sales and understates what's owed. Volume rebates promised to big accounts accrue against every sale as it happens; discovering the rebate liability only at year-end is how distributors get margin surprises.",
+    "starter_prompts": [
+      "Show container deposit balance by customer.",
+      "What is rebate accrual exposure this quarter?",
+      "Show route coverage and sales by rep.",
+      "Which customers are near their credit limit?"
+    ]
+  }
+}

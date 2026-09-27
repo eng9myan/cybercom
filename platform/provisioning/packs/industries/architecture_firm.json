@@ -1,0 +1,175 @@
+{
+  "key": "architecture_firm",
+  "name": "Architecture Firm",
+  "version": "1.0",
+  "description": "Design practice: RIBA/project-stage billing, drawing revisions, consultant coordination, planning submissions.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "projects",
+    "hr",
+    "documents"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "manages_projects"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Commission",
+    "project": "Commission"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Principal Architect",
+        "description": "Signs off drawings and stage completion; approves fee proposals."
+      },
+      {
+        "name": "Project Architect",
+        "description": "Runs day-to-day design and consultant coordination."
+      },
+      {
+        "name": "Architectural Assistant",
+        "description": "Prepares drawings and models."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "commission",
+      "name": "Commission / Fee Proposal",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 20000,
+          "role": "Project Architect"
+        },
+        {
+          "min": 20000,
+          "max": null,
+          "role": "Principal Architect"
+        }
+      ]
+    },
+    {
+      "document_type": "stage_signoff",
+      "name": "Design Stage Sign-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Principal Architect"
+        }
+      ]
+    },
+    {
+      "document_type": "consultant_appointment",
+      "name": "Consultant Appointment",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Project Architect"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Concept Design",
+    "Planning Submission",
+    "Technical Design",
+    "Construction Documentation",
+    "Site Inspection"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "1173",
+        "name": "Unbilled WIP (Design Stages)",
+        "account_type": "asset",
+        "parent": "1100"
+      },
+      {
+        "code": "4810",
+        "name": "Design Fees",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4820",
+        "name": "Planning & Consultancy Fees",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5610",
+        "name": "Sub-consultant Fees",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "commission": [
+      "riba_stage",
+      "planning_reference",
+      "consultant_list",
+      "fee_basis",
+      "stage_deadline"
+    ],
+    "drawing": [
+      "revision",
+      "discipline",
+      "issue_status",
+      "issue_date"
+    ]
+  },
+  "dashboards": [
+    "Stage Progress",
+    "WIP by Commission",
+    "Consultant Spend",
+    "Planning Deadlines"
+  ],
+  "reports": [
+    "Stage Billing Schedule",
+    "WIP Aging",
+    "Consultant Fee Ledger",
+    "Drawing Issue Register"
+  ],
+  "doc_templates": [
+    "Fee Proposal",
+    "Appointment Letter",
+    "Drawing Issue Sheet",
+    "Planning Submission"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email",
+        "project_address"
+      ]
+    },
+    {
+      "entity": "commissions",
+      "columns": [
+        "client",
+        "name",
+        "riba_stage",
+        "fee_basis",
+        "stage_deadline"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Fees are billed by design stage, not by time alone -- a stage isn't complete (and billable) until the principal signs it off, which is a real quality gate, not paperwork. Sub-consultant fees pass through the practice's books but belong to a different budget line than the design fee itself, or margin looks wrong. Planning deadlines are statutory, not negotiable, and belong on the same dashboard as WIP.",
+    "starter_prompts": [
+      "Show WIP by commission and design stage.",
+      "Which commissions have a planning deadline in the next 30 days?",
+      "Show sub-consultant spend by commission.",
+      "List drawings awaiting issue for Technical Design stage."
+    ]
+  }
+}

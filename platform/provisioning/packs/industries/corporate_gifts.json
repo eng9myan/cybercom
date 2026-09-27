@@ -1,0 +1,160 @@
+{
+  "key": "corporate_gifts",
+  "name": "Corporate Gifts & Promotional Products",
+  "version": "1.0",
+  "description": "Branded merchandise: supplier sourcing, artwork proofing, minimum order quantities, bulk corporate orders.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "buys_products",
+    "makes_products"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Account Manager",
+        "description": "Owns client relationships and order approval."
+      },
+      {
+        "name": "Production Coordinator",
+        "description": "Manages proofing and supplier fulfilment."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "bulk_order",
+      "name": "Bulk Order Approval",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10000,
+          "role": "Account Manager"
+        },
+        {
+          "min": 10000,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "artwork_proof",
+      "name": "Artwork Proof Approval",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Production Coordinator"
+        }
+      ]
+    },
+    {
+      "document_type": "moq_exception",
+      "name": "Below-MOQ Exception",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Account Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Apparel",
+    "Drinkware",
+    "Tech Accessories",
+    "Bags",
+    "Stationery",
+    "Awards"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4870",
+        "name": "Merchandise Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5650",
+        "name": "Branding & Print Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "order": [
+      "moq",
+      "artwork_status",
+      "supplier",
+      "lead_time_days",
+      "delivery_date"
+    ],
+    "product": [
+      "branding_method",
+      "moq",
+      "supplier_cost"
+    ]
+  },
+  "dashboards": [
+    "Orders in Production",
+    "Artwork Approval Status",
+    "Supplier Lead Times",
+    "Order Margin"
+  ],
+  "reports": [
+    "Production Status Report",
+    "Artwork Approval Log",
+    "Supplier Performance",
+    "Order Margin Analysis"
+  ],
+  "doc_templates": [
+    "Quotation",
+    "Artwork Proof",
+    "Purchase Order",
+    "Delivery Note"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email"
+      ]
+    },
+    {
+      "entity": "orders",
+      "columns": [
+        "client",
+        "product",
+        "quantity",
+        "artwork_status",
+        "delivery_date"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Nothing prints until the client signs off the artwork proof -- a missed approval step is a full reprint at the company's cost, not the client's. Minimum order quantities are a supplier constraint, not a sales team preference, so an order below MOQ needs an explicit exception rather than a surprised supplier.",
+    "starter_prompts": [
+      "Show orders awaiting artwork approval.",
+      "What is order margin by client this quarter?",
+      "List orders below minimum order quantity.",
+      "Show supplier lead time performance."
+    ]
+  }
+}

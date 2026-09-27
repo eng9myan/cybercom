@@ -1,0 +1,161 @@
+{
+  "key": "food_truck",
+  "name": "Food Truck",
+  "version": "1.0",
+  "description": "Mobile food service: location/route scheduling, limited menu with high throughput, cash+card split, daily prep.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "makes_products",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Truck Owner",
+        "description": "Owns menu, pricing and route planning."
+      },
+      {
+        "name": "Line Cook",
+        "description": "Preps and serves from the truck."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "menu_change",
+      "name": "Menu / Price Change",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Truck Owner"
+        }
+      ]
+    },
+    {
+      "document_type": "route_booking",
+      "name": "Event / Route Booking",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Truck Owner"
+        }
+      ]
+    },
+    {
+      "document_type": "wastage_writeoff",
+      "name": "Daily Wastage Write-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 100,
+          "role": "Line Cook"
+        },
+        {
+          "min": 100,
+          "max": null,
+          "role": "Truck Owner"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Mains",
+    "Sides",
+    "Drinks",
+    "Specials",
+    "Catering Events"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4990",
+        "name": "Truck Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5780",
+        "name": "Ingredient Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5790",
+        "name": "Site & Permit Fees",
+        "account_type": "expense",
+        "parent": "5000"
+      }
+    ]
+  },
+  "industry_fields": {
+    "location": [
+      "site_name",
+      "date",
+      "start_time",
+      "end_time",
+      "permit_reference"
+    ],
+    "item": [
+      "prep_time_minutes",
+      "daily_prep_quantity"
+    ]
+  },
+  "dashboards": [
+    "Today's Location",
+    "Daily Sales",
+    "Wastage %",
+    "Route Calendar"
+  ],
+  "reports": [
+    "Daily Takings by Location",
+    "Wastage Report",
+    "Menu Item Profitability",
+    "Route/Event Calendar"
+  ],
+  "doc_templates": [
+    "Daily Prep Sheet",
+    "Event Booking Confirmation",
+    "Z Report"
+  ],
+  "import_templates": [
+    {
+      "entity": "locations",
+      "columns": [
+        "site_name",
+        "date",
+        "permit_reference"
+      ]
+    },
+    {
+      "entity": "menu_items",
+      "columns": [
+        "name",
+        "category",
+        "cost",
+        "price",
+        "prep_time_minutes"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Revenue depends entirely on being in the right place with the right prep quantity for that day's foot traffic -- unlike a fixed shop, a bad location choice can't be recovered by waiting for tomorrow's customers to find you. Daily prep that doesn't sell is same-day wastage with no shelf life to fall back on, so tracking waste per location sharpens the next day's prep decision.",
+    "starter_prompts": [
+      "Show sales by location this week.",
+      "What is wastage percentage today?",
+      "Which menu items are most profitable?",
+      "Show the route calendar for next week."
+    ]
+  }
+}

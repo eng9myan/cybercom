@@ -1,0 +1,172 @@
+{
+  "key": "electrician_services",
+  "name": "Electrical Contractor",
+  "version": "1.0",
+  "description": "Domestic and commercial electrical work: certified sign-off, van stock, callouts plus fixed-price jobs.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "inventory",
+    "hr",
+    "maintenance"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Job"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Operations Manager",
+        "description": "Owns quoting, scheduling and certification sign-off."
+      },
+      {
+        "name": "Electrician",
+        "description": "Attends jobs and issues certificates."
+      },
+      {
+        "name": "Apprentice",
+        "description": "Assists under supervision, cannot self-certify."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "quotation",
+      "name": "Job Quotation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 5000,
+          "role": "Operations Manager"
+        },
+        {
+          "min": 5000,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "certificate",
+      "name": "Electrical Safety Certificate",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Electrician"
+        }
+      ]
+    },
+    {
+      "document_type": "van_stock_order",
+      "name": "Van Stock Reorder",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Operations Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Domestic Wiring",
+    "Commercial Fit-out",
+    "EICR/Inspection",
+    "Fault Finding",
+    "EV Charging",
+    "Solar Connection"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4830",
+        "name": "Labour Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "4840",
+        "name": "Materials & Parts Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5620",
+        "name": "Van Stock & Consumables",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "job": [
+      "job_type",
+      "certificate_required",
+      "certificate_number",
+      "scheduled_date",
+      "site_address"
+    ],
+    "electrician": [
+      "certification_number",
+      "certification_expiry",
+      "qualified_supervisor"
+    ]
+  },
+  "dashboards": [
+    "Today's Jobs",
+    "Certificates Issued",
+    "Van Stock Levels",
+    "First-time Fix Rate"
+  ],
+  "reports": [
+    "Certificate Register",
+    "Job Costing vs Quote",
+    "Van Stock Report",
+    "Certification Expiry"
+  ],
+  "doc_templates": [
+    "Job Quotation",
+    "Electrical Certificate",
+    "Job Sheet",
+    "Invoice"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "site_address",
+        "contact_email"
+      ]
+    },
+    {
+      "entity": "jobs",
+      "columns": [
+        "client",
+        "job_type",
+        "site_address",
+        "scheduled_date",
+        "quoted_price"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "A safety certificate is a legal instrument tied to a named, currently-certified electrician -- issuing one under an expired qualification is a compliance failure, not a clerical error, so certification expiry needs its own alert independent of job scheduling. Apprentices can attend jobs but can't self-certify, which the job record should enforce, not just the office remember.",
+    "starter_prompts": [
+      "Which electricians have certifications expiring in 60 days?",
+      "Show today's jobs by engineer.",
+      "List certificates issued this month.",
+      "Show job costing against quote."
+    ]
+  }
+}

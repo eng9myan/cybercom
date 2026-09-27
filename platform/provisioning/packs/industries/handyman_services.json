@@ -1,0 +1,137 @@
+{
+  "key": "handyman_services",
+  "name": "Handyman & Home Repair",
+  "version": "1.0",
+  "description": "Small home-repair jobs booked by the hour or fixed quote: multi-trade technicians, materials pass-through.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "inventory"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "books_appointments"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Job"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Office Manager",
+        "description": "Schedules jobs and approves quotes."
+      },
+      {
+        "name": "Handyman",
+        "description": "Attends jobs and buys materials as needed."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "quotation",
+      "name": "Job Quotation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 1000,
+          "role": "Handyman"
+        },
+        {
+          "min": 1000,
+          "max": null,
+          "role": "Office Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "materials_reimbursement",
+      "name": "Materials Reimbursement",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Office Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Plumbing",
+    "Carpentry",
+    "Painting",
+    "Assembly",
+    "General Repairs",
+    "Materials"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4850",
+        "name": "Callout & Labour Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5630",
+        "name": "Job Materials",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "job": [
+      "trade_type",
+      "hourly_or_fixed",
+      "scheduled_window",
+      "materials_estimate"
+    ]
+  },
+  "dashboards": [
+    "Today's Schedule",
+    "Job Margin",
+    "Repeat Customer Rate",
+    "Materials Spend"
+  ],
+  "reports": [
+    "Daily Schedule",
+    "Job Costing",
+    "Materials Reimbursement Log",
+    "Repeat Business Report"
+  ],
+  "doc_templates": [
+    "Job Quote",
+    "Invoice",
+    "Materials Receipt"
+  ],
+  "import_templates": [
+    {
+      "entity": "customers",
+      "columns": [
+        "name",
+        "address",
+        "phone"
+      ]
+    },
+    {
+      "entity": "jobs",
+      "columns": [
+        "customer",
+        "trade_type",
+        "scheduled_window",
+        "quoted_price"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Jobs are small and numerous, so the real margin leak is materials bought on the fly and under-reported, not the labour rate. A simple hourly-vs-fixed flag on each job matters because a fixed-price job that overruns is the business absorbing the risk, not the customer.",
+    "starter_prompts": [
+      "Show job margin this week.",
+      "What is today's schedule by technician?",
+      "Show materials spend against reimbursement claims.",
+      "What percentage of customers book again within 6 months?"
+    ]
+  }
+}

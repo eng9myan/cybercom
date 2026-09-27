@@ -1,0 +1,164 @@
+{
+  "key": "surveying_mapping",
+  "name": "Surveying & Mapping",
+  "version": "1.0",
+  "description": "Land and building survey work: site visits, deliverable-based billing, equipment calibration, drawing deliverables.",
+  "department_pack_keys": [
+    "finance",
+    "sales",
+    "projects",
+    "documents",
+    "maintenance"
+  ],
+  "recommended_ops": [
+    "provides_services",
+    "manages_projects"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Survey Instruction"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Principal Surveyor",
+        "description": "Signs off survey deliverables and quotes."
+      },
+      {
+        "name": "Surveyor",
+        "description": "Conducts site surveys and processes data."
+      },
+      {
+        "name": "CAD Technician",
+        "description": "Produces drawing deliverables from survey data."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "instruction",
+      "name": "Survey Instruction / Quote",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 10000,
+          "role": "Principal Surveyor"
+        },
+        {
+          "min": 10000,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "deliverable_signoff",
+      "name": "Deliverable Sign-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Principal Surveyor"
+        }
+      ]
+    },
+    {
+      "document_type": "equipment_calibration",
+      "name": "Equipment Calibration Due",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Surveyor"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Topographic",
+    "Measured Building",
+    "Boundary",
+    "Utility Mapping",
+    "Aerial/Drone",
+    "Setting Out"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4860",
+        "name": "Survey Fees",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5640",
+        "name": "Equipment Calibration & Maintenance",
+        "account_type": "expense",
+        "parent": "5000"
+      }
+    ]
+  },
+  "industry_fields": {
+    "instruction": [
+      "survey_type",
+      "site_address",
+      "deliverable_format",
+      "deadline"
+    ],
+    "equipment": [
+      "serial_number",
+      "last_calibration",
+      "next_calibration_due"
+    ]
+  },
+  "dashboards": [
+    "Site Visits Scheduled",
+    "Deliverables Due",
+    "Equipment Calibration Status",
+    "Instruction Backlog"
+  ],
+  "reports": [
+    "Deliverable Status",
+    "Calibration Due Report",
+    "Instruction Profitability",
+    "Site Visit Log"
+  ],
+  "doc_templates": [
+    "Survey Instruction",
+    "Site Visit Report",
+    "Deliverable Certificate",
+    "Invoice"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email"
+      ]
+    },
+    {
+      "entity": "instructions",
+      "columns": [
+        "client",
+        "survey_type",
+        "site_address",
+        "deadline",
+        "fee"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "A survey deliverable stated to an incorrect datum or from out-of-calibration equipment can be legally unusable, so calibration due dates are a hard operational gate, not a maintenance nicety. Billing is per deliverable, not time, so tracking status per instruction (not per surveyor day) is what shows real backlog.",
+    "starter_prompts": [
+      "Which equipment is due calibration in 30 days?",
+      "Show deliverables due this week.",
+      "What is instruction profitability this quarter?",
+      "List site visits scheduled tomorrow."
+    ]
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "key": "bike_shop",
+  "name": "Bicycle Shop",
+  "version": "1.0",
+  "description": "Bike sales and service: build sheets, service bookings, warranty claims, seasonal demand, parts inventory.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement",
+    "hr"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "provides_services",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Sale"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Shop Manager",
+        "description": "Owns pricing, warranty claims and stock."
+      },
+      {
+        "name": "Mechanic",
+        "description": "Builds and services bikes."
+      },
+      {
+        "name": "Sales Associate",
+        "description": "Sells bikes and accessories."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "warranty_claim",
+      "name": "Manufacturer Warranty Claim",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Shop Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "service_estimate",
+      "name": "Service Estimate Authorisation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 500,
+          "role": "Mechanic"
+        },
+        {
+          "min": 500,
+          "max": null,
+          "role": "Shop Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "trade_in",
+      "name": "Bike Trade-in Valuation",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Shop Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Bikes",
+    "Parts",
+    "Accessories",
+    "Apparel",
+    "Service & Repair",
+    "Trade-ins"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "5010",
+        "name": "Bike & Accessory Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5020",
+        "name": "Service & Repair Revenue",
+        "account_type": "income",
+        "parent": "4200"
+      },
+      {
+        "code": "5810",
+        "name": "Warranty Parts Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "bike": [
+      "frame_number",
+      "brand",
+      "model",
+      "size",
+      "build_date",
+      "warranty_end"
+    ],
+    "service": [
+      "service_type",
+      "parts_used",
+      "labour_hours",
+      "estimate_approved"
+    ]
+  },
+  "dashboards": [
+    "Service Bay Schedule",
+    "Warranty Claims Open",
+    "Seasonal Sales",
+    "Parts Stock"
+  ],
+  "reports": [
+    "Service Bay Utilization",
+    "Warranty Claim Status",
+    "Seasonal Sales Comparison",
+    "Parts Stock Report"
+  ],
+  "doc_templates": [
+    "Sales Receipt",
+    "Service Estimate",
+    "Warranty Claim Form",
+    "Build Sheet"
+  ],
+  "import_templates": [
+    {
+      "entity": "bikes",
+      "columns": [
+        "frame_number",
+        "brand",
+        "model",
+        "size",
+        "cost",
+        "retail_price"
+      ]
+    },
+    {
+      "entity": "customers",
+      "columns": [
+        "name",
+        "phone",
+        "email"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Frame numbers are the warranty key -- a claim without one is a claim the manufacturer can reject outright, so it has to be captured at sale, not chased later. Service estimates need customer sign-off before parts are fitted, the same way an auto workshop works, or additional work becomes a billing dispute at collection.",
+    "starter_prompts": [
+      "Show warranty claims currently open.",
+      "What is service bay utilization this week?",
+      "Show seasonal sales comparison to last year.",
+      "Which service jobs are awaiting estimate approval?"
+    ]
+  }
+}

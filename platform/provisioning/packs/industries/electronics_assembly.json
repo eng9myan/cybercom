@@ -1,0 +1,162 @@
+{
+  "key": "electronics_assembly",
+  "name": "Electronics Assembly & Contract Manufacturing",
+  "version": "1.0",
+  "description": "PCB/electronics contract manufacturing: BOM-driven builds, component sourcing, first-article inspection, traceability.",
+  "department_pack_keys": [
+    "finance",
+    "inventory",
+    "manufacturing",
+    "procurement",
+    "hr"
+  ],
+  "recommended_ops": [
+    "makes_products",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Build Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Production Manager",
+        "description": "Owns build scheduling and first-article sign-off."
+      },
+      {
+        "name": "Buyer",
+        "description": "Sources components against the BOM."
+      },
+      {
+        "name": "Quality Inspector",
+        "description": "Runs inspection and traceability checks."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "build_order",
+      "name": "Build Order Release",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Production Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "first_article",
+      "name": "First Article Inspection Sign-off",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Quality Inspector"
+        }
+      ]
+    },
+    {
+      "document_type": "component_shortage",
+      "name": "Component Shortage / Substitution",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Production Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "PCB Assembly",
+    "Box Build",
+    "Cable Assembly",
+    "Components",
+    "Testing",
+    "Packaging"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4880",
+        "name": "Contract Assembly Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5660",
+        "name": "Component Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5670",
+        "name": "Scrap & Rework",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "build_order": [
+      "bom_reference",
+      "quantity",
+      "lot_number",
+      "first_article_passed",
+      "customer_po"
+    ],
+    "component": [
+      "manufacturer_part_number",
+      "lead_time_days",
+      "lot_traceable"
+    ]
+  },
+  "dashboards": [
+    "Build Schedule",
+    "Component Shortages",
+    "First Article Status",
+    "Scrap Rate"
+  ],
+  "reports": [
+    "BOM Shortage Report",
+    "Traceability Log",
+    "First Article Report",
+    "Scrap & Rework Analysis"
+  ],
+  "doc_templates": [
+    "Build Order",
+    "First Article Report",
+    "Certificate of Conformance",
+    "Packing List"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email"
+      ]
+    },
+    {
+      "entity": "build_orders",
+      "columns": [
+        "client",
+        "bom_reference",
+        "quantity",
+        "customer_po",
+        "due_date"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "A build can't start with an incomplete BOM -- component shortages must be visible before the line stops mid-run, not discovered at the bench. First article inspection is the gate between prototype risk and committing the full run's components; skipping it to save time is exactly how a shortage becomes a full batch of scrap. Lot traceability back to the component is often a contractual requirement, not optional.",
+    "starter_prompts": [
+      "Which build orders have component shortages?",
+      "Show first article inspection status by build order.",
+      "What is scrap rate this month?",
+      "Trace which build orders used a given component lot."
+    ]
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "key": "toy_store",
+  "name": "Toy Store",
+  "version": "1.0",
+  "description": "Seasonal-driven toy retail: age/category browsing, safety compliance, gift wrapping, holiday demand spikes.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Sale"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Store Manager",
+        "description": "Owns buying, pricing and seasonal planning."
+      },
+      {
+        "name": "Sales Associate",
+        "description": "Serves customers and gift wraps."
+      },
+      {
+        "name": "General Manager",
+        "description": "Final approval authority for high-value documents across the business."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "markdown",
+      "name": "Markdown Approval",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 30,
+          "role": "Store Manager"
+        },
+        {
+          "min": 30,
+          "max": null,
+          "role": "General Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "return",
+      "name": "Return / Exchange",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 200,
+          "role": "Sales Associate"
+        },
+        {
+          "min": 200,
+          "max": null,
+          "role": "Store Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "seasonal_order",
+      "name": "Seasonal Bulk Order",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Store Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Educational",
+    "Outdoor",
+    "Games & Puzzles",
+    "Action Figures",
+    "Infant & Toddler",
+    "Seasonal"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4940",
+        "name": "Toy Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5750",
+        "name": "Seasonal Markdown & Shrinkage",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "age_range",
+      "safety_certification",
+      "season_peak",
+      "barcode"
+    ]
+  },
+  "dashboards": [
+    "Seasonal Sales Curve",
+    "Age-range Mix",
+    "Markdown Exposure",
+    "Best Sellers"
+  ],
+  "reports": [
+    "Seasonal Sales Comparison",
+    "Age-range Sales Mix",
+    "Ageing Stock",
+    "Z Report"
+  ],
+  "doc_templates": [
+    "Sales Receipt",
+    "Gift Receipt",
+    "Return Voucher"
+  ],
+  "import_templates": [
+    {
+      "entity": "products",
+      "columns": [
+        "sku",
+        "name",
+        "category",
+        "age_range",
+        "cost",
+        "retail_price",
+        "barcode"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Demand is brutally seasonal -- most of the year's revenue lands in a few weeks around holidays, so buying in ahead of that window is a forecast bet with real markdown risk if it's wrong. Age-range and safety certification data matter for both merchandising and liability, not just search filters.",
+    "starter_prompts": [
+      "Compare this season's sales to last year.",
+      "Show best sellers by age range.",
+      "Which stock needs markdown before season end?",
+      "Show sales mix by category this week."
+    ]
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "key": "textile_manufacturing",
+  "name": "Textile & Garment Manufacturing",
+  "version": "1.0",
+  "description": "Cut-make-trim production: fabric consumption per style, size-run cutting, piece-rate labour, quality inspection.",
+  "department_pack_keys": [
+    "finance",
+    "inventory",
+    "manufacturing",
+    "procurement",
+    "hr"
+  ],
+  "recommended_ops": [
+    "makes_products",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Client",
+    "sale_order": "Production Order"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Production Manager",
+        "description": "Owns cutting plans and production schedule."
+      },
+      {
+        "name": "Line Supervisor",
+        "description": "Runs the sewing line."
+      },
+      {
+        "name": "Quality Inspector",
+        "description": "Inspects against AQL standards."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "cutting_plan",
+      "name": "Cutting Plan / Fabric Release",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Production Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "production_order",
+      "name": "Production Order",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Production Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "quality_hold",
+      "name": "Quality Hold / Reject",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Quality Inspector"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Fabric",
+    "Trims & Accessories",
+    "Cut Pieces",
+    "Finished Garments",
+    "Packaging"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4910",
+        "name": "Garment Production Revenue",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5720",
+        "name": "Fabric & Trim Cost",
+        "account_type": "expense",
+        "parent": "5100"
+      },
+      {
+        "code": "5730",
+        "name": "Piece-rate Labour",
+        "account_type": "expense",
+        "parent": "5200"
+      }
+    ]
+  },
+  "industry_fields": {
+    "style": [
+      "fabric_consumption_per_unit",
+      "size_run",
+      "aql_level"
+    ],
+    "cutting_plan": [
+      "fabric_lot",
+      "marker_efficiency",
+      "size_breakdown"
+    ]
+  },
+  "dashboards": [
+    "Line Efficiency",
+    "Fabric Utilization",
+    "Quality Hold Rate",
+    "Order Status by Style"
+  ],
+  "reports": [
+    "Marker/Fabric Efficiency",
+    "Line Output vs Target",
+    "AQL Inspection Log",
+    "Style Costing"
+  ],
+  "doc_templates": [
+    "Production Order",
+    "Cutting Ticket",
+    "Inspection Report",
+    "Packing List"
+  ],
+  "import_templates": [
+    {
+      "entity": "clients",
+      "columns": [
+        "name",
+        "contact_email"
+      ]
+    },
+    {
+      "entity": "styles",
+      "columns": [
+        "client",
+        "name",
+        "fabric_consumption_per_unit",
+        "size_run"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Fabric consumption per unit is the number the whole style's margin depends on -- a marker layout that wastes 5% more fabric than costed erases the margin on the entire order, not just the offcuts. AQL-based quality holds must stop a specific lot, not the whole line, or a single bad batch halts output unnecessarily.",
+    "starter_prompts": [
+      "Show marker/fabric efficiency by style.",
+      "What is line output against target today?",
+      "Show styles currently on quality hold.",
+      "What is style costing versus quoted price?"
+    ]
+  }
+}

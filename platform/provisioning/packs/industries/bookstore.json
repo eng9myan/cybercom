@@ -1,0 +1,150 @@
+{
+  "key": "bookstore",
+  "name": "Bookstore",
+  "version": "1.0",
+  "description": "Book retail: ISBN-based catalog, publisher returns/sale-or-return terms, events, special orders.",
+  "department_pack_keys": [
+    "finance",
+    "pos",
+    "inventory",
+    "procurement"
+  ],
+  "recommended_ops": [
+    "retail_pos",
+    "buys_products"
+  ],
+  "terminology": {
+    "customer": "Customer",
+    "sale_order": "Sale"
+  },
+  "default_config": {
+    "roles": [
+      {
+        "name": "Store Manager",
+        "description": "Owns buying, returns and events."
+      },
+      {
+        "name": "Bookseller",
+        "description": "Serves customers and handles special orders."
+      }
+    ]
+  },
+  "approval_matrix": [
+    {
+      "document_type": "publisher_return",
+      "name": "Publisher Return (sale-or-return)",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Store Manager"
+        }
+      ]
+    },
+    {
+      "document_type": "special_order",
+      "name": "Customer Special Order",
+      "tiers": [
+        {
+          "min": 0,
+          "max": null,
+          "role": "Bookseller"
+        }
+      ]
+    },
+    {
+      "document_type": "discount",
+      "name": "Order Discount",
+      "tiers": [
+        {
+          "min": 0,
+          "max": 15,
+          "role": "Bookseller"
+        },
+        {
+          "min": 15,
+          "max": null,
+          "role": "Store Manager"
+        }
+      ]
+    }
+  ],
+  "categories": [
+    "Fiction",
+    "Non-fiction",
+    "Children's",
+    "Academic",
+    "Stationery",
+    "Special Orders"
+  ],
+  "accounting_mappings": {
+    "extra_accounts": [
+      {
+        "code": "4950",
+        "name": "Book Sales",
+        "account_type": "income",
+        "parent": "4100"
+      },
+      {
+        "code": "5760",
+        "name": "Publisher Return Adjustments",
+        "account_type": "expense",
+        "parent": "5100"
+      }
+    ]
+  },
+  "industry_fields": {
+    "product": [
+      "isbn",
+      "publisher",
+      "sale_or_return",
+      "author"
+    ],
+    "special_order": [
+      "customer_name",
+      "isbn",
+      "ordered_date",
+      "expected_date"
+    ]
+  },
+  "dashboards": [
+    "Special Orders Pending",
+    "Sale-or-return Exposure",
+    "Best Sellers",
+    "Event Calendar"
+  ],
+  "reports": [
+    "Sale-or-return Statement",
+    "Special Order Status",
+    "Best Seller Report",
+    "Z Report"
+  ],
+  "doc_templates": [
+    "Sales Receipt",
+    "Special Order Confirmation",
+    "Publisher Return Note"
+  ],
+  "import_templates": [
+    {
+      "entity": "products",
+      "columns": [
+        "isbn",
+        "title",
+        "author",
+        "publisher",
+        "cost",
+        "retail_price",
+        "sale_or_return"
+      ]
+    }
+  ],
+  "ai_knowledge": {
+    "domain_notes": "Sale-or-return stock isn't fully owned until the return window closes -- treating it as ordinary paid-for inventory overstates what the shop actually risks. Special orders are a promise to a named customer with an expected date, and losing track of one is a lost sale plus a broken promise, worse than a stockout.",
+    "starter_prompts": [
+      "Show special orders pending fulfilment.",
+      "What is sale-or-return exposure by publisher?",
+      "Show best sellers this month.",
+      "List special orders overdue from the publisher."
+    ]
+  }
+}
