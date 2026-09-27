@@ -11,7 +11,7 @@ import {
   Wrench, Car, Briefcase, FileSignature, Building2,
   ChevronDown, Star, CalendarOff, Award, PenTool,
   Send, LayoutGrid, ArrowLeft, MapPin, Server, Plus, Clipboard, Activity, Calculator, CheckCircle, Laptop, Edit3,
-  Sparkles, ShieldCheck
+  Sparkles, ShieldCheck, X
 } from 'lucide-react';
 import { useCompany } from '@/context/CompanyContext';
 import { useT } from '@/lib/i18n';
@@ -120,21 +120,47 @@ const getModuleConfig = (segment: string): ModuleConfig => {
   };
 };
 
-export default function CycomSidebar() {
+interface CycomSidebarProps {
+  /** Mobile drawer state (ignored at lg+, where the sidebar is always visible). */
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function CycomSidebar({ isOpen, onClose }: CycomSidebarProps) {
   const t = useT();
   const pathname = usePathname() || '';
   const { activeCompany, setActiveCompany, allCompanies } = useCompany();
   const [companySwitcherOpen, setCompanySwitcherOpen] = useState(false);
-  
+
   // Extract active module segment
   const segment = pathname.split('/')[1] || '';
   const moduleConfig = getModuleConfig(segment);
   const ModuleIcon = moduleConfig.icon;
 
   return (
-    <aside className="w-[240px] h-screen flex flex-col flex-shrink-0 bg-gradient-to-b from-[#0a0f1e] to-[#080d18] border-e border-white/5 font-sans relative z-30">
+    <>
+      {/* Backdrop: mobile-only, closes the drawer on tap-outside. */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`w-[240px] h-screen flex flex-col flex-shrink-0 bg-gradient-to-b from-[#0a0f1e] to-[#080d18] border-e border-white/5 font-sans fixed inset-y-0 start-0 z-50 transition-transform duration-200 lg:static lg:z-30 lg:translate-x-0 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full'
+        }`}
+      >
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-white/5 flex-shrink-0">
+        <button
+          onClick={onClose}
+          className="lg:hidden ms-auto order-last p-1.5 -m-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5"
+          aria-label={t('common.close')}
+        >
+          <X className="w-4 h-4" />
+        </button>
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E67E22] to-[#5DADE2] flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-orange-500/10">
           CY
         </div>
@@ -248,6 +274,7 @@ export default function CycomSidebar() {
           );
         })}
       </nav>
-    </aside>
+      </aside>
+    </>
   );
 }

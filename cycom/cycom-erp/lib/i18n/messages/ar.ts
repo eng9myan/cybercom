@@ -59,6 +59,7 @@ const ar: Messages = {
   },
   sidebar: {
     backToLauncher: "العودة إلى قائمة التطبيقات",
+    openMenu: "فتح القائمة",
     activeModule: "الوحدة النشطة",
     switchCompany: "تبديل الشركة",
     setupHub: "مركز الإعداد",

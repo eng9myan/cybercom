@@ -56,6 +56,7 @@ const en = {
   },
   sidebar: {
     backToLauncher: "Back to Apps Launcher",
+    openMenu: "Open menu",
     activeModule: "Active Module",
     switchCompany: "Switch Company",
     // setup
