@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Percent, Workflow, Key, Cloud } from 'lucide-react';
+import { Percent, Workflow, Key, Cloud, Tag } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
 export default function SettingsAdminPage() {
@@ -21,6 +21,18 @@ export default function SettingsAdminPage() {
       <div className="glass-card p-6 space-y-4">
         <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('settingsMain.pillarsHeading')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            href="/settings/custom-fields"
+            className="p-4 bg-slate-950/40 border border-slate-850 rounded-xl hover:border-amber-500/30 hover:bg-slate-900/20 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <Tag className="w-6 h-6 text-amber-400 mb-2" />
+              <h4 className="font-semibold text-slate-200">{t('settingsMain.customFieldsTitle')}</h4>
+              <p className="text-[10px] text-slate-500 mt-1">{t('settingsMain.customFieldsDesc')}</p>
+            </div>
+            <span className="text-[10px] text-amber-400 font-bold mt-4 inline-block">{t('settingsMain.configure')}</span>
+          </Link>
+
           <Link
             href="/settings/tax"
             className="p-4 bg-slate-950/40 border border-slate-850 rounded-xl hover:border-blue-500/30 hover:bg-slate-900/20 transition-all flex flex-col justify-between"

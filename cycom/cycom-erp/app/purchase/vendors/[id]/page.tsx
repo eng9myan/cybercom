@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { call } from '@/lib/cycom';
 import { LoadingCard } from '@/components/CycomEmptyStates';
+import CustomFieldsPanel from '@/components/CustomFieldsPanel';
 import { useT } from '@/lib/i18n';
 
 interface VendorDetails {
@@ -291,6 +292,8 @@ export default function VendorApprovalDetail() {
               </div>
             </div>
           </div>
+
+          <CustomFieldsPanel modelKey="customer_vendor" recordId={vendorId} />
 
           {vendor.approval_status === 'rejected' && vendor.rejection_reason && (
             <div className="glass-card p-6 border border-rose-500/20 bg-rose-500/5">

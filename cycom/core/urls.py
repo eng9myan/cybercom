@@ -115,6 +115,8 @@ urlpatterns = [
     path("api/v1/logistics/", include("products.cycom.logistics.urls")),
     # ── No-code automation rules (triggers -> conditions -> actions) ────────
     path("api/v1/automation/", include("products.cycom.automation.urls")),
+    # ── No-code custom fields (tenant-declared extension fields) ────────────
+    path("api/v1/customfields/", include("products.cycom.customfields.urls")),
 ]
 
 # Dev-only: serve uploaded files (e.g. products.cycom.documents.Document's

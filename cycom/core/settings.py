@@ -123,6 +123,7 @@ PRODUCT_APPS = [
     "products.cycom.logistics",
     "products.cycom.simulations",
     "products.cycom.automation",
+    "products.cycom.customfields",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
