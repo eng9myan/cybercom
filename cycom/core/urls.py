@@ -5,6 +5,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from core.views.apps import InstalledAppsView
+from core.views.dashboard import DashboardSummaryView
 from core.views.health import HealthView, LivenessView, ReadinessView
 
 urlpatterns = [
@@ -15,6 +16,7 @@ urlpatterns = [
     path("health/liveness", LivenessView.as_view(), name="liveness-check"),
     path("health/readiness", ReadinessView.as_view(), name="readiness-check"),
     path("api/v1/common/installed-apps/", InstalledAppsView.as_view(), name="installed-apps"),
+    path("api/v1/common/dashboard-summary/", DashboardSummaryView.as_view(), name="dashboard-summary"),
     # ── OpenAPI Schema ─────────────────────────────────────────────────────
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
