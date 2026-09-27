@@ -6,6 +6,7 @@ import CycomSidebar from './CycomSidebar';
 import CycomTopbar from './CycomTopbar';
 import CyaiChatWidget from '../CyaiChatWidget';
 import PublicChatWidget from '../PublicChatWidget';
+import CommandPalette from '../CommandPalette';
 
 const PUBLIC_SITE_PREFIXES = ['/store/', '/blog/', '/forum/', '/learn/', '/site/'];
 
@@ -39,6 +40,8 @@ export default function CycomLayoutWrapper({ children }: { children: React.React
         </main>
       </div>
       <CyaiChatWidget />
+      {/* Ctrl/Cmd+K from anywhere in the admin shell. */}
+      <CommandPalette />
     </div>
   );
 }
