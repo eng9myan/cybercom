@@ -259,6 +259,11 @@ class NationalFormat:
         schema itself requires). Checked before a sequence number is taken."""
         return []
 
+    def signing_status(self) -> bool | None:
+        """None: the format has no document signature. Otherwise whether
+        usable signing credentials are installed (settings page)."""
+        return None
+
     def build(self, doc: DocInput) -> str:  # pragma: no cover - abstract
         raise NotImplementedError
 

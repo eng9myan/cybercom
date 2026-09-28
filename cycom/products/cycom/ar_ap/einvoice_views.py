@@ -20,7 +20,6 @@ from rest_framework.views import APIView
 from core.permissions import IsAuthenticatedViaClaims
 from platform.einvoicing.engine import NATIONAL_FORMATS, mode_for_country
 from platform.einvoicing.models import EInvoiceInteraction, EInvoiceProfile
-from platform.einvoicing.signing import KEY_LOADER, NATIONAL_KEY_ENV
 from platform.tenant.models import Tenant, TenantProfile
 from products.cycom.accounting.sequencing import OVERRIDE_ROLES
 from products.cycom.ar_ap.einvoice import (
@@ -92,7 +91,7 @@ class EInvoiceProfileView(APIView):
         values.setdefault("tax_id", "")
         # Map the format-spec vocabulary ("name") onto the profile column.
         values["name"] = values.get("legal_name") or ""
-        key_pem, cert_pem = KEY_LOADER(mode) if mode else (None, None)
+        signing = fmt.signing_status() if fmt else None
         return {
             "country_code": country,
             "mode": mode,
@@ -108,8 +107,8 @@ class EInvoiceProfileView(APIView):
                 "tax_id": getattr(tprofile, "vat_number", "") or "",
             },
             "transport_configured": bool(fmt and getattr(fmt.client(), "configured", False)),
-            "signing_supported": bool(mode in NATIONAL_KEY_ENV),
-            "signing_configured": bool(key_pem and cert_pem),
+            "signing_supported": signing is not None,
+            "signing_configured": bool(signing),
         }
 
     def get(self, request):

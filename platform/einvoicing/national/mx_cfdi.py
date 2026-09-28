@@ -135,6 +135,13 @@ class MxCfdi(NationalFormat):
         if problems:
             raise EInvoiceDataMissing(self.mode, problems)
 
+    def signing_status(self) -> bool:
+        try:
+            _csd()
+            return True
+        except TransportNotConfigured:
+            return False
+
     def signing_problems(self, doc: DocInput) -> list[dict]:
         try:
             _csd()

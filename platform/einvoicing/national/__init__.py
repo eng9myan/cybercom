@@ -10,6 +10,7 @@ from .base import (  # noqa: F401
     PartyInput,
     TransportNotConfigured,
 )
+from .br_nfe import BrNfe
 from .it_fatturapa import ItFatturaPA
 from .mx_cfdi import MxCfdi
 from .pl_ksef import PlKsef
@@ -19,6 +20,7 @@ FORMATS: dict[str, NationalFormat] = {
         ItFatturaPA(),
         PlKsef(),
         MxCfdi(),
+        BrNfe(),
     )
 }
 

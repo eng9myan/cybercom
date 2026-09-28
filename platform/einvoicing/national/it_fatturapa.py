@@ -248,6 +248,12 @@ class ItFatturaPA(NationalFormat):
 
         return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(root, encoding="unicode")
 
+    def signing_status(self) -> bool:
+        from ..signing import KEY_LOADER
+
+        key_pem, cert_pem = KEY_LOADER(self.mode)
+        return bool(key_pem and cert_pem)
+
     def signing_problems(self, doc: DocInput) -> list[dict]:
         from ..signing import KEY_LOADER
 
