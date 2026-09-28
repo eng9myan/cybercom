@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Percent, Workflow, Key, Cloud, Tag } from 'lucide-react';
+import { Percent, Workflow, Key, Cloud, Tag, FileCheck2 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
 export default function SettingsAdminPage() {
@@ -31,6 +31,18 @@ export default function SettingsAdminPage() {
               <p className="text-[10px] text-slate-500 mt-1">{t('settingsMain.customFieldsDesc')}</p>
             </div>
             <span className="text-[10px] text-amber-400 font-bold mt-4 inline-block">{t('settingsMain.configure')}</span>
+          </Link>
+
+          <Link
+            href="/settings/einvoicing"
+            className="p-4 bg-slate-950/40 border border-slate-850 rounded-xl hover:border-cyan-500/30 hover:bg-slate-900/20 transition-all flex flex-col justify-between"
+          >
+            <div>
+              <FileCheck2 className="w-6 h-6 text-cyan-400 mb-2" />
+              <h4 className="font-semibold text-slate-200">{t('settingsMain.einvoicingTitle')}</h4>
+              <p className="text-[10px] text-slate-500 mt-1">{t('settingsMain.einvoicingDesc')}</p>
+            </div>
+            <span className="text-[10px] text-cyan-400 font-bold mt-4 inline-block">{t('settingsMain.configure')}</span>
           </Link>
 
           <Link

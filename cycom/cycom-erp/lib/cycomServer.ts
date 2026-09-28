@@ -245,6 +245,17 @@ export async function cycomBackendProxy(
   }
   try {
     const upstream = await backendFetch(targetPath, sessionId, init);
+    const upstreamType = upstream.headers.get('content-type') || '';
+    if (upstream.ok && upstreamType && !upstreamType.includes('json')) {
+      // Successful file responses (XML e-invoices, PDFs, CSV): pass the
+      // bytes and the download headers through untouched -- forcing them
+      // through .json() turned every download into an empty "{}". Error
+      // responses keep the JSON path existing callers rely on.
+      const headers = new Headers({ 'Content-Type': upstreamType });
+      const disposition = upstream.headers.get('content-disposition');
+      if (disposition) headers.set('Content-Disposition', disposition);
+      return new NextResponse(await upstream.arrayBuffer(), { status: upstream.status, headers });
+    }
     const payload = await upstream.json().catch(() => ({}));
     return NextResponse.json(payload, { status: upstream.status });
   } catch (err: any) {

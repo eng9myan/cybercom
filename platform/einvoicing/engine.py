@@ -32,6 +32,9 @@ from .clients.jofotara import JoFotaraClient
 from .clients.peppol import PeppolClient
 from .hashing import invoice_hash
 from .models import EInvoiceInteraction, EInvoiceSequence
+from .national import COUNTRY_MODES as _NATIONAL_COUNTRY_MODES
+from .national import FORMATS as NATIONAL_FORMATS
+from .national import DocInput, EInvoiceDataMissing, TransportNotConfigured
 from .signing import get_signer
 from .ubl import (
     JoInvoiceData,
@@ -59,12 +62,15 @@ _PEPPOL_COUNTRIES = [
     "AU", "NZ", "SG", "MY", "JP",
 ]
 
+# A national mandate outranks Peppol for the same country (e.g. IT: FatturaPA
+# via SdI is the legal B2B channel; Peppol is only used for cross-border).
 MODE_BY_COUNTRY = {
     "JO": "jo_jofotara",
     "SA": "sa_zatca",
     **{c: "eu_peppol" for c in _PEPPOL_COUNTRIES},
+    **_NATIONAL_COUNTRY_MODES,
 }
-_IMPLEMENTED = {"jo_jofotara", "sa_zatca", "eu_peppol"}
+_IMPLEMENTED = {"jo_jofotara", "sa_zatca", "eu_peppol", *NATIONAL_FORMATS}
 
 
 @dataclass
@@ -132,6 +138,8 @@ def clear_invoice(
         raise ValueError(f"no e-invoicing mode configured for country {country_code!r}")
     if mode not in _IMPLEMENTED:
         raise NotImplementedError(f"e-invoicing mode {mode!r} not implemented yet (see spec §7)")
+    if mode in NATIONAL_FORMATS:
+        raise ValueError(f"{mode!r} is a national format -- call clear_national() with a DocInput")
 
     uuid_val = str(uuid4())
 
@@ -194,6 +202,123 @@ def clear_invoice(
 
 def _norm_status(s: str) -> str:
     return "cleared" if s in ("cleared", "submitted") else s
+
+
+# ── National formats (IT FatturaPA, PL KSeF, MX CFDI, ...) ─────────────────
+@dataclass
+class NationalResult(EInvoiceResult):
+    """`status` adds two outcomes to the UBL modes' set:
+    incomplete -- required national data is missing; nothing was issued, no
+                  sequence number consumed; `problems` says what to fill in.
+    generated  -- the legal document was built (and signed where required)
+                  and stored, but no transmission channel is configured; it
+                  can be downloaded and filed manually.
+    """
+
+    problems: list | None = None
+    document: str = ""
+    document_filename: str = ""
+
+
+def clear_national(*, tenant_id, scope: str, mode: str, doc: DocInput, client=None) -> NationalResult:
+    fmt = NATIONAL_FORMATS[mode]
+    doc.uuid = doc.uuid or str(uuid4())
+
+    # Validate before taking a sequence number: an incomplete document must
+    # not burn a progressive/ICV (several mandates require them gap-free).
+    try:
+        fmt.validate(doc)
+    except EInvoiceDataMissing as exc:
+        return NationalResult(mode=mode, uuid=doc.uuid, icv=0, pih="", invoice_hash="",
+                              status="incomplete", error=str(exc), problems=exc.problems)
+
+    with transaction.atomic():
+        seq, _ = EInvoiceSequence.objects.select_for_update().get_or_create(
+            tenant_id=tenant_id, scope=scope, mode=mode,
+        )
+        doc.icv = seq.next_icv
+        pih = seq.last_hash
+
+        unsigned = fmt.build(doc)
+        schema_errors = fmt.schema_errors(unsigned)
+        this_hash = invoice_hash(unsigned)
+        filename = fmt.filename(doc)
+        result = NationalResult(mode=mode, uuid=doc.uuid, icv=doc.icv, pih=pih,
+                                invoice_hash=this_hash, status="pending",
+                                document_filename=filename)
+        interaction = EInvoiceInteraction.objects.create(
+            tenant_id=tenant_id, mode=mode, invoice_ref=doc.number, invoice_uuid=doc.uuid,
+            icv=doc.icv, pih=pih, invoice_hash=this_hash, status="pending",
+            request_xml_sha=hashlib.sha256(unsigned.encode()).hexdigest(),
+            document_filename=filename,
+        )
+
+        if schema_errors:
+            # Defensive gate -- the builders are tested against the official
+            # XSDs, but never transmit a document the schema rejects.
+            result.status = "rejected"
+            result.error = "Generated document failed schema validation: " + "; ".join(schema_errors[:5])
+        else:
+            try:
+                signed = fmt.sign(unsigned, doc)
+                result.document = signed
+                interaction.document = signed
+                resp = fmt.submit(signed, doc, client=client)
+                result.status = _norm_status(resp["status"])
+                result.provider_reference = resp.get("reference", "")
+                result.qr = resp.get("qr", "")
+                interaction.response = resp.get("raw", {})
+            except TransportNotConfigured as exc:
+                result.status, result.error = ("generated", str(exc)) if result.document else ("rejected", str(exc))
+            except Exception as exc:
+                logger.warning("%s submission failed for %s: %s", mode, doc.number, exc)
+                result.status, result.error = "rejected", str(exc)
+
+        interaction.status = result.status
+        interaction.provider_reference = result.provider_reference
+        interaction.qr = result.qr
+        interaction.error_message = result.error
+        interaction.save(update_fields=[
+            "status", "provider_reference", "qr", "response", "error_message",
+            "document", "updated_at",
+        ])
+
+        # A generated document is an issued document (it carries this
+        # progressive and may be filed manually), so the sequence advances
+        # for it as well as for an accepted one.
+        if result.ok or result.status == "generated":
+            seq.next_icv = doc.icv + 1
+            seq.last_hash = this_hash
+            seq.save(update_fields=["next_icv", "last_hash", "updated_at"])
+
+    return result
+
+
+def resubmit_national(*, interaction: EInvoiceInteraction, doc: DocInput, client=None) -> NationalResult:
+    """Transmit an already-generated document (e.g. once a transport has
+    been configured) WITHOUT rebuilding it: it already carries its
+    progressive, and may already have been filed manually."""
+    fmt = NATIONAL_FORMATS[interaction.mode]
+    doc.icv = interaction.icv
+    result = NationalResult(mode=interaction.mode, uuid=str(interaction.invoice_uuid), icv=interaction.icv,
+                            pih=interaction.pih, invoice_hash=interaction.invoice_hash, status="pending",
+                            document=interaction.document, document_filename=interaction.document_filename)
+    try:
+        resp = fmt.submit(interaction.document, doc, client=client)
+        result.status = _norm_status(resp["status"])
+        result.provider_reference = resp.get("reference", "")
+        result.qr = resp.get("qr", "")
+        interaction.response = resp.get("raw", {})
+    except TransportNotConfigured as exc:
+        result.status, result.error = "generated", str(exc)
+    except Exception as exc:
+        result.status, result.error = "rejected", str(exc)
+    interaction.status = result.status
+    interaction.provider_reference = result.provider_reference
+    interaction.qr = result.qr
+    interaction.error_message = result.error
+    interaction.save(update_fields=["status", "provider_reference", "qr", "response", "error_message", "updated_at"])
+    return result
 
 
 # ── Peppol (EN 16931 / BIS Billing 3.0) ────────────────────────────────────

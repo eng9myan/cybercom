@@ -7,6 +7,7 @@ import { useT } from '@/lib/i18n';
 import { LoadingCard } from '@/components/CycomEmptyStates';
 import { statusTone, REAL_INVOICE_STATE } from '@/lib/status';
 import { formatApiErrors } from '@/lib/apiErrors';
+import InvoiceEInvoicePanel from '@/components/InvoiceEInvoicePanel';
 
 interface InvoiceLine {
   id: string;
@@ -161,6 +162,9 @@ export default function InvoiceDetailPage() {
             <div className="flex items-start gap-2 p-3 rounded-lg border bg-emerald-950/40 border-emerald-500/20 text-emerald-400">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" /> {t('invoices.postedNote')}
             </div>
+          )}
+          {(invoice.invoice_type === 'customer' || invoice.invoice_type === 'customer_credit_note') && (
+            <InvoiceEInvoicePanel invoiceId={invoice.id} invoiceStatus={invoice.status} />
           )}
           {postError && (
             <div className="flex items-start gap-2 p-3 rounded-lg border bg-rose-950/40 border-rose-500/20 text-rose-400">

@@ -165,8 +165,23 @@ def _read(path: str) -> bytes | None:
     return None
 
 
+#: env-var prefix per national format's signing credentials
+#: (<PREFIX>_PRIVATE_KEY_PATH / <PREFIX>_CERT_PATH)
+NATIONAL_KEY_ENV = {
+    "it_fatturapa": "FATTURAPA",
+    "mx_cfdi": "CFDI_CSD",
+    "br_nfe": "NFE",
+}
+
+
 #: swap for a KMS/HSM loader in production — signature: (mode) -> (key_pem, cert_pem) | (None, None)
 def KEY_LOADER(mode: str) -> tuple[bytes | None, bytes | None]:
+    if mode in NATIONAL_KEY_ENV:
+        prefix = NATIONAL_KEY_ENV[mode]
+        return (
+            _read(os.getenv(f"{prefix}_PRIVATE_KEY_PATH", "")),
+            _read(os.getenv(f"{prefix}_CERT_PATH", "")),
+        )
     if mode == "jo_jofotara":
         return (
             _read(os.getenv("JOFOTARA_PRIVATE_KEY_PATH", "")),

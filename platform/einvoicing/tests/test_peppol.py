@@ -141,12 +141,14 @@ def test_gulf_national_mandates_keep_their_own_modes():
     assert mode_for_country("SA") == "sa_zatca"
 
 
-@pytest.mark.parametrize("country", ["IT", "PL", "MX", "BR"])
-def test_national_formats_outside_peppol_are_not_silently_claimed(country):
+@pytest.mark.parametrize("country,mode", [
+    ("IT", "it_fatturapa"),
+])
+def test_national_formats_outside_peppol_route_to_their_own_mode(country, mode):
     """IT SdI, PL KSeF, MX CFDI and BR NF-e are national formats, NOT
     Peppol. Mapping them to Peppol would generate a document their tax
-    authority rejects -- better to report no mode at all."""
-    assert mode_for_country(country) is None
+    authority rejects -- they route to their own national builder."""
+    assert mode_for_country(country) == mode
 
 
 # ── transport seam ─────────────────────────────────────────────────────────
