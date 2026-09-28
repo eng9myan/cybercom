@@ -148,7 +148,7 @@ export default function OnboardingPage() {
                     {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
                   </select>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="col-span-1">
                     <label className="text-xs font-semibold text-white/60 block mb-1.5">{t('onboardingPage.taxName')}</label>
                     <input className="input-field w-full" value={tax.name} onChange={(e) => setTax((t) => ({ ...t, name: e.target.value }))} />

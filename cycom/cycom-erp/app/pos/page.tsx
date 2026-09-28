@@ -321,9 +321,12 @@ export default function PosDashboard() {
           </div>
         </div>
 
-        <div className="flex flex-1 overflow-hidden">
+        {/* Side-by-side at lg+ (a POS terminal); stacked below that so the
+            fixed-380px cart panel doesn't crush the product grid to near-zero
+            width on a phone. */}
+        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
           {/* LEFT: Product Catalog */}
-          <div className="flex-1 flex flex-col border-r border-white/5 overflow-hidden">
+          <div className="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r border-white/5 overflow-hidden min-h-0">
             {/* Search & Barcode */}
             <div className="px-4 py-3 flex gap-3 border-b border-white/5 flex-shrink-0">
               <div className="flex items-center gap-2 bg-white/3 border border-white/8 rounded-xl px-3 py-1.5 flex-1">
@@ -363,7 +366,7 @@ export default function PosDashboard() {
             </div>
 
             {/* Product Grid */}
-            <div className="flex-1 overflow-y-auto p-4 grid grid-cols-3 xl:grid-cols-4 gap-3 content-start">
+            <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 content-start">
               {filteredProducts.map(product => (
                 <button
                   key={product.id}
@@ -386,7 +389,7 @@ export default function PosDashboard() {
           </div>
 
           {/* RIGHT: Order Panel */}
-          <div className="w-[380px] flex flex-col bg-[#0b0f19]">
+          <div className="w-full lg:w-[380px] flex flex-col bg-[#0b0f19] max-h-[45vh] lg:max-h-none min-h-0 flex-shrink-0">
             {/* Customer */}
             <div className="px-4 py-3 border-b border-white/5 flex-shrink-0">
               <input 

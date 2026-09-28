@@ -340,8 +340,8 @@ export default function BranchOrders() {
 
                 {/* Cart list */}
                 {cart.length > 0 && (
-                  <div className="border border-slate-850 rounded-xl overflow-hidden">
-                    <table className="w-full border-collapse bg-slate-950/20 text-xs">
+                  <div className="border border-slate-850 rounded-xl overflow-x-auto">
+                    <table className="w-full min-w-[420px] border-collapse bg-slate-950/20 text-xs">
                       <thead>
                         <tr className="bg-slate-950 text-slate-500 uppercase font-semibold border-b border-slate-850">
                           <th className="p-3 text-start">{t('branchOrders.colProduct')}</th>

@@ -77,7 +77,7 @@ export default function MyPayslipsPortal() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-6 text-xs text-start">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 text-xs text-start">
                 <div>
                   <span className="text-slate-500 block">{t('portalPayslips.basic')}</span>
                   <span className="font-semibold text-slate-200">{p.basic}</span>

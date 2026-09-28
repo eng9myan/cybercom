@@ -223,7 +223,7 @@ export default function PlanningPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-500 uppercase">{t('planningDash.weekday')}</label>
                   <select
@@ -286,6 +286,10 @@ export default function PlanningPage() {
           <div className="glass-card p-5 space-y-4">
             <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400 border-b border-white/5 pb-3">{t('planningDash.boardHeading')}</h2>
 
+            {/* 8 columns (name + 7 days) don't collapse sensibly on a phone --
+                scroll horizontally instead, same as the ledger table below. */}
+            <div className="overflow-x-auto">
+            <div className="min-w-[640px]">
             <div className="grid grid-cols-8 gap-2 text-center text-xs font-bold border-b border-white/5 pb-2">
               <div className="text-start text-slate-500">{t('planningDash.employeeCol')}</div>
               {DAYS.map(d => <div key={d} className="text-slate-400">{t(DAY_KEY[d])}</div>)}
@@ -323,6 +327,8 @@ export default function PlanningPage() {
                   </div>
                 );
               })}
+            </div>
+            </div>
             </div>
           </div>
 

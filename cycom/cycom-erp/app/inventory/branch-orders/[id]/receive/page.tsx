@@ -145,8 +145,8 @@ export default function ReceiveReplenishment() {
             {t('receiveOrder.verifyHeading')}
           </h3>
 
-          <div className="border border-slate-850 rounded-xl overflow-hidden">
-            <table className="w-full border-collapse bg-slate-950/20 text-xs text-start">
+          <div className="border border-slate-850 rounded-xl overflow-x-auto">
+            <table className="w-full min-w-[640px] border-collapse bg-slate-950/20 text-xs text-start">
               <thead>
                 <tr className="bg-slate-950 text-slate-500 uppercase font-semibold border-b border-slate-850">
                   <th className="p-3">{t('receiveOrder.colProduct')}</th>
