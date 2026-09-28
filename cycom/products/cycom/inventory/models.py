@@ -87,6 +87,17 @@ class StorageLocation(BaseModel):
     sort_order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
 
+    # Floor-plan placement for the 2D/3D warehouse map. Null until a tenant
+    # actually places this node on the map -- placement is opt-in per node
+    # (a tenant may only place zones, or only racks, or nothing at all) and
+    # nothing else reads these fields, so leaving them unset never affects
+    # stock/valuation. Units are arbitrary "floor tiles", not a real-world
+    # scale; the map view picks its own pixel-per-tile factor.
+    pos_x = models.FloatField(null=True, blank=True)
+    pos_y = models.FloatField(null=True, blank=True)
+    size_w = models.FloatField(null=True, blank=True)
+    size_d = models.FloatField(null=True, blank=True)
+
     class Meta:
         db_table = "cycom_inventory_storage_locations"
         ordering = ["warehouse", "sort_order", "code"]

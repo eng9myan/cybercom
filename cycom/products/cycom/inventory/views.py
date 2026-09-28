@@ -64,6 +64,47 @@ class WarehouseViewSet(TenantScopedModelViewSet):
         data["warehouse"] = {"id": str(warehouse.id), "code": warehouse.code, "name": warehouse.name}
         return Response(data)
 
+    @action(detail=True, methods=["post"], url_path="layout/positions")
+    def layout_positions(self, request, pk=None):
+        """
+        Bulk-save floor-plan placement from the 2D map editor: one call per
+        drag-and-drop session instead of a PATCH per box. Body:
+        {"positions": [{"id": "<uuid>", "pos_x": 1.0, "pos_y": 2.0,
+        "size_w": 1.0, "size_d": 1.0}, ...]}. `pos_x`/`pos_y` may be null to
+        remove a location from the map. Only locations that actually belong
+        to this warehouse (and tenant) are touched -- a crafted id for
+        another warehouse/tenant's location is silently skipped, not a 500
+        or a cross-tenant write.
+        """
+        warehouse = self.get_object()
+        positions = request.data.get("positions")
+        if not isinstance(positions, list):
+            return Response({"detail": "'positions' must be a list."}, status=400)
+
+        ids = [p.get("id") for p in positions if isinstance(p, dict) and p.get("id")]
+        locations = {
+            str(loc.id): loc
+            for loc in StorageLocation.objects.filter(
+                tenant_id=request.tenant_id, warehouse=warehouse, id__in=ids,
+            )
+        }
+
+        updated = []
+        for p in positions:
+            loc = locations.get(p.get("id")) if isinstance(p, dict) else None
+            if loc is None:
+                continue
+            fields = []
+            for field in ("pos_x", "pos_y", "size_w", "size_d"):
+                if field in p:
+                    setattr(loc, field, p[field])
+                    fields.append(field)
+            if fields:
+                loc.save(update_fields=[*fields, "updated_at"])
+                updated.append(str(loc.id))
+
+        return Response({"updated": updated})
+
 
 class StorageLocationViewSet(TenantScopedModelViewSet):
     queryset = StorageLocation.objects.select_related("warehouse", "parent").all()

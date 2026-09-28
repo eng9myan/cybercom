@@ -7,12 +7,19 @@
 // looking for "which bin is full / where is this stock", and a flat map
 // answers that faster than a rotatable warehouse model.
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Warehouse as WarehouseIcon, Boxes, PackageOpen, ChevronRight, AlertTriangle,
+  List, Grid3x3, Box as Box3d,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import { flattenLayout } from '@/lib/warehouseHeat';
+import Warehouse2DEditor from '@/components/warehouse/Warehouse2DEditor';
+import dynamic from 'next/dynamic';
+
+// Three.js touches the DOM/WebGL directly -- never render it during SSR.
+const Warehouse3DScene = dynamic(() => import('@/components/warehouse/Warehouse3DScene'), { ssr: false });
 
 interface LocationNode {
   id: string;
@@ -25,6 +32,10 @@ interface LocationNode {
   total_quantity: number;
   total_value: number;
   total_product_count: number;
+  pos_x: number | null;
+  pos_y: number | null;
+  size_w: number | null;
+  size_d: number | null;
   children: LocationNode[];
 }
 
@@ -109,6 +120,9 @@ export default function WarehouseMapPage() {
   const [layout, setLayout] = useState<Layout | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | '2d' | '3d'>('list');
+
+  const flatNodes = useMemo(() => (layout ? flattenLayout(layout.tree) : []), [layout]);
 
   useEffect(() => {
     fetch('/api/cycom/rest/inventory/warehouses/', { credentials: 'include' })
@@ -205,13 +219,37 @@ export default function WarehouseMapPage() {
               </div>
             )}
 
-            {layout.tree.length === 0 ? (
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/3 border border-white/8 w-fit">
+              {([
+                ['list', List, t('warehouseMap.viewList')],
+                ['2d', Grid3x3, t('warehouseMap.view2d')],
+                ['3d', Box3d, t('warehouseMap.view3d')],
+              ] as const).map(([mode, Icon, label]) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition ${
+                    viewMode === mode ? 'bg-amber-500/15 text-amber-400' : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" /> {label}
+                </button>
+              ))}
+            </div>
+
+            {viewMode === '2d' && (
+              <Warehouse2DEditor warehouseId={warehouseId} nodes={flatNodes} onSaved={load} />
+            )}
+
+            {viewMode === '3d' && <Warehouse3DScene nodes={flatNodes} />}
+
+            {viewMode === 'list' && (layout.tree.length === 0 ? (
               <div className="glass-card p-12 text-center text-slate-500">{t('warehouseMap.noLayout')}</div>
             ) : (
               <div className="space-y-4">
                 {layout.tree.map((zone) => <LocationCard key={zone.id} node={zone} depth={0} />)}
               </div>
-            )}
+            ))}
 
             <div className="flex flex-wrap items-center gap-5 text-[10px] text-slate-500">
               {[

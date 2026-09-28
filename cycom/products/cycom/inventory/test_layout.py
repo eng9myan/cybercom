@@ -185,3 +185,62 @@ def test_layout_is_tenant_isolated(admin_client, tenant_id):
     theirs = Warehouse.objects.create(tenant_id=other_tenant, code="X", name="Theirs")
     resp = admin_client.get(f"/api/v1/inventory/warehouses/{theirs.pk}/layout/")
     assert resp.status_code == 404
+
+
+def test_layout_reports_null_position_for_an_unplaced_location(tenant_id, warehouse):
+    loc(tenant_id, warehouse, "Z1", "zone")
+    data = _layout(tenant_id, warehouse)
+    assert data["tree"][0]["pos_x"] is None
+    assert data["tree"][0]["size_w"] is None
+
+
+def test_layout_positions_bulk_save(admin_client, tenant_id, warehouse):
+    z1 = loc(tenant_id, warehouse, "Z1", "zone")
+    z2 = loc(tenant_id, warehouse, "Z2", "zone")
+
+    resp = admin_client.post(
+        f"/api/v1/inventory/warehouses/{warehouse.pk}/layout/positions/",
+        {"positions": [
+            {"id": str(z1.pk), "pos_x": 1.0, "pos_y": 2.0, "size_w": 3.0, "size_d": 4.0},
+            {"id": str(z2.pk), "pos_x": 5.0, "pos_y": 6.0},
+        ]},
+        format="json",
+    )
+    assert resp.status_code == 200
+    assert set(resp.data["updated"]) == {str(z1.pk), str(z2.pk)}
+
+    z1.refresh_from_db()
+    z2.refresh_from_db()
+    assert (z1.pos_x, z1.pos_y, z1.size_w, z1.size_d) == (1.0, 2.0, 3.0, 4.0)
+    assert (z2.pos_x, z2.pos_y) == (5.0, 6.0)
+    assert z2.size_w is None  # untouched field stays null, not clobbered to 0
+
+
+def test_layout_positions_can_clear_a_placement(admin_client, tenant_id, warehouse):
+    z = loc(tenant_id, warehouse, "Z1", "zone")
+    z.pos_x, z.pos_y = 1.0, 2.0
+    z.save(update_fields=["pos_x", "pos_y"])
+
+    resp = admin_client.post(
+        f"/api/v1/inventory/warehouses/{warehouse.pk}/layout/positions/",
+        {"positions": [{"id": str(z.pk), "pos_x": None, "pos_y": None}]},
+        format="json",
+    )
+    assert resp.status_code == 200
+    z.refresh_from_db()
+    assert z.pos_x is None and z.pos_y is None
+
+
+def test_layout_positions_silently_skips_a_location_outside_this_warehouse(admin_client, tenant_id, warehouse):
+    other = Warehouse.objects.create(tenant_id=tenant_id, code="WH2", name="Other")
+    foreign = loc(tenant_id, other, "ZX", "zone")
+
+    resp = admin_client.post(
+        f"/api/v1/inventory/warehouses/{warehouse.pk}/layout/positions/",
+        {"positions": [{"id": str(foreign.pk), "pos_x": 1.0, "pos_y": 1.0}]},
+        format="json",
+    )
+    assert resp.status_code == 200
+    assert resp.data["updated"] == []
+    foreign.refresh_from_db()
+    assert foreign.pos_x is None  # the other warehouse's location was never touched
