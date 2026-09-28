@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useCycomList, m2oName, fmtDate, type Many2One } from '@/lib/cycomModels';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FolderOpen, Folder, Plus, Trash2, Download, Search,
   FileText, ShieldCheck, CheckCircle, PenTool,
-  Send, FileSignature, Award, X
+  Send, FileSignature, Award, X, Sparkles
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
@@ -283,6 +284,13 @@ export default function DocumentsPage() {
             {t('documentsPage.tabEsign')}
           </button>
         </div>
+
+        <Link
+          href="/documents/ai-parse"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#A855F7]/20 to-[#00F0FF]/20 border border-[#A855F7]/30 text-[#A855F7] text-xs font-bold hover:border-[#A855F7]/50 transition-colors"
+        >
+          <Sparkles className="w-3.5 h-3.5" /> {t('documentsPage.aiParseLink')}
+        </Link>
       </div>
 
       {/* DMS TAB VIEW */}

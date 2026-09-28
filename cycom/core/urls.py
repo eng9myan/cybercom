@@ -117,6 +117,8 @@ urlpatterns = [
     path("api/v1/automation/", include("products.cycom.automation.urls")),
     # ── No-code custom fields (tenant-declared extension fields) ────────────
     path("api/v1/customfields/", include("products.cycom.customfields.urls")),
+    # ── AI document parsing (invoice/PO/bank-statement extraction) ──────────
+    path("api/v1/docai/", include("products.cycom.docai.urls")),
 ]
 
 # Dev-only: serve uploaded files (e.g. products.cycom.documents.Document's

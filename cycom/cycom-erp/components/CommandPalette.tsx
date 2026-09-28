@@ -98,6 +98,7 @@ export default function CommandPalette() {
     // Workspace
     { href: '/discuss', label: t('appLauncher.modDiscuss'), group: t('palette.groupWorkspace'), keywords: 'chat channels messages' },
     { href: '/documents', label: t('appLauncher.modDocuments'), group: t('palette.groupWorkspace'), keywords: 'files attachments' },
+    { href: '/documents/ai-parse', label: t('documentsPage.aiParseLink'), group: t('palette.groupWorkspace'), keywords: 'ai document parse invoice ocr extract' },
     { href: '/sign', label: t('appLauncher.modSign'), group: t('palette.groupWorkspace'), keywords: 'esignature signature' },
     { href: '/approvals', label: t('palette.approvals'), group: t('palette.groupWorkspace'), keywords: 'hitl review queue authorise' },
 
