@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { searchRead } from '@/lib/cycom';
 import { useT } from '@/lib/i18n';
+import CustomFieldsPanel from '@/components/CustomFieldsPanel';
 
 /**
  * Employee Directory
@@ -21,7 +22,7 @@ import { useT } from '@/lib/i18n';
 
 type Employee = {
   id: string;       // formatted code, e.g. EMP-00249
-  rawId: number;    // Cycom numeric id
+  rawId: string;    // real backend UUID (hr.Employee.id), despite the historical name
   name: string;
   role: string;
   department: string;
@@ -38,7 +39,7 @@ type Employee = {
 };
 
 type CycomEmployeeRecord = {
-  id: number;
+  id: string; // real backend UUID (hr.Employee.id) passed through by the RPC shim
   name?: string;
   work_email?: string | false;
   work_phone?: string | false;
@@ -342,6 +343,8 @@ export default function EmployeeDirectory() {
                     </div>
                   </div>
                 </div>
+
+                <CustomFieldsPanel modelKey="employee" recordId={selectedEmp.rawId} />
               </div>
             </motion.div>
           </>

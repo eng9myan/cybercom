@@ -20,10 +20,14 @@ export type StatusKey =
   | "waiting"
   | "ready"
   | "completed"
+  | "delivered"
+  | "invoiced"
+  | "rejected"
+  | "partiallyReceived"
   | "unknown";
 
-const GREEN: StatusKey[] = ["confirmed", "done", "approved", "reimbursed", "completed"];
-const RED: StatusKey[] = ["cancelled", "declined"];
+const GREEN: StatusKey[] = ["confirmed", "done", "approved", "reimbursed", "completed", "delivered", "invoiced"];
+const RED: StatusKey[] = ["cancelled", "declined", "rejected"];
 const YELLOW: StatusKey[] = [
   "draft",
   "pendingApproval",
@@ -32,6 +36,7 @@ const YELLOW: StatusKey[] = [
   "rfqSent",
   "submitted",
   "waiting",
+  "partiallyReceived",
 ];
 
 /** Tailwind badge class for a status key (matches the design-system badges). */
@@ -75,4 +80,24 @@ export const TRANSFER_STATE: Record<string, StatusKey> = {
   assigned: "ready",
   done: "completed",
   cancel: "cancelled",
+};
+
+// The two maps below are for pages reading the *real* backend REST
+// endpoints directly (products.cycom.sales / products.cycom.procurement),
+// not the legacy Odoo-shaped RPC shim -- their status vocab is different
+// from SALES_STATE / PURCHASE_STATE above, which map Odoo's state strings.
+export const REAL_SALES_ORDER_STATE: Record<string, StatusKey> = {
+  draft: "draft",
+  confirmed: "confirmed",
+  delivered: "delivered",
+  invoiced: "invoiced",
+  cancelled: "cancelled",
+};
+
+export const REAL_PURCHASE_ORDER_STATE: Record<string, StatusKey> = {
+  draft: "draft",
+  approved: "approved",
+  rejected: "rejected",
+  received: "completed",
+  partially_received: "partiallyReceived",
 };

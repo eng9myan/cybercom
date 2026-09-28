@@ -1,9 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { ShoppingBag, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { useCycomList, m2oName, type Many2One } from '@/lib/cycomModels';
 import { useT } from '@/lib/i18n';
+import { statusTone, REAL_SALES_ORDER_STATE } from '@/lib/status';
+
+interface RealOrderRow {
+  id: string;
+  number: string;
+  customer_name: string;
+  order_date: string;
+  amount_total: number;
+  status: string;
+  currency: string;
+}
 
 type CySaleOrderItem = {
   id: number;
@@ -37,6 +49,16 @@ export default function SalesOrderCreation() {
   const [priceOverrides, setPriceOverrides] = useState<Record<string, { customPrice: number; error: boolean }>>({});
   const items = baseItems.map((item) => ({ ...item, ...(priceOverrides[item.id] || {}) }));
   const [customer] = useState('Cycom Trading Est');
+
+  const [recentOrders, setRecentOrders] = useState<RealOrderRow[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/cycom/rest/sales/orders/', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data) => setRecentOrders(data.results || data || []))
+      .finally(() => setOrdersLoading(false));
+  }, []);
 
   const updatePrice = (id: string, priceVal: number) => {
     const baseItem = baseItems.find((i) => i.id === id);
@@ -139,6 +161,44 @@ export default function SalesOrderCreation() {
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="glass-card p-6">
+        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">{t('salesOrders.recentOrdersHeading')}</h2>
+        {ordersLoading ? (
+          <div className="py-6 text-center text-slate-500 text-xs">{t('common.loading')}</div>
+        ) : recentOrders.length === 0 ? (
+          <div className="py-6 text-center text-slate-500 text-xs">{t('salesOrders.noOrdersYet')}</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>{t('salesOrders.colNumber')}</th>
+                  <th>{t('common.customer')}</th>
+                  <th>{t('common.date')}</th>
+                  <th>{t('common.total')}</th>
+                  <th>{t('common.status')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentOrders.map((o) => (
+                  <tr key={o.id}>
+                    <td className="font-mono text-xs font-bold text-slate-400">
+                      <Link href={`/sales/orders/${o.id}`} className="hover:text-purple-400 transition-colors">
+                        {o.number}
+                      </Link>
+                    </td>
+                    <td className="font-semibold text-slate-200">{o.customer_name}</td>
+                    <td className="text-slate-400">{o.order_date}</td>
+                    <td className="font-bold text-white">{o.currency} {Number(o.amount_total).toFixed(2)}</td>
+                    <td><span className={`badge ${statusTone(REAL_SALES_ORDER_STATE[o.status] || 'unknown')}`}>{t(`status.${REAL_SALES_ORDER_STATE[o.status] || 'unknown'}`)}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

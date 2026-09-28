@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Briefcase, AlertCircle, ShoppingBag, Users } from 'lucide-react';
 import { useCycomList, fmtDate, fmtMoney, m2oName, type Many2One } from '@/lib/cycomModels';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/CycomEmptyStates';
@@ -38,6 +39,7 @@ const mapPO = (r: CycomPO): PurchaseOrderRow => ({
 
 export default function PurchasePage() {
   const t = useT();
+  const router = useRouter();
   const { rows: orders, loading, error } = useCycomList<CycomPO, PurchaseOrderRow>(
     'purchase.order',
     [],
@@ -92,7 +94,11 @@ export default function PurchasePage() {
               </thead>
               <tbody>
                 {orders.map((o) => (
-                  <tr key={o.rawId}>
+                  <tr
+                    key={o.rawId}
+                    onClick={() => router.push(`/purchase/orders/${o.rawId}`)}
+                    className="cursor-pointer hover:bg-white/5 transition-colors"
+                  >
                     <td className="font-mono text-xs font-bold text-slate-400">{o.id}</td>
                     <td className="font-semibold text-slate-200">{o.vendorName}</td>
                     <td className="text-slate-400">{o.date}</td>

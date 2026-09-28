@@ -39,6 +39,7 @@ class PurchaseRequestSerializer(serializers.ModelSerializer):
 
 class PurchaseOrderLineSerializer(serializers.ModelSerializer):
     quantity_remaining = serializers.DecimalField(max_digits=12, decimal_places=4, read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
 
     class Meta:
         model = PurchaseOrderLine

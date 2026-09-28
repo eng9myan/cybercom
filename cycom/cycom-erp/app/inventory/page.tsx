@@ -173,6 +173,9 @@ export default function InventoryDashboard() {
           <p className="page-subtitle">{t('invDash.subtitle')}</p>
         </div>
         <div className="flex gap-3">
+          <Link href="/inventory/products" className="btn-secondary flex items-center gap-2">
+            <Package className="w-4 h-4 text-cyan-400" /> {t('invDash.productCatalog')}
+          </Link>
           <Link href="/inventory/branch-orders" className="btn-primary flex items-center gap-2">
             <RefreshCw className="w-4 h-4" /> {t('invDash.replenishment')}
           </Link>
