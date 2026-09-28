@@ -78,6 +78,7 @@ export default function CommandPalette() {
     // Finance
     { href: '/accounting', label: t('appLauncher.modAccounting'), group: t('palette.groupFinance'), keywords: 'ledger journals gl' },
     { href: '/accounting/journals', label: t('palette.journals'), group: t('palette.groupFinance'), keywords: 'entries posting' },
+    { href: '/accounting/invoices', label: t('invoices.title'), group: t('palette.groupFinance'), keywords: 'bills ar ap vendor customer receivable payable' },
     { href: '/accounting/reconciliation', label: t('accountingReconciliation.title'), group: t('palette.groupFinance'), keywords: 'bank statement match' },
     { href: '/payroll', label: t('appLauncher.modPayroll'), group: t('palette.groupFinance'), keywords: 'salary payslip wages' },
     { href: '/payroll/deductions', label: t('palette.deductions'), group: t('palette.groupFinance'), keywords: 'lateness absence' },

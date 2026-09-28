@@ -35,6 +35,7 @@ class PartnerSerializer(serializers.ModelSerializer):
 class InvoiceLineSerializer(serializers.ModelSerializer):
     subtotal = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
     tax_amount = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    account_name = serializers.CharField(source="account.name", read_only=True)
 
     class Meta:
         model = InvoiceLine
@@ -59,6 +60,7 @@ class InvoiceLineSerializer(serializers.ModelSerializer):
 class InvoiceSerializer(serializers.ModelSerializer):
     lines = InvoiceLineSerializer(many=True)
     amount_due = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    partner_name = serializers.CharField(source="partner.name", read_only=True)
     # A-4: number is auto-allocated from a per-tenant/per-type gapless sequence
     # when omitted. A caller with a finance/admin role may still supply one
     # explicitly (migration, correction) — see validate().

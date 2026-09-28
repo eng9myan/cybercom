@@ -2,14 +2,16 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   ArrowLeft, Sparkles, Upload, FileText, CheckCircle2, AlertTriangle,
-  Loader2, RefreshCw, Plus, Trash2, X,
+  Loader2, RefreshCw, Plus, Trash2, X, FilePlus2, ExternalLink,
 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import { formatApiErrors } from '@/lib/apiErrors';
 
 type DocType = 'invoice' | 'purchase_order' | 'bank_statement';
-type Status = 'pending' | 'parsed' | 'failed' | 'reviewed';
+type Status = 'pending' | 'parsed' | 'failed' | 'reviewed' | 'applied';
 
 interface ParsedDoc {
   id: string;
@@ -20,14 +22,234 @@ interface ParsedDoc {
   extracted_data: Record<string, any>;
   error_message: string;
   reviewed_data: Record<string, any> | null;
+  applied_record_type: '' | 'invoice' | 'purchase_order';
+  applied_record_id: string | null;
   created_at: string;
 }
 
+interface Option { id: string; label: string; name?: string; partner_type?: string; account_type?: string }
+interface ApplyOptions { partners: Option[]; accounts: Option[]; warehouses: Option[]; products: Option[] }
+
 const DOC_TYPES: DocType[] = ['invoice', 'purchase_order', 'bank_statement'];
+
+function recordHref(doc: ParsedDoc) {
+  if (!doc.applied_record_id) return null;
+  if (doc.applied_record_type === 'invoice') return `/accounting/invoices/${doc.applied_record_id}`;
+  if (doc.applied_record_type === 'purchase_order') return `/purchase/orders/${doc.applied_record_id}`;
+  return null;
+}
+
+const norm = (s: unknown) => String(s ?? '').trim().toLowerCase();
+
+/** Best-effort preselect: an exact (case-insensitive) name match only.
+ * Anything fuzzier risks silently attaching the wrong partner/product. */
+function matchByName(options: Option[], name: unknown, key: (o: Option) => string = (o) => o.label) {
+  const n = norm(name);
+  if (!n) return '';
+  return options.find((o) => norm(key(o)) === n)?.id || '';
+}
+
+function num(v: unknown): number | null {
+  if (v === null || v === undefined || String(v).trim() === '') return null;
+  const n = Number(String(v).replace(/,/g, ''));
+  return Number.isFinite(n) ? n : null;
+}
+
+function Picker({ label, value, onChange, options, allowNone, noneLabel, placeholder }: {
+  label: string; value: string; onChange: (v: string) => void; options: Option[];
+  allowNone?: boolean; noneLabel?: string; placeholder: string;
+}) {
+  return (
+    <div>
+      <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none mt-0.5 text-xs"
+      >
+        <option value="">{allowNone ? noneLabel : placeholder}</option>
+        {options.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+      </select>
+    </div>
+  );
+}
+
+/** Turns a reviewed invoice/PO into a real draft record. The reviewer picks
+ * the FKs the AI can't read off a page (partner, accounts, warehouse, and a
+ * product per PO line); the backend re-validates every one of them against
+ * the tenant and runs the real Invoice/PO serializers. */
+function ApplyPanel({ doc, draft, onApplied }: {
+  doc: ParsedDoc; draft: Record<string, any>; onApplied: (d: ParsedDoc) => void;
+}) {
+  const t = useT();
+  const [options, setOptions] = useState<ApplyOptions | null>(null);
+  const [params, setParams] = useState<Record<string, any>>({});
+  const [applying, setApplying] = useState(false);
+  const [errors, setErrors] = useState<string[] | null>(null);
+
+  const reviewed = doc.reviewed_data || {};
+  const lineItems: Record<string, any>[] = Array.isArray(reviewed.line_items) ? reviewed.line_items : [];
+  const dirty = JSON.stringify(draft) !== JSON.stringify(reviewed);
+
+  useEffect(() => {
+    fetch('/api/cycom/rest/docai/documents/apply-options/', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((opts: ApplyOptions | null) => {
+        if (!opts) return;
+        setOptions(opts);
+        const partnerId = matchByName(opts.partners, reviewed.vendor_name);
+        if (doc.document_type === 'invoice') {
+          const sub = num(reviewed.subtotal);
+          const tax = num(reviewed.tax_amount);
+          const pct = sub && tax && sub > 0 ? Math.round((tax / sub) * 10000) / 100 : 0;
+          setParams({ invoice_type: 'vendor', partner: partnerId, tax_percent: String(pct) });
+        } else {
+          setParams({
+            vendor: partnerId,
+            line_products: lineItems.map((li) =>
+              matchByName(opts.products, li.description, (o) => o.name || o.label)),
+          });
+        }
+      });
+    // Options only need loading once per opened document.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc.id]);
+
+  const set = (key: string, value: any) => setParams((p) => ({ ...p, [key]: value }));
+  const setLineProduct = (idx: number, value: string) =>
+    setParams((p) => {
+      const next = [...(p.line_products || [])];
+      next[idx] = value;
+      return { ...p, line_products: next };
+    });
+
+  const handleApply = async () => {
+    setApplying(true);
+    setErrors(null);
+    try {
+      const resp = await fetch(`/api/cycom/rest/docai/documents/${doc.id}/apply/`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params),
+      });
+      const body = await resp.json().catch(() => null);
+      if (resp.ok && body) onApplied(body);
+      else setErrors(formatApiErrors(body).length ? formatApiErrors(body) : [String(resp.status)]);
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  if (!options) {
+    return <div className="py-4 text-center text-slate-500">{t('docaiParse.loadingOptions')}</div>;
+  }
+
+  const pick = t('docaiParse.selectPlaceholder');
+  const isInvoice = doc.document_type === 'invoice';
+  const partnerOptions = options.partners.filter((p) => {
+    const want = isInvoice && params.invoice_type === 'customer' ? 'customer' : 'vendor';
+    return p.partner_type === want || p.partner_type === 'both';
+  });
+  const taxPct = num(params.tax_percent) || 0;
+  const ready = isInvoice
+    ? Boolean(params.partner && params.control_account && params.line_account && (taxPct === 0 || params.tax_account))
+    : Boolean(params.vendor && params.warehouse && params.offset_account
+        && (params.line_products || []).length === lineItems.length
+        && (params.line_products || []).every(Boolean));
+
+  return (
+    <div className="space-y-4">
+      <p className="text-[11px] text-slate-400">
+        {isInvoice ? t('docaiParse.applyHintInvoice') : t('docaiParse.applyHintPo')}
+      </p>
+
+      {isInvoice ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('docaiParse.invoiceType')}</label>
+            <select
+              value={params.invoice_type || 'vendor'}
+              onChange={(e) => setParams((p) => ({ ...p, invoice_type: e.target.value, partner: '' }))}
+              className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none mt-0.5 text-xs"
+            >
+              <option value="vendor">{t('docaiParse.invoiceTypeVendor')}</option>
+              <option value="customer">{t('docaiParse.invoiceTypeCustomer')}</option>
+            </select>
+          </div>
+          <Picker label={t('docaiParse.partner')} value={params.partner || ''} onChange={(v) => set('partner', v)} options={partnerOptions} placeholder={pick} />
+          <Picker label={t('docaiParse.controlAccount')} value={params.control_account || ''} onChange={(v) => set('control_account', v)} options={options.accounts} placeholder={pick} />
+          <Picker label={t('docaiParse.lineAccount')} value={params.line_account || ''} onChange={(v) => set('line_account', v)} options={options.accounts} placeholder={pick} />
+          <div>
+            <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('docaiParse.taxPercent')}</label>
+            <input
+              type="number" min={0} max={100} step="0.01"
+              value={params.tax_percent ?? ''}
+              onChange={(e) => set('tax_percent', e.target.value)}
+              className="w-full bg-slate-950 border border-slate-850 rounded-lg px-3 py-2 text-slate-200 outline-none mt-0.5 text-xs"
+            />
+          </div>
+          <Picker
+            label={t('docaiParse.taxAccount')} value={params.tax_account || ''} onChange={(v) => set('tax_account', v)}
+            options={options.accounts} placeholder={pick} allowNone={taxPct === 0} noneLabel={t('docaiParse.none')}
+          />
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Picker label={t('docaiParse.vendor')} value={params.vendor || ''} onChange={(v) => set('vendor', v)} options={partnerOptions} placeholder={pick} />
+            <Picker label={t('docaiParse.warehouse')} value={params.warehouse || ''} onChange={(v) => set('warehouse', v)} options={options.warehouses} placeholder={pick} />
+            <Picker label={t('docaiParse.offsetAccount')} value={params.offset_account || ''} onChange={(v) => set('offset_account', v)} options={options.accounts} placeholder={pick} />
+          </div>
+          <div className="space-y-2">
+            {lineItems.map((li, idx) => (
+              <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end">
+                <div className="text-[11px] text-slate-300 truncate">
+                  <span className="text-slate-500">{t('docaiParse.lineN', { n: idx + 1 })}:</span> {li.description || '—'}
+                  <span className="text-slate-500 font-mono"> · {li.quantity ?? 1} × {li.unit_price ?? li.amount ?? '—'}</span>
+                </div>
+                <Picker
+                  label={t('docaiParse.lineProduct')} value={(params.line_products || [])[idx] || ''}
+                  onChange={(v) => setLineProduct(idx, v)} options={options.products} placeholder={pick}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {dirty && (
+        <div className="flex items-start gap-2 p-3 rounded-lg border bg-amber-950/40 border-amber-500/20 text-amber-400 text-[11px]">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0" /> {t('docaiParse.applyUnsaved')}
+        </div>
+      )}
+      {errors && (
+        <div className="flex items-start gap-2 p-3 rounded-lg border bg-rose-950/40 border-rose-500/20 text-rose-400 text-[11px]">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">{t('docaiParse.applyFailed')}</p>
+            {errors.map((line, i) => <p key={i}>{line}</p>)}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end">
+        <button
+          onClick={handleApply}
+          disabled={applying || dirty || !ready}
+          className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-[#A855F7] to-[#00F0FF] disabled:opacity-40 rounded-lg text-white font-semibold transition text-xs"
+        >
+          {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : <FilePlus2 className="w-4 h-4" />}
+          {applying ? t('docaiParse.applying') : t('docaiParse.applyBtn')}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function statusTone(status: Status) {
   if (status === 'parsed') return 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400';
   if (status === 'reviewed') return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
+  if (status === 'applied') return 'bg-violet-500/10 border-violet-500/30 text-violet-400';
   if (status === 'failed') return 'bg-rose-500/10 border-rose-500/30 text-rose-400';
   return 'bg-slate-800 border-slate-700 text-slate-400';
 }
@@ -181,7 +403,10 @@ export default function DocAIParsePage() {
         body: JSON.stringify({ reviewed_data: draft }),
       });
       if (resp.ok) {
-        setSelected(null);
+        // Stay open: the next step (creating the real record) happens here.
+        const updated: ParsedDoc = await resp.json();
+        setSelected(updated);
+        setDraft(updated.reviewed_data || {});
         load();
       }
     } finally {
@@ -293,11 +518,25 @@ export default function DocAIParsePage() {
                   <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>{selected.error_message}</span>
                 </div>
+              ) : selected.status === 'applied' ? (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-lg border bg-violet-950/30 border-violet-500/20 text-violet-300">
+                    <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> {t('docaiParse.appliedNote')}</span>
+                    {recordHref(selected) && (
+                      <Link href={recordHref(selected)!} className="flex items-center gap-1.5 text-xs font-semibold text-violet-200 hover:text-white">
+                        {t('docaiParse.viewRecord')} <ExternalLink className="w-3.5 h-3.5" />
+                      </Link>
+                    )}
+                  </div>
+                  <pre className="text-[10px] text-slate-400 bg-slate-950 border border-slate-850 rounded-lg p-3 overflow-x-auto" dir="ltr">
+                    {JSON.stringify(selected.reviewed_data, null, 2)}
+                  </pre>
+                </div>
               ) : (
                 <ReviewFields data={draft} onChange={setDraft} />
               )}
             </div>
-            {selected.status !== 'failed' && (
+            {selected.status !== 'failed' && selected.status !== 'applied' && (
               <div className="flex justify-end gap-3 border-t border-white/5 p-5">
                 <button onClick={() => setSelected(null)} className="px-4 py-2 border border-slate-800 hover:bg-slate-800 rounded-lg transition text-xs font-semibold">
                   {t('docaiParse.cancel')}
@@ -310,6 +549,27 @@ export default function DocAIParsePage() {
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   {t('docaiParse.markReviewed')}
                 </button>
+              </div>
+            )}
+            {(selected.status === 'parsed' || selected.status === 'reviewed') && (
+              <div className="border-t border-white/5 p-5 space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                  <FilePlus2 className="w-4 h-4 text-[#A855F7]" /> {t('docaiParse.applyHeading')}
+                </h4>
+                {selected.document_type === 'bank_statement' ? (
+                  <p className="text-[11px] text-slate-500">{t('docaiParse.bankStatementNoApply')}</p>
+                ) : selected.status !== 'reviewed' ? (
+                  <p className="text-[11px] text-slate-500">{t('docaiParse.applyReviewFirst')}</p>
+                ) : (
+                  <ApplyPanel
+                    // Re-init pickers (esp. one product per line) whenever a
+                    // re-saved review changes the line items.
+                    key={`${selected.id}:${JSON.stringify(selected.reviewed_data)}`}
+                    doc={selected}
+                    draft={draft}
+                    onApplied={(updated) => { setSelected(updated); load(); }}
+                  />
+                )}
               </div>
             )}
           </div>

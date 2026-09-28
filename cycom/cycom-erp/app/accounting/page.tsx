@@ -205,7 +205,10 @@ export default function AccountingDashboard() {
           <h1 className="page-title text-white">{t('acctDash.title')}</h1>
           <p className="page-subtitle">{t('acctDash.subtitle')}</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          <Link href="/accounting/invoices" className="btn-secondary flex items-center gap-2">
+            <FileText className="w-4 h-4 text-cyan-400" /> {t('invoices.title')}
+          </Link>
           <Link href="/accounting/reconciliation" className="btn-primary flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-indigo-400" /> {t('acctDash.aiReconciler')}
           </Link>

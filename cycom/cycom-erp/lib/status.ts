@@ -24,9 +24,12 @@ export type StatusKey =
   | "invoiced"
   | "rejected"
   | "partiallyReceived"
+  | "posted"
+  | "partiallyPaid"
+  | "paid"
   | "unknown";
 
-const GREEN: StatusKey[] = ["confirmed", "done", "approved", "reimbursed", "completed", "delivered", "invoiced"];
+const GREEN: StatusKey[] = ["confirmed", "done", "approved", "reimbursed", "completed", "delivered", "invoiced", "posted", "paid"];
 const RED: StatusKey[] = ["cancelled", "declined", "rejected"];
 const YELLOW: StatusKey[] = [
   "draft",
@@ -37,6 +40,7 @@ const YELLOW: StatusKey[] = [
   "submitted",
   "waiting",
   "partiallyReceived",
+  "partiallyPaid",
 ];
 
 /** Tailwind badge class for a status key (matches the design-system badges). */
@@ -100,4 +104,12 @@ export const REAL_PURCHASE_ORDER_STATE: Record<string, StatusKey> = {
   rejected: "rejected",
   received: "completed",
   partially_received: "partiallyReceived",
+};
+
+export const REAL_INVOICE_STATE: Record<string, StatusKey> = {
+  draft: "draft",
+  posted: "posted",
+  partial: "partiallyPaid",
+  paid: "paid",
+  cancelled: "cancelled",
 };
