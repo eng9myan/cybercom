@@ -203,6 +203,30 @@ def test_patch_rejects_malformed_values_and_foreign_lines_all_or_nothing(invoice
     assert resp.status_code == 400 and resp.data["errors"][0]["key"] == "codice_destinatario"
 
 
+def test_polish_tenant_routes_to_ksef_through_the_same_bridge(db, monkeypatch):
+    monkeypatch.delenv("KSEF_BASE_URL", raising=False)
+    t = Tenant.objects.create(name="Cycom Polska", slug="cycom-pl", country_code="PL")
+    TenantProfile.objects.create(tenant=t, legal_name="Cycom Polska Sp. z o.o.", vat_number="5260250274")
+    EInvoiceProfile.objects.create(tenant_id=t.id, street="ul. Marszałkowska 1", postal_code="00-001",
+                                   city="Warszawa", national={"metoda_kasowa": "2"})
+    ar = Account.objects.create(tenant_id=t.id, code="1100", name="AR", account_type="asset")
+    rev = Account.objects.create(tenant_id=t.id, code="4000", name="Rev", account_type="income")
+    partner = Partner.objects.create(tenant_id=t.id, name="Klient S.A.", tax_id="1234563218",
+                                     attributes={"einvoice": {"country_code": "PL"}})
+    inv = Invoice.objects.create(tenant_id=t.id, invoice_type="customer", number="FV/1", partner=partner,
+                                 date=date(2026, 9, 1), due_date=date(2026, 9, 15), currency="PLN",
+                                 control_account=ar, status="posted")
+    InvoiceLine.objects.create(tenant_id=t.id, invoice=inv, account=rev, description="Usługa",
+                               quantity=Decimal("1"), unit_price=Decimal("100"), tax_percent=Decimal("23"))
+    bridge.run_einvoice_clearance(inv)
+    inv.refresh_from_db()
+    assert inv.einvoice_mode == "pl_ksef"
+    assert inv.einvoice_status == "generated", inv.einvoice_response
+    doc = EInvoiceInteraction.objects.get(tenant_id=t.id).document
+    from platform.einvoicing.national.pl_ksef import PlKsef
+    assert PlKsef().schema_errors(doc) == []
+
+
 def test_einvoice_endpoints_are_tenant_isolated(invoice, client_for, mint_token, mock_jwks):
     token = mint_token({"sub": str(uuid.uuid4()), "tenant_id": str(uuid.uuid4()),
                         "realm_access": {"roles": ["tenant_admin"]}})

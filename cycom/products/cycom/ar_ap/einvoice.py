@@ -107,7 +107,11 @@ def national_doc_input(invoice, country: str) -> DocInput:
         original_number=original.number if original else "",
         original_date=original.date if original else None,
         due_date=invoice.due_date,
-        extra=dict((invoice.attributes or {}).get(EINVOICE_ATTR, {})),
+        extra={
+            # the corrected invoice's authority id (e.g. its KSeF number)
+            **({"original_reference": original.einvoice_reference} if original and original.einvoice_reference else {}),
+            **dict((invoice.attributes or {}).get(EINVOICE_ATTR, {})),
+        },
     )
 
 
