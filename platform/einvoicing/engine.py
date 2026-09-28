@@ -228,6 +228,9 @@ def clear_national(*, tenant_id, scope: str, mode: str, doc: DocInput, client=No
     # not burn a progressive/ICV (several mandates require them gap-free).
     try:
         fmt.validate(doc)
+        signing = fmt.signing_problems(doc)
+        if signing:
+            raise EInvoiceDataMissing(mode, signing)
     except EInvoiceDataMissing as exc:
         return NationalResult(mode=mode, uuid=doc.uuid, icv=0, pih="", invoice_hash="",
                               status="incomplete", error=str(exc), problems=exc.problems)
@@ -240,7 +243,6 @@ def clear_national(*, tenant_id, scope: str, mode: str, doc: DocInput, client=No
         pih = seq.last_hash
 
         unsigned = fmt.build(doc)
-        schema_errors = fmt.schema_errors(unsigned)
         this_hash = invoice_hash(unsigned)
         filename = fmt.filename(doc)
         result = NationalResult(mode=mode, uuid=doc.uuid, icv=doc.icv, pih=pih,
@@ -253,14 +255,17 @@ def clear_national(*, tenant_id, scope: str, mode: str, doc: DocInput, client=No
             document_filename=filename,
         )
 
-        if schema_errors:
-            # Defensive gate -- the builders are tested against the official
-            # XSDs, but never transmit a document the schema rejects.
-            result.status = "rejected"
-            result.error = "Generated document failed schema validation: " + "; ".join(schema_errors[:5])
-        else:
-            try:
-                signed = fmt.sign(unsigned, doc)
+        try:
+            signed = fmt.sign(unsigned, doc)
+            # Defensive gate on the document that would actually be sent
+            # (some schemas, e.g. CFDI, require the signature attributes):
+            # the builders are XSD-tested, but never transmit what the
+            # official schema rejects.
+            schema_errors = fmt.schema_errors(signed)
+            if schema_errors:
+                result.status = "rejected"
+                result.error = "Generated document failed schema validation: " + "; ".join(schema_errors[:5])
+            else:
                 result.document = signed
                 interaction.document = signed
                 resp = fmt.submit(signed, doc, client=client)
@@ -268,11 +273,11 @@ def clear_national(*, tenant_id, scope: str, mode: str, doc: DocInput, client=No
                 result.provider_reference = resp.get("reference", "")
                 result.qr = resp.get("qr", "")
                 interaction.response = resp.get("raw", {})
-            except TransportNotConfigured as exc:
-                result.status, result.error = ("generated", str(exc)) if result.document else ("rejected", str(exc))
-            except Exception as exc:
-                logger.warning("%s submission failed for %s: %s", mode, doc.number, exc)
-                result.status, result.error = "rejected", str(exc)
+        except TransportNotConfigured as exc:
+            result.status, result.error = ("generated", str(exc)) if result.document else ("rejected", str(exc))
+        except Exception as exc:
+            logger.warning("%s submission failed for %s: %s", mode, doc.number, exc)
+            result.status, result.error = "rejected", str(exc)
 
         interaction.status = result.status
         interaction.provider_reference = result.provider_reference

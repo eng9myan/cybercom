@@ -11,12 +11,14 @@ from .base import (  # noqa: F401
     TransportNotConfigured,
 )
 from .it_fatturapa import ItFatturaPA
+from .mx_cfdi import MxCfdi
 from .pl_ksef import PlKsef
 
 FORMATS: dict[str, NationalFormat] = {
     f.mode: f for f in (
         ItFatturaPA(),
         PlKsef(),
+        MxCfdi(),
     )
 }
 

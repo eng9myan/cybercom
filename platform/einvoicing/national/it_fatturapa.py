@@ -248,6 +248,18 @@ class ItFatturaPA(NationalFormat):
 
         return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(root, encoding="unicode")
 
+    def signing_problems(self, doc: DocInput) -> list[dict]:
+        from ..signing import KEY_LOADER
+
+        dest = (doc.buyer.get("codice_destinatario") or "").strip()
+        if _is_it(doc, doc.buyer) and len(dest) == 6:
+            key_pem, cert_pem = KEY_LOADER(self.mode)
+            if not (key_pem and cert_pem):
+                return [{"scope": "seller", "key": "certificate", "label": "Firma digitale (FPA12)",
+                         "message": "invoices to the public administration must be signed -- install the "
+                                    "qualified certificate (FATTURAPA_PRIVATE_KEY_PATH / FATTURAPA_CERT_PATH)"}]
+        return []
+
     def sign(self, document: str, doc: DocInput) -> str:
         from ..signing import KEY_LOADER, XAdESSigner
 

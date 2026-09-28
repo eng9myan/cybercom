@@ -253,6 +253,12 @@ class NationalFormat:
     def validate(self, doc: DocInput) -> None:
         validate_fields(self.mode, self.fields, doc)
 
+    def signing_problems(self, doc: DocInput) -> list[dict]:
+        """Pre-flight: problems that stop a *legally valid* document being
+        produced for lack of signing credentials (e.g. CFDI's CSD, which the
+        schema itself requires). Checked before a sequence number is taken."""
+        return []
+
     def build(self, doc: DocInput) -> str:  # pragma: no cover - abstract
         raise NotImplementedError
 
