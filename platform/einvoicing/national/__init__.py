@@ -11,6 +11,7 @@ from .base import (  # noqa: F401
     TransportNotConfigured,
 )
 from .br_nfe import BrNfe
+from .es_sii import EsSii
 from .in_gst import InGst
 from .it_fatturapa import ItFatturaPA
 from .mx_cfdi import MxCfdi
@@ -23,6 +24,7 @@ FORMATS: dict[str, NationalFormat] = {
         MxCfdi(),
         BrNfe(),
         InGst(),
+        EsSii(),
     )
 }
 
