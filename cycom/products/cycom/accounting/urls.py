@@ -10,6 +10,16 @@ from products.cycom.accounting.report_views import (
     TrialBalanceView,
     VatReturnView,
 )
+from products.cycom.accounting.mtd_views import (
+    MtdCallbackView,
+    MtdConnectView,
+    MtdDisconnectView,
+    MtdObligationsView,
+    MtdPreviewView,
+    MtdStatusView,
+    MtdSubmissionsView,
+    MtdSubmitView,
+)
 from products.cycom.accounting.saft_views import SaftExportView, SaftSettingsView
 from products.cycom.accounting.views import (
     AccountViewSet,
@@ -29,6 +39,14 @@ router.register("fixed-assets", FixedAssetViewSet)
 router.register("budgets", BudgetViewSet)
 
 urlpatterns = [
+    path("mtd/status/", MtdStatusView.as_view(), name="mtd-status"),
+    path("mtd/connect/", MtdConnectView.as_view(), name="mtd-connect"),
+    path("mtd/callback/", MtdCallbackView.as_view(), name="mtd-callback"),
+    path("mtd/disconnect/", MtdDisconnectView.as_view(), name="mtd-disconnect"),
+    path("mtd/obligations/", MtdObligationsView.as_view(), name="mtd-obligations"),
+    path("mtd/preview/", MtdPreviewView.as_view(), name="mtd-preview"),
+    path("mtd/submit/", MtdSubmitView.as_view(), name="mtd-submit"),
+    path("mtd/submissions/", MtdSubmissionsView.as_view(), name="mtd-submissions"),
     path("saft/settings/", SaftSettingsView.as_view(), name="saft-settings"),
     path("saft/export/", SaftExportView.as_view(), name="saft-export"),
     path("reports/trial-balance/", TrialBalanceView.as_view(), name="trial-balance"),

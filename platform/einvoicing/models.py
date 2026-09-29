@@ -1,5 +1,6 @@
 from django.db import models
 
+from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 
 from .hashing import GENESIS_PIH
@@ -76,3 +77,37 @@ class EInvoiceProfile(BaseModel):
     class Meta:
         db_table = "platform_einvoice_profiles"
         constraints = [models.UniqueConstraint(fields=["tenant_id"], name="uniq_einvoice_profile_tenant")]
+
+
+class HmrcMtdConnection(BaseModel):
+    """A tenant's OAuth2 grant to HMRC's MTD VAT API (one per tenant).
+    Tokens are per-tenant encrypted at rest."""
+
+    vrn = models.CharField(max_length=9)
+    access_token = EncryptedText(classification="financial_id")
+    refresh_token = EncryptedText(classification="financial_id")
+    expires_at = models.DateTimeField(null=True, blank=True)
+    connected_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "platform_hmrc_mtd_connections"
+        constraints = [models.UniqueConstraint(fields=["tenant_id"], name="uniq_hmrc_mtd_connection_tenant")]
+
+
+class MtdVatSubmission(BaseModel):
+    """Permanent record of a VAT return filed with HMRC: what was sent and
+    HMRC's receipt. Never edited after creation."""
+
+    vrn = models.CharField(max_length=9)
+    period_key = models.CharField(max_length=4)
+    date_from = models.DateField()
+    date_to = models.DateField()
+    payload = models.JSONField()
+    receipt = models.JSONField(default=dict, blank=True)
+    submitted_by = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "platform_mtd_vat_submissions"
+        ordering = ["-created_at"]
+        constraints = [models.UniqueConstraint(fields=["tenant_id", "vrn", "period_key"],
+                                               name="uniq_mtd_submission_period")]

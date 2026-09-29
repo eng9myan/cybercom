@@ -212,6 +212,9 @@ export default function AccountingDashboard() {
           <Link href="/accounting/saft" className="btn-secondary flex items-center gap-2">
             <FileSpreadsheet className="w-4 h-4 text-cyan-400" /> {t('saft.title')}
           </Link>
+          <Link href="/accounting/vat-mtd" className="btn-secondary flex items-center gap-2">
+            <FileText className="w-4 h-4 text-cyan-400" /> {t('vatMtd.title')}
+          </Link>
           <Link href="/accounting/reconciliation" className="btn-primary flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-indigo-400" /> {t('acctDash.aiReconciler')}
           </Link>
