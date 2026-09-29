@@ -10,6 +10,7 @@ from products.cycom.accounting.report_views import (
     TrialBalanceView,
     VatReturnView,
 )
+from products.cycom.accounting.saft_views import SaftExportView, SaftSettingsView
 from products.cycom.accounting.views import (
     AccountViewSet,
     BankStatementLineViewSet,
@@ -28,6 +29,8 @@ router.register("fixed-assets", FixedAssetViewSet)
 router.register("budgets", BudgetViewSet)
 
 urlpatterns = [
+    path("saft/settings/", SaftSettingsView.as_view(), name="saft-settings"),
+    path("saft/export/", SaftExportView.as_view(), name="saft-export"),
     path("reports/trial-balance/", TrialBalanceView.as_view(), name="trial-balance"),
     path("reports/profit-and-loss/", ProfitAndLossView.as_view(), name="profit-and-loss"),
     path("reports/balance-sheet/", BalanceSheetView.as_view(), name="balance-sheet"),
