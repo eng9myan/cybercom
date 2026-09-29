@@ -224,6 +224,11 @@ def clear_national(*, tenant_id, scope: str, mode: str, doc: DocInput, client=No
     fmt = NATIONAL_FORMATS[mode]
     doc.uuid = doc.uuid or str(uuid4())
 
+    reason = fmt.not_applicable_reason(doc)
+    if reason:
+        return NationalResult(mode=mode, uuid=doc.uuid, icv=0, pih="", invoice_hash="",
+                              status="not_applicable", error=reason)
+
     # Validate before taking a sequence number: an incomplete document must
     # not burn a progressive/ICV (several mandates require them gap-free).
     try:

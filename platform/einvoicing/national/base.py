@@ -253,6 +253,11 @@ class NationalFormat:
     def validate(self, doc: DocInput) -> None:
         validate_fields(self.mode, self.fields, doc)
 
+    def not_applicable_reason(self, doc: DocInput) -> str | None:
+        """A reason string when the mandate doesn't cover this document at
+        all (e.g. India's IRN is B2B-only) -- distinct from 'incomplete'."""
+        return None
+
     def signing_problems(self, doc: DocInput) -> list[dict]:
         """Pre-flight: problems that stop a *legally valid* document being
         produced for lack of signing credentials (e.g. CFDI's CSD, which the

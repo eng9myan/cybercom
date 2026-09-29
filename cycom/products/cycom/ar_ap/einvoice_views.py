@@ -294,6 +294,8 @@ class InvoiceEInvoiceDocumentView(APIView):
         if interaction is None:
             from django.http import Http404
             raise Http404
-        resp = HttpResponse(interaction.document, content_type="application/xml; charset=utf-8")
+        is_json = (interaction.document_filename or "").endswith(".json")
+        resp = HttpResponse(interaction.document, content_type=(
+            "application/json; charset=utf-8" if is_json else "application/xml; charset=utf-8"))
         resp["Content-Disposition"] = f'attachment; filename="{interaction.document_filename or "einvoice.xml"}"'
         return resp

@@ -116,6 +116,13 @@ def national_doc_input(invoice, country: str) -> DocInput:
 
 
 def _save_national_result(invoice, result) -> None:
+    if result.status == "not_applicable":
+        # Outside the mandate (e.g. an Indian B2C sale): nothing to issue.
+        invoice.einvoice_mode = result.mode
+        invoice.einvoice_status = "not_applicable"
+        invoice.einvoice_response = {"note": result.error}
+        invoice.save(update_fields=["einvoice_mode", "einvoice_status", "einvoice_response", "updated_at"])
+        return
     invoice.einvoice_mode = result.mode
     invoice.einvoice_uuid = result.uuid if result.status != "incomplete" else None
     invoice.einvoice_icv = result.icv or None

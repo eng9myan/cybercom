@@ -2364,6 +2364,7 @@ const en = {
       reported: "Reported",
       rejected: "Rejected",
       pending: "Pending",
+      not_applicable: "Not required",
     },
   },
   warehouseMap: {

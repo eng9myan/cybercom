@@ -146,6 +146,7 @@ def test_gulf_national_mandates_keep_their_own_modes():
     ("PL", "pl_ksef"),
     ("MX", "mx_cfdi"),
     ("BR", "br_nfe"),
+    ("IN", "in_gst"),
 ])
 def test_national_formats_outside_peppol_route_to_their_own_mode(country, mode):
     """IT SdI, PL KSeF, MX CFDI and BR NF-e are national formats, NOT

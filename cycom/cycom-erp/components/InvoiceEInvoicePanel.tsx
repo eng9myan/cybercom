@@ -14,7 +14,7 @@ interface EInvoiceState {
   is_national: boolean;
   status: string;
   reference: string;
-  response: { problems?: Problem[]; error?: string };
+  response: { problems?: Problem[]; error?: string; note?: string };
   has_document: boolean;
   document_filename: string;
   buyer_fields: EInvoiceFieldSpec[];
@@ -121,6 +121,9 @@ export default function InvoiceEInvoicePanel({ invoiceId, invoiceStatus }: { inv
             <Link href="/settings/einvoicing" className="inline-block text-cyan-300 hover:text-cyan-200 font-semibold">{t('einvoicing.fixSeller')}</Link>
           )}
         </div>
+      )}
+      {state.status === 'not_applicable' && state.response?.note && (
+        <div className="p-3 rounded-lg border bg-slate-900 border-slate-800 text-slate-400 text-[11px]">{state.response.note}</div>
       )}
       {state.status === 'generated' && (
         <div className="p-3 rounded-lg border bg-cyan-950/30 border-cyan-500/20 text-cyan-300 text-[11px]">{t('einvoicing.generatedNote')}</div>

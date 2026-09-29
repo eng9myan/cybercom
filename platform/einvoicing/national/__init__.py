@@ -11,6 +11,7 @@ from .base import (  # noqa: F401
     TransportNotConfigured,
 )
 from .br_nfe import BrNfe
+from .in_gst import InGst
 from .it_fatturapa import ItFatturaPA
 from .mx_cfdi import MxCfdi
 from .pl_ksef import PlKsef
@@ -21,6 +22,7 @@ FORMATS: dict[str, NationalFormat] = {
         PlKsef(),
         MxCfdi(),
         BrNfe(),
+        InGst(),
     )
 }
 

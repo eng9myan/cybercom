@@ -2355,6 +2355,7 @@ const ar: Messages = {
       reported: "مُبلَّغ عنها",
       rejected: "مرفوضة",
       pending: "قيد الانتظار",
+      not_applicable: "غير مطلوبة",
     },
   },
   warehouseMap: {
