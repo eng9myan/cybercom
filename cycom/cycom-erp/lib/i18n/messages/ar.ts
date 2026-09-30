@@ -677,6 +677,13 @@ const ar: Messages = {
     evalFailed: "فشل التقييم.",
   },
   settingsSecurity: {
+    recentEvents: "سجل التدقيق الأخير",
+    loadingEvents: "جارٍ تحميل سجل التدقيق…",
+    noEvents: "لا توجد أحداث تدقيق مسجّلة بعد.",
+    colWhen: "الوقت",
+    colWho: "المستخدم",
+    colAction: "الإجراء",
+    colRecord: "السجل",
     title: "الأمن وسلسلة التدقيق",
     subtitle: "حدّد تفضيل الدخول الموحد لمؤسستك وتحقق من سلامة سلسلة تجزئة SHA-256 لسجل التدقيق الحقيقي.",
     ssoHeading: "الدخول الموحد (SSO)",

@@ -30,6 +30,9 @@ from .models import (
 )
 from .permissions import (
     CanCreateLegalHold,
+    CanReadAudit,
+    caller_tenant_id,
+    is_platform_admin,
     CanExportAuditLogs,
     CanReleaseLegalHold,
     IsAuditAdmin,
@@ -76,6 +79,40 @@ from .services import (
 log = logging.getLogger(__name__)
 
 
+class TenantScopedAuditMixin:
+    """Every audit / compliance record is visible only within the caller's
+    own tenant; platform admins see across tenants. A caller whose tenant
+    can't be resolved sees nothing (fail closed). Previously these viewsets
+    used Model.objects.all(), so any caller passing the role gate could read
+    every tenant's audit trail."""
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if not any(f.name == "tenant_id" for f in qs.model._meta.get_fields()):
+            return qs
+        if is_platform_admin(self.request):
+            return qs
+        tid = caller_tenant_id(self.request)
+        return qs.filter(tenant_id=tid) if tid else qs.none()
+
+    def _has_tenant(self, serializer) -> bool:
+        return any(f.name == "tenant_id" for f in serializer.Meta.model._meta.get_fields())
+
+    def perform_create(self, serializer):
+        # A non-platform caller always writes into its own tenant, whatever
+        # tenant_id the request body claims.
+        if self._has_tenant(serializer) and not is_platform_admin(self.request):
+            serializer.save(tenant_id=caller_tenant_id(self.request))
+        else:
+            serializer.save()
+
+    def perform_update(self, serializer):
+        if self._has_tenant(serializer) and not is_platform_admin(self.request):
+            serializer.save(tenant_id=serializer.instance.tenant_id)
+        else:
+            serializer.save()
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def audit_health(request):
@@ -92,80 +129,92 @@ def audit_metrics(request):
     return HttpResponse(payload, content_type="text/plain; version=0.0.4")
 
 
-class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
+class AuditLogViewSet(TenantScopedAuditMixin, viewsets.ReadOnlyModelViewSet):
     queryset = AuditLog.objects.all()
     serializer_class = AuditLogSerializer
     permission_classes = [ReadOnlyOrAuditAdmin]
 
 
-class AuditEventViewSet(viewsets.ReadOnlyModelViewSet):
+class AuditEventViewSet(TenantScopedAuditMixin, viewsets.ReadOnlyModelViewSet):
     queryset = AuditEvent.objects.all()
     serializer_class = AuditEventSerializer
     permission_classes = [ReadOnlyOrAuditAdmin]
 
-    @action(detail=False, methods=["post"], serializer_class=AuditSearchSerializer)
+    @action(detail=False, methods=["post"], serializer_class=AuditSearchSerializer,
+            permission_classes=[CanReadAudit])
     def search(self, request):
         ser = AuditSearchSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
-        svc = AuditSearchService()
-        events = svc.search(**ser.validated_data)
+        params = dict(ser.validated_data)
+        if not is_platform_admin(request):
+            tid = caller_tenant_id(request)
+            if not tid:
+                return Response([])
+            params["tenant_id"] = tid          # never another tenant's trail
+        events = AuditSearchService().search(**params)
         return Response(AuditEventSerializer(events, many=True).data)
 
     @action(
         detail=False,
         methods=["post"],
         serializer_class=ChainVerifySerializer,
-        permission_classes=[IsAuditAdmin],
+        # read-only and tenant-scoped below, so audit readers may run it
+        permission_classes=[CanReadAudit],
     )
     def verify_chain(self, request):
         ser = ChainVerifySerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         verifier = AuditChainVerifier()
         chain_key = ser.validated_data.get("chain_key")
+        if is_platform_admin(request):
+            return Response(verifier.verify(chain_key) if chain_key else verifier.verify_all())
+        # Tenant-level auditors verify only their own tenant's chains.
+        own = AuditChain.objects.filter(tenant_id=caller_tenant_id(request))
         if chain_key:
-            result = verifier.verify(chain_key)
-        else:
-            result = verifier.verify_all()
-        return Response(result)
+            if not own.filter(chain_key=chain_key).exists():
+                return Response({"valid": False, "error": "chain_not_found", "chain_key": chain_key})
+            return Response(verifier.verify(chain_key))
+        # same list shape as verify_all(), restricted to the caller's chains
+        return Response([verifier.verify(k) for k in own.values_list("chain_key", flat=True)])
 
 
-class AuditCategoryViewSet(viewsets.ModelViewSet):
+class AuditCategoryViewSet(TenantScopedAuditMixin, viewsets.ModelViewSet):
     queryset = AuditCategory.objects.all()
     serializer_class = AuditCategorySerializer
     permission_classes = [ReadOnlyOrAuditAdmin]
 
 
-class AuditChainViewSet(viewsets.ReadOnlyModelViewSet):
+class AuditChainViewSet(TenantScopedAuditMixin, viewsets.ReadOnlyModelViewSet):
     queryset = AuditChain.objects.all()
     serializer_class = AuditChainSerializer
     permission_classes = [IsAuditAdmin]
 
 
-class AuditEntryViewSet(viewsets.ReadOnlyModelViewSet):
+class AuditEntryViewSet(TenantScopedAuditMixin, viewsets.ReadOnlyModelViewSet):
     queryset = AuditEntry.objects.all()
     serializer_class = AuditEntrySerializer
     permission_classes = [ReadOnlyOrAuditAdmin]
 
 
-class AuditRetentionPolicyViewSet(viewsets.ModelViewSet):
+class AuditRetentionPolicyViewSet(TenantScopedAuditMixin, viewsets.ModelViewSet):
     queryset = AuditRetentionPolicy.objects.all()
     serializer_class = AuditRetentionPolicySerializer
     permission_classes = [ReadOnlyOrAuditAdmin]
 
 
-class AuditArchiveViewSet(viewsets.ModelViewSet):
+class AuditArchiveViewSet(TenantScopedAuditMixin, viewsets.ModelViewSet):
     queryset = AuditArchive.objects.all()
     serializer_class = AuditArchiveSerializer
     permission_classes = [IsAuditAdmin]
 
 
-class AuditSignatureViewSet(viewsets.ReadOnlyModelViewSet):
+class AuditSignatureViewSet(TenantScopedAuditMixin, viewsets.ReadOnlyModelViewSet):
     queryset = AuditSignature.objects.all()
     serializer_class = AuditSignatureSerializer
     permission_classes = [IsAuditAdmin]
 
 
-class AuditExportViewSet(viewsets.ModelViewSet):
+class AuditExportViewSet(TenantScopedAuditMixin, viewsets.ModelViewSet):
     queryset = AuditExport.objects.all()
     serializer_class = AuditExportSerializer
     permission_classes = [CanExportAuditLogs]
@@ -175,7 +224,8 @@ class AuditExportViewSet(viewsets.ModelViewSet):
         ser.is_valid(raise_exception=True)
         svc = AuditExportService()
         export = svc.create_export(
-            tenant_id=ser.validated_data.get("tenant_id"),
+            tenant_id=(ser.validated_data.get("tenant_id") if is_platform_admin(request)
+                       else caller_tenant_id(request)),
             requested_by=str(getattr(request.user, "id", "system")),
             reason=ser.validated_data["reason"],
             filter_criteria=ser.validated_data.get("filter_criteria", {}),
@@ -186,7 +236,7 @@ class AuditExportViewSet(viewsets.ModelViewSet):
         return Response(AuditExportSerializer(export).data, status=status.HTTP_201_CREATED)
 
 
-class LegalHoldViewSet(viewsets.ModelViewSet):
+class LegalHoldViewSet(TenantScopedAuditMixin, viewsets.ModelViewSet):
     queryset = LegalHold.objects.all()
     serializer_class = LegalHoldSerializer
     permission_classes = [CanCreateLegalHold]
@@ -209,7 +259,7 @@ class LegalHoldViewSet(viewsets.ModelViewSet):
         return Response(LegalHoldSerializer(hold).data)
 
 
-class ComplianceProfileViewSet(viewsets.ModelViewSet):
+class ComplianceProfileViewSet(TenantScopedAuditMixin, viewsets.ModelViewSet):
     queryset = ComplianceProfile.objects.all()
     serializer_class = ComplianceProfileSerializer
     permission_classes = [IsComplianceOfficer]
@@ -239,13 +289,13 @@ class ComplianceProfileViewSet(viewsets.ModelViewSet):
         return Response(ComplianceReportSerializer(report).data, status=status.HTTP_201_CREATED)
 
 
-class ComplianceRuleViewSet(viewsets.ModelViewSet):
+class ComplianceRuleViewSet(TenantScopedAuditMixin, viewsets.ModelViewSet):
     queryset = ComplianceRule.objects.all()
     serializer_class = ComplianceRuleSerializer
     permission_classes = [IsComplianceOfficer]
 
 
-class ComplianceViolationViewSet(viewsets.ModelViewSet):
+class ComplianceViolationViewSet(TenantScopedAuditMixin, viewsets.ModelViewSet):
     queryset = ComplianceViolation.objects.all()
     serializer_class = ComplianceViolationSerializer
     permission_classes = [IsComplianceOfficer]
@@ -267,19 +317,19 @@ class ComplianceViolationViewSet(viewsets.ModelViewSet):
         return Response(ComplianceViolationSerializer(violation).data)
 
 
-class ComplianceAssessmentViewSet(viewsets.ReadOnlyModelViewSet):
+class ComplianceAssessmentViewSet(TenantScopedAuditMixin, viewsets.ReadOnlyModelViewSet):
     queryset = ComplianceAssessment.objects.all()
     serializer_class = ComplianceAssessmentSerializer
     permission_classes = [IsComplianceOfficer]
 
 
-class ComplianceReportViewSet(viewsets.ReadOnlyModelViewSet):
+class ComplianceReportViewSet(TenantScopedAuditMixin, viewsets.ReadOnlyModelViewSet):
     queryset = ComplianceReport.objects.all()
     serializer_class = ComplianceReportSerializer
     permission_classes = [IsComplianceOfficer]
 
 
-class EvidenceRecordViewSet(viewsets.ModelViewSet):
+class EvidenceRecordViewSet(TenantScopedAuditMixin, viewsets.ModelViewSet):
     queryset = EvidenceRecord.objects.all()
     serializer_class = EvidenceRecordSerializer
     permission_classes = [IsAuditAdmin]
@@ -291,7 +341,7 @@ class EvidenceRecordViewSet(viewsets.ModelViewSet):
         return Response(EvidenceRecordSerializer(record).data)
 
 
-class EvidencePackageViewSet(viewsets.ModelViewSet):
+class EvidencePackageViewSet(TenantScopedAuditMixin, viewsets.ModelViewSet):
     queryset = EvidencePackage.objects.all()
     serializer_class = EvidencePackageSerializer
     permission_classes = [IsAuditAdmin]

@@ -686,6 +686,13 @@ const en = {
     evalFailed: "Evaluation failed.",
   },
   settingsSecurity: {
+    recentEvents: "Recent audit trail",
+    loadingEvents: "Loading audit trail…",
+    noEvents: "No audit events recorded yet.",
+    colWhen: "When",
+    colWho: "Who",
+    colAction: "Action",
+    colRecord: "Record",
     title: "Security & Audit Chain",
     subtitle: "Set your organization's SSO preference and verify the SHA-256 hash-chain integrity of the real audit log.",
     ssoHeading: "Single-Sign-On (SSO)",

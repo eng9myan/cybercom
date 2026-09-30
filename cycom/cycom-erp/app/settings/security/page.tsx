@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, ShieldCheck, Key, ShieldAlert, RefreshCw
+  ArrowLeft, ShieldCheck, Key, ShieldAlert, RefreshCw, History
 } from 'lucide-react';
 import { call } from '@/lib/cycom';
 import { useT } from '@/lib/i18n';
@@ -14,6 +14,18 @@ interface ChainResult {
   checked?: number;
   errors?: unknown[];
   error?: string;
+}
+
+interface AuditEventRow {
+  id: string;
+  timestamp: string;
+  action: string;
+  action_verb: string;
+  resource_type: string;
+  resource_id: string;
+  actor_username: string;
+  actor_user_id: string;
+  status: string;
 }
 
 const SSO_ENABLED_KEY = 'cycom.security.sso_required';
@@ -37,6 +49,22 @@ export default function SecuritySettings() {
   const [verifying, setVerifying] = useState(false);
   const [results, setResults] = useState<ChainResult[] | null>(null);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+
+  // Recent audit trail for this company (platform.audit, tenant-scoped).
+  const [events, setEvents] = useState<AuditEventRow[] | null>(null);
+  const [eventsError, setEventsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/cycom/rest/audit/events/', { credentials: 'include' })
+      .then(async (r) => {
+        const data = await r.json().catch(() => null);
+        if (r.status === 403) setEventsError(t('settingsSecurity.notAuthorized'));
+        else if (!r.ok) setEventsError(t('settingsSecurity.verifyFailed', { msg: data?.detail || String(r.status) }));
+        else setEvents(((data?.results ?? data) as AuditEventRow[]).slice(0, 25));
+      })
+      .catch((err) => setEventsError(t('settingsSecurity.verifyFailed', { msg: err.message })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -189,6 +217,39 @@ export default function SecuritySettings() {
               </div>
             </div>
           ))}
+        </div>
+        {/* Recent audit trail */}
+        <div className="glass-card p-6 space-y-3 md:col-span-2">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2 border-b border-white/5 pb-2">
+            <History className="w-4 h-4 text-cyan-400" /> {t('settingsSecurity.recentEvents')}
+          </h3>
+          {eventsError && <p className="text-xs text-amber-400">{eventsError}</p>}
+          {!events && !eventsError && <p className="text-xs text-slate-500">{t('settingsSecurity.loadingEvents')}</p>}
+          {events && events.length === 0 && <p className="text-xs text-slate-500">{t('settingsSecurity.noEvents')}</p>}
+          {events && events.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[560px] text-xs">
+                <thead>
+                  <tr className="text-slate-500 uppercase border-b border-slate-850">
+                    <th className="p-2 text-start font-bold">{t('settingsSecurity.colWhen')}</th>
+                    <th className="p-2 text-start font-bold">{t('settingsSecurity.colWho')}</th>
+                    <th className="p-2 text-start font-bold">{t('settingsSecurity.colAction')}</th>
+                    <th className="p-2 text-start font-bold">{t('settingsSecurity.colRecord')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {events.map((e) => (
+                    <tr key={e.id}>
+                      <td className="p-2 text-slate-400 whitespace-nowrap">{new Date(e.timestamp).toLocaleString()}</td>
+                      <td className="p-2 text-slate-200">{e.actor_username || e.actor_user_id || '—'}</td>
+                      <td className="p-2 text-slate-300">{e.action_verb || e.action}</td>
+                      <td className="p-2 text-slate-400 font-mono">{e.resource_type}{e.resource_id ? ` · ${e.resource_id}` : ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
