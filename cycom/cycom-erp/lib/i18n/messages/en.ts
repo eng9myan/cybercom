@@ -260,6 +260,18 @@ const en = {
     automatic: "Automatic",
   },
   hrDepts: {
+    add: "Add department",
+    addSub: "Add sub-department",
+    edit: "Edit department",
+    delete: "Delete department",
+    name: "Name",
+    code: "Code",
+    parent: "Parent department",
+    topLevel: "— Top level —",
+    manager: "Manager",
+    save: "Save",
+    cancel: "Cancel",
+    loadFailed: "Could not load departments ({msg}).",
     title: "Department Hierarchy",
     subtitle:
       "Company structure with dynamic child-employee metrics propagated down departments.",
@@ -277,7 +289,6 @@ const en = {
     countLogicHeading: "Automated Count Logic",
     countLogicBody:
       "Department headcount is calculated dynamically by summing active child departments recursively, exposed via cached database summaries.",
-    readSpec: "Read the Cycom module specification",
     unassigned: "Unassigned",
   },
   hrRequests: {

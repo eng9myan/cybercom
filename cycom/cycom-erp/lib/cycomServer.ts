@@ -421,6 +421,29 @@ const MODEL_ADAPTERS: Record<string, ModelAdapter> = {
     },
     fromBackend: (r) => ({ id: r.id, name: r.name, description: r.description || '' }),
   },
+  // Real hierarchical departments (products.cycom.hr.Department).
+  'hr.department': {
+    basePath: '/api/v1/hr/departments/',
+    toBackend: (f) => {
+      const src = stripLegacyJunk(f);
+      const out: Record<string, unknown> = {};
+      if ('name' in src) out.name = src.name;
+      if ('code' in src) out.code = src.code;
+      if ('parent_id' in src) out.parent = src.parent_id || null;
+      if ('manager_id' in src) out.manager = src.manager_id || null;
+      return out;
+    },
+    fromBackend: (r) => ({
+      id: r.id,
+      name: r.name,
+      code: r.code || '',
+      parent_id: r.parent ? [r.parent, r.parent_name || ''] : false,
+      manager_id: r.manager ? [r.manager, r.manager_name || ''] : false,
+      member_ids: r.member_ids || [],
+      child_ids: r.child_ids || [],
+      total_employee: r.total_employee ?? 0,
+    }),
+  },
   'fleet.vehicle': {
     basePath: '/api/v1/fleet/vehicles/',
     toBackend: (f) => {

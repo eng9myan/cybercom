@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { installModules, setParam } from '@/lib/setup/serverHelpers';
+import { installModules, cycomRpc, setParam } from '@/lib/setup/serverHelpers';
 
 type Payload = {
   orgSize: 'small' | 'medium' | 'large';
@@ -49,20 +49,22 @@ export async function POST(req: NextRequest) {
       { name: 'cycom_employee_profile' },
     ], summary, warnings);
 
-    // Real Employee.department (products.cycom.hr) is a plain free-text
-    // field, not a separate entity with its own id/hierarchy/manager (that
-    // richer concept -- what app/hr/departments/page.tsx's tree view
-    // actually wants -- doesn't exist in the backend yet; a real one is a
-    // separate feature, not onboarding plumbing). Nothing needs pre-
-    // creating: an employee just gets typed into a department directly.
-    // Persist the chosen names as a preference so the employee-creation
-    // UI can offer them as suggestions.
+    // Create the chosen departments as real top-level units (idempotent:
+    // re-running the wizard doesn't duplicate an existing name).
     const departmentNames = [...new Set(p.departments.map((d) => d.trim()).filter(Boolean))];
-    await setParam(req, 'cycom.hr.department_names', JSON.stringify(departmentNames));
+    const existing = await cycomRpc<Array<{ id: string; name: string; parent_id: unknown }>>(
+      req, 'hr.department', 'search_read', [[], ['id', 'name', 'parent_id']]);
+    const topLevel = new Set(existing.filter((d) => !d.parent_id).map((d) => d.name));
+    let created = 0;
+    for (const name of departmentNames) {
+      if (topLevel.has(name)) continue;
+      await cycomRpc<string>(req, 'hr.department', 'create', [{ name }]);
+      created += 1;
+    }
 
     await setParam(req, 'cycom.hr.org_size', p.orgSize);
     await setParam(req, 'cycom.tenant.setup.hr_done', 'true');
-    summary.push(`Saved HR org size: ${p.orgSize}. Saved ${departmentNames.length} department name(s) as a preference.`);
+    summary.push(`Saved HR org size: ${p.orgSize}. Created ${created} department(s) (${departmentNames.length - created} already existed).`);
 
     return NextResponse.json({ ok: true, summary, warnings, departmentNames });
   } catch (e) {

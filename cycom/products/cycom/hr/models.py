@@ -4,6 +4,44 @@ from platform.common.fields import EncryptedText
 from platform.common.models import BaseModel
 
 
+class Department(BaseModel):
+    """Organisational unit: a tree (parent/children) with an optional
+    manager. Employees belong to one via Employee.department_unit; the
+    legacy free-text Employee.department is kept in sync with its name so
+    existing reports/payroll that read the string keep working."""
+
+    name = models.CharField(max_length=150)
+    code = models.CharField(max_length=30, blank=True)
+    parent = models.ForeignKey("self", on_delete=models.PROTECT, null=True, blank=True, related_name="children")
+    manager = models.ForeignKey("Employee", on_delete=models.SET_NULL, null=True, blank=True,
+                                related_name="managed_departments")
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "cycom_hr_departments"
+        ordering = ["name"]
+        constraints = [models.UniqueConstraint(fields=["tenant_id", "parent", "name"],
+                                               name="uniq_department_name_per_parent")]
+
+    def __str__(self):
+        return self.name
+
+    def ancestors(self):
+        node, seen = self.parent, []
+        while node is not None and node.pk not in seen:
+            seen.append(node.pk)
+            node = node.parent
+        return seen
+
+    def descendant_ids(self) -> set:
+        out, frontier = set(), [self.pk]
+        while frontier:
+            kids = list(Department.objects.filter(parent_id__in=frontier).values_list("pk", flat=True))
+            frontier = [k for k in kids if k not in out]
+            out.update(frontier)
+        return out
+
+
 class Employee(BaseModel):
     EMPLOYMENT_STATUS = [
         ("active", "Active"),
@@ -28,6 +66,8 @@ class Employee(BaseModel):
     phone = EncryptedText(classification="pii")
     job_title = models.CharField(max_length=150, blank=True)
     department = models.CharField(max_length=150, blank=True)
+    department_unit = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True,
+                                        related_name="members")
     hire_date = models.DateField()
     status = models.CharField(max_length=20, choices=EMPLOYMENT_STATUS, default="active")
     # Drives the Jordan income-tax personal exemption (18,000 for a married
@@ -42,6 +82,17 @@ class Employee(BaseModel):
 
     def __str__(self):
         return f"{self.employee_number} — {self.first_name} {self.last_name}"
+
+    def save(self, *args, **kwargs):
+        # Keep the legacy text field and the real FK in step: a unit wins and
+        # sets the text; text alone links to the unit with exactly that name.
+        if self.department_unit_id:
+            self.department = self.department_unit.name
+        elif self.department:
+            matches = list(Department.objects.filter(tenant_id=self.tenant_id, name=self.department)[:2])
+            if len(matches) == 1:
+                self.department_unit = matches[0]
+        super().save(*args, **kwargs)
 
 
 class Contract(BaseModel):
