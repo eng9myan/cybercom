@@ -266,6 +266,20 @@ export async function cycomBackendProxy(
   }
 }
 
+/** Server-side JSON call to a real /api/v1/* route as the signed-in user
+ * (for Route Handlers that orchestrate, e.g. the onboarding wizard). */
+export async function cycomBackendJson<T = unknown>(
+  req: NextRequest,
+  targetPath: string,
+  init: RequestInit = {},
+): Promise<{ ok: boolean; status: number; data: T | null }> {
+  const sessionId = getSessionId(req);
+  if (!sessionId) return { ok: false, status: 401, data: null };
+  const upstream = await backendFetch(targetPath, sessionId, init);
+  const data = (await upstream.json().catch(() => null)) as T | null;
+  return { ok: upstream.ok, status: upstream.status, data };
+}
+
 // ---------------------------------------------------------------------------
 // REST proxy — translates the legacy Odoo-shaped {model, method, args, kwargs}
 // calls the UI still makes into real requests against the new Django REST API.

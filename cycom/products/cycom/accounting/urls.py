@@ -10,6 +10,7 @@ from products.cycom.accounting.report_views import (
     TrialBalanceView,
     VatReturnView,
 )
+from products.cycom.accounting.chart_views import SeedChartView
 from products.cycom.accounting.mtd_views import (
     MtdCallbackView,
     MtdConnectView,
@@ -39,6 +40,7 @@ router.register("fixed-assets", FixedAssetViewSet)
 router.register("budgets", BudgetViewSet)
 
 urlpatterns = [
+    path("chart/seed/", SeedChartView.as_view(), name="chart-seed"),
     path("mtd/status/", MtdStatusView.as_view(), name="mtd-status"),
     path("mtd/connect/", MtdConnectView.as_view(), name="mtd-connect"),
     path("mtd/callback/", MtdCallbackView.as_view(), name="mtd-callback"),

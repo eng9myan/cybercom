@@ -82,30 +82,9 @@ class ProvisioningService:
     # -- generators ----------------------------------------------------------
 
     def _generate_coa(self, country: CountryPack, industry: IndustryTemplate) -> int:
-        Account = apps.get_model("cycom_accounting", "Account")
-        # Country CoA first (parents before children — template is ordered so
-        # a parent code always precedes its children).
-        rows = list(country.coa_template)
         # Industry may add its own accounts (e.g. construction WIP, retention).
-        rows += list(industry.accounting_mappings.get("extra_accounts", []))
-
-        code_to_obj: dict[str, object] = {}
-        created = 0
-        for row in rows:
-            parent_obj = code_to_obj.get(row.get("parent")) if row.get("parent") else None
-            obj, was_created = Account.objects.get_or_create(
-                tenant_id=self.tenant_id,
-                code=row["code"],
-                defaults={
-                    "name": row["name"],
-                    "account_type": row["account_type"],
-                    "parent": parent_obj,
-                    "currency": country.currency,
-                },
-            )
-            code_to_obj[row["code"]] = obj
-            created += int(was_created)
-        return created
+        extra = list(industry.accounting_mappings.get("extra_accounts", []))
+        return seed_chart_of_accounts(self.tenant_id, country, extra_rows=extra)["created"]
 
     def _generate_roles(self, packs: list[DepartmentPack], industry: IndustryTemplate) -> list[str]:
         Role = apps.get_model("cycom_access", "Role")
@@ -232,3 +211,29 @@ class ProvisioningService:
         }
         bp.save()
         return bp
+
+
+def seed_chart_of_accounts(tenant_id, country: CountryPack, *, extra_rows=(), locale: str | None = None) -> dict:
+    """Create the country pack's chart (plus any extra rows) for a tenant.
+
+    Idempotent: an account whose code already exists is left exactly as the
+    tenant has it (never renamed or re-typed), so re-running only fills in
+    what's missing. Names come out in Arabic for an Arabic-locale tenant
+    when the template provides `name_ar`. Rows are ordered so a parent code
+    always precedes its children."""
+    Account = apps.get_model("cycom_accounting", "Account")
+    use_ar = (locale or country.default_locale or "").startswith("ar")
+    rows = list(country.coa_template) + list(extra_rows)
+    existing = {a.code: a for a in Account.objects.filter(tenant_id=tenant_id, code__in=[r["code"] for r in rows])}
+    created = 0
+    for row in rows:
+        if row["code"] in existing:
+            continue
+        parent = existing.get(row.get("parent")) if row.get("parent") else None
+        existing[row["code"]] = Account.objects.create(
+            tenant_id=tenant_id, code=row["code"],
+            name=(row.get("name_ar") if use_ar and row.get("name_ar") else row["name"]),
+            account_type=row["account_type"], parent=parent, currency=country.currency,
+        )
+        created += 1
+    return {"created": created, "existing": len(rows) - created, "total": len(rows)}

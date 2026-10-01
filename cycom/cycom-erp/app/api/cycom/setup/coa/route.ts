@@ -1,47 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cycomCallKw } from '@/lib/cycomServer';
+import { cycomBackendJson, cycomCallKw } from '@/lib/cycomServer';
 
 /**
  * Chart of Accounts orchestrator.
  *
- * Used to install a per-country l10n_<cc> module (auto-loads a full chart
- * of accounts + tax templates) via Odoo's ir.module.module RPC, then
- * adjust the default sales/purchase tax rate. Neither ir.module.module
- * nor account.tax has any entry in MODEL_ADAPTERS -- there's no
- * "localization module" concept in the rewritten backend, and no central
- * tax-rate registry (products.cycom.sales/ar_ap store tax_percent inline
- * per line, not against a shared Tax entity). This always threw before
- * (confirmed live: every submission 500'd).
+ * Creates the tenant's chart from its country pack (platform.provisioning
+ * country templates: a common IFRS-style backbone plus each country's own
+ * statutory liabilities -- end-of-service provisions in the GCC/Jordan,
+ * Zakat in Saudi Arabia, withholding tax, UK PAYE/NIC, ...), with Arabic
+ * account names for an Arabic-locale tenant. Idempotent: accounts that
+ * already exist are left untouched, so re-running only fills gaps.
  *
- * Building a *real* per-country chart-of-accounts seeder (actual Account
- * rows per jurisdiction, not just a module-name string) is a genuinely
- * separate, larger feature -- flagged, not attempted here. What this now
- * does honestly: persist the tenant's choice (country/localization/tax
- * rates) via ir.config_parameter, which IS real, so the preference isn't
- * lost -- and tell the caller plainly that no accounts were created, so
- * the wizard doesn't claim more than actually happened.
+ * The chosen tax rates are stored as the tenant's defaults; tax itself is
+ * applied per invoice line (there is no shared tax-rate entity to create).
  */
 
 type Payload = {
   countryCode: string;
-  l10nModule: string;
+  l10nModule?: string;
   salesTaxPct: number;
   purchaseTaxPct: number;
 };
 
-async function rpc<T = unknown>(
-  req: NextRequest,
-  model: string,
-  method: string,
-  args: unknown[] = [],
-  kwargs: Record<string, unknown> = {},
-): Promise<T> {
-  const res = await cycomCallKw(req, { model, method, args, kwargs });
-  const data = (await res.json()) as { result?: T; error?: { message?: string; data?: { message?: string } } };
-  if (data.error) {
-    throw new Error(data.error.data?.message || data.error.message || `Cycom backend error on ${model}.${method}`);
-  }
-  return data.result as T;
+async function setParam(req: NextRequest, key: string, value: string) {
+  const res = await cycomCallKw(req, { model: 'ir.config_parameter', method: 'set_param', args: [key, value], kwargs: {} });
+  const data = (await res.json()) as { error?: { message?: string } };
+  if (data.error) throw new Error(data.error.message || `Could not save ${key}`);
 }
 
 export async function POST(req: NextRequest) {
@@ -51,31 +35,30 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ ok: false, error: 'Invalid JSON payload' }, { status: 400 });
   }
-
-  if (!payload.l10nModule?.trim()) {
-    return NextResponse.json({ ok: false, error: 'Localization module is required' }, { status: 400 });
-  }
+  const country = (payload.countryCode || '').trim().toUpperCase();
+  if (!country) return NextResponse.json({ ok: false, error: 'Country is required' }, { status: 400 });
 
   const summary: string[] = [];
-  const warnings: string[] = [
-    'No chart of accounts was created automatically -- set up accounts under Accounting → Chart of Accounts.',
-  ];
-
+  const warnings: string[] = [];
   try {
-    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', ['cycom.tenant.setup.coa_done', 'true']);
-    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', ['cycom.tenant.coa_module', payload.l10nModule]);
-    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', ['cycom.tenant.coa_country', payload.countryCode]);
-    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', ['cycom.tenant.coa_sales_tax_pct', String(payload.salesTaxPct)]);
-    await rpc<boolean>(req, 'ir.config_parameter', 'set_param', ['cycom.tenant.coa_purchase_tax_pct', String(payload.purchaseTaxPct)]);
-    summary.push(
-      `Saved chart-of-accounts preference: ${payload.countryCode} (${payload.l10nModule}), sales tax ${payload.salesTaxPct}%, purchase tax ${payload.purchaseTaxPct}%.`,
-    );
+    const seeded = await cycomBackendJson<{ created: number; existing: number; total: number; detail?: string }>(
+      req, '/api/v1/accounting/chart/seed/', { method: 'POST', body: JSON.stringify({ country_code: country }) });
+    if (!seeded.ok || !seeded.data) {
+      return NextResponse.json(
+        { ok: false, error: seeded.data?.detail || `Chart of accounts could not be created (${seeded.status})` },
+        { status: seeded.status >= 400 ? seeded.status : 500 },
+      );
+    }
+    summary.push(`Chart of accounts (${country}): created ${seeded.data.created} account(s), ${seeded.data.existing} already existed.`);
 
-    return NextResponse.json({ ok: true, summary, warnings, l10nModule: payload.l10nModule });
+    await setParam(req, 'cycom.tenant.coa_country', country);
+    await setParam(req, 'cycom.tenant.coa_sales_tax_pct', String(payload.salesTaxPct));
+    await setParam(req, 'cycom.tenant.coa_purchase_tax_pct', String(payload.purchaseTaxPct));
+    await setParam(req, 'cycom.tenant.setup.coa_done', 'true');
+    summary.push(`Default tax rates: sales ${payload.salesTaxPct}%, purchases ${payload.purchaseTaxPct}%.`);
+
+    return NextResponse.json({ ok: true, summary, warnings, created: seeded.data.created });
   } catch (e) {
-    return NextResponse.json(
-      { ok: false, error: e instanceof Error ? e.message : 'Setup failed', warnings },
-      { status: 500 },
-    );
+    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : 'Setup failed', warnings }, { status: 500 });
   }
 }
