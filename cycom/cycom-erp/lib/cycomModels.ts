@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { searchRead } from '@/lib/cycom';
+import { getActiveLocale } from '@/lib/i18n';
 
 export type Many2One = [number, string] | false | null;
 
@@ -26,14 +27,9 @@ export function m2oId(v: Many2One | undefined): number | null {
 // toggle via components/LocaleDirection); falls back to the browser locale, then
 // 'en'. Arabic ('ar') renders Arabic-Indic numerals + RTL-aware dates.
 function activeLocale(): string {
-  try {
-    const stored = typeof localStorage !== 'undefined' && localStorage.getItem('cycom.locale');
-    if (stored) return stored;
-  } catch {
-    /* storage blocked */
-  }
-  if (typeof navigator !== 'undefined' && navigator.language) return navigator.language;
-  return 'en';
+  // Same source on server and client (the locale cookie), so formatted dates
+  // and numbers don't differ between SSR and hydration.
+  return getActiveLocale();
 }
 
 export function fmtDate(s?: string): string {

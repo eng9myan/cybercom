@@ -8,10 +8,14 @@
  * translated strings + a locale switch now; a next-intl migration can come later
  * without changing call sites (they use `t('pos.checkout')` either way).
  *
- * Locale source: the 'cycom.locale' key written by components/LocaleDirection's
- * applyLocale(). Catalogs are small and bundled (no async load).
+ * Locale source: the 'cycom.locale' cookie written by components/LocaleDirection's
+ * applyLocale(). The root layout reads it on the server and passes it in as
+ * `locale`, so server and client render the same language. Catalogs are
+ * small and bundled (no async load).
  */
 import React, { createContext, useCallback, useContext, useMemo } from "react";
+
+import { currentLocale } from "@/components/LocaleDirection";
 
 import ar from "./messages/ar";
 import en, { type Messages } from "./messages/en";
@@ -51,18 +55,10 @@ export function I18nProvider({
   locale?: string;
   children: React.ReactNode;
 }) {
-  const locale = resolveLocale(
-    forced ??
-      (typeof window !== "undefined"
-        ? (() => {
-            try {
-              return localStorage.getItem("cycom.locale");
-            } catch {
-              return null;
-            }
-          })()
-        : null),
-  );
+  const locale = resolveLocale(forced ?? (typeof window !== "undefined" ? currentLocale() : null));
+  // Non-component helpers (t(), date/number formatters) read this. Set during
+  // render so the server-rendered HTML uses the request's locale too.
+  renderLocale = locale;
 
   const t = useCallback<TFn>(
     (key, vars) => {
@@ -90,14 +86,18 @@ export function useLocale(): Locale {
   return useContext(I18nContext).locale;
 }
 
-/** Non-component helper (e.g. formatters). Reads localStorage directly. */
+let renderLocale: Locale = "en";
+
+/** The active locale outside React components (formatters, plain t()).
+ * In the browser the cookie is authoritative; on the server it's the locale
+ * the provider was rendered with for this request. */
+export function getActiveLocale(): Locale {
+  return typeof window !== "undefined" ? resolveLocale(currentLocale()) : renderLocale;
+}
+
+/** Non-component helper (e.g. formatters). */
 export function t(key: string, vars?: Record<string, string | number>): string {
-  let loc: Locale = "en";
-  try {
-    if (typeof localStorage !== "undefined") loc = resolveLocale(localStorage.getItem("cycom.locale"));
-  } catch {
-    /* storage blocked */
-  }
+  const loc = getActiveLocale();
   let s = lookup(CATALOGS[loc], key);
   if (s === key && loc !== "en") s = lookup(CATALOGS.en, key);
   if (vars) for (const [k, v] of Object.entries(vars)) s = s.replace(new RegExp(`\\{${k}\\}`, "g"), String(v));
