@@ -22,6 +22,12 @@ class CartAlreadyCheckedOutError(Exception):
     pass
 
 
+class DietPlanViolationError(Exception):
+    """Raised when the Diet Shield blocks this item for the cart's
+    customer. Only ever raised for a customer who has an active
+    DietProfile — everyone else is unaffected (see ShieldGate)."""
+
+
 class CartService:
     def get_or_create_active_cart(self, customer_id: uuid.UUID) -> Cart:
         cart = Cart.objects.filter(customer_id=customer_id, status=CartStatus.ACTIVE).first()
@@ -40,6 +46,7 @@ class CartService:
         product_name: str = "",
         item_discount: Decimal = Decimal("0"),
         notes: str = "",
+        enforce_diet_shield: bool = True,
     ) -> CartItem:
         if cart.status != CartStatus.ACTIVE:
             raise CartAlreadyCheckedOutError(f"Cart {cart.id} is '{cart.status}', not active.")
@@ -49,6 +56,23 @@ class CartService:
                 f"Cart {cart.id} already has items from store {cart.store_id}. "
                 "Start a new cart to order from a different store."
             )
+
+        # Diet Shield gate — lazy import so cart has no hard dependency on
+        # dietshield at module load. A no-op for any customer without an
+        # active DietProfile (the single on/off switch for the whole
+        # feature); only diet-shield customers ever see this raise.
+        if enforce_diet_shield:
+            from products.cymart.dietshield.services import (
+                DietShieldBlockedError,
+                ShieldGate,
+            )
+
+            try:
+                ShieldGate().enforce(
+                    cart.customer_id, [{"product_id": product_id, "quantity": quantity}]
+                )
+            except DietShieldBlockedError as exc:
+                raise DietPlanViolationError(str(exc)) from exc
 
         with transaction.atomic():
             if cart.store_id is None:
@@ -125,4 +149,22 @@ class CartService:
         cart.status = CartStatus.CHECKED_OUT
         cart.order_id = order.id
         cart.save(update_fields=["status", "order_id", "updated_at"])
+
+        # Feed the grocery brain — lazy import, same posture as the diet
+        # shield hook above. This is a best-effort learning signal for
+        # replenish predictions, never part of the checkout contract: a
+        # failure here must not fail an already-placed order.
+        try:
+            from products.cymart.pantry.services import ReplenishEngine
+
+            for line in line_items:
+                ReplenishEngine().record_purchase(
+                    customer_id=cart.customer_id,
+                    product_id=line["product_id"],
+                    quantity=line["quantity"],
+                    product_name=line["product_name"],
+                )
+        except Exception:
+            pass
+
         return order

@@ -8,6 +8,7 @@ from .serializers import CartSerializer
 from .services import (
     CartAlreadyCheckedOutError,
     CartService,
+    DietPlanViolationError,
     DifferentStoreInCartError,
     EmptyCartCheckoutError,
 )
@@ -44,6 +45,8 @@ class CartViewSet(viewsets.ReadOnlyModelViewSet):
             )
         except (DifferentStoreInCartError, CartAlreadyCheckedOutError) as exc:
             return Response({"detail": str(exc)}, status=409)
+        except DietPlanViolationError as exc:
+            return Response({"detail": str(exc), "code": "diet_shield_blocked"}, status=422)
         cart.refresh_from_db()
         return Response(self.get_serializer(cart).data)
 

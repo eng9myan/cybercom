@@ -20,4 +20,9 @@ urlpatterns = [
     path("api/v1/marketplace/", include("products.cymart.cart.urls")),
     path("api/v1/settlement/", include("products.cymart.settlement.urls")),
     path("api/v1/payments/", include("products.cymart.payments.urls")),
+    path("api/v1/dietshield/", include("products.cymart.dietshield.urls")),
+    path("api/v1/pantry/", include("products.cymart.pantry.urls")),
+    path("api/v1/agent/", include("products.cymart.agent.urls")),
+    path("api/v1/delivery/", include("products.cymart.delivery.urls")),
+    path("api/v1/merchants/", include("products.cymart.merchants.urls")),
 ]

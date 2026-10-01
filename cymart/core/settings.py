@@ -61,6 +61,7 @@ THIRD_PARTY_APPS = [
 # reimplemented here.
 PLATFORM_APPS = [
     "platform.common",
+    "platform.canonical",
     "platform.tenant",
     "platform.audit",
     "platform.cyidentity",
@@ -76,7 +77,22 @@ PRODUCT_APPS = [
     "products.cymart.cart",
     "products.cymart.settlement",
     "products.cymart.payments",
+    "products.cymart.dietshield",
+    "products.cymart.pantry",
+    "products.cymart.agent",
+    "products.cymart.delivery",
+    "products.cymart.merchants",
 ]
+
+# Swappable agent completion provider — same pattern as
+# CYMART_PAYMENT_PROVIDER above. Defaults to the deterministic sandbox
+# (no LLM key needed to run or test); point this at
+# "products.cymart.agent.providers.claude.ClaudeCompletionProvider" and
+# set ANTHROPIC_API_KEY for a real model.
+CYMART_AGENT_PROVIDER = os.environ.get(
+    "CYMART_AGENT_PROVIDER",
+    "products.cymart.agent.providers.sandbox.SandboxCompletionProvider",
+)
 
 # Swappable payment provider (master spec section 17). No real gateway
 # credentials exist in this environment — defaults to the sandbox. Point
