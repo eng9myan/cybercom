@@ -1,12 +1,30 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Percent, Workflow, Key, Cloud, Tag, FileCheck2 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
+interface SystemStatus {
+  company: { name: string; tax_id: string; country_code: string; currency: string; timezone: string };
+  integrations: { key: string; detail: string; status: string }[];
+}
+
+const STATUS_TONE: Record<string, string> = {
+  connected: 'text-emerald-400', configured: 'text-emerald-400', manual: 'text-amber-400',
+  not_configured: 'text-slate-500', not_applicable: 'text-slate-600',
+};
+
 export default function SettingsAdminPage() {
   const t = useT();
+  const [status, setStatus] = useState<SystemStatus | null>(null);
+
+  useEffect(() => {
+    fetch('/api/cycom/rest/common/system-status/', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setStatus)
+      .catch(() => {});
+  }, []);
   return (
     <div className="space-y-6 text-xs md:text-sm">
       {/* Page Header */}
@@ -96,42 +114,48 @@ export default function SettingsAdminPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column - General Parameters */}
+        {/* Company profile -- real tenant data */}
         <div className="glass-card p-6 space-y-4">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('settingsMain.companyProfile')}</h2>
-          <div className="space-y-3 text-sm">
-            <div>
-              <span className="text-xs text-slate-500 block">{t('settingsMain.orgName')}</span>
-              <span className="text-slate-200 font-semibold">Cycom Co.</span>
+          {!status ? (
+            <p className="text-xs text-slate-500">{t('settingsMain.loading')}</p>
+          ) : (
+            <div className="space-y-3 text-sm">
+              {([
+                ['orgName', status.company.name],
+                ['taxId', status.company.tax_id],
+                ['country', status.company.country_code],
+                ['localCurrency', status.company.currency],
+                ['timezone', status.company.timezone],
+              ] as const).map(([key, value]) => (
+                <div key={key}>
+                  <span className="text-xs text-slate-500 block">{t(`settingsMain.${key}`)}</span>
+                  <span className="text-slate-200 font-semibold">{value || t('settingsMain.notSet')}</span>
+                </div>
+              ))}
             </div>
-            <div>
-              <span className="text-xs text-slate-500 block">{t('settingsMain.erpBrand')}</span>
-              <span className="text-slate-200 font-semibold">CYCOM ERP</span>
-            </div>
-            <div>
-              <span className="text-xs text-slate-500 block">{t('settingsMain.localCurrency')}</span>
-              <span className="text-slate-200 font-semibold">Jordanian Dinar (JOD)</span>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Right Column - Dev bridges */}
+        {/* Integrations -- each one's actual configuration state */}
         <div className="glass-card p-6 space-y-4">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('settingsMain.bridgesHeading')}</h2>
-          <div className="space-y-3 text-xs">
-            <div className="flex justify-between items-center pb-2 border-b border-white/5">
-              <span className="text-slate-400">{t('settingsMain.biometricBridge')}</span>
-              <span className="text-[#10B981] font-semibold">{t('settingsMain.healthy')}</span>
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">{t('settingsMain.integrationsHeading')}</h2>
+          {!status ? (
+            <p className="text-xs text-slate-500">{t('settingsMain.loading')}</p>
+          ) : (
+            <div className="space-y-3 text-xs">
+              {status.integrations.map((i) => (
+                <div key={i.key} className="flex justify-between items-center gap-3 pb-2 border-b border-white/5 last:border-0">
+                  <span className="text-slate-400">
+                    {t(`settingsMain.integration.${i.key}`)}
+                    {i.detail && <span className="text-slate-600"> · {i.detail}</span>}
+                  </span>
+                  <span className={`font-semibold ${STATUS_TONE[i.status] || 'text-slate-500'}`}>{t(`settingsMain.integrationStatus.${i.status}`)}</span>
+                </div>
+              ))}
+              <p className="text-[10px] text-slate-600">{t('settingsMain.integrationsNote')}</p>
             </div>
-            <div className="flex justify-between items-center pb-2 border-b border-white/5">
-              <span className="text-slate-400">{t('settingsMain.pricingVerifier')}</span>
-              <span className="text-[#10B981] font-semibold">{t('settingsMain.active')}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400">{t('settingsMain.draftLock')}</span>
-              <span className="text-[#10B981] font-semibold">{t('settingsMain.active')}</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
