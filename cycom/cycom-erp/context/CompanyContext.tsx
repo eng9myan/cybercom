@@ -1,6 +1,16 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
+
+/**
+ * The company / branch the user is working in, from real data:
+ *  - companies: products.cycom.company (multi-company). Most tenants have
+ *    none defined -- then the tenant itself is the one company (legal name
+ *    and currency from the tenant profile / country pack).
+ *  - branches: the tenant's real warehouses / store locations.
+ * The selection is remembered per browser. (This used to be a hard-coded
+ * list of four invented companies with invented store names.)
+ */
 
 export interface Company {
   id: string;
@@ -13,105 +23,98 @@ export interface Company {
   icon: string;
 }
 
-export const COMPANIES: Company[] = [
-  {
-    id: 'COM-001',
-    name: 'Cycom Retail Co.',
-    shortName: 'Retail',
-    type: 'retail',
-    currency: 'JOD',
-    branches: [
-      'Store 01 — Abdali Mall', 'Store 02 — Mecca Mall', 'Store 03 — City Mall',
-      'Store 04 — Taj Mall', 'Store 05 — Galleria', 'Store 06 — Al-Baraka',
-      'Store 07 — Zarqa Central', 'Store 08 — Irbid Branch', 'Store 09 — Aqaba Branch',
-      'Store 10 — Salt Branch', 'Store 11 — Madaba Branch', 'Store 12 — Karak Branch',
-      'Store 13 — Mafraq Branch', 'Store 14 — Jerash Branch', 'Store 15 — Ajloun Branch',
-      'Store 16 — Tafila Branch', 'Store 17 — Maan Branch', 'Store 18 — Al-Balqa',
-      'Store 19 — Sweileh Branch', 'Store 20 — Marj Al-Hamam', 'Store 21 — Abu Nseir',
-      'Store 22 — Tabarbour', 'Store 23 — Al-Hashmi'
-    ],
-    color: '#EF4444',
-    icon: '🏪'
-  },
-  {
-    id: 'COM-002',
-    name: 'Cycom Commercial & HQ',
-    shortName: 'Head Office',
-    type: 'commercial',
-    currency: 'JOD',
-    color: '#3B82F6',
-    icon: '🏢'
-  },
-  {
-    id: 'COM-003',
-    name: 'Cycom Manufacturing Co.',
-    shortName: 'Factory',
-    type: 'factory',
-    currency: 'JOD',
-    color: '#10B981',
-    icon: '🏭'
-  },
-  {
-    id: 'COM-004',
-    name: 'CyberCom Group (HQ)',
-    shortName: 'CyberCom',
-    type: 'retail',
-    currency: 'JOD',
-    branches: [
-      'Amman Showroom — Car Terminal',
-      'Amman Showroom — Café POS',
-      'Amman Showroom — Restaurant POS',
-      'Amman Showroom — Supermarket POS',
-      'Dubai Showroom — Car Terminal',
-      'Dubai Showroom — Café POS',
-      'Dubai Showroom — Restaurant POS',
-      'Dubai Showroom — Supermarket POS',
-      'Riyadh Showroom — Car Terminal',
-      'Riyadh Showroom — Café POS',
-      'Riyadh Showroom — Restaurant POS',
-      'Riyadh Showroom — Supermarket POS',
-      'Factory — CyberCom Car Factory',
-      'Distributor 01 — Germany HQ',
-      'Distributor 02 — USA East',
-      'Distributor 03 — UK Logistics',
-      'Distributor 04 — Japan Hub',
-      'Distributor 05 — Canada Warehouse',
-      'Distributor 06 — France Center',
-      'Distributor 07 — Australia Depot',
-      'Distributor 08 — China Hub',
-      'Distributor 09 — Saudi Logistics',
-      'Distributor 10 — Egypt Warehouse'
-    ],
-    color: '#8B5CF6',
-    icon: '🚗'
-  }
-];
-
 interface CompanyContextValue {
   activeCompany: Company;
   setActiveCompany: (company: Company) => void;
   allCompanies: Company[];
   activeBranch: string | null;
   setActiveBranch: (branch: string | null) => void;
+  loading: boolean;
+}
+
+const PALETTE = ['#3B82F6', '#10B981', '#EF4444', '#8B5CF6', '#E67E22', '#06B6D4'];
+const STORE_KEY = 'cycom.activeCompany';
+const BRANCH_KEY = 'cycom.activeBranch';
+
+const PLACEHOLDER: Company = { id: 'tenant', name: '', shortName: '', type: 'commercial', currency: '', color: PALETTE[0], icon: '🏢' };
+
+function shortName(name: string): string {
+  const words = name.replace(/\b(LLC|Ltd\.?|S\.?r\.?l\.?|S\.?A\.?|GmbH|AS|Inc\.?|Co\.?)\b/gi, '').trim().split(/\s+/);
+  return words.slice(0, 2).join(' ') || name;
+}
+
+async function getJson(url: string) {
+  try {
+    const r = await fetch(url, { credentials: 'include' });
+    return r.ok ? await r.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+function read(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
+function write(key: string, value: string | null) {
+  try {
+    if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value);
+  } catch { /* storage blocked -- selection lasts for this page only */ }
 }
 
 const CompanyContext = createContext<CompanyContextValue | undefined>(undefined);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
-  const [activeCompany, setActiveCompany] = useState<Company>(COMPANIES[1]); // Default to HQ
-  const [activeBranch, setActiveBranch] = useState<string | null>(null);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeBranch, setActiveBranchState] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  return (
-    <CompanyContext.Provider value={{
-      activeCompany,
-      setActiveCompany,
-      allCompanies: COMPANIES,
-      activeBranch,
-      setActiveBranch,
-    }}>
-      {children}
-    </CompanyContext.Provider>
+  useEffect(() => {
+    (async () => {
+      const [status, companyData, warehouseData] = await Promise.all([
+        getJson('/api/cycom/rest/common/system-status/'),
+        getJson('/api/cycom/rest/company/companies/'),
+        getJson('/api/cycom/rest/inventory/warehouses/'),
+      ]);
+      const warehouses: { name: string; is_active?: boolean }[] =
+        (Array.isArray(warehouseData) ? warehouseData : warehouseData?.results) || [];
+      const branches = warehouses.filter((w) => w.is_active !== false).map((w) => w.name);
+      const rows: { id: string; name: string; currency: string; is_active?: boolean }[] =
+        ((Array.isArray(companyData) ? companyData : companyData?.results) || []).filter((c: { is_active?: boolean }) => c.is_active !== false);
+
+      const list: Company[] = rows.length
+        ? rows.map((c, i) => ({
+            id: c.id, name: c.name, shortName: shortName(c.name), type: 'commercial', currency: c.currency,
+            branches, color: PALETTE[i % PALETTE.length], icon: '🏢',
+          }))
+        : [{
+            id: 'tenant', name: status?.company?.name || '', shortName: shortName(status?.company?.name || ''),
+            type: 'commercial', currency: status?.company?.currency || '', branches, color: PALETTE[0], icon: '🏢',
+          }];
+      setCompanies(list);
+      const saved = read(STORE_KEY);
+      setActiveId(list.some((c) => c.id === saved) ? saved : list[0].id);
+      const savedBranch = read(BRANCH_KEY);
+      setActiveBranchState(savedBranch && branches.includes(savedBranch) ? savedBranch : null);
+      setLoading(false);
+    })();
+  }, []);
+
+  const activeCompany = useMemo(
+    () => companies.find((c) => c.id === activeId) || companies[0] || PLACEHOLDER,
+    [companies, activeId],
   );
+
+  const value: CompanyContextValue = {
+    activeCompany,
+    setActiveCompany: (c) => { setActiveId(c.id); write(STORE_KEY, c.id); },
+    allCompanies: companies,
+    activeBranch,
+    setActiveBranch: (b) => { setActiveBranchState(b); write(BRANCH_KEY, b); },
+    loading,
+  };
+  return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>;
 }
 
 export function useCompany() {

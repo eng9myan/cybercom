@@ -36,10 +36,12 @@ def _integrations(tenant_id, country: str) -> list[dict]:
     mode = mode_for_country(country)
     fmt = NATIONAL_FORMATS.get(mode or "")
     if fmt:
-        out.append({"key": "einvoicing", "detail": fmt.label,
+        out.append({"key": "einvoicing", "mode": mode, "detail": fmt.label,
                     "status": "configured" if getattr(fmt.client(), "configured", False) else "manual"})
     elif mode:
-        out.append({"key": "einvoicing", "detail": mode, "status": "configured"})
+        labels = {"jo_jofotara": "Jordan - JoFotara", "sa_zatca": "Saudi Arabia - ZATCA",
+                  "eu_peppol": "Peppol (EN 16931)"}
+        out.append({"key": "einvoicing", "mode": mode, "detail": labels.get(mode, mode), "status": "configured"})
     else:
         out.append({"key": "einvoicing", "detail": "", "status": "not_applicable"})
 

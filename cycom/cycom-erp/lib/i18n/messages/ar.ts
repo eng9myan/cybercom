@@ -2412,7 +2412,88 @@ const ar: Messages = {
     save: "حفظ الإعدادات",
     saved: "تم حفظ الإعدادات.",
   },
+  topbar: {
+    locations: "{n} مواقع",
+  },
   einvoicing: {
+    required: "مطلوب",
+    scopeLine: "البند {n}",
+    scope: {
+      seller: "المُصدِر",
+      buyer: "العميل",
+      document: "الفاتورة",
+    },
+    help: {
+      it_fatturapa: {
+        seller: {
+          default_natura: "تُستخدم لأي بند بنسبة 0% لا يحمل رمز Natura خاصاً به.",
+          modalita_pagamento: "تضيف قسم DatiPagamento عندما يكون للفاتورة تاريخ استحقاق.",
+        },
+        buyer: {
+          codice_destinatario: "7 أحرف للشركات، و6 لمكتب جهة حكومية؛ واستخدم '0000000' عند التسليم عبر PEC أو للمستهلك.",
+        },
+      },
+      pl_ksef: {
+        seller: {
+          metoda_kasowa: "اختيار المحاسبة على الأساس النقدي. القيمة '2' ما لم يختر المكلّف ذلك.",
+          zwolnienie_podstawa: "السند القانوني للإعفاء من الضريبة، مثل 'art. 43 ust. 1 pkt 37 ustawy o VAT'.",
+        },
+        buyer: {
+          jst: "'1' فقط إذا كان المشتري وحدة حكم محلي تابعة. الافتراضي 2.",
+          gv: "'1' فقط إذا كان المشتري عضواً في مجموعة ضريبية. الافتراضي 2.",
+        },
+        document: {
+          kurs_waluty: "عدد الزلوتي مقابل وحدة واحدة من عملة الفاتورة (السعر الوسطي لبنك NBP ليوم العمل السابق).",
+        },
+      },
+      mx_cfdi: {
+        seller: {
+          name: "كما هو مسجّل لدى SAT تماماً (دون لاحقة الشكل القانوني مثل 'S.A. de C.V.').",
+          default_clave_prod_serv: "رمز المنتج/الخدمة لدى SAT للبنود التي لا تحمل رمزاً خاصاً.",
+          default_clave_unidad: "مثل H87 قطعة، E48 وحدة خدمة، ACT نشاط.",
+        },
+        buyer: {
+          tax_id: "اتركه فارغاً للبيع لعامة الجمهور (XAXX010101000).",
+          residencia_fiscal: "رمز الدولة ISO 3166-1 من ثلاثة أحرف، مثل USA وCAN وESP.",
+        },
+        document: {
+          tipo_cambio: "عدد البيزو مقابل وحدة واحدة من عملة الفاتورة (سعر DOF).",
+        },
+      },
+      br_nfe: {
+        seller: {
+          building_number: "يُرسل الحقل الفارغ كـ 'S/N' (بدون رقم).",
+          natureza_operacao: "مثل 'Venda de mercadoria'.",
+          utc_offset: "فرق التوقيت لـ dhEmi؛ الافتراضي -03:00 (برازيليا).",
+          default_origem: "0 = منشأ محلي.",
+        },
+      },
+      in_gst: {
+        document: {
+          place_of_supply: "الافتراضي ولاية المشتري (من رقم GSTIN).",
+        },
+      },
+      es_sii: {
+        seller: {
+          sii_obligado: "يقدّم هنا المسجلون في SII فقط؛ وغيرهم يستخدم VERI*FACTU أو TicketBAI (غير مشمولين).",
+          descripcion_operacion: "مثل 'Venta de mercaderías' أو 'Prestación de servicios'.",
+        },
+        buyer: {
+          id_type: "الافتراضي 02 لرقم ضريبي أوروبي، و06 لغير ذلك.",
+        },
+      },
+    },
+    mode: {
+      it_fatturapa: "إيطاليا - FatturaPA عبر SdI",
+      pl_ksef: "بولندا - KSeF FA(3)",
+      mx_cfdi: "المكسيك - CFDI 4.0 (SAT / PAC)",
+      br_nfe: "البرازيل - NF-e 4.00 (النموذج 55)",
+      in_gst: "الهند - فاتورة GST الإلكترونية (IRN عبر IRP)",
+      es_sii: "إسبانيا - SII (سجل الفواتير الصادرة)",
+      jo_jofotara: "الأردن - جوفوترة",
+      sa_zatca: "السعودية - زاتكا (فاتورة)",
+      eu_peppol: "شبكة Peppol (EN 16931)",
+    },
     title: "الفوترة الإلكترونية",
     subtitle: "الهوية التي تُصدَر بها فواتيرك الإلكترونية الوطنية. أسماء الحقول تتبع مصطلحات الجهة الضريبية نفسها.",
     loading: "جارٍ التحميل…",

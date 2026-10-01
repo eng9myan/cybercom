@@ -91,10 +91,10 @@ export default function InvoiceDetailPage() {
           </button>
           <div className="min-w-0">
             <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
-              <Receipt className="w-6 h-6 text-cyan-400 flex-shrink-0" /> <span className="truncate">{invoice.partner_name}</span>
+              <Receipt className="w-6 h-6 text-cyan-400 flex-shrink-0" /> <bdi className="truncate">{invoice.partner_name}</bdi>
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              <span className="font-mono">{invoice.number}</span> · {t(`invoices.type.${invoice.invoice_type}`)}
+              <bdi className="font-mono">{invoice.number}</bdi> · {t(`invoices.type.${invoice.invoice_type}`)}
             </p>
           </div>
         </div>

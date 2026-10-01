@@ -134,8 +134,13 @@ export default function CommandPalette() {
         setOpen(false);
       }
     };
+    const onOpen = () => { setOpen(true); setQuery(''); setActive(0); };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('cycom:open-palette', onOpen);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('cycom:open-palette', onOpen);
+    };
   }, []);
 
   useEffect(() => {

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, FileCheck2, Loader2, CheckCircle2, AlertTriangle, Send, KeyRound, Globe2 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import { LoadingCard } from '@/components/CycomEmptyStates';
-import { EInvoiceFieldInput, EInvoiceFieldSpec } from '@/components/EInvoiceFields';
+import { EInvoiceFieldInput, EInvoiceFieldSpec, useModeLabel } from '@/components/EInvoiceFields';
 import { formatApiErrors } from '@/lib/apiErrors';
 
 interface ProfilePayload {
@@ -33,6 +33,7 @@ function StatusPill({ ok, okLabel, offLabel }: { ok: boolean; okLabel: string; o
 
 export default function EInvoicingSettingsPage() {
   const t = useT();
+  const modeLabel = useModeLabel();
   const router = useRouter();
   const [data, setData] = useState<ProfilePayload | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
@@ -101,7 +102,7 @@ export default function EInvoicingSettingsPage() {
             <div className="glass-card p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1"><Globe2 className="w-3 h-3" /> {t('einvoicing.format')}</p>
-                <p className="text-slate-200 font-semibold mt-1">{data.mode_label || data.mode || t('einvoicing.noMandate')}</p>
+                <p className="text-slate-200 font-semibold mt-1">{data.mode ? modeLabel(data.mode, data.mode_label) : t('einvoicing.noMandate')}</p>
                 <p className="text-[10px] text-slate-500">{t('einvoicing.countryLine', { country: data.country_code || '—' })}</p>
               </div>
               {data.is_national && (
@@ -136,6 +137,7 @@ export default function EInvoicingSettingsPage() {
                     <div key={spec.key}>
                       <EInvoiceFieldInput
                         spec={spec}
+                        mode={data.mode}
                         value={values[spec.key] || ''}
                         onChange={(v) => setValues((prev) => ({ ...prev, [spec.key]: v }))}
                         invalid={errorKeys.has(spec.key)}

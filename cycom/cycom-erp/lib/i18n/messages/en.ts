@@ -2421,7 +2421,88 @@ const en = {
     save: "Save settings",
     saved: "Settings saved.",
   },
+  topbar: {
+    locations: "{n} locations",
+  },
   einvoicing: {
+    required: "required",
+    scopeLine: "Line {n}",
+    scope: {
+      seller: "Issuer",
+      buyer: "Customer",
+      document: "Invoice",
+    },
+    help: {
+      it_fatturapa: {
+        seller: {
+          default_natura: "Used for a 0% line that has no Natura of its own.",
+          modalita_pagamento: "Adds a DatiPagamento block when the invoice has a due date.",
+        },
+        buyer: {
+          codice_destinatario: "7 characters (B2B), 6 for a public administration office; '0000000' when delivering via PEC or to a consumer.",
+        },
+      },
+      pl_ksef: {
+        seller: {
+          metoda_kasowa: "Cash-accounting method election. '2' unless the taxpayer opted in.",
+          zwolnienie_podstawa: "Legal basis of the VAT exemption, e.g. 'art. 43 ust. 1 pkt 37 ustawy o VAT'.",
+        },
+        buyer: {
+          jst: "'1' only if the buyer is a subordinate local-government unit. Defaults to 2.",
+          gv: "'1' only if the buyer is a VAT group member. Defaults to 2.",
+        },
+        document: {
+          kurs_waluty: "PLN per 1 unit of the invoice currency (NBP mid rate, prior business day).",
+        },
+      },
+      mx_cfdi: {
+        seller: {
+          name: "Exactly as registered with SAT (no régimen suffix such as 'S.A. de C.V.').",
+          default_clave_prod_serv: "SAT product/service key used for lines without their own.",
+          default_clave_unidad: "e.g. H87 pieza, E48 unidad de servicio, ACT actividad.",
+        },
+        buyer: {
+          tax_id: "Leave blank for a sale to the general public (XAXX010101000).",
+          residencia_fiscal: "ISO 3166-1 alpha-3, e.g. USA, CAN, ESP.",
+        },
+        document: {
+          tipo_cambio: "MXN per 1 unit of the invoice currency (DOF rate).",
+        },
+      },
+      br_nfe: {
+        seller: {
+          building_number: "Blank is sent as 'S/N'.",
+          natureza_operacao: "e.g. 'Venda de mercadoria'.",
+          utc_offset: "Offset of dhEmi; defaults to -03:00 (Brasília).",
+          default_origem: "0 = nacional.",
+        },
+      },
+      in_gst: {
+        document: {
+          place_of_supply: "Defaults to the buyer's state (from its GSTIN).",
+        },
+      },
+      es_sii: {
+        seller: {
+          sii_obligado: "Only SII filers report here; others use VERI*FACTU / TicketBAI (not covered).",
+          descripcion_operacion: "e.g. 'Venta de mercaderías' or 'Prestación de servicios'.",
+        },
+        buyer: {
+          id_type: "Defaults to 02 for an EU VAT number, 06 otherwise.",
+        },
+      },
+    },
+    mode: {
+      it_fatturapa: "Italy - FatturaPA via SdI",
+      pl_ksef: "Poland - KSeF FA(3)",
+      mx_cfdi: "Mexico - CFDI 4.0 (SAT / PAC)",
+      br_nfe: "Brazil - NF-e 4.00 (modelo 55)",
+      in_gst: "India - GST e-invoice (IRN via IRP)",
+      es_sii: "Spain - SII (libro de facturas expedidas)",
+      jo_jofotara: "Jordan - JoFotara",
+      sa_zatca: "Saudi Arabia - ZATCA",
+      eu_peppol: "Peppol (EN 16931)",
+    },
     title: "E-Invoicing",
     subtitle: "The identity your national e-invoices are issued under. Field names follow the tax authority's own terms.",
     loading: "Loading…",

@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FileCheck2, Loader2, AlertTriangle, CheckCircle2, Download, RefreshCw, Save, Send } from 'lucide-react';
 import { useT } from '@/lib/i18n';
-import { EInvoiceFieldInput, EInvoiceFieldSpec } from '@/components/EInvoiceFields';
+import { EInvoiceFieldInput, EInvoiceFieldSpec, useModeLabel } from '@/components/EInvoiceFields';
 import { formatApiErrors } from '@/lib/apiErrors';
 
 interface Problem { scope: string; key: string; label: string; message: string }
@@ -37,6 +37,7 @@ const TONE: Record<string, string> = {
  * buyer/line fields to fix it, retry, and download of the legal document. */
 export default function InvoiceEInvoicePanel({ invoiceId, invoiceStatus }: { invoiceId: string; invoiceStatus: string }) {
   const t = useT();
+  const modeLabel = useModeLabel();
   const [state, setState] = useState<EInvoiceState | null>(null);
   const [buyer, setBuyer] = useState<Record<string, string>>({});
   const [lineValues, setLineValues] = useState<Record<string, Record<string, string>>>({});
@@ -60,7 +61,21 @@ export default function InvoiceEInvoicePanel({ invoiceId, invoiceStatus }: { inv
   if (!state || (!state.is_national && state.status === 'none')) return null;
 
   const problems = state.response?.problems || [];
+  const scopeLabel = (scope: string) => {
+    const m = /^line\[(\d+)\]$/.exec(scope);
+    if (m) return t('einvoicing.scopeLine', { n: m[1] });
+    const k = `einvoicing.scope.${scope}`;
+    const v = t(k);
+    return v === k ? scope : v;
+  };
   const problemKeys = new Set(problems.map((p) => `${p.scope.startsWith('line') ? 'line' : p.scope}:${p.key}`));
+  // "line[2]" problems -> which line (0-based) needs which key. A conditional
+  // line field (e.g. Natura for 0% lines) only shows on lines that need it or
+  // already carry a value -- not on every line.
+  const lineProblems = new Set(problems.flatMap((p) => {
+    const m = /^line\[(\d+)\]$/.exec(p.scope);
+    return m ? [`${Number(m[1]) - 1}:${p.key}`] : [];
+  }));
   const editable = state.is_national && ['none', 'incomplete', 'rejected'].includes(state.status);
   const posted = ['posted', 'partial', 'paid'].includes(invoiceStatus);
 
@@ -108,14 +123,14 @@ export default function InvoiceEInvoicePanel({ invoiceId, invoiceStatus }: { inv
           {t(`einvoicing.status.${state.status}`)}
         </span>
       </div>
-      <p className="text-[11px] text-slate-400">{state.mode_label || state.mode}</p>
+      <p className="text-[11px] text-slate-400">{modeLabel(state.mode, state.mode_label)}</p>
       {state.reference && <p className="text-[11px] text-slate-400">{t('einvoicing.reference')}: <span className="font-mono text-slate-200">{state.reference}</span></p>}
 
       {state.status === 'incomplete' && (
         <div className="p-3 rounded-lg border bg-amber-950/30 border-amber-500/20 text-amber-300 text-[11px] space-y-1">
           <p className="font-semibold flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> {t('einvoicing.incompleteNote')}</p>
           <ul className="list-disc ps-5">
-            {problems.map((p, i) => <li key={i}><span className="text-amber-200">{p.scope} · {p.label}</span> — {p.message}</li>)}
+            {problems.map((p, i) => <li key={i}><span className="text-amber-200">{scopeLabel(p.scope)} · {p.label}</span> — {p.message === 'required' ? t('einvoicing.required') : p.message}</li>)}
           </ul>
           {problems.some((p) => p.scope === 'seller') && (
             <Link href="/settings/einvoicing" className="inline-block text-cyan-300 hover:text-cyan-200 font-semibold">{t('einvoicing.fixSeller')}</Link>
@@ -140,7 +155,7 @@ export default function InvoiceEInvoicePanel({ invoiceId, invoiceStatus }: { inv
               <div className="grid grid-cols-1 gap-3">
                 {state.buyer_fields.map((spec) => (
                   <EInvoiceFieldInput
-                    key={spec.key} spec={spec} value={buyer[spec.key] || ''}
+                    key={spec.key} spec={spec} mode={state.mode} value={buyer[spec.key] || ''}
                     invalid={problemKeys.has(`buyer:${spec.key}`)}
                     onChange={(v) => setBuyer((b) => ({ ...b, [spec.key]: v }))}
                   />
@@ -151,19 +166,24 @@ export default function InvoiceEInvoicePanel({ invoiceId, invoiceStatus }: { inv
           {state.line_fields.length > 0 && (
             <div className="space-y-2">
               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('einvoicing.linesHeading')}</p>
-              {state.lines.map((line) => (
-                <div key={line.id} className="p-2 rounded-lg border border-slate-850 space-y-2">
-                  <p className="text-[11px] text-slate-300">{line.description || '—'} <span className="text-slate-500 font-mono">· {Number(line.tax_percent).toFixed(2)}%</span></p>
-                  {state.line_fields.map((spec) => (
-                    <EInvoiceFieldInput
-                      key={spec.key} spec={spec}
-                      value={(lineValues[line.id] || {})[spec.key] || ''}
-                      invalid={problemKeys.has(`line:${spec.key}`) && !(lineValues[line.id] || {})[spec.key]}
-                      onChange={(v) => setLineValues((lv) => ({ ...lv, [line.id]: { ...(lv[line.id] || {}), [spec.key]: v } }))}
-                    />
-                  ))}
-                </div>
-              ))}
+              {state.lines.map((line, idx) => {
+                const specs = state.line_fields.filter((spec) =>
+                  !spec.conditional || lineProblems.has(`${idx}:${spec.key}`) || !!(lineValues[line.id] || {})[spec.key]);
+                if (!specs.length) return null;
+                return (
+                  <div key={line.id} className="p-2 rounded-lg border border-slate-850 space-y-2">
+                    <p className="text-[11px] text-slate-300"><bdi>{line.description || '—'}</bdi> <span className="text-slate-500 font-mono">· {Number(line.tax_percent).toFixed(2)}%</span></p>
+                    {specs.map((spec) => (
+                      <EInvoiceFieldInput
+                        key={spec.key} spec={spec} mode={state.mode}
+                        value={(lineValues[line.id] || {})[spec.key] || ''}
+                        invalid={lineProblems.has(`${idx}:${spec.key}`) && !(lineValues[line.id] || {})[spec.key]}
+                        onChange={(v) => setLineValues((lv) => ({ ...lv, [line.id]: { ...(lv[line.id] || {}), [spec.key]: v } }))}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

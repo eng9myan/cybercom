@@ -148,8 +148,10 @@ export default function CycomSidebar({ isOpen, onClose }: CycomSidebarProps) {
         />
       )}
       <aside
-        className={`w-[240px] h-screen flex flex-col flex-shrink-0 bg-gradient-to-b from-[#0a0f1e] to-[#080d18] border-e border-white/5 font-sans fixed inset-y-0 start-0 z-50 transition-transform duration-200 lg:static lg:z-30 lg:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full'
+        className={`w-[240px] h-screen flex flex-col flex-shrink-0 bg-gradient-to-b from-[#0a0f1e] to-[#080d18] border-e border-white/5 font-sans fixed inset-y-0 start-0 z-50 transition-transform duration-200 lg:static lg:z-30 ${
+          // off-canvas only below lg: an unscoped rtl:translate-x-full
+          // outranked lg:translate-x-0 and hid the desktop sidebar in Arabic
+          isOpen ? 'translate-x-0' : 'max-lg:-translate-x-full max-lg:rtl:translate-x-full'
         }`}
       >
       {/* Brand Header */}
@@ -165,7 +167,8 @@ export default function CycomSidebar({ isOpen, onClose }: CycomSidebarProps) {
           CY
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-0.5">
+          {/* brand wordmark always reads CY·COM, also in RTL */}
+          <div className="flex items-baseline gap-0.5 rtl:justify-end" dir="ltr">
             <span className="text-[14px] font-black text-[#E67E22] tracking-wide">CY</span>
             <span className="text-[14px] font-black text-white tracking-wide">COM</span>
             <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-orange-500/20 text-[#E67E22] ms-2 border border-orange-500/30">ERP</span>

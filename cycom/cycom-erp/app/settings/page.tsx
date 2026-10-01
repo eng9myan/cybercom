@@ -4,10 +4,11 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Percent, Workflow, Key, Cloud, Tag, FileCheck2 } from 'lucide-react';
 import { useT } from '@/lib/i18n';
+import { useModeLabel } from '@/components/EInvoiceFields';
 
 interface SystemStatus {
   company: { name: string; tax_id: string; country_code: string; currency: string; timezone: string };
-  integrations: { key: string; detail: string; status: string }[];
+  integrations: { key: string; detail: string; status: string; mode?: string }[];
 }
 
 const STATUS_TONE: Record<string, string> = {
@@ -17,6 +18,7 @@ const STATUS_TONE: Record<string, string> = {
 
 export default function SettingsAdminPage() {
   const t = useT();
+  const modeLabel = useModeLabel();
   const [status, setStatus] = useState<SystemStatus | null>(null);
 
   useEffect(() => {
@@ -148,7 +150,7 @@ export default function SettingsAdminPage() {
                 <div key={i.key} className="flex justify-between items-center gap-3 pb-2 border-b border-white/5 last:border-0">
                   <span className="text-slate-400">
                     {t(`settingsMain.integration.${i.key}`)}
-                    {i.detail && <span className="text-slate-600"> · {i.detail}</span>}
+                    {i.detail && <span className="text-slate-600"> · {i.mode ? modeLabel(i.mode, i.detail) : i.detail}</span>}
                   </span>
                   <span className={`font-semibold ${STATUS_TONE[i.status] || 'text-slate-500'}`}>{t(`settingsMain.integrationStatus.${i.status}`)}</span>
                 </div>

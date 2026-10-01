@@ -102,7 +102,7 @@ export default function InvoicesPage() {
                       className="cursor-pointer hover:bg-white/5 transition-colors"
                     >
                       <td className="p-3 font-mono text-slate-200">{inv.number}</td>
-                      <td className="p-3 text-slate-200">{inv.partner_name}</td>
+                      <td className="p-3 text-slate-200"><bdi>{inv.partner_name}</bdi></td>
                       <td className="p-3 text-slate-400">{t(`invoices.type.${inv.invoice_type}`)}</td>
                       <td className="p-3 text-slate-400">{inv.date}</td>
                       <td className="p-3 text-slate-400">{inv.due_date}</td>

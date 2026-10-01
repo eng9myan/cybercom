@@ -193,11 +193,11 @@ export default function SaftPage() {
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-xs">
+              <table className="w-full min-w-[720px] text-xs table-fixed">
                 <thead>
                   <tr className="bg-slate-950 text-slate-500 uppercase border-b border-slate-850">
-                    <th className="p-2 text-start font-bold">{t('saft.colAccount')}</th>
-                    <th className="p-2 text-start font-bold">{t('saft.colCategory')}</th>
+                    <th className="p-2 text-start font-bold w-[32%]">{t('saft.colAccount')}</th>
+                    <th className="p-2 text-start font-bold w-[30%]">{t('saft.colCategory')}</th>
                     <th className="p-2 text-start font-bold">{t('saft.colCode')}</th>
                   </tr>
                 </thead>
@@ -206,7 +206,7 @@ export default function SaftPage() {
                     const m = mapping[a.id];
                     return (
                       <tr key={a.id}>
-                        <td className="p-2 text-slate-200"><span className="font-mono text-slate-400">{a.code}</span> {a.name}</td>
+                        <td className="p-2 text-slate-200 truncate"><span className="font-mono text-slate-400">{a.code}</span> <bdi>{a.name}</bdi></td>
                         <td className="p-2">
                           <select value={m.grouping_category} className={inputCls}
                             onChange={(e) => setMapping((mp) => ({ ...mp, [a.id]: { grouping_category: e.target.value, grouping_code: '' } }))}>

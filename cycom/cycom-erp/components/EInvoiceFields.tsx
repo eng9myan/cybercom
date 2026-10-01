@@ -19,12 +19,27 @@ export interface EInvoiceFieldSpec {
   default_from: string | null;
 }
 
+/** Translated label for a format mode, falling back to the backend label. */
+export function useModeLabel() {
+  const t = useT();
+  return (mode: string | null | undefined, fallback?: string | null) => {
+    if (!mode) return fallback || '';
+    const key = `einvoicing.mode.${mode}`;
+    const v = t(key);
+    return v === key ? (fallback || mode) : v;
+  };
+}
+
 export function EInvoiceFieldInput({
-  spec, value, onChange, invalid, compact,
+  spec, value, onChange, invalid, compact, mode,
 }: {
   spec: EInvoiceFieldSpec; value: string; onChange: (v: string) => void; invalid?: boolean; compact?: boolean;
+  mode?: string | null;
 }) {
   const t = useT();
+  const helpKey = mode ? `einvoicing.help.${mode}.${spec.scope}.${spec.key}` : '';
+  const translatedHelp = helpKey ? t(helpKey) : '';
+  const help = translatedHelp && translatedHelp !== helpKey ? translatedHelp : spec.help;
   const cls = `w-full bg-slate-950 border rounded-lg px-3 py-2 text-slate-200 outline-none text-xs ${
     invalid ? 'border-rose-500/60' : 'border-slate-850'
   }`;
@@ -51,7 +66,7 @@ export function EInvoiceFieldInput({
           className={`${cls} mt-0.5 ${patternOk ? '' : 'border-amber-500/60'}`}
         />
       )}
-      {!compact && spec.help && <p className="text-[10px] text-slate-500 mt-0.5">{spec.help}</p>}
+      {!compact && help && <p className="text-[10px] text-slate-500 mt-0.5">{help}</p>}
       {!patternOk && <p className="text-[10px] text-amber-400 mt-0.5">{t('einvoicing.formatHint')}</p>}
     </div>
   );

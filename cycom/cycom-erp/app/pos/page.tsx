@@ -168,7 +168,7 @@ export default function PosDashboard() {
   // Rounding
   const roundingStrategy = 0.05;
 
-  const storeName = activeBranch || (activeCompany.type === 'retail' && activeCompany.branches ? activeCompany.branches[0] : activeCompany.shortName);
+  const storeName = activeBranch || activeCompany.branches?.[0] || activeCompany.shortName;
 
   // ── Derived data (Dynamic Terminal Filtering) ──
   const filteredProducts = useMemo(() => {
