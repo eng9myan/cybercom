@@ -11,6 +11,8 @@ node_modules/
 dist/
 build/
 *.sqlite3
+*.pem
+.devauth_key.pem
 .env
 .env.local
 .venv/
@@ -62,3 +64,4 @@ cymed/.venv/
 _run_*.ps1
 */_local_runserver.log
 cymed/core/settings_local.py
+_migrate.log
