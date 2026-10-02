@@ -334,3 +334,39 @@ class ConsentGrant(BaseModel):
         if self.valid_until and self.valid_until < now:
             return False
         return True
+
+
+# ── NFC scan terminals ──────────────────────────────────────────────────
+class ScanTerminal(BaseModel):
+    """A provider device registered to read patient NFC cards.
+
+    The card proves the *patient* is present (signed nonce); this proves the
+    *reader* belongs to a known provider. Without it any authenticated
+    account — a patient's included — could pull another patient's clinical
+    summary off a card it had briefly held. The raw key is shown once at
+    registration; only its SHA-256 is stored.
+    """
+
+    terminal_id = models.CharField(max_length=64)
+    name = models.CharField(max_length=200)
+    location = models.CharField(max_length=200, blank=True)
+    key_hash = models.CharField(max_length=64, editable=False)
+    is_active = models.BooleanField(default=True)
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "cymed_patient_portal_scan_terminals"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant_id", "terminal_id"], name="uniq_scan_terminal_per_tenant"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.terminal_id})"
+
+    @staticmethod
+    def hash_key(raw: str) -> str:
+        import hashlib
+
+        return hashlib.sha256(raw.encode()).hexdigest()

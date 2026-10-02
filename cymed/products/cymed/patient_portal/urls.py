@@ -8,6 +8,7 @@ from .views import (
     NFCChallengeView,
     NFCScanLogViewSet,
     NFCScanView,
+    ScanTerminalViewSet,
     PatientDeviceViewSet,
     PatientPortalActivityViewSet,
     PatientPortalNotificationPreferenceViewSet,
@@ -59,6 +60,12 @@ urlpatterns = [
          name="nfc-scan-list"),
 
     # NFC public (provider terminals)
+    path("nfc/terminals/", _viewset(ScanTerminalViewSet, {"get": "list", "post": "create"}),
+         name="nfc-terminal-list"),
+    path("nfc/terminals/<uuid:pk>/", _viewset(ScanTerminalViewSet, {"get": "retrieve"}),
+         name="nfc-terminal-detail"),
+    path("nfc/terminals/<uuid:pk>/revoke/", _viewset(ScanTerminalViewSet, {"post": "revoke"}),
+         name="nfc-terminal-revoke"),
     path("nfc/challenge/", NFCChallengeView.as_view(), name="nfc-challenge"),
     path("nfc/scan/",      NFCScanView.as_view(),      name="nfc-scan"),
 

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import (
+    ScanTerminal,
     ConsentGrant,
     DelegatedAccess,
     EmergencyProfile,
@@ -89,7 +90,9 @@ class NFCScanPublicRequestSerializer(serializers.Serializer):
     purpose = serializers.ChoiceField(
         choices=["reception", "pharmacy", "lab", "imaging", "emergency", "other"]
     )
-    terminal_id = serializers.CharField(max_length=200)
+    # Ignored: the terminal is identified by X-Terminal-Key, not by a
+    # self-reported id. Kept optional for older terminal builds.
+    terminal_id = serializers.CharField(max_length=200, required=False)
 
 
 class EmergencyProfileSerializer(serializers.ModelSerializer):
@@ -129,3 +132,10 @@ class ConsentGrantSerializer(serializers.ModelSerializer):
                   "purpose", "valid_from", "valid_until", "revoked_at",
                   "is_active", "created_at"]
         read_only_fields = ["id", "revoked_at", "is_active", "created_at"]
+
+
+class ScanTerminalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScanTerminal
+        fields = ["id", "terminal_id", "name", "location", "is_active", "last_seen_at", "created_at"]
+        read_only_fields = ["id", "is_active", "last_seen_at", "created_at"]

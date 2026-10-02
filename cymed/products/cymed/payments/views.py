@@ -8,6 +8,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from platform.api.permissions import IsAuthenticatedClinicalStaff as IsAuthenticated  # M-7
+from platform.api.permissions import IsAuthenticatedPatient
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -96,7 +97,8 @@ class UnifiedBillViewSet(viewsets.ReadOnlyModelViewSet):
 
 # ── Payment Request public endpoints ────────────────────────────────────
 class PaymentRequestPublicView(APIView):
-    """Non-authenticated payer views + pays a delegated request."""
+    """A delegated payment link. Anyone holding the link may view the amount;
+    paying requires a signed-in patient, who pays with their own method."""
     permission_classes = [AllowAny]
 
     def get(self, request, token):
@@ -125,10 +127,19 @@ class PaymentRequestPublicView(APIView):
         if pr.expires_at < timezone.now():
             return Response({"detail": "Expired"}, status=410)
 
+        # The payer is whoever is signed in — never a profile id from the
+        # body. Previously any caller holding a link could name an arbitrary
+        # payer_profile_id + method_id pair and charge someone else's card.
+        payer = (PatientPortalProfile.objects.filter(user_id=request.user.id).first()
+                 if getattr(request.user, "is_authenticated", False) else None)
+        if payer is None:
+            return Response({"detail": "Sign in with a patient account to pay."}, status=401)
         method_id = request.data.get("method_id")
-        payer_profile_id = request.data.get("payer_profile_id")
-        if not (method_id and payer_profile_id):
-            return Response({"detail": "method_id + payer_profile_id required"}, status=400)
+        if not method_id:
+            return Response({"detail": "method_id required"}, status=400)
+        if not PaymentMethod.objects.filter(id=method_id, profile=payer, is_deleted=False).exists():
+            return Response({"detail": "Payment method not found."}, status=404)
+        payer_profile_id = payer.id
 
         txn = pay_bill(
             bill_id=pr.bill.id,
@@ -159,7 +170,8 @@ class PaymentMethodViewSet(viewsets.ModelViewSet):
 
 # ── Wallet ──────────────────────────────────────────────────────────────
 class PatientWalletView(APIView):
-    permission_classes = [IsAuthenticated]
+    # The patient's own wallet: was the staff-only gate, so patients got 403.
+    permission_classes = [IsAuthenticatedPatient]
 
     def get(self, request):
         profile = PatientPortalProfile.objects.filter(user_id=request.user.id).first()

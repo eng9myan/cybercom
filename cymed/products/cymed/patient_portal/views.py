@@ -8,6 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from platform.api.permissions import IsAuthenticatedClinicalStaff, IsAuthenticatedPatient
+
 from .models import (
     ConsentGrant,
     DelegatedAccess,
@@ -18,6 +20,7 @@ from .models import (
     PatientPortalActivity,
     PatientPortalNotificationPreference,
     PatientPortalProfile,
+    ScanTerminal,
 )
 from .nfc_service import build_summary_for_purpose, issue_challenge, verify_scan
 from .serializers import (
@@ -32,6 +35,7 @@ from .serializers import (
     PatientPortalActivitySerializer,
     PatientPortalNotificationPreferenceSerializer,
     PatientPortalProfileSerializer,
+    ScanTerminalSerializer,
 )
 
 
@@ -123,12 +127,70 @@ class NFCScanLogViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = NFCScanLogSerializer
 
 
-# ── NFC public (called by provider terminals) ───────────────────────────
+# ── NFC scan terminals ──────────────────────────────────────────────────
+class ScanTerminalViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                          mixins.CreateModelMixin, viewsets.GenericViewSet):
+    """Register / list / revoke the card readers of the caller's tenant.
+
+    Create returns the raw terminal key exactly once; it is stored hashed."""
+
+    queryset = ScanTerminal.objects.all()
+    serializer_class = ScanTerminalSerializer
+
+    def create(self, request, *args, **kwargs):
+        ser = self.get_serializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        raw_key = secrets.token_urlsafe(32)
+        terminal = ser.save(tenant_id=request.tenant_id, key_hash=ScanTerminal.hash_key(raw_key))
+        data = dict(self.get_serializer(terminal).data)
+        data["terminal_key"] = raw_key  # shown once
+        return Response(data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def revoke(self, request, pk=None):
+        terminal = self.get_object()
+        terminal.is_active = False
+        terminal.save(update_fields=["is_active", "updated_at"])
+        return Response(self.get_serializer(terminal).data)
+
+
+def _authenticated_terminal(request):
+    """The active ScanTerminal named by `X-Terminal-Key: <terminal_id>:<key>`,
+    registered to the caller's own tenant — or None."""
+    import hmac
+
+    raw = request.headers.get("X-Terminal-Key", "")
+    terminal_id, _, key = raw.partition(":")
+    if not (terminal_id and key and getattr(request, "tenant_id", None)):
+        return None
+    terminal = ScanTerminal.objects.filter(
+        tenant_id=request.tenant_id, terminal_id=terminal_id, is_active=True
+    ).first()
+    if terminal is None or not hmac.compare_digest(terminal.key_hash, ScanTerminal.hash_key(key)):
+        return None
+    ScanTerminal.objects.filter(pk=terminal.pk).update(last_seen_at=timezone.now())
+    return terminal
+
+
+def _terminal_required():
+    return Response(
+        {"detail": "A registered scan terminal is required (X-Terminal-Key)."},
+        status=status.HTTP_401_UNAUTHORIZED,
+    )
+
+
+# ── NFC scan (called by provider terminals) ─────────────────────────────
+# Cards are deliberately readable at any provider (emergency use), so the
+# card lookup is not tenant-scoped. What gates it: a staff token AND a
+# registered terminal of that staff member's tenant AND the card's own
+# signature over a fresh nonce. Previously AllowAny: any token could read.
 class NFCChallengeView(APIView):
     """Terminal calls this to get a fresh nonce before scanning."""
-    permission_classes = [permissions.AllowAny]  # gated by terminal token in real deploy
+    permission_classes = [IsAuthenticatedClinicalStaff]
 
     def post(self, request):
+        if _authenticated_terminal(request) is None:
+            return _terminal_required()
         card_uuid = request.data.get("card_uuid")
         if not card_uuid:
             return Response({"detail": "card_uuid required"}, status=400)
@@ -137,9 +199,12 @@ class NFCChallengeView(APIView):
 
 class NFCScanView(APIView):
     """Terminal calls this after reading the signed nonce off the card."""
-    permission_classes = [permissions.AllowAny]  # gated by terminal token in real deploy
+    permission_classes = [IsAuthenticatedClinicalStaff]
 
     def post(self, request):
+        terminal = _authenticated_terminal(request)
+        if terminal is None:
+            return _terminal_required()
         s = NFCScanPublicRequestSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         data = s.validated_data
@@ -163,7 +228,7 @@ class NFCScanView(APIView):
             card=card,
             profile=card.profile,
             purpose=data["purpose"],
-            terminal_id=data["terminal_id"],
+            terminal_id=f"{terminal.tenant_id}:{terminal.terminal_id}",
             ip_address=request.META.get("REMOTE_ADDR"),
             scope_granted={"fields": list(summary.keys())},
         )
@@ -171,7 +236,7 @@ class NFCScanView(APIView):
         PatientPortalActivity.objects.create(
             profile=card.profile,
             activity_type="nfc_scan",
-            description=f"{data['purpose']} scan by terminal {data['terminal_id']}",
+            description=f"{data['purpose']} scan by {terminal.name}",
             ip_address=request.META.get("REMOTE_ADDR"),
         )
 
@@ -185,6 +250,8 @@ class NFCScanView(APIView):
 # ── Emergency profile ─────────────────────────────────────────────────
 class EmergencyProfileView(APIView):
     """GET/PATCH the emergency profile of the authenticated patient."""
+    # Patient-facing: the project default is the staff-only gate.
+    permission_classes = [IsAuthenticatedPatient]
 
     def _get_profile(self, request):
         return PatientPortalProfile.objects.get(user_id=request.user.id) \
