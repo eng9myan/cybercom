@@ -18,6 +18,20 @@ from products.cyed.hr.models import Contract, Staff
 from products.cyed.staff_attendance.models import StaffAttendanceDay
 
 
+def _grant_recent_mfa(tenant_id, email):
+    # mark-paid and budget approve require step-up MFA
+    # (products.cyed.security.stepup) — these tests exercise the business
+    # flow, not the permission layer, so give the caller a fresh session.
+    from django.utils import timezone
+
+    from products.cyed.security.models import MfaSession
+
+    MfaSession.objects.create(
+        tenant_id=tenant_id, user_email=email,
+        verified_at=timezone.now(), expires_at=timezone.now() + timezone.timedelta(minutes=15),
+    )
+
+
 @pytest.fixture
 def client_for(mint_token, mock_jwks, tenant_id):
     def _make(roles, email="user@cyed.edu.au"):
@@ -226,6 +240,7 @@ def test_payroll_reconciles_against_attendance(client_for, tenant_id, teacher_st
 def test_payroll_mark_paid_records_payment_history(client_for, tenant_id, teacher_staff):
     fin = client_for(["finance"], email="fin@cyed.edu.au")
     run = fin.post("/api/v1/payroll/runs/", {"period_label": "2026-06"}, format="json")
+    _grant_recent_mfa(tenant_id, "fin@cyed.edu.au")
     # Cannot pay a run that was never processed.
     assert fin.post(f"/api/v1/payroll/runs/{run.data['id']}/mark-paid/").status_code == 400
     fin.post(f"/api/v1/payroll/runs/{run.data['id']}/process/")
@@ -472,6 +487,7 @@ def test_financial_statements_and_budget(client_for, tenant_id):
                                    account_type="expense")
 
     acct = client_for(["finance"], email="acct@cyed.edu.au")
+    _grant_recent_mfa(tenant_id, "acct@cyed.edu.au")
     acct.post("/api/v1/finance/journal-entries/", {
         "date": "2026-03-01", "reference": "JE1", "narration": "Fee income",
         "lines": [{"account": str(cash.id), "debit": "10000", "credit": "0"},
