@@ -88,12 +88,26 @@ class AgentOrchestrator:
         self.lang = language if language in ("en", "ar") else "en"
 
     # ── public ────────────────────────────────────────────────────────────────
-    def run(self, profile: dict, messages: list[dict], platform_tools: list[str], confirmed: list[str]) -> TurnResult:
+    def run(self, profile: dict, messages: list[dict], platform_tools: list[str], confirmed: list[str], trigger: dict | None = None) -> TurnResult:
         self.profile = profile
         self.platform_tools = set(platform_tools) & T.CLIENT_TOOLS
         self.confirmed = set(confirmed)
         self.events: list[dict] = []
         new: list[dict] = []
+
+        if trigger and not messages:
+            # A meal-time prompt starts the conversation: the platform's own candidates (for example today's
+            # planned options) enter the transcript as a search result, so the normal ranking and gates apply.
+            meal = trigger["meal"]
+            if trigger.get("calories"):
+                self.profile = {**profile, "meal_calories_target": float(trigger["calories"])}
+            call_id = _new_id()
+            new.extend([
+                {"role": "user", "content": f"[meal_time:{meal}]"},
+                {"role": "assistant", "content": "", "tool_calls": [{"id": call_id, "name": "search_menu", "arguments": {"query": f"planned {meal}"}}]},
+                {"role": "tool", "tool_call_id": call_id, "name": "search_menu",
+                 "content": json.dumps({"items": list(trigger.get("candidates") or [])}, ensure_ascii=False, default=str)},
+            ])
 
         pending = T.unresolved_tool_calls(messages)
         if pending:

@@ -10,7 +10,7 @@ and Arabic. A real model is a drop-in replacement (see providers/claude.py).
 import json
 import re
 
-from ...i18n import normalise
+from ...i18n import normalise, t
 from ..tools import cart_from_transcript, items_seen
 from .base import Completion, CompletionProvider, ToolCall
 
@@ -24,6 +24,11 @@ CANCEL = {normalise(w) for w in "no nope cancel stop not now لا الغاء إ�
 ORDINALS = {
     "first": 1, "1st": 1, "second": 2, "2nd": 2, "third": 3, "3rd": 3,
     normalise("الاول"): 1, normalise("الأول"): 1, normalise("الثاني"): 2, normalise("الثالث"): 3,
+}
+
+MEAL_NAMES = {
+    "en": {"breakfast": "breakfast", "lunch": "lunch", "dinner": "dinner", "snack": "a snack"},
+    "ar": {"breakfast": "الإفطار", "lunch": "الغداء", "dinner": "العشاء", "snack": "وجبة خفيفة"},
 }
 
 S = {
@@ -170,7 +175,7 @@ class SandboxCompletionProvider(CompletionProvider):
             if not ranked:
                 why = f" ({hidden} hidden by your plan)" if hidden else ""
                 return Completion(text=s["none"].format(why=why))
-            lines = [s["header"]]
+            lines = [self._header(lang, messages, s)]
             for r in ranked[:3]:
                 where = f" ({r['restaurant']})" if r.get("restaurant") else ""
                 flag = s["flag_warn"] if r.get("severity") == "warn" else ""
@@ -211,6 +216,15 @@ class SandboxCompletionProvider(CompletionProvider):
             return Completion(text=p.get("message") or s["error"].format(error=p.get("error", "")))
 
         return Completion(text=s["error"].format(error=p.get("error", name or "")))
+
+    @staticmethod
+    def _header(lang, messages, s) -> str:
+        first = messages[0]["content"] if messages and isinstance(messages[0].get("content"), str) else ""
+        m = re.match(r"\[meal_time:(\w+)\]", first)
+        if not m:
+            return s["header"]
+        names = MEAL_NAMES[lang]
+        return t(lang, "meal_header", meal=names.get(m.group(1), m.group(1)))
 
     @staticmethod
     def _args_of(messages, tool_msg) -> dict:

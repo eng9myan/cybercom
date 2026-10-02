@@ -33,7 +33,7 @@ class PartnerAgentTurnView(APIView):
         messages = [self._plain(m) for m in data["messages"]]
         try:
             result = AgentOrchestrator(load_provider(), data["language"]).run(
-                data["profile"], messages, data["platform_tools"], data["confirmed"]
+                data["profile"], messages, data["platform_tools"], data["confirmed"], data.get("trigger")
             )
         except Exception as exc:  # the provider (model API) failed; never leak its message
             log.error("agent provider failed: %s", type(exc).__name__)

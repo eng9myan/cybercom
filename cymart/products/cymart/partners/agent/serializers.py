@@ -2,6 +2,7 @@ import json
 
 from rest_framework import serializers
 
+from ..planner.serializers import MEALS, PoolItemSerializer
 from ..serializers import LANGUAGE_CHOICES, PartnerRankProfileSerializer
 from . import tools as T
 
@@ -40,6 +41,20 @@ class AgentMessageSerializer(serializers.Serializer):
         return attrs
 
 
+class AgentTriggerSerializer(serializers.Serializer):
+    """Starts a conversation from the platform's own schedule, e.g. the customer's planned lunch time."""
+
+    type = serializers.ChoiceField(choices=["meal_time"])
+    meal = serializers.ChoiceField(choices=MEALS)
+    calories = serializers.FloatField(required=False, min_value=50, max_value=3000)
+    candidates = PoolItemSerializer(many=True, required=False, default=list)
+
+    def validate_candidates(self, value):
+        if len(value) > 50:
+            raise serializers.ValidationError("At most 50 candidates.")
+        return value
+
+
 class AgentTurnRequestSerializer(serializers.Serializer):
     language = serializers.ChoiceField(choices=LANGUAGE_CHOICES, required=False, default="en")
     profile = PartnerRankProfileSerializer()
@@ -47,13 +62,21 @@ class AgentTurnRequestSerializer(serializers.Serializer):
     platform_tools = serializers.ListField(
         child=serializers.ChoiceField(choices=sorted(T.CLIENT_TOOLS)), required=False, default=list, max_length=len(T.CLIENT_TOOLS)
     )
-    messages = AgentMessageSerializer(many=True)
+    messages = AgentMessageSerializer(many=True, required=False, default=list)
+    trigger = AgentTriggerSerializer(required=False)
     # Confirmation ids the customer approved in the app (from an earlier needs_confirmation).
     confirmed = serializers.ListField(child=serializers.CharField(max_length=120), required=False, default=list, max_length=20)
 
+    def validate(self, attrs):
+        if attrs.get("trigger") and attrs["messages"]:
+            raise serializers.ValidationError("A trigger starts a new conversation: send it with no messages.")
+        if not attrs.get("trigger") and not attrs["messages"]:
+            raise serializers.ValidationError({"messages": ["At least one message is required."]})
+        return attrs
+
     def validate_messages(self, value):
         if not value:
-            raise serializers.ValidationError("At least one message is required.")
+            return value
         if len(value) > MAX_MESSAGES:
             raise serializers.ValidationError(f"At most {MAX_MESSAGES} messages; send a shorter transcript.")
         if len(json.dumps(value, default=str)) > MAX_BYTES:
