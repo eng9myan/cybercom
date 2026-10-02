@@ -6,18 +6,59 @@ sandbox default. Enable via:
     CYMART_AGENT_PROVIDER = "products.cymart.agent.providers.claude.ClaudeCompletionProvider"
     ANTHROPIC_API_KEY = "..."  # or the ANTHROPIC_API_KEY env var
 
-No credentials exist in this environment — this class is unexercised by
-the test suite (see providers/sandbox.py for what tests run against),
-same posture as payments.providers for a real gateway.
+STATUS: the message conversion and response parsing are unit-tested offline
+(agent/tests/test_claude_adapter.py). The network call itself has NOT been run
+against the live API — no valid key was available. Run one real turn before
+relying on it.
 """
 
+import json
 import os
 
 from django.conf import settings
 
 from .base import CompletionProvider, CompletionResult, ToolCall
 
-DEFAULT_MODEL = "claude-sonnet-5"
+DEFAULT_MODEL = "claude-sonnet-5-5"
+
+
+def to_claude_messages(messages: list[dict]) -> list[dict]:
+    """Collapses the orchestrator's simple {user, assistant, tool} protocol into
+    Claude's message format.
+
+    Anthropic requires every ``tool_result`` to follow the ``tool_use`` it
+    answers, so an assistant turn that made tool calls must be sent as text +
+    ``tool_use`` blocks (not as plain text), and ALL results for one assistant turn
+    go in a single user message, one ``tool_result`` block per call. Empty text is
+    rejected by the API, so empty assistant turns are skipped.
+    """
+    out: list[dict] = []
+    for m in messages:
+        role = m.get("role")
+        if role == "user":
+            out.append({"role": "user", "content": m["content"]})
+        elif role == "assistant":
+            blocks = []
+            if m.get("content"):
+                blocks.append({"type": "text", "text": m["content"]})
+            for call in m.get("tool_calls") or []:
+                blocks.append(
+                    {"type": "tool_use", "id": call["id"], "name": call["name"], "input": call.get("arguments") or {}}
+                )
+            if blocks:
+                out.append({"role": "assistant", "content": blocks})
+        elif role == "tool":
+            content = m.get("content")
+            block = {
+                "type": "tool_result",
+                "tool_use_id": m.get("tool_call_id", ""),
+                "content": content if isinstance(content, str) else json.dumps(content, ensure_ascii=False, default=str),
+            }
+            if out and out[-1]["role"] == "user" and isinstance(out[-1]["content"], list):
+                out[-1]["content"].append(block)
+            else:
+                out.append({"role": "user", "content": [block]})
+    return out
 
 
 class ClaudeCompletionProvider(CompletionProvider):
@@ -43,41 +84,18 @@ class ClaudeCompletionProvider(CompletionProvider):
             model=self._model,
             system=system_prompt,
             tools=claude_tools,
-            messages=self._to_claude_messages(messages),
+            messages=to_claude_messages(messages),
             max_tokens=1024,
         )
 
         text = "".join(block.text for block in response.content if block.type == "text")
         tool_calls = [
-            ToolCall(name=block.name, arguments=block.input, id=block.id)
+            ToolCall(name=block.name, arguments=dict(block.input), id=block.id)
             for block in response.content
             if block.type == "tool_use"
         ]
         stop_reason = "tool_use" if tool_calls else "end"
         return CompletionResult(text=text, tool_calls=tool_calls, stop_reason=stop_reason)
 
-    def _to_claude_messages(self, messages: list[dict]) -> list[dict]:
-        """Collapses the orchestrator's simple {user, assistant, tool}
-        protocol into Claude's message format — a tool result becomes a
-        tool_result content block on a user-role turn."""
-        out = []
-        for m in messages:
-            role = m.get("role")
-            if role == "user":
-                out.append({"role": "user", "content": m["content"]})
-            elif role == "assistant":
-                out.append({"role": "assistant", "content": m.get("content") or ""})
-            elif role == "tool":
-                out.append(
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "tool_result",
-                                "tool_use_id": m.get("tool_call_id", ""),
-                                "content": str(m.get("content")),
-                            }
-                        ],
-                    }
-                )
-        return out
+    # kept for callers that used the old private name
+    _to_claude_messages = staticmethod(to_claude_messages)

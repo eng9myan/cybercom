@@ -25,4 +25,5 @@ urlpatterns = [
     path("api/v1/agent/", include("products.cymart.agent.urls")),
     path("api/v1/delivery/", include("products.cymart.delivery.urls")),
     path("api/v1/merchants/", include("products.cymart.merchants.urls")),
+    path("api/v1/partner/", include("products.cymart.partners.urls")),
 ]

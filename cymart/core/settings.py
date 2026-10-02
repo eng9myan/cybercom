@@ -82,6 +82,7 @@ PRODUCT_APPS = [
     "products.cymart.agent",
     "products.cymart.delivery",
     "products.cymart.merchants",
+    "products.cymart.partners",
 ]
 
 # Swappable agent completion provider — same pattern as
@@ -196,6 +197,23 @@ CORS_ALLOWED_ORIGINS = os.environ.get(
 ).split(",")
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = DEBUG
+
+# Paths exempt from CyIdentityAuthMiddleware's customer-JWT requirement.
+# The partner API (products.cymart.partners — Diet Shield's third-party
+# lane) is a deliberately separate auth lane: third parties authenticate
+# with their own API key (PartnerAPIKeyAuthentication, enforced at the DRF
+# view level), never a CyMart customer JWT. This only lets those requests
+# through to DRF; it does not make the endpoint unauthenticated.
+AUTH_PUBLIC_PATH_PREFIXES = ["/api/v1/partner/"]
+
+# Which model the Diet Shield ordering agent (products.cymart.partners.agent) uses.
+# The sandbox is a deterministic stand-in (no key, no network). A real model:
+# products.cymart.partners.agent.providers.claude.ClaudeCompletionProvider
+# (needs ANTHROPIC_API_KEY in the environment; not yet run against the live API).
+AGENT_PROVIDER = os.environ.get(
+    "DIET_SHIELD_AGENT_PROVIDER",
+    "products.cymart.partners.agent.providers.sandbox.SandboxCompletionProvider",
+)
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
