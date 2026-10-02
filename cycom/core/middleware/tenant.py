@@ -90,8 +90,23 @@ class TenantIsolationMiddleware:
             request.tenant_id = None
             return self.get_response(request)
 
-        if not tenant_id and hasattr(request, "user_session"):
-            tenant_id = request.user_session.get("tenant_id")
+        # The header is only a hint. When the caller presented a verified
+        # token, the token's tenant claim is authoritative: a tenant-A token
+        # carrying `X-Tenant-ID: <B>` must not be served as tenant B. Without
+        # this check the header alone chose the tenant for every queryset AND
+        # for the RLS GUC below, so any authenticated user could read another
+        # tenant's data by editing one header. Platform admins are the one
+        # role that legitimately operates cross-tenant via the header.
+        session = getattr(request, "user_session", None) or {}
+        token_tenant = session.get("tenant_id")
+        if tenant_id and token_tenant and str(tenant_id) != str(token_tenant):
+            if "platform_admin" not in set(session.get("roles") or []):
+                return JsonResponse(
+                    {"detail": "X-Tenant-ID does not match the authenticated tenant."},
+                    status=403,
+                )
+        if not tenant_id and token_tenant:
+            tenant_id = token_tenant
 
         if not tenant_id:
             # Platform admins operate cross-tenant by design. DRF permission

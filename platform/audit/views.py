@@ -86,6 +86,10 @@ class TenantScopedAuditMixin:
     used Model.objects.all(), so any caller passing the role gate could read
     every tenant's audit trail."""
 
+    # Scoping is done here (with the platform-admin cross-tenant view), so the
+    # project-wide TenantScopeFilterBackend must not narrow it a second time.
+    tenant_scope_exempt = True
+
     def get_queryset(self):
         qs = super().get_queryset()
         if not any(f.name == "tenant_id" for f in qs.model._meta.get_fields()):

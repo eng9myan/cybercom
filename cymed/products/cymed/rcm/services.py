@@ -20,8 +20,13 @@ from .models import AppealCase, Claim837, ClaimResponse
 def build_claim_from_bill(*, bill_id, encounter_id, payer_code: str,
                            payer_country: str = "SA",
                            kind: str = "professional") -> Claim837:
+    from platform.common.tenant_context import get_current_tenant
+
     Bill = apps.get_model("cymed_payments", "UnifiedBill")
-    bill = Bill.objects.get(id=bill_id)
+    # bill_id arrives in the request body, so nothing upstream has checked
+    # it: scope the lookup to the caller's tenant or a claim could be built
+    # (and later submitted to a payer) from another hospital's bill.
+    bill = Bill.objects.get(id=bill_id, tenant_id=get_current_tenant())
 
     # Auto-code
     coder = AutoCodingEngine()
@@ -111,20 +116,25 @@ def raise_appeal(*, claim_id, narrative: str,
     )
 
 
-def kpi_snapshot() -> dict:
-    """Denial rate, DSO, first-pass yield, AR aging — network-wide."""
+def kpi_snapshot(tenant_id) -> dict:
+    """Denial rate, DSO, first-pass yield, AR aging for one tenant.
+
+    Was network-wide: every tenant's dashboard showed the whole platform's
+    claim volume and outstanding AR."""
     from django.db.models import Avg, Count, Q, Sum
 
-    total = Claim837.objects.count()
-    denied = Claim837.objects.filter(status__in=["denied", "rejected"]).count()
-    paid = Claim837.objects.filter(status="paid").count()
-    submitted = Claim837.objects.filter(status__in=["submitted", "accepted", "paid",
+    claims = Claim837.objects.filter(tenant_id=tenant_id)
+
+    total = claims.count()
+    denied = claims.filter(status__in=["denied", "rejected"]).count()
+    paid = claims.filter(status="paid").count()
+    submitted = claims.filter(status__in=["submitted", "accepted", "paid",
                                                       "denied", "appealed"]).count()
     denial_rate = (denied / submitted) if submitted else 0
     first_pass = (paid / submitted) if submitted else 0
-    dso_avg = Claim837.objects.filter(dso_days__isnull=False).aggregate(Avg("dso_days"))["dso_days__avg"] or 0
+    dso_avg = claims.filter(dso_days__isnull=False).aggregate(Avg("dso_days"))["dso_days__avg"] or 0
 
-    ar_total = (Claim837.objects
+    ar_total = (claims
                 .filter(status__in=["submitted", "accepted", "denied"])
                 .aggregate(Sum("charge_total"))["charge_total__sum"]) or 0
 

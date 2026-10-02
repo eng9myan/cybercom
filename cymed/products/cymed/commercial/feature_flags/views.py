@@ -1,6 +1,8 @@
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from platform.api.permissions import IsAuthenticatedClinicalStaff
+
 from products.cymed.commercial.feature_flags.models import (
     CustomerFeature,
     FeatureDependency,
@@ -21,7 +23,8 @@ class FeatureFlagViewSet(CommercialModelViewSet):
     queryset = FeatureFlag.objects.all()
     serializer_class = FeatureFlagSerializer
 
-    @action(detail=False, methods=["post"])
+    # POST, but a read: any staff member may ask whether a feature is on.
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticatedClinicalStaff])
     def check(self, request):
         """Check if a feature is enabled for the current tenant."""
         ser = FeatureCheckSerializer(data=request.data)

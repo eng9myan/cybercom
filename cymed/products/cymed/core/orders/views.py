@@ -9,6 +9,9 @@ from products.cymed.core.orders.serializers import OrderSerializer
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
+    # Read by the project-wide tenant filter (platform.api.tenancy) so it
+    # matches get_queryset below instead of narrowing it to the owner only.
+    tenant_scope_fields = ("tenant_id", "fulfilling_tenant_id")
     permission_classes = [IsAuthenticated]
     # Real consumer: Phase 9's mobile e-Rx screen filters on order_type=medication.
     filterset_fields = ["order_type", "status", "priority"]

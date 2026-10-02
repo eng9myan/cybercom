@@ -9,11 +9,7 @@ class ObservationMapper:
 
     @property
     def django_model(self):
-        # Best-effort — falls back to loose lookup
-        try:
-            return apps.get_model("observations", "Observation")
-        except LookupError:
-            return apps.get_model("clinical", "Observation")
+        return apps.get_model("cymed_clinical", "Observation")
 
     _search_map = {
         "patient": "patient_id",
@@ -57,8 +53,8 @@ class ObservationMapper:
             unit=vq.get("unit", ""),
         )
 
-    def search(self, params: dict):
+    def search(self, params: dict, tenant_id):
         q, limit, order = parse_search(params, self._search_map)
-        qs = self.django_model.objects.filter(q)
+        qs = self.django_model.objects.filter(q, tenant_id=tenant_id)
         if order: qs = qs.order_by(*order)
         return qs[:limit]

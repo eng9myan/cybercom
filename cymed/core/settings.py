@@ -241,6 +241,9 @@ MIDDLEWARE = [
     # publishes request.tenant_id into the ambient tenant context so
     # TenantScopedMixin.save() can fill tenant_id when a caller forgets it
     "platform.common.middleware.TenantContextMiddleware",
+    # 404s detail routes (.../<pk>/...) whose row belongs to another tenant,
+    # before the view runs — covers custom actions that bypass get_object().
+    "platform.api.tenancy.TenantObjectGuardMiddleware",
     "core.middleware.branding.BrandingMiddleware",
     "core.middleware.feature_flags.FeatureFlagMiddleware",
     "core.middleware.audit.AuditMiddleware",
@@ -409,7 +412,13 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.JSONParser",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    # TenantScopeFilterBackend narrows every tenant_id queryset to the caller's
+    # tenant (platform.api.tenancy). Default, not opt-in: 210 viewsets shipped
+    # as bare `Model.objects.all()` and served every tenant's rows.
+    "DEFAULT_FILTER_BACKENDS": [
+        "platform.api.tenancy.TenantScopeFilterBackend",
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.environ.get("API_PAGE_SIZE", "25")),
     "EXCEPTION_HANDLER": "platform.api.exceptions.cybercom_exception_handler",

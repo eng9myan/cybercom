@@ -146,6 +146,8 @@ MIDDLEWARE = [
     # publishes request.tenant_id into the ambient tenant context so
     # TenantScopedMixin.save() can fill tenant_id when a caller forgets it
     "platform.common.middleware.TenantContextMiddleware",
+    # 404s detail routes whose row belongs to another tenant (platform.api.tenancy).
+    "platform.api.tenancy.TenantObjectGuardMiddleware",
 ]
 
 # Per-product public (AllowAny) surfaces — see shared/auth/auth_middleware.py.
@@ -276,7 +278,14 @@ REST_FRAMEWORK = {
     # returning every tenant's lines mixed together instead of one order's.
     # This enables the mechanism; individual viewsets still need
     # filterset_fields to opt in.
-    "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
+    # TenantScopeFilterBackend (platform.api.tenancy) narrows every tenant_id
+    # queryset to the caller's tenant. CyCom's own viewsets already scope via
+    # TenantScopedModelViewSet; this catches the shared platform/ viewsets
+    # (identity users, sessions, client secrets, event logs) that did not.
+    "DEFAULT_FILTER_BACKENDS": [
+        "platform.api.tenancy.TenantScopeFilterBackend",
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.environ.get("API_PAGE_SIZE", "25")),
     "EXCEPTION_HANDLER": "platform.api.exceptions.cybercom_exception_handler",

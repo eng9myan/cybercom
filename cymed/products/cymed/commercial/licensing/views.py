@@ -102,14 +102,15 @@ class LicenseViewSet(CommercialModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @action(detail=False, methods=["post"])
+    # POST, but a read: a tenant may validate its own licences.
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
     def validate(self, request):
         """Validate license status for a product."""
         ser = LicenseValidateSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
 
         try:
-            lic = License.objects.get(
+            lic = self.filter_queryset(License.objects.all()).get(
                 license_number=ser.validated_data["license_number"],
                 product_code=ser.validated_data["product_code"],
             )

@@ -9,6 +9,9 @@ from products.cymed.core.consents.serializers import ConsentSerializer
 class ConsentViewSet(viewsets.ModelViewSet):
     queryset = Consent.objects.all()
     serializer_class = ConsentSerializer
+    # Read by the project-wide tenant filter (platform.api.tenancy) so it
+    # matches get_queryset below instead of narrowing it to the owner only.
+    tenant_scope_fields = ("tenant_id", "granted_to_tenant_id")
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):

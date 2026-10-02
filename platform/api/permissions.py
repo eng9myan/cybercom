@@ -155,3 +155,19 @@ class CanManageWebhooks(BasePermission):
 class CanViewApiCatalog(BasePermission):
     def has_permission(self, request, view):
         return True  # Public catalog is readable
+
+
+class StaffReadPlatformAdminWrite(IsAuthenticatedClinicalStaff):
+    """Any staff member may read; only platform_admin may change anything.
+
+    For vendor-side data — the product catalog, editions, licences,
+    subscriptions — where a tenant must be able to see what it has but must
+    never be able to grant itself more (a tenant_admin included: they run
+    their own tenant, not the vendor's price list)."""
+
+    def has_permission(self, request, view):
+        if not super().has_permission(request, view):
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        return "platform_admin" in _roles(request)

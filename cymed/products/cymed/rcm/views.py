@@ -25,6 +25,18 @@ class Claim837ViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="build")
     def build(self, request):
+        from django.apps import apps
+        from django.core.exceptions import ValidationError
+
+        Bill = apps.get_model("cymed_payments", "UnifiedBill")
+        try:
+            own_bill = Bill.objects.filter(
+                id=request.data.get("bill_id"), tenant_id=request.tenant_id
+            ).exists()
+        except (ValueError, ValidationError):
+            own_bill = False
+        if not own_bill:
+            return Response({"detail": "Bill not found."}, status=404)
         claim = build_claim_from_bill(
             bill_id=request.data["bill_id"],
             encounter_id=request.data["encounter_id"],
@@ -80,10 +92,12 @@ class DenialCodeViewSet(viewsets.ReadOnlyModelViewSet):
 
 class DenialsListView(APIView):
     def get(self, request):
-        qs = Claim837.objects.filter(status="denied").order_by("-denied_at")[:200]
+        qs = (Claim837.objects
+              .filter(tenant_id=request.tenant_id, status="denied")
+              .order_by("-denied_at")[:200])
         return Response(Claim837Serializer(qs, many=True).data)
 
 
 class KPIView(APIView):
     def get(self, request):
-        return Response(kpi_snapshot())
+        return Response(kpi_snapshot(request.tenant_id))

@@ -48,8 +48,8 @@ class ClaimMapper:
         # Read-only for now: external systems shouldn't create bills via FHIR
         raise NotImplementedError("Claim creation via FHIR handled by RCM engine")
 
-    def search(self, params: dict):
+    def search(self, params: dict, tenant_id):
         q, limit, order = parse_search(params, self._search_map)
-        qs = self.django_model.objects.filter(q)
+        qs = self.django_model.objects.filter(q, tenant_id=tenant_id)
         if order: qs = qs.order_by(*order)
         return qs[:limit]
