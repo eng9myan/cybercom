@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from products.cymed.hospital.nursing.models import (
+    MedicationAdministration,
     NursingAssessment,
     NursingAssignment,
     NursingCarePlan,
@@ -109,3 +110,50 @@ class NursingHandoverSerializer(serializers.ModelSerializer):
     class Meta:
         model = NursingHandover
         fields = "__all__"
+
+
+class MedicationAdministrationSerializer(serializers.ModelSerializer):
+    """Read shape of an eMAR row. Every state change goes through the
+    actions (generate / administer / prn / not-given), never a plain write."""
+
+    notes = _phi_text()
+    drug_name = serializers.CharField(source="medication_order.drug_name", read_only=True)
+    ordered_dose = serializers.CharField(source="medication_order.dose", read_only=True)
+    frequency = serializers.CharField(source="medication_order.frequency", read_only=True)
+    is_controlled = serializers.BooleanField(source="medication_order.is_controlled", read_only=True)
+
+    class Meta:
+        model = MedicationAdministration
+        fields = [
+            "id", "medication_order", "patient_id", "admission_id", "status", "scheduled_at",
+            "administered_at", "administered_by", "witnessed_by", "dose_given", "dose_unit",
+            "route", "site", "patient_barcode_verified", "medication_barcode_verified",
+            "reason", "notes", "drug_name", "ordered_dose", "frequency", "is_controlled",
+        ]
+        read_only_fields = fields
+
+
+class AdministerSerializer(serializers.Serializer):
+    patient_barcode = serializers.CharField()
+    medication_barcode = serializers.CharField()
+    dose = serializers.CharField(required=False, allow_blank=True, default="")
+    route = serializers.CharField(required=False, allow_blank=True, default="")
+    site = serializers.CharField(required=False, allow_blank=True, default="")
+    reason = serializers.CharField(required=False, allow_blank=True, default="")
+    witness = serializers.CharField(required=False, allow_blank=True, default="")
+    notes = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class PrnSerializer(AdministerSerializer):
+    medication_order = serializers.UUIDField()
+    reason = serializers.CharField()
+
+
+class NotGivenSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["held", "refused", "missed"])
+    reason = serializers.CharField()
+
+
+class GenerateScheduleSerializer(serializers.Serializer):
+    medication_order = serializers.UUIDField()
+    hours = serializers.IntegerField(min_value=1, max_value=72, default=24)

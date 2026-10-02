@@ -171,3 +171,19 @@ class StaffReadPlatformAdminWrite(IsAuthenticatedClinicalStaff):
         if request.method in SAFE_METHODS:
             return True
         return "platform_admin" in _roles(request)
+
+
+def actor(request) -> str:
+    """Who is acting, for audit fields (administered_by, sender, ordered_by):
+    the principal's email, else the verified token's email, else its subject."""
+    user = getattr(request, "user", None)
+    session = getattr(request, "user_session", None) or {}
+    claims = getattr(request, "auth_claims", None) or {}
+    return (
+        getattr(user, "email", "")
+        or session.get("email")
+        or claims.get("email")
+        or session.get("user_id")
+        or claims.get("sub")
+        or str(getattr(user, "id", "") or "")
+    )

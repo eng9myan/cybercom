@@ -50,6 +50,8 @@ urlpatterns = [
     path("api/v1/documents/", include("products.cymed.core.documents.urls")),
     path("api/v1/careplans/", include("products.cymed.core.careplans.urls")),
     path("api/v1/orders/", include("products.cymed.core.orders.urls")),
+    path("api/v1/order-sets/", include("products.cymed.core.orders.set_urls")),
+    path("api/v1/messages/", include("products.cymed.core.messaging.urls")),
     path("api/v1/scheduling/", include("products.cymed.core.scheduling.urls")),
     path("api/v1/consents/", include("products.cymed.core.consents.urls")),
     path("api/v1/registries/", include("products.cymed.core.registries.urls")),

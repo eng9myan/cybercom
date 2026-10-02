@@ -81,6 +81,7 @@ PRODUCT_APPS = [
     "products.cymed.core.orders",
     "products.cymed.core.scheduling",
     "products.cymed.core.consents",
+    "products.cymed.core.messaging",
     "products.cymed.core.registries",
     # CyMed Commercial Foundation (Program 3.C0)
     "products.cymed.commercial.licensing",

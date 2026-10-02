@@ -15,6 +15,7 @@ import uuid
 from datetime import date
 
 import pytest
+from django.core.exceptions import EmptyResultSet
 from django.urls import get_resolver
 from rest_framework.request import Request
 from rest_framework.test import APIClient, APIRequestFactory
@@ -67,6 +68,7 @@ def _routed_view_classes():
     return seen
 
 
+@pytest.mark.django_db
 def test_every_routed_tenant_viewset_filters_by_tenant():
     tenant = "99999999-9999-9999-9999-999999999999"
     factory = APIRequestFactory()
@@ -84,7 +86,11 @@ def test_every_routed_tenant_viewset_filters_by_tenant():
         view.request, view.args, view.kwargs = request, (), {}
         view.action, view.format_kwarg = "list", None
         qs = view.filter_queryset(view.get_queryset())
-        if tenant.replace("-", "") not in str(qs.query).replace("-", ""):
+        try:
+            sql = str(qs.query)
+        except EmptyResultSet:
+            continue  # .none(): serves nothing, so nothing to leak
+        if tenant.replace("-", "") not in sql.replace("-", ""):
             unscoped.append(f"{cls.__module__}.{cls.__name__} /{path}")
     assert unscoped == [], "views serving every tenant's rows:\n" + "\n".join(unscoped)
 

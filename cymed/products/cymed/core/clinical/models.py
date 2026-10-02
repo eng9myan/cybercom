@@ -34,7 +34,20 @@ class Condition(BaseModel, SoftDeleteMixin):
         ],
         default="confirmed",
     )
+    # FHIR Condition.category. The problem list is the longitudinal set of
+    # problem_list_item rows; encounter_diagnosis rows belong to one visit.
+    category = models.CharField(
+        max_length=30,
+        choices=[
+            ("problem_list_item", "Problem list item"),
+            ("encounter_diagnosis", "Encounter diagnosis"),
+            ("health_concern", "Health concern"),
+        ],
+        default="problem_list_item",
+        db_index=True,
+    )
     onset_date = models.DateField(null=True, blank=True)
+    abatement_date = models.DateField(null=True, blank=True)
     recorded_at = models.DateTimeField(default=timezone.now)
     recorded_by = models.CharField(max_length=255)
 

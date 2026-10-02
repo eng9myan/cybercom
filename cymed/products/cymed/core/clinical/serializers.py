@@ -28,6 +28,8 @@ class ConditionSerializer(serializers.ModelSerializer):
             "code",
             "display",
             "system",
+            "category",
+            "abatement_date",
             "clinical_status",
             "verification_status",
             "onset_date",

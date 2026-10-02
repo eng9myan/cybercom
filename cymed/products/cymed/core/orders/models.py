@@ -78,3 +78,44 @@ class OrderResult(BaseModel):
 
     class Meta:
         db_table = "cymed_order_results"
+
+
+class OrderSet(BaseModel):
+    """A reusable bundle of orders (e.g. "Chest pain workup", "Sepsis bundle").
+
+    Applying a set to a patient creates real Order + OrderItem rows — one
+    Order per order type — so everything downstream (lab, imaging, pharmacy
+    queues, the outbox) sees ordinary orders."""
+
+    code = models.CharField(max_length=50)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    specialty = models.CharField(max_length=100, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "cymed_order_sets"
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(fields=["tenant_id", "code"], name="uniq_order_set_code_per_tenant")
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class OrderSetItem(BaseModel):
+    order_set = models.ForeignKey(OrderSet, on_delete=models.CASCADE, related_name="items")
+    order_type = models.CharField(max_length=30, choices=OrderType.choices)
+    code = models.CharField(max_length=100)  # LOINC, RxNorm, or SNOMED
+    display = models.CharField(max_length=255)
+    quantity = models.PositiveIntegerField(default=1)
+    priority = models.CharField(max_length=20, choices=OrderPriority.choices, default=OrderPriority.ROUTINE)
+    instructions = models.TextField(blank=True)
+    # Pre-ticked in the ordering UI; a clinician can untick before applying.
+    default_selected = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "cymed_order_set_items"
+        ordering = ["sort_order", "display"]

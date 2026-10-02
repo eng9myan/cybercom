@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from products.cymed.core.orders.models import Order, OrderItem, OrderResult
+from products.cymed.core.orders.models import Order, OrderItem, OrderResult, OrderSet, OrderSetItem
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -69,3 +69,43 @@ class OrderSerializer(serializers.ModelSerializer):
         )
 
         return order
+
+
+class OrderSetItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderSetItem
+        fields = ["id", "order_type", "code", "display", "quantity", "priority",
+                  "instructions", "default_selected", "sort_order"]
+
+
+class OrderSetSerializer(serializers.ModelSerializer):
+    items = OrderSetItemSerializer(many=True, required=False)
+
+    class Meta:
+        model = OrderSet
+        fields = ["id", "code", "name", "description", "specialty", "is_active",
+                  "items", "created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at"]
+
+    def create(self, validated_data):
+        items = validated_data.pop("items", [])
+        order_set = OrderSet.objects.create(**validated_data)
+        for item in items:
+            OrderSetItem.objects.create(order_set=order_set, tenant_id=order_set.tenant_id, **item)
+        return order_set
+
+    def update(self, instance, validated_data):
+        items = validated_data.pop("items", None)
+        instance = super().update(instance, validated_data)
+        if items is not None:  # full replacement — a set is edited as a whole
+            instance.items.all().delete()
+            for item in items:
+                OrderSetItem.objects.create(order_set=instance, tenant_id=instance.tenant_id, **item)
+        return instance
+
+
+class OrderSetApplySerializer(serializers.Serializer):
+    patient = serializers.UUIDField()
+    encounter = serializers.UUIDField(required=False, allow_null=True)
+    # Subset of the set's items to order; omitted = every default_selected item.
+    item_ids = serializers.ListField(child=serializers.UUIDField(), required=False)

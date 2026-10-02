@@ -2,6 +2,7 @@ import uuid
 
 from django.utils import timezone
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from platform.api.permissions import IsAuthenticatedClinicalStaff as IsAuthenticated  # M-7: staff-role gate
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -32,6 +33,32 @@ class ConditionViewSet(viewsets.ModelViewSet):
         if tenant_id:
             return self.queryset.filter(tenant_id=tenant_id)
         return self.queryset.none()
+
+    @action(detail=False, methods=["get"], url_path="problem-list")
+    def problem_list(self, request):
+        """The patient's current problem list: problem-list items that are
+        active / in remission and not refuted. ?patient=<id> is required;
+        ?include_resolved=1 adds the resolved history."""
+        patient = request.query_params.get("patient")
+        if not patient:
+            return Response({"detail": "patient is required."}, status=status.HTTP_400_BAD_REQUEST)
+        statuses = ["active", "remission"]
+        if request.query_params.get("include_resolved") in ("1", "true"):
+            statuses += ["inactive", "resolved"]
+        qs = (self.filter_queryset(self.get_queryset())
+              .filter(patient_id=patient, category="problem_list_item",
+                      clinical_status__in=statuses)
+              .exclude(verification_status="refuted")
+              .order_by("clinical_status", "-onset_date", "-recorded_at"))
+        return Response(self.get_serializer(qs, many=True).data)
+
+    @action(detail=True, methods=["post"])
+    def resolve(self, request, pk=None):
+        condition = self.get_object()
+        condition.clinical_status = "resolved"
+        condition.abatement_date = request.data.get("abatement_date") or timezone.localdate()
+        condition.save(update_fields=["clinical_status", "abatement_date", "updated_at"])
+        return Response(self.get_serializer(condition).data)
 
 
 class AllergyViewSet(viewsets.ModelViewSet):
