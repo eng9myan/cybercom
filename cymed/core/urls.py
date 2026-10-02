@@ -73,6 +73,7 @@ urlpatterns = [
     path("api/v1/integrations/zakata/", include("products.cymed.integrations.zakata.urls")),
     path("api/v1/integrations/nphies/", include("products.cymed.integrations.nphies.urls")),
     path("api/v1/integrations/hakeem/", include("products.cymed.integrations.hakeem.urls")),
+    path("api/v1/integrations/erx/", include("products.cymed.integrations.erx.urls")),
     # ── FHIR R4 REST Server (P0-4) ─────────────────────────────────────────
     path("fhir/R4/", include("products.cymed.fhir_r4.urls")),
     # ── AI Clinical Decision Support (P0-5) ────────────────────────────────

@@ -160,6 +160,7 @@ PRODUCT_APPS = [
     "products.cymed.integrations.zakata",
     "products.cymed.integrations.nphies",
     "products.cymed.integrations.hakeem",
+    "products.cymed.integrations.erx",
     # CyMed Portals
     "products.cymed.patient_portal",
     "products.cymed.provider_portal",
