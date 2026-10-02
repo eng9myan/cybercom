@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Search, Users } from 'lucide-react';
+import Link from 'next/link';
+import { Search, Users, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/lib/i18n';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/ProviderPortalEmptyStates';
@@ -140,6 +141,7 @@ export default function PatientsPage() {
                 <th>{t('patients.dob')}</th>
                 <th>{t('patients.gender')}</th>
                 <th>{t('patients.status')}</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -155,6 +157,15 @@ export default function PatientsPage() {
                     <span className={`badge ${p.is_active ? 'badge-green' : 'badge-red'}`}>
                       {p.is_active ? t('patients.active') : t('patients.inactive')}
                     </span>
+                  </td>
+                  <td>
+                    <Link
+                      href={`/messages?new=${p.id}`}
+                      className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white"
+                      title={t('messages.newThread')}
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    </Link>
                   </td>
                 </tr>
               ))}
