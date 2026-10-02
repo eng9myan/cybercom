@@ -148,7 +148,9 @@ export default function PatientsPage() {
               {filtered.map((p) => (
                 <tr key={p.id}>
                   <td className="font-semibold text-white">
-                    {p.first_name} {p.last_name}
+                    <Link href={`/patients/${p.id}`} className="hover:text-[var(--cy-teal)]">
+                      {p.first_name} {p.last_name}
+                    </Link>
                   </td>
                   <td className="font-mono">{p.mrn}</td>
                   <td>{p.dob}</td>
