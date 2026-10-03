@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Calendar, FlaskConical, Video, Stethoscope, MessageSquare, ListChecks, BedDouble } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, FlaskConical, Video, Stethoscope, MessageSquare, ListChecks, BedDouble, Pill } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 
 const LINKS = [
@@ -12,6 +12,7 @@ const LINKS = [
   { href: '/schedule', icon: Calendar, key: 'nav.schedule' },
   { href: '/orders', icon: FlaskConical, key: 'nav.orders' },
   { href: '/order-sets', icon: ListChecks, key: 'nav.orderSets' },
+  { href: '/dispensing', icon: Pill, key: 'nav.dispensing' },
   { href: '/messages', icon: MessageSquare, key: 'nav.messages' },
   { href: '/telemedicine', icon: Video, key: 'nav.telemedicine' },
 ] as const;
