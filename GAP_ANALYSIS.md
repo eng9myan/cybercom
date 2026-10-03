@@ -1,4 +1,10 @@
-# GAP_ANALYSIS.md — CyCom vs Odoo Module Map (Phase 1, 2026-08-25)
+# GAP_ANALYSIS.md — CyCom vs Odoo Module Map (Phase 1, 2026-08-25, re-verified 2026-10-03)
+
+> **2026-10-03 re-verification note:** Payment gateway and Payroll-beyond-JO
+> below were stale — both were built in later sessions. `PROJECT_STATE.md` is
+> the up-to-date source of truth; this file's other rows were spot-checked
+> against current code and still hold, but check `PROJECT_STATE.md` first
+> before trusting anything here as current.
 
 > Launch product = **CyCom** (Commerce/Retail-first), per `MARKET_READINESS.md`.
 > Scope here is CyCom only. CyShop is folding in (its unique parts already ported);
@@ -17,7 +23,7 @@
 | Purchase | `procurement` | Present | — | PurchaseRequest→PO→GoodsReceipt. Approval workflow present. |
 | Accounting | `accounting` + `ar_ap` | Present | — | Real journal posting, AR/AP, invoices, partners, trial balance/P&L/balance sheet/VAT return, bank reconciliation. All tested. No frontend statements viewer yet. |
 | HR | `hr` + `leave` + `recruitment` | Present (core) | — | Employee, Contract, Leave, Applicant. |
-| Payroll | `payroll` | Partial | P1 | PayrollRun, Payslip, attendance, JO social-security. Only JO localized; other countries missing. |
+| Payroll | `payroll` | Present | — | PayrollRun, Payslip, attendance, JO + SA GOSI + UAE gratuity/GPSSA, country dispatcher, 11 tests (done — see PROJECT_STATE.md). 2 rates (SA scheme choice, UAE national %) need business confirmation, not code. |
 | Project | `project` | Partial | P2 | Basic; no Gantt/timesheet depth. |
 | Manufacturing (MRP) | `manufacturing` | Partial | P2 | BOM/work-order basics; not launch-critical for Commerce. |
 | Multi-company | `platform/tenant` | Partial | P1 | Multi-**tenant** strong; multi-company **within** a tenant not modeled (dropped Company FK). Branches TBD. |
@@ -34,7 +40,7 @@
 | Receipts | `pos.PosReceipt` | Present | — | |
 | Self-serve onboarding | `cycom-erp` `/onboarding`, `/setup` | Present | — | 10-step provisioning wizard + Commerce quick-setup. |
 | Self-serve signup (tenant register) | `platform/tenant` + `/signup` | Partial | **P0** | Wired end-to-end **but** realm provisioning needs Keycloak (fails on no-Docker). |
-| **Payment gateway** | — | **Missing** | **P0** | `register` only raises a bank-transfer-pending invoice. No card capture. Blocks paid self-serve. |
+| **Payment gateway** | `platform/tenant/payments.py` | Present | — | HyperPay (create_checkout + AES-256-GCM webhook decrypt + verify) and Stripe both fully implemented, plus manual/fake providers. Frontend checkout render in `/signup`. Needs live HyperPay merchant keys to actually charge a card — that's an account/infra step, not a code gap. |
 | eCommerce storefront (online ordering) | — | Missing | P2 | POS-first launch doesn't require it; needed for omnichannel later. |
 | Loyalty / promotions | — | Missing | P2 | |
 
@@ -45,7 +51,7 @@
 | Multi-tenant isolation | Present | — | Enforced at queryset (`TenantScopedModelViewSet`); RLS path exists. |
 | Auth — production (Keycloak/OIDC) | Present | **P0** | Real, but must be stood up on a real box to run at all. |
 | Auth — demo (dev-auth shim) | Present | — | Works without Keycloak; demo/dev only. |
-| RTL / Arabic bilingual | Partial | P1 | Not audited; prompt marks it a hard requirement. |
+| RTL / Arabic bilingual | Present (core) | — | Large sweep done across 30+ batches in later sessions (RTL arrows, logical CSS properties, i18n key parity, locale cookie SSR). Not re-verified in this pass — check for drift before citing as finished. |
 | Hosting / Odoo.sh-equivalent platform | Missing | P1 | No git-branch envs / one-click tenant provisioning platform yet. |
 | Automated tests | Partial | P1 | Strong on the apps built this session (catalog/pos/sales); coverage uneven elsewhere. |
 
@@ -53,7 +59,9 @@
 
 **P0 — before a first paying customer can self-serve:**
 1. **Keycloak on a real box** — unblocks signup/login end-to-end. (Or: hand-provision the first customer's tenant and defer.)
-2. **Payment gateway** — Stripe + regional (HyperPay/PayTabs for JO/SA/AE) on the `register` flow. (Or: manual invoicing for the first hand-held deal.)
+2. ~~Payment gateway~~ — **done**: Stripe + HyperPay (the regional pick for JO/SA/AE)
+   both fully implemented on the `register` flow, plus manual/fake providers.
+   Remaining is an account step (live HyperPay merchant keys), not code.
 
 **P1 — for a credible commercial CyCom (Commerce):**
 3. Hosting/provisioning platform (git-branch envs, one-click tenant instance) — prompt §8.
@@ -66,11 +74,14 @@
    (Lead.stage, funnel/weighted-value aggregation, Activity log) and a Kanban frontend —
    the real bug was the Kanban's stage-move buttons never persisting `stage` to the backend
    (fixed in `cycom-erp/app/crm/page.tsx`).
-6. RTL/Arabic audit + fixes.
-7. Payroll beyond JO (SA/AE localizations).
+6. ~~RTL/Arabic audit + fixes~~ — **largely done** across later sessions (30+
+   batches); not re-verified in this pass, see the Cross-cutting row above.
+7. ~~Payroll beyond JO~~ — **done**: SA GOSI + UAE gratuity/GPSSA + country
+   dispatcher, 11 tests. 2 rates still need business confirmation (SA scheme
+   choice, UAE national %) — not a code gap.
 
 **P2 — after first launch:** eCommerce storefront, loyalty/promotions, MRP depth, Project depth, Studio-style field designer.
 
 ## The honest one-liner
 
-CyCom's **operational core is Present** (sell, stock, buy, book, pay staff) and the **Commerce vertical is its strongest, most-tested, most-differentiated surface** (POS + live KDS). The gap to first revenue is **not features** — it's **two enablers (Keycloak-hosted + payments)** and a **hosting platform** to deliver tenants. Everything else is P2 polish that should not delay launch.
+CyCom's **operational core is Present** (sell, stock, buy, book, pay staff) and the **Commerce vertical is its strongest, most-tested, most-differentiated surface** (POS + live KDS). As of 2026-10-03, payment gateway and payroll-beyond-JO are both code-complete (see re-verification note above) — the gap to first revenue is now **entirely infra/business, not features**: a hosted Keycloak, live payment-provider keys, confirming 2 payroll rates, and a hosting platform to deliver tenants. Everything else is P2 polish that should not delay launch.
