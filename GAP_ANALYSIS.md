@@ -1,10 +1,12 @@
 # GAP_ANALYSIS.md — CyCom vs Odoo Module Map (Phase 1, 2026-08-25, re-verified 2026-10-03)
 
-> **2026-10-03 re-verification note:** Payment gateway and Payroll-beyond-JO
-> below were stale — both were built in later sessions. `PROJECT_STATE.md` is
-> the up-to-date source of truth; this file's other rows were spot-checked
-> against current code and still hold, but check `PROJECT_STATE.md` first
-> before trusting anything here as current.
+> **2026-10-03 re-verification note:** this file is from the Phase 1 pass and
+> had gone stale on 7 rows — Payment gateway, Payroll-beyond-JO,
+> Multi-company, Project, Manufacturing, Studio, and eCommerce storefront
+> were all marked Missing/Partial but had since been built (spot-checked
+> directly against the current code, not just memory). Fixed in place below.
+> `PROJECT_STATE.md` is the up-to-date source of truth going forward — check
+> it first before trusting anything in this file as current.
 
 > Launch product = **CyCom** (Commerce/Retail-first), per `MARKET_READINESS.md`.
 > Scope here is CyCom only. CyShop is folding in (its unique parts already ported);
@@ -24,11 +26,11 @@
 | Accounting | `accounting` + `ar_ap` | Present | — | Real journal posting, AR/AP, invoices, partners, trial balance/P&L/balance sheet/VAT return, bank reconciliation. All tested. No frontend statements viewer yet. |
 | HR | `hr` + `leave` + `recruitment` | Present (core) | — | Employee, Contract, Leave, Applicant. |
 | Payroll | `payroll` | Present | — | PayrollRun, Payslip, attendance, JO + SA GOSI + UAE gratuity/GPSSA, country dispatcher, 11 tests (done — see PROJECT_STATE.md). 2 rates (SA scheme choice, UAE national %) need business confirmation, not code. |
-| Project | `project` | Partial | P2 | Basic; no Gantt/timesheet depth. |
-| Manufacturing (MRP) | `manufacturing` | Partial | P2 | BOM/work-order basics; not launch-critical for Commerce. |
-| Multi-company | `platform/tenant` | Partial | P1 | Multi-**tenant** strong; multi-company **within** a tenant not modeled (dropped Company FK). Branches TBD. |
+| Project | `project` | Present | P2 | Timesheets (logged hours roll into Task.effective_hours) + real CPM scheduling (forward/backward pass, slack, cycle-detection) with a Gantt frontend — built later, row was stale. |
+| Manufacturing (MRP) | `manufacturing` | Present | P2 | Real MRP now: WorkCenter/Routing/RoutingOperation, auto-generated WorkOrders per operation (strictly sequenced), work_center_load() capacity planning. Built later, row was stale; still not launch-critical for Commerce. |
+| Multi-company | `products.cycom.company` | Present | — | Multi-tenant strong; multi-company **within** a tenant now modeled too (`Company` w/ `parent_company` self-FK, nullable FK on JournalEntry/PurchaseOrder/SalesOrder/ManufacturingOrder, optional `company=` filter on the 5 statement functions) — built later, not reflected when this row was first written. Intercompany auto-mirroring and per-company CoA/numbering still deliberately out of scope. |
 | Multi-currency | model currency fields | Partial | P1 | Currency stored per order; no rate table / revaluation. |
-| Studio (extensibility) | `cyai_moduledev`, `provisioning` | Partial | P2 | Provisioning blueprints + AI-propose exist; no end-user field/form designer. |
+| Studio (extensibility) | `cyai_moduledev`, `provisioning`, `customfields` | Partial | P2 | Provisioning blueprints + AI-propose + a real no-code custom-fields system (5 whitelisted models, attributes JSONField, Settings UI) now exist — built later, row was stale. Still no end-user form/layout designer. |
 
 ## Commerce-vertical (CyCom-first launch surface)
 
@@ -41,7 +43,7 @@
 | Self-serve onboarding | `cycom-erp` `/onboarding`, `/setup` | Present | — | 10-step provisioning wizard + Commerce quick-setup. |
 | Self-serve signup (tenant register) | `platform/tenant` + `/signup` | Partial | **P0** | Wired end-to-end **but** realm provisioning needs Keycloak (fails on no-Docker). |
 | **Payment gateway** | `platform/tenant/payments.py` | Present | — | HyperPay (create_checkout + AES-256-GCM webhook decrypt + verify) and Stripe both fully implemented, plus manual/fake providers. Frontend checkout render in `/signup`. Needs live HyperPay merchant keys to actually charge a card — that's an account/infra step, not a code gap. |
-| eCommerce storefront (online ordering) | — | Missing | P2 | POS-first launch doesn't require it; needed for omnichannel later. |
+| eCommerce storefront (online ordering) | `products.cycom.storefront` | Present | P2 | Built later, row was stale: public `/store/[slug]` + cart + checkout creating a real SalesOrder, token-based guest cart, opt-in `Product.is_published_online`. |
 | Loyalty / promotions | — | Missing | P2 | |
 
 ## Cross-cutting
@@ -80,7 +82,7 @@
    dispatcher, 11 tests. 2 rates still need business confirmation (SA scheme
    choice, UAE national %) — not a code gap.
 
-**P2 — after first launch:** eCommerce storefront, loyalty/promotions, MRP depth, Project depth, Studio-style field designer.
+**P2 — after first launch:** loyalty/promotions, Studio-style end-user form/layout designer. (eCommerce storefront, MRP depth, and Project depth are now done — see rows above.)
 
 ## The honest one-liner
 
