@@ -42,7 +42,9 @@ class DischargeDispositionViewSet(HospitalModelViewSet):
 
 
 class AdmissionViewSet(HospitalModelViewSet):
-    queryset = Admission.objects.all()
+    queryset = Admission.objects.select_related(
+        "encounter", "encounter__patient", "admission_type", "admission_reason"
+    )
     serializer_class = AdmissionSerializer
 
 

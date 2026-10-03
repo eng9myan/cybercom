@@ -135,6 +135,10 @@ class TestHospitalEdition:
         )
         assert resp.status_code == 201
         admission_id = resp.data["id"]
+        assert resp.data["patient_id"] == str(patient.id)
+        assert resp.data["patient_name"] == f"{patient.first_name} {patient.last_name}"
+        assert resp.data["admission_type_name"] == "Emergency"
+        assert resp.data["admission_reason_name"] == "Chest Pain"
         assert (
             DomainEvent.objects.filter(
                 tenant_id=test_tenant_id, event_type="cymed.hospital.admission.created"

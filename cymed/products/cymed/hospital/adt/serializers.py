@@ -42,18 +42,31 @@ class DischargeDispositionSerializer(serializers.ModelSerializer):
 
 
 class AdmissionSerializer(serializers.ModelSerializer):
+    patient_id = serializers.UUIDField(source="encounter.patient_id", read_only=True)
+    patient_name = serializers.SerializerMethodField()
+    admission_type_name = serializers.CharField(source="admission_type.name", read_only=True)
+    admission_reason_name = serializers.CharField(source="admission_reason.name", read_only=True)
+
     class Meta:
         model = Admission
         fields = [
             "id",
             "encounter",
+            "patient_id",
+            "patient_name",
             "admission_type",
+            "admission_type_name",
             "admission_reason",
+            "admission_reason_name",
             "admitting_physician_id",
             "admitted_at",
             "status",
         ]
         read_only_fields = ["admitted_at"]
+
+    def get_patient_name(self, obj) -> str:
+        patient = obj.encounter.patient
+        return f"{patient.first_name} {patient.last_name}"
 
     def create(self, validated_data):
         tenant_id = validated_data.get("tenant_id")
