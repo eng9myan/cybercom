@@ -1,10 +1,42 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { FlaskConical, Radiation, Pill, ListOrdered } from 'lucide-react';
+import { FlaskConical, Radiation, Pill, ListOrdered, Eye, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useT } from '@/lib/i18n';
 import { LoadingCard, ErrorCard, EmptyCard } from '@/components/ProviderPortalEmptyStates';
+
+type LabResultValue = {
+  id: string;
+  analyte_name: string;
+  value_numeric: string | null;
+  value_text: string;
+  unit: string;
+  interpretation: string;
+  is_critical: boolean;
+  is_abnormal: boolean;
+};
+
+type LabResultRow = {
+  id: string;
+  order_item: string;
+  status: string;
+  comments: string;
+  values: LabResultValue[];
+};
+
+type RadiologyReportRow = {
+  id: string;
+  order_item: string;
+  status: string;
+  clinical_indication: string;
+  findings: string;
+  impression: string;
+  recommendations: string;
+};
+
+const RESULT_VIEWABLE_KINDS = new Set(['lab', 'imaging']);
+const RESULT_VIEWABLE_STATUSES = new Set(['completed', 'verified', 'resulted', 'approved']);
 
 type OrderKind = 'lab' | 'imaging' | 'medication';
 
@@ -36,6 +68,21 @@ function statusBadge(status: string): string {
   return 'badge-blue';
 }
 
+type Page<T> = { results: T[]; next: string | null };
+
+async function fetchAll<T>(url: string): Promise<T[]> {
+  const all: T[] = [];
+  let next: string | null = url;
+  while (next) {
+    const res = await fetch(next, { credentials: 'include' });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    const json = (await res.json()) as Page<T>;
+    all.push(...json.results);
+    next = json.next;
+  }
+  return all;
+}
+
 function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -50,6 +97,12 @@ export default function OrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [kindFilter, setKindFilter] = useState<OrderKind | 'all'>('all');
+
+  const [resultTarget, setResultTarget] = useState<OrderRow | null>(null);
+  const [resultLoading, setResultLoading] = useState(false);
+  const [resultError, setResultError] = useState<string | null>(null);
+  const [labResults, setLabResults] = useState<LabResultRow[]>([]);
+  const [imagingReport, setImagingReport] = useState<RadiologyReportRow | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -74,6 +127,40 @@ export default function OrdersPage() {
   useEffect(() => {
     if (!authLoading && user) load();
   }, [authLoading, user, load]);
+
+  const openResult = useCallback(async (row: OrderRow) => {
+    setResultTarget(row);
+    setResultLoading(true);
+    setResultError(null);
+    setLabResults([]);
+    setImagingReport(null);
+    // Both the order detail and the result list sit behind a licensable
+    // feature tier (same as eMAR's medication-order picker) — a tenant
+    // without it sees "not available" here, not a scary error banner,
+    // since there's nothing actionable to do from this read-only preview.
+    try {
+      const basePath = row.kind === 'lab' ? 'lab/orders/orders' : 'imaging/orders/orders';
+      const orderRes = await fetch(`/api/cymed/rest/${basePath}/${row.id}/`, { credentials: 'include' });
+      if (!orderRes.ok) {
+        setResultLoading(false);
+        return;
+      }
+      const orderDetail = (await orderRes.json()) as { items?: { id: string }[] };
+      const itemIds = new Set((orderDetail.items || []).map((i) => i.id));
+
+      if (row.kind === 'lab') {
+        const all = await fetchAll<LabResultRow>('/api/cymed/rest/lab/results/results/').catch(() => []);
+        setLabResults(all.filter((r) => itemIds.has(r.order_item)));
+      } else {
+        const all = await fetchAll<RadiologyReportRow>('/api/cymed/rest/imaging/reporting/reports/').catch(() => []);
+        setImagingReport(all.find((r) => itemIds.has(r.order_item)) || null);
+      }
+    } catch (e) {
+      setResultError(e instanceof Error ? e.message : t('orders.resultLoadFailed'));
+    } finally {
+      setResultLoading(false);
+    }
+  }, [t]);
 
   if (authLoading) {
     return <LoadingCard label={t('common.loading')} />;
@@ -145,11 +232,13 @@ export default function OrdersPage() {
                 <th>{t('orders.status')}</th>
                 <th>{t('orders.priority')}</th>
                 <th>{t('orders.placed')}</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((o) => {
                 const Icon = KIND_ICON[o.kind];
+                const canViewResult = RESULT_VIEWABLE_KINDS.has(o.kind) && RESULT_VIEWABLE_STATUSES.has(o.status);
                 return (
                   <tr key={`${o.kind}-${o.id}`}>
                     <td>
@@ -168,11 +257,106 @@ export default function OrdersPage() {
                     </td>
                     <td className="capitalize text-xs">{o.priority}</td>
                     <td className="text-xs text-slate-500">{formatDateTime(o.created_at)}</td>
+                    <td>
+                      {canViewResult && (
+                        <button onClick={() => openResult(o)} className="btn-secondary text-xs px-2 py-1 flex items-center gap-1">
+                          <Eye className="w-3 h-3" />
+                          {t('orders.viewResult')}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {resultTarget && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="glass-card p-5 w-full max-w-lg space-y-3 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-white">{resultTarget.order_number}</h3>
+                <p className="text-xs text-slate-500">{resultTarget.patient_name}{resultTarget.label && ` — ${resultTarget.label}`}</p>
+              </div>
+              <button onClick={() => setResultTarget(null)} className="text-slate-500 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {resultLoading ? (
+              <LoadingCard label={t('common.loading')} />
+            ) : resultError ? (
+              <ErrorCard error={resultError} />
+            ) : resultTarget.kind === 'lab' ? (
+              labResults.length === 0 ? (
+                <EmptyCard label={t('orders.resultNotAvailable')} />
+              ) : (
+                <div className="space-y-3">
+                  {labResults.map((r) => (
+                    <div key={r.id} className="space-y-1.5">
+                      {r.comments && <p className="text-xs text-slate-400">{r.comments}</p>}
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th>{t('orders.analyte')}</th>
+                            <th>{t('orders.value')}</th>
+                            <th>{t('orders.flag')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {r.values.map((v) => (
+                            <tr key={v.id}>
+                              <td className="text-xs text-slate-300">{v.analyte_name}</td>
+                              <td className="text-xs font-mono text-white">
+                                {v.value_numeric ?? v.value_text} {v.unit}
+                              </td>
+                              <td>
+                                {v.is_critical ? (
+                                  <span className="badge badge-red">{t('orders.critical')}</span>
+                                ) : v.is_abnormal ? (
+                                  <span className="badge badge-yellow">{v.interpretation || t('orders.abnormal')}</span>
+                                ) : (
+                                  <span className="badge badge-green">{t('orders.normal')}</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : !imagingReport ? (
+              <EmptyCard label={t('orders.resultNotAvailable')} />
+            ) : (
+              <div className="space-y-3 text-xs">
+                {imagingReport.clinical_indication && (
+                  <div>
+                    <p className="text-slate-500 font-semibold mb-0.5">{t('orders.clinicalIndication')}</p>
+                    <p className="text-slate-300 whitespace-pre-wrap">{imagingReport.clinical_indication}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-slate-500 font-semibold mb-0.5">{t('orders.findings')}</p>
+                  <p className="text-slate-300 whitespace-pre-wrap">{imagingReport.findings || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 font-semibold mb-0.5">{t('orders.impression')}</p>
+                  <p className="text-slate-300 whitespace-pre-wrap">{imagingReport.impression || '—'}</p>
+                </div>
+                {imagingReport.recommendations && (
+                  <div>
+                    <p className="text-slate-500 font-semibold mb-0.5">{t('orders.recommendations')}</p>
+                    <p className="text-slate-300 whitespace-pre-wrap">{imagingReport.recommendations}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
