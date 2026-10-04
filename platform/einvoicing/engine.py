@@ -60,6 +60,11 @@ _PEPPOL_COUNTRIES = [
     "ES", "SE",
     "GB", "NO", "IS", "CH", "LI",
     "AU", "NZ", "SG", "MY", "JP",
+    # No B2B e-invoicing mandate in either country, but both have a live
+    # Peppol Authority a tenant's trading partners may require: DBNAlliance
+    # (US, since 2024) and the Digital Governance Council (CA, since 2022,
+    # mandatory only for federal-government suppliers).
+    "US", "CA",
 ]
 
 # A national mandate outranks Peppol for the same country (e.g. IT: FatturaPA

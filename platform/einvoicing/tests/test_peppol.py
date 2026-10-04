@@ -131,7 +131,7 @@ def test_buyer_reference_and_due_date_are_optional_but_emitted_when_set():
 
 # ── mode routing ───────────────────────────────────────────────────────────
 
-@pytest.mark.parametrize("country", ["DE", "NL", "FR", "SE", "AE", "GB", "NO", "AU", "SG"])
+@pytest.mark.parametrize("country", ["DE", "NL", "FR", "SE", "AE", "GB", "NO", "AU", "SG", "US", "CA"])
 def test_peppol_countries_route_to_the_peppol_mode(country):
     assert mode_for_country(country) == "eu_peppol"
 
