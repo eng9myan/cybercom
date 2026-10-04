@@ -2,8 +2,9 @@
 The Invoice -> platform.einvoicing bridge (`run_einvoice_clearance`).
 
 Verifies a posted customer invoice for a JO tenant gets cleared and the
-result lands on the Invoice's einvoice_* fields, and that a non-JO tenant is
-left untouched (einvoice_status stays "none").
+result lands on the Invoice's einvoice_* fields, and that a tenant with no
+e-invoicing mandate mapped at all is left untouched (einvoice_status stays
+"none").
 """
 from datetime import date
 from decimal import Decimal
@@ -65,8 +66,10 @@ def test_jo_invoice_is_cleared_via_engine(monkeypatch, jo_tenant, invoice_factor
 
 
 @pytest.mark.django_db
-def test_non_jo_tenant_is_left_untouched(db, invoice_factory):
-    t = Tenant.objects.create(name="US Co", slug="us-co", country_code="US")
+def test_unmapped_country_tenant_is_left_untouched(db, invoice_factory):
+    # ZA has no Peppol Authority and no national mandate mapped -- unlike
+    # US/CA, which route to eu_peppol since 2026-10-04.
+    t = Tenant.objects.create(name="Cape Town Co", slug="cape-town-co", country_code="ZA")
     inv = invoice_factory(t.id)
     bridge.run_einvoice_clearance(inv)
     inv.refresh_from_db()
