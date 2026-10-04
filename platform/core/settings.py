@@ -46,6 +46,7 @@ PLATFORM_APPS = [
     "platform.events",
     "platform.notifications",
     "platform.provisioning",
+    "platform.ephemeral_envs",
     "platform.einvoicing",
     "platform.security",
     "platform.terminology",

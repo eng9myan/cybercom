@@ -1,0 +1,54 @@
+#cloud-config
+# Ephemeral environment bootstrap for ${env_name}.
+#
+# Generates its own throwaway secrets on first boot (never transmitted
+# anywhere — an ephemeral env's data is disposable by design, so reusing
+# production secrets here would be a pure downside: broader blast radius
+# for zero benefit). Real Keycloak realm via bootstrap_platform_realm,
+# same as GO_LIVE.md's documented first-boot sequence — not a dev-auth
+# shortcut, so this environment actually exercises the real auth path.
+package_update: true
+packages:
+  - docker.io
+  - docker-compose-v2
+  - git
+
+runcmd:
+  - systemctl enable --now docker
+  - mkdir -p /opt/ephemeral
+  - cd /opt/ephemeral && git clone --depth 1 --branch "${git_ref}" "${repo_url}" repo || (git clone --depth 1 "${repo_url}" repo && cd repo && git fetch --depth 1 origin "${git_ref}" && git checkout FETCH_HEAD)
+  - |
+    cd /opt/ephemeral/repo
+    POSTGRES_PASSWORD=$(openssl rand -hex 24)
+    REDIS_PASSWORD=$(openssl rand -hex 24)
+    DJANGO_SECRET_KEY=$(openssl rand -hex 32)
+    KEYCLOAK_ADMIN_PASSWORD=$(openssl rand -hex 24)
+    cat > .env.production <<EOF
+    DJANGO_SETTINGS_MODULE=core.settings
+    DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY
+    DJANGO_DEBUG=False
+    POSTGRES_DB=${app}
+    POSTGRES_USER=${app}
+    POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+    REDIS_PASSWORD=$REDIS_PASSWORD
+    KEYCLOAK_ADMIN=admin
+    KEYCLOAK_ADMIN_PASSWORD=$KEYCLOAK_ADMIN_PASSWORD
+    CYCOM_DEV_AUTH=0
+    CYMED_DEV_AUTH=0
+    EOF
+    chmod 600 .env.production
+  - |
+    cd /opt/ephemeral/repo
+    docker compose --env-file .env.production -f ${compose_file} build
+    docker compose --env-file .env.production -f ${compose_file} up -d
+  - |
+    cd /opt/ephemeral/repo
+    for i in $(seq 1 60); do
+      docker compose --env-file .env.production -f ${compose_file} exec -T postgres pg_isready -U "${app}" && break
+      sleep 5
+    done
+    docker compose --env-file .env.production -f ${compose_file} exec -T backend python manage.py migrate --noinput
+    docker compose --env-file .env.production -f ${compose_file} exec -T backend python manage.py collectstatic --noinput || true
+    docker compose --env-file .env.production -f ${compose_file} exec -T backend python manage.py seed_packs || true
+    docker compose --env-file .env.production -f ${compose_file} exec -T backend python manage.py bootstrap_platform_realm --admin-email ephemeral@cy-com.com --admin-username platformadmin || true
+  - echo "ephemeral environment ${env_name} ready" > /opt/ephemeral/READY

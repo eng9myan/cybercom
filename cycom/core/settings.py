@@ -61,6 +61,7 @@ PLATFORM_APPS = [
     "platform.events",
     "platform.cyai",
     "platform.provisioning",
+    "platform.ephemeral_envs",
     "platform.einvoicing",
     "platform.security",
 ]

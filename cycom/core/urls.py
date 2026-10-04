@@ -31,6 +31,8 @@ urlpatterns = [
     path("api/v1/ai/", include("platform.cyai.urls")),
     # ── Cycom Ready-ERP provisioning (industry templates + wizard) ──────────
     path("api/v1/provisioning/", include("platform.provisioning.urls")),
+    # ── Phase 4 hosting: ephemeral per-branch/per-tenant environments (ops) ──
+    path("api/v1/ephemeral-envs/", include("platform.ephemeral_envs.urls")),
     # ── Multi-tenant registry + public self-serve signup (demo/ + register/) ─
     path("api/v1/tenants/", include("platform.tenant.urls")),
     path("api/v1/company/", include("products.cycom.company.urls")),
