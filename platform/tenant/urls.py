@@ -7,6 +7,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from platform.tenant import views
+from platform.tenant.views_kpi import PlatformKpiDashboardView
 
 router = DefaultRouter()
 # TenantViewSet's empty-prefix detail route (^(?P<pk>[^/.]+)/$) greedily
@@ -54,6 +55,10 @@ router.register(r"", views.TenantViewSet, basename="tenant")
 urlpatterns = [
     path("healthz/", views.tenant_health, name="tenant-health"),
     path("metrics", views.tenant_metrics, name="tenant-metrics"),
+    # Phase 4 hosting, item 3: cross-tenant fleet KPI dashboard (platform_admin
+    # only) -- distinct from tenant_metrics above, which is a Prometheus
+    # scrape target, not a JSON dashboard API.
+    path("kpi-dashboard/", PlatformKpiDashboardView.as_view(), name="tenant-kpi-dashboard"),
     # Public self-serve signup (AllowAny + throttled). demo/ = 72h trial,
     # register/ = permanent tenant + bank-transfer invoice. Both reuse the
     # existing DemoProvisioning / SubscriptionRegistration services.
