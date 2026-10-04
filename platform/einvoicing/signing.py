@@ -171,6 +171,7 @@ NATIONAL_KEY_ENV = {
     "it_fatturapa": "FATTURAPA",
     "mx_cfdi": "CFDI_CSD",
     "br_nfe": "NFE",
+    "eg_eta": "ETA",
 }
 
 

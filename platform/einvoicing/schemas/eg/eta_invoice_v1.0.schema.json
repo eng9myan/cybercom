@@ -1,0 +1,143 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "AUTHORED by CyCom from the published ETA SDK docs (sdk.invoicing.eta.gov.eg/documents/invoice-v1-0/) -- the full official JSON Schema file is distributed only via the preprod sandbox's Get Document Type Version endpoint, which needs a live taxpayer onboarding to reach. Covers the subset this engine emits (the 'document' envelope, strictly -- additionalProperties false), not every optional ETA field (payment/delivery/export blocks are omitted since this engine doesn't populate them yet).",
+  "title": "ETA Invoice v1.0 (Egypt)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["document"],
+  "properties": {
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issuer", "receiver", "documentType", "documentTypeVersion", "dateTimeIssued",
+        "taxpayerActivityCode", "internalId", "invoiceLines", "totalSalesAmount",
+        "totalDiscountAmount", "netAmount", "taxTotals", "totalAmount"
+      ],
+      "properties": {
+        "issuer": {"$ref": "#/definitions/party"},
+        "receiver": {"$ref": "#/definitions/party"},
+        "documentType": {"enum": ["i", "c", "d"]},
+        "documentTypeVersion": {"const": "1.0"},
+        "dateTimeIssued": {"type": "string", "pattern": "^[0-9]{4}-[0-1][0-9]-[0-3][0-9]T[0-2][0-9]:[0-5][0-9]:[0-5][0-9]Z$"},
+        "taxpayerActivityCode": {"type": "string", "minLength": 1, "maxLength": 20},
+        "internalId": {"type": "string", "minLength": 1, "maxLength": 50},
+        "purchaseOrderReference": {"type": "string"},
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["uuid"],
+            "properties": {"uuid": {"type": "string", "pattern": "^[A-Za-z0-9]{26}$"}}
+          }
+        },
+        "invoiceLines": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/line"}},
+        "totalSalesAmount": {"$ref": "#/definitions/amount"},
+        "totalDiscountAmount": {"$ref": "#/definitions/amount"},
+        "netAmount": {"$ref": "#/definitions/amount"},
+        "taxTotals": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["taxType", "amount"],
+            "properties": {
+              "taxType": {"enum": ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"]},
+              "amount": {"$ref": "#/definitions/amount"}
+            }
+          }
+        },
+        "extraDiscountAmount": {"$ref": "#/definitions/amount"},
+        "totalItemsDiscountAmount": {"$ref": "#/definitions/amount"},
+        "totalAmount": {"$ref": "#/definitions/amount"},
+        "signatures": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["type", "value"],
+            "properties": {
+              "type": {"enum": ["I", "C"]},
+              "value": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "amount": {"type": "number", "minimum": -99999999999999.99999, "maximum": 99999999999999.99999},
+    "address": {
+      "type": "object",
+      "properties": {
+        "branchId": {"type": "string"},
+        "country": {"type": "string", "pattern": "^[A-Z]{2}$"},
+        "governate": {"type": "string"},
+        "regionCity": {"type": "string"},
+        "street": {"type": "string"},
+        "buildingNumber": {"type": "string"},
+        "postalCode": {"type": "string"},
+        "floor": {"type": "string"},
+        "room": {"type": "string"},
+        "landmark": {"type": "string"},
+        "additionalInformation": {"type": "string"}
+      }
+    },
+    "party": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id", "name", "address"],
+      "properties": {
+        "type": {"enum": ["B", "P", "F"]},
+        "id": {"type": "string", "minLength": 1, "maxLength": 20},
+        "name": {"type": "string", "minLength": 1, "maxLength": 200},
+        "address": {"$ref": "#/definitions/address"}
+      }
+    },
+    "unitValue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currencySold", "amountEGP", "amountSold"],
+      "properties": {
+        "currencySold": {"type": "string", "pattern": "^[A-Z]{3}$"},
+        "amountEGP": {"$ref": "#/definitions/amount"},
+        "amountSold": {"$ref": "#/definitions/amount"},
+        "currencyExchangeRate": {"$ref": "#/definitions/amount"}
+      }
+    },
+    "taxableItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taxType", "amount", "subType", "rate"],
+      "properties": {
+        "taxType": {"enum": ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"]},
+        "amount": {"$ref": "#/definitions/amount"},
+        "subType": {"type": "string"},
+        "rate": {"$ref": "#/definitions/amount"}
+      }
+    },
+    "line": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description", "itemType", "itemCode", "unitType", "quantity", "unitValue",
+        "salesTotal", "total", "netTotal", "taxableItems", "internalCode"
+      ],
+      "properties": {
+        "description": {"type": "string", "minLength": 1, "maxLength": 500},
+        "itemType": {"enum": ["GS1", "EGS"]},
+        "itemCode": {"type": "string", "minLength": 1},
+        "unitType": {"type": "string"},
+        "quantity": {"$ref": "#/definitions/amount"},
+        "unitValue": {"$ref": "#/definitions/unitValue"},
+        "salesTotal": {"$ref": "#/definitions/amount"},
+        "total": {"$ref": "#/definitions/amount"},
+        "valueDifference": {"$ref": "#/definitions/amount"},
+        "totalTaxableFees": {"$ref": "#/definitions/amount"},
+        "netTotal": {"$ref": "#/definitions/amount"},
+        "itemsDiscount": {"$ref": "#/definitions/amount"},
+        "discount": {
+          "type": "object", "additionalProperties": false,
+          "properties": {"rate": {"$ref": "#/definitions/amount"}, "amount": {"$ref": "#/definitions/amount"}}
+        },
+        "taxableItems": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/taxableItem"}},
+        "internalCode": {"type": "string"}
+      }
+    }
+  }
+}

@@ -11,6 +11,7 @@ from .base import (  # noqa: F401
     TransportNotConfigured,
 )
 from .br_nfe import BrNfe
+from .eg_eta import EgEta
 from .es_sii import EsSii
 from .in_gst import InGst
 from .it_fatturapa import ItFatturaPA
@@ -25,6 +26,7 @@ FORMATS: dict[str, NationalFormat] = {
         BrNfe(),
         InGst(),
         EsSii(),
+        EgEta(),
     )
 }
 
