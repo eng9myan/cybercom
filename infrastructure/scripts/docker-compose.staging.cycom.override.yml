@@ -1,0 +1,11 @@
+# Staging port remap, layered on top of docker-compose.cycom-api.yml by
+# clone-staging-from-prod.sh. Isolation from production comes from the
+# Compose project name (-p cycom-staging) for everything EXCEPT the
+# `cymed-shared-net` external network (fixed-named
+# `current_cybercom-api-net`, not parameterized by project) -- a cycom
+# staging clone's backend still joins cymed PRODUCTION's network over that
+# link. Flagged in this script's header; not solved here.
+services:
+  backend:
+    ports: !override
+      - "${APP_STAGING_PORT:-8112}:8000"

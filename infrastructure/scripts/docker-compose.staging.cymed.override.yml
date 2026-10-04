@@ -1,0 +1,19 @@
+# Staging port remap, layered on top of docker-compose.api.yml (cymed) by
+# clone-staging-from-prod.sh. Everything else (images, env, volumes) is
+# inherited unchanged from the base file -- isolation from production comes
+# entirely from the Compose project name (-p cymed-staging), which gives
+# every container/volume/network its own namespace automatically.
+#
+# cycom's docker-compose.cycom-api.yml has no `keycloak` service of its own
+# (it reaches cymed's over the external `cymed-shared-net` network, fixed-
+# named `current_cybercom-api-net` -- that name is NOT parameterized by
+# Compose project, so a cycom staging clone is NOT network-isolated from
+# cymed's real production Keycloak. Flagged, not solved here -- giving
+# cycom staging its own isolated auth path is a separate follow-up.
+services:
+  keycloak:
+    ports: !override
+      - "127.0.0.1:${APP_STAGING_PORT_KEYCLOAK:-8190}:8080"
+  backend:
+    ports: !override
+      - "${APP_STAGING_PORT:-8111}:8000"
