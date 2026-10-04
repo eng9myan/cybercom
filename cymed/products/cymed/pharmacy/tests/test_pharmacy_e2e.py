@@ -8,6 +8,7 @@ from products.cymed.core.encounters.models import Encounter
 from products.cymed.core.facilities.models import Facility
 from products.cymed.core.organizations.models import Organization
 from products.cymed.core.patients.models import Patient
+from platform.common.tenant_context import tenant_context
 from products.cymed.pharmacy.dispensing.models import DispenseOrder, DispenseStatus
 from products.cymed.pharmacy.dispensing.serializers import DispenseOrderSerializer
 from products.cymed.pharmacy.formulary.models import Formulary, FormularyDrug, TherapeuticClass
@@ -116,7 +117,11 @@ class TestPharmacyEndToEndWorkflow:
         assert disp.status == DispenseStatus.DISPENSED
         # DispenseOrder.patient_id is a bare UUID with no FK -- the serializer
         # must resolve the patient name itself for any dispensing-queue UI.
-        assert DispenseOrderSerializer(disp).data["patient_name"] == "Ahmad Kamal"
+        # Patient.first_name/last_name are encrypted; a real request gets its
+        # tenant context from middleware, a direct serializer call needs it
+        # set explicitly.
+        with tenant_context(test_tenant_id):
+            assert DispenseOrderSerializer(disp).data["patient_name"] == "Ahmad Kamal"
 
     def test_controlled_substance_workflow(self, test_tenant_id, setup_pharmacy_base_data):
         patient = setup_pharmacy_base_data["patient"]
