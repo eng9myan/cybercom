@@ -3,8 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.permissions import IsAuthenticatedViaClaims
-from core.viewsets import TenantScopedModelViewSet
+from platform.api.permissions import IsAuthenticatedViaClaims
+from platform.api.viewsets import TenantScopedModelViewSet
 from platform.provisioning.models import (
     ApprovalPolicy,
     CompanyBlueprint,
