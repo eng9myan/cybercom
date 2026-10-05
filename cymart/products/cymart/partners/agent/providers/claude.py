@@ -13,10 +13,16 @@ The ``anthropic`` package is imported lazily so its absence never affects the sa
 
 import json
 import os
+import threading
+import time
 
 from .base import Completion, CompletionProvider, ToolCall
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
+DEFAULT_TIMEOUT_S = 25.0   # a slow or hung model must never hold a server thread for minutes (override: DIET_SHIELD_AGENT_TIMEOUT)
+DEFAULT_RETRIES = 1        # (override: DIET_SHIELD_AGENT_RETRIES)
+_CLIENTS: dict = {}
+_CLIENTS_LOCK = threading.Lock()
 
 
 def to_claude_messages(messages: list[dict]) -> list[dict]:
@@ -52,16 +58,27 @@ def to_claude_messages(messages: list[dict]) -> list[dict]:
 class ClaudeCompletionProvider(CompletionProvider):
     def __init__(self, model: str | None = None):
         self._model = model or os.environ.get("DIET_SHIELD_AGENT_MODEL", DEFAULT_MODEL)
+        # one entry per model call: latency and the token counts the API reports (see simulation/check_live_model.py)
+        self.usage_log: list[dict] = []
 
     def _client(self):
+        """One client per (key, endpoint, limits), shared by every request: building a client per call cost hundreds of
+        milliseconds (TLS setup) and threw away the connection each time; the SDK client is safe to share across threads."""
         import anthropic
 
         key = os.environ.get("ANTHROPIC_API_KEY")
         if not key:
             raise RuntimeError("ANTHROPIC_API_KEY is not set.")
-        return anthropic.Anthropic(api_key=key)
+        timeout = float(os.environ.get("DIET_SHIELD_AGENT_TIMEOUT", DEFAULT_TIMEOUT_S))
+        retries = int(os.environ.get("DIET_SHIELD_AGENT_RETRIES", DEFAULT_RETRIES))
+        cache_key = (key, os.environ.get("ANTHROPIC_BASE_URL"), timeout, retries)
+        with _CLIENTS_LOCK:
+            if cache_key not in _CLIENTS:
+                _CLIENTS[cache_key] = anthropic.Anthropic(api_key=key, timeout=timeout, max_retries=retries)
+            return _CLIENTS[cache_key]
 
     def complete(self, system, messages, tools, language="en") -> Completion:
+        t0 = time.perf_counter()
         response = self._client().messages.create(
             model=self._model,
             system=system,
@@ -70,6 +87,12 @@ class ClaudeCompletionProvider(CompletionProvider):
             messages=to_claude_messages(messages),
             max_tokens=800,
         )
+        usage = getattr(response, "usage", None)
+        self.usage_log.append({
+            "latency_s": round(time.perf_counter() - t0, 3),
+            "input_tokens": getattr(usage, "input_tokens", None), "output_tokens": getattr(usage, "output_tokens", None),
+            "cache_read_input_tokens": getattr(usage, "cache_read_input_tokens", None),
+        })
         text = "".join(b.text for b in response.content if b.type == "text")
         calls = [ToolCall(name=b.name, arguments=dict(b.input), id=b.id) for b in response.content if b.type == "tool_use"]
         return Completion(text=text, tool_calls=calls)

@@ -1,4 +1,6 @@
 import logging
+import os
+import threading
 
 from django.conf import settings
 from drf_spectacular.types import OpenApiTypes
@@ -16,6 +18,11 @@ from .orchestrator import AgentOrchestrator
 from .serializers import AgentTurnRequestSerializer
 
 log = logging.getLogger(__name__)
+
+# Bulkhead: only this many assistant turns may run at once, so a slow or hung model can never use up every server
+# thread and take the safety checks down with it. A turn that cannot start within half a second gets a clean 503.
+MAX_CONCURRENT_TURNS = int(os.environ.get("DIET_SHIELD_AGENT_MAX_CONCURRENT", "8"))
+_slots = threading.BoundedSemaphore(MAX_CONCURRENT_TURNS)
 
 
 def load_provider():
@@ -39,6 +46,8 @@ class PartnerAgentTurnView(APIView):
         data = serializer.validated_data
 
         messages = [self._plain(m) for m in data["messages"]]
+        if not _slots.acquire(timeout=0.5):
+            return Response({"error": "agent_busy", "detail": "The assistant is busy; please try again in a moment."}, status=503)
         try:
             result = AgentOrchestrator(load_provider(), data["language"]).run(
                 data["profile"], messages, data["platform_tools"], data["confirmed"], data.get("trigger")
@@ -46,6 +55,8 @@ class PartnerAgentTurnView(APIView):
         except Exception as exc:  # the provider (model API) failed; never leak its message
             log.error("agent provider failed: %s", type(exc).__name__)
             return Response({"error": "agent_unavailable", "detail": "The assistant is temporarily unavailable."}, status=503)
+        finally:
+            _slots.release()
 
         PartnerCallLog.objects.create(partner=request.partner, item_count=min(result.steps, 32000))
         return Response({
