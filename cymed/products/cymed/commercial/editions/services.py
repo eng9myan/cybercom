@@ -8,6 +8,7 @@ from products.cymed.commercial.editions.models import (
     EditionModule,
     ProductCatalogEntry,
     ProductEdition,
+    TenantProductSubscription,
 )
 
 
@@ -66,3 +67,26 @@ class EditionService:
     def provision_edition(cls, product_code: str, edition_code: str) -> ProductEdition | None:
         """Ensure product and edition exist in catalog; return the edition."""
         return cls.get_edition(product_code, edition_code)
+
+    @staticmethod
+    def tenant_has_product(tenant_id, product_code: str) -> bool:
+        """
+        Entitlement check for ProductEntitlementMiddleware. A tenant with NO
+        subscription rows AT ALL (active or not) is legacy/unconfigured and
+        always passes — gating only activates once a tenant has been given
+        at least one subscription row, so existing tenants aren't locked out
+        the moment this ships. A tenant with rows but none active/matching
+        (e.g. churned) is correctly blocked, not treated as legacy.
+        """
+        all_subs = TenantProductSubscription.objects.filter(tenant_id=tenant_id)
+        if not all_subs.exists():
+            return True
+        return all_subs.filter(product__code=product_code, is_active=True).exists()
+
+    @staticmethod
+    def tenant_entitled_products(tenant_id) -> list[str]:
+        """Product codes this tenant is actively subscribed to (for a nav/UI to consume)."""
+        return list(
+            TenantProductSubscription.objects.filter(tenant_id=tenant_id, is_active=True)
+            .values_list("product__code", flat=True)
+        )

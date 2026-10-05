@@ -100,3 +100,32 @@ class EditionModule(BaseModel):
     class Meta:
         db_table = "cymed_commercial_edition_modules"
         unique_together = [("edition", "module_code")]
+
+
+class TenantProductSubscription(BaseModel):
+    """
+    Which CyMed product(s)/edition a tenant has actually purchased — the
+    missing link between the commercial catalog (ProductEdition, above) and
+    a real signed-in tenant. `tenant_id` (from BaseModel) is the owning
+    tenant; a tenant with zero rows here is treated as legacy/full-access
+    (ProductEntitlementMiddleware only enforces once a tenant has at least
+    one row) so this ships without retroactively locking out every
+    pre-existing tenant.
+    """
+
+    product = models.ForeignKey(
+        ProductCatalogEntry, on_delete=models.CASCADE, related_name="tenant_subscriptions"
+    )
+    edition = models.ForeignKey(
+        ProductEdition, on_delete=models.CASCADE, related_name="tenant_subscriptions"
+    )
+    is_active = models.BooleanField(default=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    ends_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "cymed_commercial_tenant_product_subscriptions"
+        unique_together = [("tenant_id", "product")]
+
+    def __str__(self) -> str:
+        return f"TenantProductSub({self.tenant_id}/{self.product.code}:{self.edition.code})"

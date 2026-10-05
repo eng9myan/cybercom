@@ -243,6 +243,10 @@ MIDDLEWARE = [
     # publishes request.tenant_id into the ambient tenant context so
     # TenantScopedMixin.save() can fill tenant_id when a caller forgets it
     "platform.common.middleware.TenantContextMiddleware",
+    # 403s a product-gated path (/api/v1/hospital/, /clinic/, /lab/,
+    # /imaging/, /pharmacy/) for a tenant not subscribed to that product —
+    # the "standalone products" entitlement gate.
+    "products.cymed.commercial.editions.middleware.ProductEntitlementMiddleware",
     # 404s detail routes (.../<pk>/...) whose row belongs to another tenant,
     # before the view runs — covers custom actions that bypass get_object().
     "platform.api.tenancy.TenantObjectGuardMiddleware",
