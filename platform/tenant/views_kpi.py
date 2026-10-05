@@ -14,8 +14,9 @@ from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django.apps import apps
+
 from platform.api.permissions import _roles
-from platform.ephemeral_envs.models import EphemeralEnvironment
 from platform.tenant.models import Tenant, TenantStatus, TenantSubscription
 
 
@@ -41,7 +42,14 @@ class PlatformKpiDashboardView(APIView):
         active_subs = TenantSubscription.objects.filter(is_active=True)
         plan_counts = Counter(active_subs.values_list("plan", flat=True))
 
-        env_counts = Counter(EphemeralEnvironment.objects.values_list("status", flat=True))
+        ephemeral_environments = None
+        if apps.is_installed("platform.ephemeral_envs"):
+            EphemeralEnvironment = apps.get_model("ephemeral_envs", "EphemeralEnvironment")
+            env_counts = Counter(EphemeralEnvironment.objects.values_list("status", flat=True))
+            ephemeral_environments = {
+                "total": sum(env_counts.values()),
+                "by_status": dict(env_counts),
+            }
 
         return Response({
             "tenants": {
@@ -50,8 +58,5 @@ class PlatformKpiDashboardView(APIView):
             },
             "active_subscriptions_by_plan": dict(plan_counts),
             "einvoicing_coverage": dict(einvoicing_counts),
-            "ephemeral_environments": {
-                "total": sum(env_counts.values()),
-                "by_status": dict(env_counts),
-            },
+            "ephemeral_environments": ephemeral_environments,
         })
