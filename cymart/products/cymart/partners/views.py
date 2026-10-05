@@ -1,12 +1,16 @@
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from . import schema  # noqa: F401  (registers the API-key scheme for the docs)
 from .auth import PartnerAPIKeyAuthentication
 from .engine import PartnerShieldEngine
 from .models import PartnerCallLog
 from .prepare import KitchenInstructions
 from .ranking import PartnerRanker
+from .throttle import PartnerRateThrottle
 from .serializers import PartnerEvaluateRequestSerializer, PartnerRankRequestSerializer, PartnerPrepareRequestSerializer
 
 
@@ -16,7 +20,10 @@ class PartnerEvaluateView(APIView):
 
     authentication_classes = [PartnerAPIKeyAuthentication]
     permission_classes = [IsAuthenticated]
+    throttle_classes = [PartnerRateThrottle]
 
+    @extend_schema(request=PartnerEvaluateRequestSerializer, responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 429: OpenApiTypes.OBJECT},
+                   summary="Check items against a customer's plan", description="Allergies (always a hard block), diet rules and the calorie budget, per item or per basket. Returns allow / warn / block with a reason code, and a swap from the alternatives you send.")
     def post(self, request):
         serializer = PartnerEvaluateRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -54,7 +61,10 @@ class PartnerRankView(APIView):
 
     authentication_classes = [PartnerAPIKeyAuthentication]
     permission_classes = [IsAuthenticated]
+    throttle_classes = [PartnerRateThrottle]
 
+    @extend_schema(request=PartnerRankRequestSerializer, responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 429: OpenApiTypes.OBJECT},
+                   summary="Filter and rank search results", description="Send what your own search returned; get back only the items that fit the plan, best fit first, plus a reason code for everything hidden.")
     def post(self, request):
         serializer = PartnerRankRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -100,7 +110,10 @@ class PartnerPrepareView(APIView):
 
     authentication_classes = [PartnerAPIKeyAuthentication]
     permission_classes = [IsAuthenticated]
+    throttle_classes = [PartnerRateThrottle]
 
+    @extend_schema(request=PartnerPrepareRequestSerializer, responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 429: OpenApiTypes.OBJECT},
+                   summary="Kitchen instructions for the vendor", description="After the customer chooses, turn their plan into the requirements the kitchen must follow, using only the changes the vendor says it can make.")
     def post(self, request):
         serializer = PartnerPrepareRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

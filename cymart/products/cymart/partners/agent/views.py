@@ -1,13 +1,17 @@
 import logging
 
 from django.conf import settings
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from django.utils.module_loading import import_string
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .. import schema  # noqa: F401
 from ..auth import PartnerAPIKeyAuthentication
 from ..models import PartnerCallLog
+from ..throttle import AgentRateThrottle, PartnerRateThrottle
 from .orchestrator import AgentOrchestrator
 from .serializers import AgentTurnRequestSerializer
 
@@ -24,7 +28,11 @@ class PartnerAgentTurnView(APIView):
 
     authentication_classes = [PartnerAPIKeyAuthentication]
     permission_classes = [IsAuthenticated]
+    throttle_classes = [PartnerRateThrottle, AgentRateThrottle]
 
+    @extend_schema(request=AgentTurnRequestSerializer, responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 429: OpenApiTypes.OBJECT, 503: OpenApiTypes.OBJECT},
+                   summary="One turn of the ordering assistant",
+                   description="Send the transcript and the customer's plan. The reply is text, ONE platform tool for your app to run, or a confirmation for the customer to approve. Stateless: you keep the transcript. A meal-time trigger can start a conversation.")
     def post(self, request):
         serializer = AgentTurnRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
