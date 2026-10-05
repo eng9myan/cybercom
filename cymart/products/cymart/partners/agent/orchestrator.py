@@ -44,6 +44,10 @@ You help one customer find and order food that fits their own plan (allergies, d
 
 Rules:
 - Use only the tools you are given. Call one tool at a time.
+- If the customer is also ordering for other people (friends, family) who have no plan here, call set_party first with how many
+  guests, and any allergies the customer SAID they have; never invent allergies and never guess the number. Then every add_to_cart
+  needs for_diner: 'me' for the customer's own portion, 'guests' for the guests' portions. Guests are not checked against the
+  customer's plan; say so plainly and never claim a guest's meal is safe for them unless allergies were named and checked.
 - After every search_menu, call rank_for_plan and offer only what it returns. Never offer a hidden item.
 - Never say an item is safe or suitable yourself; rely on the tools. If a tool refuses something, say so plainly and offer alternatives.
 - Quote the customer's plan with plan_summary; never guess it.
@@ -229,6 +233,35 @@ class AgentOrchestrator:
         latest = [seen[str(r["item_id"])] for r in latest_raw if str(r["item_id"]) in seen]
         return seen, latest
 
+    # ── who is eating ──────────────────────────────────────────────────────────────
+    def _resolve_diner(self, raw, history, required: bool) -> tuple[str, str | None]:
+        """(diner id, error code). 'me' is the customer's own plan; 'guests' are people the customer named in
+        set_party: they have no plan here, only the allergies the customer stated."""
+        guests, _ = T.party_from_transcript(history)
+        if raw is None:
+            return (T.ME, "which_diner") if (guests > 0 and required) else (T.ME, None)
+        if raw == T.ME:
+            return T.ME, None
+        if raw == T.GUESTS and guests > 0:
+            return T.GUESTS, None
+        return T.ME, "unknown_diner"
+
+    def _diner_profile(self, diner: str, history) -> dict:
+        if diner == T.ME:
+            return self.profile
+        _, allergies = T.party_from_transcript(history)
+        return {"allergies": allergies, "regimes": [], "remaining_calories": None, "strictness": "balanced",
+                "meal_calories_target": None}
+
+    def _diner_error(self, code: str) -> Decision:
+        return Decision("refuse", code=code, message=t(self.lang, "ag_bad_diner" if code == "which_diner" else "ag_unknown_diner"))
+
+    def _guest_note(self, history) -> str:
+        _, allergies = T.party_from_transcript(history)
+        if allergies:
+            return t(self.lang, "ag_guest_note_allergies", allergies=join_list(self.lang, allergies))
+        return t(self.lang, "ag_guest_note_none")
+
     # ── the plan gate ───────────────────────────────────────────────────────────
     def _gate(self, name: str, args: dict, history) -> Decision:
         if name == "add_to_cart":
@@ -246,8 +279,13 @@ class AgentOrchestrator:
         item = seen.get(args["item_id"])
         if item is None:
             return Decision("refuse", code="unknown_item", message=t(lang, "ag_unknown_item"))
+        diner, err = self._resolve_diner(args.get("for_diner"), history, required=True)
+        if err:
+            self.events.append({"type": "refused", "tool": "add_to_cart", "code": err})
+            return self._diner_error(err)
+        profile = self._diner_profile(diner, history)
         qty = int(args.get("quantity") or 1)
-        kitchen = KitchenInstructions(lang).prepare(self.profile, item)
+        kitchen = KitchenInstructions(lang).prepare(profile, item)
         v = kitchen.verdict
         if kitchen.status == "needs_vendor_confirmation":
             self.events.append({"type": "blocked", "item_id": args["item_id"], "code": v["code"]})
@@ -256,71 +294,100 @@ class AgentOrchestrator:
             self.events.append({"type": "blocked", "item_id": args["item_id"], "code": v["code"]})
             return Decision("refuse", code="blocked_by_plan", message=v["reason"])
         # budget for the quantity chosen, on the item as the kitchen will make it
-        final = PartnerShieldEngine(lang).check_item(self.profile, _scale(kitchen.modified_item, qty))
+        final = PartnerShieldEngine(lang).check_item(profile, _scale(kitchen.modified_item, qty))
         if final.severity in ("block", "hard_block"):
             self.events.append({"type": "blocked", "item_id": args["item_id"], "code": final.code})
             return Decision("refuse", code="blocked_by_plan", message=final.reason)
 
         out = {"item_id": args["item_id"], "quantity": qty}
+        if "for_diner" in args:
+            out["for_diner"] = diner
         if kitchen.instructions:
             out["notes"] = kitchen.vendor_note  # ours, never the model's
         changes = [i for i in kitchen.instructions if i["type"] in ("remove", "substitute")]
         warn = final if final.severity == "warn" else None
-        if not changes and warn is None:
+        for_guests = diner == T.GUESTS
+        # Guest portions are not covered by the customer's plan, so the customer always approves them by name.
+        if not changes and warn is None and not for_guests:
             return Decision("allow", out)
 
-        cid = f"add:{args['item_id']}:{qty}"
+        cid = f"add:{args['item_id']}:{qty}" + (":guests" if for_guests else "")
         if cid in self.confirmed:
             return Decision("allow", out)
         change_text = join_list(lang, [
             (f"{c['ingredient']} → {c['replacement']}" if c["type"] == "substitute" else f"− {c['ingredient']}") for c in changes
         ])
-        text = t(lang, "ag_confirm_add", name=self._item_name(item),
+        name = self._item_name(item)
+        if for_guests:
+            name = t(lang, "ag_line_for", qty=qty, name=name, who=t(lang, "ag_who_guests"))
+        text = t(lang, "ag_confirm_add", name=name,
                  changes=t(lang, "ag_changes", changes=change_text) if changes else "",
                  warning=t(lang, "ag_warning", reason=warn.reason) if warn else "")
+        if for_guests:
+            text += self._guest_note(history)
         return Decision("confirm", out, confirmation={
             "id": cid, "action": "add_to_cart", "text": text, "item_id": args["item_id"], "quantity": qty,
             "changes": changes, "warning": ({"code": warn.code, "reason": warn.reason} if warn else None),
+            **({"for_diner": diner} if for_guests else {}),
         })
 
     def _gate_checkout(self, history) -> Decision:
         lang = self.lang
-        cart = T.cart_from_transcript(history)
+        cart = T.cart_lines(history)
         if not cart:
             return Decision("refuse", code="cart_empty", message=t(lang, "ag_cart_empty"))
         seen, _ = self._items(history)
-        lines, scaled = [], []
-        for item_id, qty in sorted(cart.items()):
+        guests, _ = T.party_from_transcript(history)
+        lines, scaled = [], {}
+        for (item_id, diner), qty in sorted(cart.items()):
             item = seen.get(item_id)
             if item is None:
                 return Decision("refuse", code="unknown_item", message=t(lang, "ag_unknown_item"))
+            if diner == T.GUESTS and guests == 0:
+                return self._diner_error("unknown_diner")
+            profile = self._diner_profile(diner, history)
             # judge each line as the kitchen will make it (the changes the customer confirmed)
-            k = KitchenInstructions(lang).prepare(self.profile, item)
+            k = KitchenInstructions(lang).prepare(profile, item)
             if k.status in ("cannot_make_safe", "needs_vendor_confirmation"):
                 self.events.append({"type": "blocked", "item_id": item_id, "code": k.verdict["code"]})
                 return Decision("refuse", code="blocked_by_plan", message=k.verdict["reason"])
             made = {**item, **{f: k.modified_item[f] for f in ("calories", "carbs_g", "ingredients", "diet_tags")}}
-            lines.append({"item_id": item_id, "name": self._item_name(item), "quantity": qty,
+            lines.append({"item_id": item_id, "name": self._item_name(item), "quantity": qty, "for_diner": diner,
                           "calories": float(made.get("calories") or 0) * qty})
-            scaled.append(_scale(made, qty))
-        result = PartnerShieldEngine(lang).evaluate(self.profile, scaled, cumulative=True)
-        for ln in result.lines:
-            if ln.severity in ("block", "hard_block"):
-                self.events.append({"type": "blocked", "item_id": ln.item_id, "code": ln.code})
-                return Decision("refuse", code="blocked_by_plan", message=ln.reason)
-        warnings = [{"item_id": ln.item_id, "code": ln.code, "reason": ln.reason} for ln in result.lines if ln.severity == "warn"]
+            scaled.setdefault(diner, []).append(_scale(made, qty))
+        warnings = []
+        for diner, items in scaled.items():       # each person's portions are judged against that person's own rules
+            result = PartnerShieldEngine(lang).evaluate(self._diner_profile(diner, history), items, cumulative=True)
+            for ln in result.lines:
+                if ln.severity in ("block", "hard_block"):
+                    self.events.append({"type": "blocked", "item_id": ln.item_id, "code": ln.code})
+                    return Decision("refuse", code="blocked_by_plan", message=ln.reason)
+            warnings += [{"item_id": ln.item_id, "code": ln.code, "reason": ln.reason} for ln in result.lines if ln.severity == "warn"]
         total = int(sum(l["calories"] for l in lines))
-        cid = "checkout:" + hashlib.sha256(json.dumps(sorted(cart.items())).encode()).hexdigest()[:16]
+        mine = int(sum(l["calories"] for l in lines if l["for_diner"] == T.ME))
+        grouped = any(d != T.ME for _, d in cart)
+        if grouped:
+            key = sorted((i, d, q) for (i, d), q in cart.items())
+        else:
+            key = sorted((i, q) for (i, _), q in cart.items())   # unchanged for single-customer carts
+        cid = "checkout:" + hashlib.sha256(json.dumps(key).encode()).hexdigest()[:16]
         if cid in self.confirmed:
             return Decision("allow", {})
-        text = t(lang, "ag_confirm_checkout",
-                 lines=join_list(lang, [t(lang, "ag_line", qty=l["quantity"], name=l["name"]) for l in lines]),
-                 total=total,
+
+        def line_text(l):
+            if not grouped:
+                return t(lang, "ag_line", qty=l["quantity"], name=l["name"])
+            who = t(lang, "ag_who_guests" if l["for_diner"] == T.GUESTS else "ag_who_me")
+            return t(lang, "ag_line_for", qty=l["quantity"], name=l["name"], who=who)
+
+        text = t(lang, "ag_confirm_checkout", lines=join_list(lang, [line_text(l) for l in lines]), total=total,
                  warning=t(lang, "ag_warning", reason=warnings[0]["reason"]) if warnings else "")
+        if grouped:
+            text += self._guest_note(history)
         return Decision("confirm", {}, confirmation={
             "id": cid, "action": "checkout", "text": text, "items": lines, "total_calories": total,
             "remaining_calories_after": (None if self.profile.get("remaining_calories") is None
-                                         else float(self.profile["remaining_calories"]) - total),
+                                         else float(self.profile["remaining_calories"]) - mine),
             "warnings": warnings,
         })
 
@@ -331,8 +398,24 @@ class AgentOrchestrator:
         names = {str(i["item_id"]): i.get("name") for i in latest}
         if name == "plan_summary":
             p = self.profile
-            return {"allergies": p.get("allergies") or [], "diet_rules": [r.get("code") for r in p.get("regimes") or []],
-                    "remaining_calories": p.get("remaining_calories"), "strictness": p.get("strictness", "balanced")}
+            out = {"allergies": p.get("allergies") or [], "diet_rules": [r.get("code") for r in p.get("regimes") or []],
+                   "remaining_calories": p.get("remaining_calories"), "strictness": p.get("strictness", "balanced")}
+            n, g_allergies = T.party_from_transcript(history)
+            if n:
+                out["party"] = {"guests": n, "guest_allergies": g_allergies}
+            return out
+        if name == "set_party":
+            n, allergies = args["guests"], args.get("guest_allergies") or []
+            diners = [{"id": T.ME, "label": t(lang, "ag_who_me"), "checked_against": "the customer's own plan"}]
+            if n:
+                diners.append({"id": T.GUESTS, "label": t(lang, "ag_who_guests"), "count": n,
+                               "checked_against": ("no plan; only these allergies: " + ", ".join(allergies)) if allergies
+                               else "nothing: no plan, and no allergies were named"})
+            return {"ok": True, "diners": diners}
+        diner, err = self._resolve_diner(args.get("for_diner"), history, required=False)
+        if err:
+            return {"ok": False, "error": err, "message": t(lang, "ag_unknown_diner")}
+        profile = self._diner_profile(diner, history)
         if name == "rank_for_plan":
             # Judge each item as the kitchen could make it for this customer ("no tomato",
             # "gluten-free bread"), using only changes the vendor offered, so a dish that is
@@ -340,7 +423,7 @@ class AgentOrchestrator:
             kitchen = KitchenInstructions(lang)
             candidates, changes_by_id, unorderable = [], {}, []
             for it in latest:
-                k = kitchen.prepare(self.profile, it)
+                k = kitchen.prepare(profile, it)
                 if k.status == "needs_vendor_confirmation":
                     # the agent could not add it for this customer, so it is not offered
                     unorderable.append({"item_id": str(it["item_id"]), "code": "ingredients_unknown", "severity": "block"})
@@ -353,11 +436,12 @@ class AgentOrchestrator:
                         changes_by_id[str(it["item_id"])] = ch
                 else:
                     candidates.append(it)
-            r = PartnerRanker(lang).rank(self.profile, candidates, limit=args.get("limit", 5)) if candidates else None
+            r = PartnerRanker(lang).rank(profile, candidates, limit=args.get("limit", 5)) if candidates else None
             ranked_items = r.ranked if r else []
             excluded = (r.excluded if r else []) + unorderable
             by_id = {str(i["item_id"]): i for i in latest}
             return {
+                "diner": diner,
                 "counts": {"evaluated": len(latest) + len(unorderable), "fit": r.fit if r else 0,
                            "fit_with_warning": r.warned if r else 0, "excluded": len(excluded)},
                 "ranked": [{"rank": x.rank, "item_id": x.item_id, "name": by_id.get(x.item_id, {}).get("name"),
@@ -371,10 +455,10 @@ class AgentOrchestrator:
         if item is None:
             return {"ok": False, "error": "unknown_item", "message": t(lang, "ag_unknown_item")}
         if name == "check_item":
-            v = PartnerShieldEngine(lang).check_item(self.profile, item)
+            v = PartnerShieldEngine(lang).check_item(profile, item)
             return {"item_id": args["item_id"], "severity": v.severity, "code": v.code, "reason": v.reason, "allowed": v.allowed}
         if name == "prepare_item":
-            k = KitchenInstructions(lang).prepare(self.profile, item)
+            k = KitchenInstructions(lang).prepare(profile, item)
             return {"item_id": args["item_id"], "status": k.status, "verdict": k.verdict, "vendor_note": k.vendor_note,
                     "changes": [i for i in k.instructions if i["type"] in ("remove", "substitute")]}
         return {"ok": False, "error": "unknown_tool"}

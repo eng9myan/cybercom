@@ -35,32 +35,49 @@ def _obj(props: dict, required: list[str] | None = None) -> dict:
     return {"type": "object", "properties": props, "required": required or [], "additionalProperties": False}
 
 
+MAX_GUESTS = 8
+ME, GUESTS = "me", "guests"
+
+_DINER = {"type": "string", "maxLength": 10}
+
 REGISTRY: dict[str, ToolSpec] = {
     spec.name: spec
     for spec in [
         ToolSpec("plan_summary",
                  "The customer's own plan: allergies, diet rules, calories left, strictness. Use it to restate the plan; never guess it.",
                  _obj({}), "server"),
+        ToolSpec("set_party",
+                 "Use when the customer is ordering for other people too (friends or family who have no plan here). "
+                 "guests = how many people besides the customer; 0 means just the customer. guest_allergies = allergies the customer "
+                 "SAID the guests have (applied to every guest); never invent any. Guests are not checked against the customer's plan; "
+                 "only the allergies named here are applied. Returns the diner ids to use as for_diner: 'me' and 'guests'.",
+                 _obj({"guests": {"type": "integer", "minimum": 0, "maximum": MAX_GUESTS},
+                       "guest_allergies": {"type": "array", "items": {"type": "string", "maxLength": 40}, "maxItems": 10}},
+                      ["guests"]), "server"),
         ToolSpec("rank_for_plan",
-                 "Filter and rank the items from the most recent search_menu result against the customer's plan. "
+                 "Filter and rank the items from the most recent search_menu result against the customer's plan "
+                 "(or, with for_diner='guests', against the guests' stated allergies). "
                  "Returns only items that fit, best first, and how many were hidden and why. Call it after every search.",
-                 _obj({"limit": {"type": "integer", "minimum": 1, "maximum": 10}}), "server"),
+                 _obj({"limit": {"type": "integer", "minimum": 1, "maximum": 10}, "for_diner": _DINER}), "server"),
         ToolSpec("check_item",
-                 "Check one item the customer asked about (an item_id from a search result) against their plan.",
-                 _obj({"item_id": {"type": "string"}}, ["item_id"]), "server"),
+                 "Check one item the customer asked about (an item_id from a search result) against their plan "
+                 "(or the guests' stated allergies with for_diner='guests').",
+                 _obj({"item_id": {"type": "string"}, "for_diner": _DINER}, ["item_id"]), "server"),
         ToolSpec("prepare_item",
                  "Preview the kitchen requirements for one item (an item_id from a search result): changes such as "
-                 "'no tomato' or 'gluten-free bread' that this customer needs.",
-                 _obj({"item_id": {"type": "string"}}, ["item_id"]), "server"),
+                 "'no tomato' or 'gluten-free bread' that this customer needs (or the guests, with for_diner='guests').",
+                 _obj({"item_id": {"type": "string"}, "for_diner": _DINER}, ["item_id"]), "server"),
         ToolSpec("search_menu",
                  "Search the platform's menu for food or grocery items by name, cuisine or category. Returns items with nutrition data.",
                  _obj({"query": {"type": "string", "maxLength": 200}, "limit": {"type": "integer", "minimum": 1, "maximum": 50}},
                       ["query"]), "client"),
         ToolSpec("add_to_cart",
                  "Add an item from a search result to the customer's cart. Diet Shield checks it against the plan first and "
-                 "attaches the kitchen requirements; it may be refused or need the customer's confirmation.",
-                 _obj({"item_id": {"type": "string"}, "quantity": {"type": "integer", "minimum": 1, "maximum": MAX_QUANTITY}},
-                      ["item_id"]), "client"),
+                 "attaches the kitchen requirements; it may be refused or need the customer's confirmation. "
+                 "When the customer ordered for guests (set_party), for_diner is required: 'me' for the customer's own portion, "
+                 "'guests' for the guests' portions (quantity = how many portions for the guests).",
+                 _obj({"item_id": {"type": "string"}, "quantity": {"type": "integer", "minimum": 1, "maximum": MAX_QUANTITY},
+                       "for_diner": _DINER}, ["item_id"]), "client"),
         ToolSpec("view_cart", "Show what is currently in the customer's cart.", _obj({}), "client"),
         ToolSpec("checkout",
                  "Place the order for the current cart. Always needs the customer's explicit confirmation in the app.",
@@ -118,7 +135,35 @@ def validate_arguments(name: str, args) -> dict:
             if not schema["minimum"] <= value <= schema["maximum"]:
                 raise ToolRefused("bad_arguments", f"'{key}' must be between {schema['minimum']} and {schema['maximum']}.")
             out[key] = value
+        elif schema["type"] == "array":
+            if not isinstance(value, list) or len(value) > schema["maxItems"]:
+                raise ToolRefused("bad_arguments", f"'{key}' must be a list of at most {schema['maxItems']} items.")
+            cleaned = []
+            for v in value:
+                if not isinstance(v, str) or not v.strip() or len(v) > schema["items"]["maxLength"]:
+                    raise ToolRefused("bad_arguments", f"'{key}' must contain short, non-empty text.")
+                cleaned.append(v.strip())
+            out[key] = cleaned
     return out
+
+
+# ── the party (who is eating): derived from the transcript, never stored ──────────
+def party_from_transcript(messages: list[dict]) -> tuple[int, list[str]]:
+    """(number of guests, the allergies the customer named for them). The most recent valid set_party
+    call in the transcript wins; no call means the customer is ordering only for themselves."""
+    guests, allergies = 0, []
+    for m in messages:
+        if m.get("role") != "assistant":
+            continue
+        for c in m.get("tool_calls") or []:
+            if c.get("name") != "set_party":
+                continue
+            try:
+                a = validate_arguments("set_party", c.get("arguments") or {})
+            except ToolRefused:
+                continue
+            guests, allergies = a["guests"], a.get("guest_allergies") or []
+    return guests, allergies
 
 
 # ── reading the transcript ────────────────────────────────────────────────────
@@ -160,9 +205,21 @@ def unresolved_tool_calls(messages: list[dict]) -> list[dict]:
 
 
 def cart_from_transcript(messages: list[dict]) -> dict[str, int]:
-    """The cart as the platform confirmed it: every add_to_cart the platform
+    """The cart by item only (all diners added together)."""
+    out: dict[str, int] = {}
+    for (iid, _), qty in cart_lines(messages).items():
+        out[iid] = out.get(iid, 0) + qty
+    return out
+
+
+def _diner_of(a: dict) -> str:
+    return GUESTS if a.get("for_diner") == GUESTS else ME
+
+
+def cart_lines(messages: list[dict]) -> dict[tuple[str, str], int]:
+    """The cart as the platform confirmed it, one line per (item, diner): every add_to_cart the platform
     answered ok, unless a later view_cart result replaced it."""
-    cart: dict[str, int] = {}
+    cart: dict[tuple[str, str], int] = {}
     pending: dict[str, dict] = {}
     for m in messages:
         if m.get("role") == "assistant":
@@ -173,10 +230,10 @@ def cart_from_transcript(messages: list[dict]) -> dict[str, int]:
             call = pending.get(str(m.get("tool_call_id")))
             if m.get("name") == "add_to_cart" and call and isinstance(payload, dict) and payload.get("ok") is True:
                 a = call.get("arguments") or {}
-                iid = str(a.get("item_id"))
-                cart[iid] = cart.get(iid, 0) + int(a.get("quantity") or 1)
+                key = (str(a.get("item_id")), _diner_of(a))
+                cart[key] = cart.get(key, 0) + int(a.get("quantity") or 1)
             elif m.get("name") == "view_cart" and isinstance(payload, dict) and isinstance(payload.get("items"), list):
-                cart = {str(i["item_id"]): int(i.get("quantity") or 1)
+                cart = {(str(i["item_id"]), _diner_of(i)): int(i.get("quantity") or 1)
                         for i in payload["items"] if isinstance(i, dict) and "item_id" in i}
             elif m.get("name") == "checkout" and isinstance(payload, dict) and payload.get("ok") is True:
                 cart = {}

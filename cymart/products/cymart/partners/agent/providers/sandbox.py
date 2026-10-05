@@ -11,7 +11,7 @@ import json
 import re
 
 from ...i18n import normalise, t
-from ..tools import cart_from_transcript, items_seen
+from ..tools import MAX_GUESTS, cart_from_transcript, items_seen, party_from_transcript
 from .base import Completion, CompletionProvider, ToolCall
 
 FILLERS = {
@@ -53,6 +53,12 @@ S = {
         "unknown_choice": "I couldn't tell which option you meant. Say the number or the name.",
         "nothing_to_pick": "Tell me what you'd like first and I'll find options that fit your plan.",
         "cancelled": "Okay, cancelled. What else can I help with?",
+        "party_set": "Got it: you plus {n} guest(s). Your guests aren't checked against your plan{allergy_part}. What would you like to order?",
+        "party_allergies": ", only the allergies you named ({allergies})",
+        "party_no_allergies": ", and I have no allergies for them, so tell me if any of them has one",
+        "added_both": "Added {name} for you and {qty}× for your guests. Say “confirm” to place the order, or keep browsing.",
+        "added_me_only": "Added {name} for you only; I did not add the guests' portions.",
+        "guests_refused": "I couldn't add {name} for your guests: {reason}",
     },
     "ar": {
         "ask": "ماذا تود أن تأكل؟ سأعرض لك فقط الخيارات المناسبة لخطتك.",
@@ -75,8 +81,60 @@ S = {
         "unknown_choice": "لم أفهم أي خيار تقصد. اذكر الرقم أو الاسم.",
         "nothing_to_pick": "أخبرني أولًا ماذا تريد وسأجد لك خيارات مناسبة لخطتك.",
         "cancelled": "حسنًا، تم الإلغاء. بماذا أساعدك أيضًا؟",
+        "party_set": "تمام: أنت و{n} ضيف/ضيوف. ضيوفك لا يُفحصون وفق خطتك{allergy_part}. ماذا تريد أن تطلب؟",
+        "party_allergies": "، فقط الحساسيات التي ذكرتها ({allergies})",
+        "party_no_allergies": "، ولا توجد حساسيات مذكورة لهم، فأخبرني إن كان لأحدهم حساسية",
+        "added_both": "تمت إضافة {name} لك و{qty}× لضيوفك. قل «تأكيد» لإتمام الطلب، أو واصل التصفح.",
+        "added_me_only": "تمت إضافة {name} لك فقط؛ لم أضف حصص الضيوف.",
+        "guests_refused": "لا يمكنني إضافة {name} لضيوفك: {reason}",
     },
 }
+
+
+_NUMW = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
+         "واحد": 1, "اثنان": 2, "اثنين": 2, "ثلاثه": 3, "ثلاث": 3, "اربعه": 4, "اربع": 4, "خمسه": 5, "خمس": 5}
+_EN_N = r"(\d+|one|two|three|four|five|six|seven|eight)"
+_AR_N = r"(\d+|واحد|اثنان|اثنين|ثلاثه|ثلاث|اربعه|اربع|خمسه|خمس)"
+_GROUP_PATTERNS = [
+    re.compile(rf"\bfor\s+me\s+and\s+{_EN_N}\s*(?:friends?|guests?|others?|people|persons?)\b"),
+    re.compile(rf"\b{_EN_N}\s+of\s+(?:them|us)\b[^.,;]*?\b(?:not|no|without|aren't|isn't|don't|dont|doesn't)\b[^.,;]*"),
+    re.compile(rf"\b{_EN_N}\s+(?:friends?|guests?|others?)\b"),
+    re.compile(rf"(?:لي\s+و)?\s*{_AR_N}\s+منهم\s+(?:ليس|بدون|لا|ما|مو)[^.,;،]*"),
+    re.compile(rf"{_AR_N}\s*(?:اصدقاء|اصحاب|ضيوف)"),
+    re.compile(r"(?:لي\s+)?ول?(صديقين|صديقان)"),
+]
+_ALLERGY = [re.compile(r"\ballerg\w*\s+(?:to|of|from)\s+([^.;?!]+)"), re.compile(r"حساسيه\s+(?:من|ل)\s*([^.;?!]+)")]
+GROUP_FILLERS = set("full meal meals person persons people them us of not no without plan from on in are is and also friends friend "
+                    "guests guest allergic allergy to dont don't aren't isn't have has do does me my ordering order "
+                    "كامله كامل اشخاص شخص منهم لديهم خطه خطتي عندهم وجبات لشخصين".split())
+
+
+def _num(tok: str) -> int:
+    return int(tok) if tok.isdigit() else _NUMW.get(tok, 0)
+
+
+def parse_party(text: str):
+    """(guests, guest_allergies, text with the group phrases removed) if the customer is ordering for people who
+    have no plan, else None. Deliberately narrow: an unclear sentence is not guessed at."""
+    low = text.lower().replace("’", "'")
+    low = normalise(low) if re.search("[؀-ۿ]", low) else low
+    guests = 0
+    for i, pat in enumerate(_GROUP_PATTERNS):
+        m = pat.search(low)
+        if m:
+            guests = 2 if i == 5 else _num(m.group(1))
+            low = low[:m.start()] + " " + low[m.end():]
+            break
+    if guests < 1:
+        return None
+    allergies: list[str] = []
+    for pat in _ALLERGY:
+        m = pat.search(low)
+        if m:
+            allergies = [a.strip() for a in re.split(r",|،|\band\b|&|\s+و", m.group(1)) if a.strip()][:10]
+            low = low[:m.start()] + " " + low[m.end():]
+            break
+    return min(guests, MAX_GUESTS), allergies, low
 
 
 def _payload(m):
@@ -115,11 +173,19 @@ class SandboxCompletionProvider(CompletionProvider):
         if ("cart" in words or normalise("السلة") in words or normalise("سلتي") in words) and "view_cart" in offered:
             return Completion(tool_calls=[ToolCall("view_cart", {})])
 
+        party = parse_party(text)
+        if party is not None:
+            guests, allergies, _ = party
+            args = {"guests": guests, **({"guest_allergies": allergies} if allergies else {})}
+            return Completion(tool_calls=[ToolCall("set_party", args)])
+
         ranked = self._last_ranked(messages)
         choice = self._choice(norm, words, ranked)
         if choice is not None:
             if "add_to_cart" in offered:
-                return Completion(tool_calls=[ToolCall("add_to_cart", {"item_id": choice, "quantity": 1})])
+                guests, _ = party_from_transcript(messages)
+                args = {"item_id": choice, "quantity": 1, **({"for_diner": "me"} if guests else {})}
+                return Completion(tool_calls=[ToolCall("add_to_cart", args)])
         elif ranked and re.fullmatch(r"\s*(number|option|رقم)?\s*\d+\s*", norm):
             return Completion(text=s["unknown_choice"])
 
@@ -165,6 +231,21 @@ class SandboxCompletionProvider(CompletionProvider):
         if not isinstance(p, dict):
             return Completion(text=s["error"].format(error=str(p)[:100]))
 
+        if name == "set_party":
+            guests, allergies = party_from_transcript(messages)
+            if not guests:
+                return Completion(text=s["ask"])
+            user = next((m["content"] for m in reversed(messages) if m.get("role") == "user" and isinstance(m.get("content"), str)), "")
+            parsed = parse_party(user)
+            rest = parsed[2] if parsed else user
+            fillers = FILLERS["en"] | FILLERS[lang] | GROUP_FILLERS | {normalise(w) for w in GROUP_FILLERS}
+            query = " ".join(w for w in rest.replace("،", " ").split()
+                             if normalise(w) not in fillers and not w.isdigit() and normalise(w).lstrip("ل") not in _NUMW).strip(" ?!.,")
+            if query:
+                return Completion(tool_calls=[ToolCall("search_menu", {"query": query[:200], "limit": 20})])
+            part = s["party_allergies"].format(allergies=", ".join(allergies)) if allergies else s["party_no_allergies"]
+            return Completion(text=s["party_set"].format(n=guests, allergy_part=part))
+
         if name == "search_menu":
             if p.get("ok") is False:
                 return Completion(text=s["error"].format(error=p.get("error", "")))
@@ -195,11 +276,19 @@ class SandboxCompletionProvider(CompletionProvider):
             call_args = self._args_of(messages, last)
             item = seen.get(str(call_args.get("item_id")), {})
             label = item.get("name") or str(call_args.get("item_id"))
+            diner = call_args.get("for_diner")
             if p.get("ok") is True:
+                if diner == "me":
+                    guests, _ = party_from_transcript(messages)
+                    if guests:   # the same dish for the guests, in the same turn
+                        return Completion(tool_calls=[ToolCall("add_to_cart", {"item_id": call_args["item_id"], "quantity": guests, "for_diner": "guests"})])
+                if diner == "guests":
+                    return Completion(text=s["added_both"].format(name=label, qty=call_args.get("quantity", 1)))
                 return Completion(text=s["added"].format(name=label))
             if p.get("error") == "customer_declined":
-                return Completion(text=s["declined"])
-            return Completion(text=s["refused"].format(name=label, reason=p.get("message") or p.get("error", "")))
+                return Completion(text=s["added_me_only"].format(name=label) if diner == "guests" else s["declined"])
+            reason = p.get("message") or p.get("error", "")
+            return Completion(text=(s["guests_refused"] if diner == "guests" else s["refused"]).format(name=label, reason=reason))
 
         if name == "view_cart":
             items = p.get("items") or []

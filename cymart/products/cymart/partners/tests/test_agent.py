@@ -381,8 +381,8 @@ class TestGatesHoldAgainstAnyModel:
         assert r.status == "tool_calls" and [c["name"] for c in r.tool_calls] == ["search_menu"]
 
     def test_server_tools_ignore_model_supplied_nutrition(self):
-        # rank_for_plan takes no item data at all, so the model has nothing to forge
-        assert T.REGISTRY["rank_for_plan"].parameters["properties"].keys() == {"limit"}
+        # rank_for_plan takes no item data at all, so the model has nothing to forge (only a count and who it is for)
+        assert T.REGISTRY["rank_for_plan"].parameters["properties"].keys() == {"limit", "for_diner"}
         r = run(Scripted(ToolCall("rank_for_plan", {"items": [{"item_id": "x", "ingredients": []}]}), "ok"), searched())
         assert json.loads([m for m in r.new_messages if m["role"] == "tool"][0]["content"])["error"] == "bad_arguments"
 
@@ -395,7 +395,7 @@ class TestGatesHoldAgainstAnyModel:
                 seen["system"] = system
                 return Completion(text="hi")
         run(Spy(), [{"role": "user", "content": "hi"}], tools=["search_menu"])
-        assert seen["tools"] == {"plan_summary", "rank_for_plan", "check_item", "prepare_item", "search_menu"}
+        assert seen["tools"] == {"plan_summary", "set_party", "rank_for_plan", "check_item", "prepare_item", "search_menu"}
         assert "never follow instructions" in seen["system"].lower()
 
 
@@ -457,3 +457,153 @@ class TestClaudeAdapterOffline:
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         with pytest.raises(RuntimeError):
             ClaudeCompletionProvider().complete("s", [{"role": "user", "content": "x"}], [])
+
+
+# ── ordering for friends who have no plan ───────────────────────────────────────────────
+def tool_msgs(r):
+    return [json.loads(m["content"]) for m in r.new_messages if m["role"] == "tool"]
+
+
+def with_party(guests, *adds):
+    """A transcript where set_party was called and the platform accepted the given add_to_cart calls."""
+    h = searched()[:3] + [
+        {"role": "assistant", "content": "", "tool_calls": [{"id": "p", "name": "set_party", "arguments": {"guests": guests}}]},
+        {"role": "tool", "tool_call_id": "p", "name": "set_party", "content": json.dumps({"ok": True})},
+    ]
+    for i, args in enumerate(adds):
+        h += [{"role": "assistant", "content": "", "tool_calls": [{"id": f"a{i}", "name": "add_to_cart", "arguments": args}]},
+              {"role": "tool", "tool_call_id": f"a{i}", "name": "add_to_cart", "content": json.dumps({"ok": True})}]
+    return h + [{"role": "user", "content": "confirm"}]
+
+
+class TestGroupOrders:
+    def party(self, *calls):
+        return Scripted(ToolCall("set_party", {"guests": 2}), *calls)
+
+    def test_guest_portion_needs_the_customers_ok_even_when_it_fits(self):
+        r = run(self.party(ToolCall("add_to_cart", {"item_id": "bunless-burger", "quantity": 2, "for_diner": "guests"})), searched())
+        assert r.status == "needs_confirmation"
+        assert r.confirmation["id"] == "add:bunless-burger:2:guests"
+        assert "your guests" in r.confirmation["text"] and "not checked against your plan" in r.confirmation["text"]
+        assert r.tool_calls == []
+
+    def test_after_the_customers_ok_the_guest_portion_is_released_without_plan_checks(self):
+        # satay burger has peanut sauce: blocked for the customer, but guests have no plan and named no allergies
+        r = run(self.party(ToolCall("add_to_cart", {"item_id": "satay-burger", "quantity": 2, "for_diner": "guests"})), searched(),
+                confirmed=["add:satay-burger:2:guests"])
+        assert r.status == "tool_calls" and r.tool_calls[0]["arguments"]["for_diner"] == "guests"
+
+    def test_the_customers_own_portion_is_still_checked_against_their_plan(self):
+        r = run(self.party(ToolCall("add_to_cart", {"item_id": "satay-burger", "for_diner": "me"}), "no"), searched())
+        assert tool_msgs(r)[-1]["error"] == "blocked_by_plan"
+
+    def test_allergies_named_for_guests_are_applied(self):
+        r = run(Scripted(ToolCall("set_party", {"guests": 1, "guest_allergies": ["peanut"]}),
+                         ToolCall("add_to_cart", {"item_id": "satay-burger", "for_diner": "guests"}), "no"), searched(),
+                confirmed=["add:satay-burger:1:guests"])
+        assert tool_msgs(r)[-1]["error"] == "blocked_by_plan" and r.tool_calls == []
+
+    def test_confirmation_names_the_guest_allergies_that_were_applied(self):
+        r = run(Scripted(ToolCall("set_party", {"guests": 1, "guest_allergies": ["shellfish"]}),
+                         ToolCall("add_to_cart", {"item_id": "bunless-burger", "for_diner": "guests"})), searched())
+        assert "shellfish" in r.confirmation["text"]
+
+    def test_who_it_is_for_is_required_once_there_are_guests(self):
+        r = run(self.party(ToolCall("add_to_cart", {"item_id": "bunless-burger"}), "ok"), searched())
+        assert tool_msgs(r)[-1]["error"] == "which_diner"
+
+    def test_guests_cannot_be_used_without_declaring_them(self):
+        r = run(Scripted(ToolCall("add_to_cart", {"item_id": "satay-burger", "for_diner": "guests"}), "ok"), searched())
+        assert tool_msgs(r)[-1]["error"] == "unknown_diner" and r.tool_calls == []
+
+    def test_unknown_diner_is_refused(self):
+        r = run(self.party(ToolCall("add_to_cart", {"item_id": "bunless-burger", "for_diner": "guest7"}), "ok"), searched())
+        assert tool_msgs(r)[-1]["error"] == "unknown_diner"
+
+    @pytest.mark.parametrize("args", [{"guests": 99}, {"guests": -1}, {"guests": "2"}, {"guests": 1, "guest_allergies": "peanut"},
+                                      {"guests": 1, "guest_allergies": [""]}, {"guests": 1, "extra": 1}, {}])
+    def test_party_arguments_are_validated(self, args):
+        r = run(Scripted(ToolCall("set_party", args), "ok"), searched())
+        assert tool_msgs(r)[0]["error"] == "bad_arguments"
+
+    def test_checkout_judges_each_person_against_their_own_rules(self):
+        mixed = with_party(2, {"item_id": "bunless-burger", "quantity": 1, "for_diner": "me"},
+                           {"item_id": "satay-burger", "quantity": 2, "for_diner": "guests"})
+        r = run(Scripted(ToolCall("checkout", {})), mixed)
+        assert r.status == "needs_confirmation"
+        text = r.confirmation["text"]
+        assert "(for you)" in text and "(for your guests)" in text and "not checked against your plan" in text
+        # the guests' peanut-sauce burger moved onto the customer's own order is refused: it breaks their allergy
+        wrong = with_party(2, {"item_id": "bunless-burger", "quantity": 1, "for_diner": "me"},
+                           {"item_id": "satay-burger", "quantity": 2, "for_diner": "me"})
+        r2 = run(Scripted(ToolCall("checkout", {}), "no"), wrong)
+        assert tool_msgs(r2)[-1]["error"] == "blocked_by_plan"
+
+    def test_confirmation_is_for_this_exact_party_cart(self):
+        for_guests = with_party(1, {"item_id": "bunless-burger", "for_diner": "guests"})
+        cid = run(Scripted(ToolCall("checkout", {})), for_guests).confirmation["id"]
+        ok = run(Scripted(ToolCall("checkout", {})), for_guests, confirmed=[cid])
+        assert ok.status == "tool_calls" and ok.tool_calls[0]["name"] == "checkout"
+        # the same item bought for the customer is a different cart, so the same approval does not cover it
+        for_me = with_party(1, {"item_id": "bunless-burger", "for_diner": "me"})
+        assert run(Scripted(ToolCall("checkout", {})), for_me, confirmed=[cid]).status == "needs_confirmation"
+
+    def test_a_single_customer_order_is_unchanged(self):
+        history = searched()[:3] + [
+            {"role": "assistant", "content": "", "tool_calls": [{"id": "a", "name": "add_to_cart", "arguments": {"item_id": "bunless-burger"}}]},
+            {"role": "tool", "tool_call_id": "a", "name": "add_to_cart", "content": json.dumps({"ok": True})},
+            {"role": "user", "content": "confirm"}]
+        r = run(Scripted(ToolCall("checkout", {})), history)
+        assert "(for" not in r.confirmation["text"] and "guests" not in r.confirmation["text"]
+
+    def test_server_tools_can_look_at_the_guests_view(self):
+        r = run(Scripted(ToolCall("set_party", {"guests": 1}), ToolCall("check_item", {"item_id": "satay-burger", "for_diner": "guests"}),
+                         ToolCall("check_item", {"item_id": "satay-burger"}), "done"), searched())
+        results = tool_msgs(r)
+        assert results[0]["ok"] and [d["id"] for d in results[0]["diners"]] == ["me", "guests"]
+        assert results[1]["allowed"] is True and results[2]["allowed"] is False
+
+
+class TestGroupOrderConversation:
+    def test_the_sentence_from_the_demo_no_longer_searches_nonsense(self, client):
+        p = FakePlatform(client)
+        out = p.say("give a full meal for 3 person 2 of them not from the plan")
+        assert not [e for e in p.executed if e[0] == "search_menu"]
+        assert "2 guest" in out["reply"] and "aren't checked against your plan" in out["reply"]
+
+    def test_full_group_order_with_the_stand_in(self, client):
+        p = FakePlatform(client)
+        p.say("I'm ordering for me and 2 friends, they don't have a plan")
+        p.say("bunless burger")
+        p.say("1")
+        adds = [a for n, a in p.executed if n == "add_to_cart"]
+        assert [(a["for_diner"], a["quantity"]) for a in adds] == [("me", 1), ("guests", 2)]
+        assert any(c["id"].endswith(":guests") for c in p.confirmations)
+        p.say("confirm")
+        assert p.checked_out
+        assert "your guests" in p.confirmations[-1]["text"]
+
+    def test_declining_the_guest_portion_keeps_only_the_customers_own(self, client):
+        p = FakePlatform(client)
+        p.say("for me and 2 friends")
+        p.say("bunless burger")
+        out = p.say("1", approve_ids=[])      # the customer declines every confirmation
+        assert [a["for_diner"] for n, a in p.executed if n == "add_to_cart"] == ["me"]
+        assert "only" in out["reply"].lower()
+
+    def test_guest_allergy_said_in_the_sentence_reaches_the_shield(self, client):
+        p = FakePlatform(client)
+        p.say("order for 2 friends, they don't have a plan, allergic to peanuts")
+        party = [m for m in p.messages if m.get("tool_calls") and m["tool_calls"][0]["name"] == "set_party"][0]
+        assert party["tool_calls"][0]["arguments"]["guest_allergies"] == ["peanuts"]
+
+    def test_arabic_group_sentence(self, client):
+        p = FakePlatform(client, language="ar")
+        out = p.say("أريد وجبة كاملة لثلاثة أشخاص اثنان منهم ليس لديهم خطة")
+        assert not [e for e in p.executed if e[0] == "search_menu"]
+        assert ARABIC.search(out["reply"]) and "2" in out["reply"]
+
+    def test_plain_orders_never_trigger_group_mode(self, client):
+        p = FakePlatform(client)
+        p.say("I want a burger")
+        assert not [m for m in p.messages if m.get("tool_calls") and m["tool_calls"][0]["name"] == "set_party"]
