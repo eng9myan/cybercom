@@ -1,0 +1,21 @@
+# Standalone CyMed Pharmacy deployment — see docker-compose.cymed-hospital.
+# override.yml for the usage pattern (same, with -p cymed-pharmacy and this
+# file). CYMED_PRODUCT_PROFILE=pharmacy — Pharmacy edition (incl. its
+# ecommerce/delivery/pos/loyalty/compounding/robotics gap-fill apps) +
+# shared clinical core + erx integration (e-prescribing needs pharmacy's
+# Prescription model), nothing from Hospital/Clinic/Lab/Imaging.
+services:
+  backend:
+    environment:
+      CYMED_PRODUCT_PROFILE: pharmacy
+    ports: !override
+      - "${CYMED_PHARMACY_PORT:-8213}:8000"
+  celery-worker:
+    environment:
+      CYMED_PRODUCT_PROFILE: pharmacy
+  celery-beat:
+    environment:
+      CYMED_PRODUCT_PROFILE: pharmacy
+  keycloak:
+    ports: !override
+      - "127.0.0.1:${CYMED_PHARMACY_PORT_KEYCLOAK:-8293}:8080"

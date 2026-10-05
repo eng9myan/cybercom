@@ -1,0 +1,19 @@
+# Standalone CyMed Laboratory deployment — see docker-compose.cymed-
+# hospital.override.yml for the usage pattern (same, with -p cymed-
+# laboratory and this file). CYMED_PRODUCT_PROFILE=laboratory — Laboratory
+# edition + shared clinical core only.
+services:
+  backend:
+    environment:
+      CYMED_PRODUCT_PROFILE: laboratory
+    ports: !override
+      - "${CYMED_LABORATORY_PORT:-8214}:8000"
+  celery-worker:
+    environment:
+      CYMED_PRODUCT_PROFILE: laboratory
+  celery-beat:
+    environment:
+      CYMED_PRODUCT_PROFILE: laboratory
+  keycloak:
+    ports: !override
+      - "127.0.0.1:${CYMED_LABORATORY_PORT_KEYCLOAK:-8294}:8080"

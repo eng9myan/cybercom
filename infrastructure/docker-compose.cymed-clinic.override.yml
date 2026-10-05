@@ -1,0 +1,19 @@
+# Standalone CyMed Clinic deployment — see docker-compose.cymed-hospital.
+# override.yml for the usage pattern (same, with -p cymed-clinic and this
+# file). CYMED_PRODUCT_PROFILE=clinic — Clinic edition + shared clinical
+# core only, nothing from Hospital/Pharmacy/Lab/Imaging.
+services:
+  backend:
+    environment:
+      CYMED_PRODUCT_PROFILE: clinic
+    ports: !override
+      - "${CYMED_CLINIC_PORT:-8212}:8000"
+  celery-worker:
+    environment:
+      CYMED_PRODUCT_PROFILE: clinic
+  celery-beat:
+    environment:
+      CYMED_PRODUCT_PROFILE: clinic
+  keycloak:
+    ports: !override
+      - "127.0.0.1:${CYMED_CLINIC_PORT_KEYCLOAK:-8292}:8080"

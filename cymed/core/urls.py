@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import TemplateView
@@ -5,6 +6,14 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 
 from core.views.health import HealthView, LivenessView, ReadinessView
 from core.views.portals import MainDashboardView, PatientPortalView, ProviderPortalView
+
+_PROFILE = settings.CYMED_PRODUCT_PROFILE
+
+
+def _product_included(product: str) -> bool:
+    """Mirrors settings._filter_product_apps — see CYMED_PRODUCT_PROFILE there."""
+    return _PROFILE == "full" or _PROFILE == product
+
 
 urlpatterns = [
     # ── Admin ──────────────────────────────────────────────────────────────
@@ -58,22 +67,35 @@ urlpatterns = [
     path("api/v1/commerce/", include("products.cymed.core.commerce.urls")),
     # ── CyMed Commercial Foundation API v1 (Program 3.C0) ─────────────────
     path("api/v1/commercial/", include("products.cymed.commercial.urls")),
-    # ── CyMed Clinic Edition API v1 (Program 3.1) ─────────────────────────
-    path("api/v1/clinic/", include("products.cymed.clinic.urls")),
-    # ── CyMed Hospital Edition API v1 (Program 3.2) ───────────────────────
-    path("api/v1/hospital/", include("products.cymed.hospital.urls")),
-    # ── CyMed Laboratory Edition API v1 (Program 3.3) ─────────────────────
-    path("api/v1/lab/", include("products.cymed.laboratory.urls")),
-    # ── CyMed Imaging Edition API v1 (Program 3.4) ────────────────────────
-    path("api/v1/imaging/", include("products.cymed.imaging.urls")),
-    # ── CyMed Pharmacy Edition API v1 (Program 3.5) ───────────────────────
-    path("api/v1/pharmacy/", include("products.cymed.pharmacy.urls")),
+    # ── Standalone-product editions (Program 3.1-3.5) — each only mounted
+    # when CYMED_PRODUCT_PROFILE includes it, so an excluded product's
+    # urls.py (which includes its gap-fill sub-apps) is never imported.
+    *([path("api/v1/clinic/", include("products.cymed.clinic.urls"))]
+      if _product_included("clinic") else []),
+    *([path("api/v1/hospital/", include("products.cymed.hospital.urls"))]
+      if _product_included("hospital") else []),
+    *([path("api/v1/lab/", include("products.cymed.laboratory.urls"))]
+      if _product_included("laboratory") else []),
+    *([path("api/v1/imaging/", include("products.cymed.imaging.urls"))]
+      if _product_included("imaging") else []),
+    *([path("api/v1/pharmacy/", include("products.cymed.pharmacy.urls"))]
+      if _product_included("pharmacy") else []),
+    # A standalone Hospital deployment carries pharmacy's prescriptions app
+    # too (see _REQUIRES_PHARMACY_PRESCRIPTIONS in settings.py — eMAR FKs
+    # it) but not the rest of pharmacy.urls.py's sub-apps, so it gets just
+    # this one app's own routes rather than the full pharmacy.urls.py.
+    *([path("api/v1/pharmacy/prescriptions/",
+            include("products.cymed.pharmacy.prescriptions.urls"))]
+      if _PROFILE == "hospital" else []),
     # ── CyMed Integrations API v1 ──────────────────────────────────────────
     path("api/v1/integrations/jofawtra/", include("products.cymed.integrations.jofawtra.urls")),
     path("api/v1/integrations/zakata/", include("products.cymed.integrations.zakata.urls")),
     path("api/v1/integrations/nphies/", include("products.cymed.integrations.nphies.urls")),
     path("api/v1/integrations/hakeem/", include("products.cymed.integrations.hakeem.urls")),
-    path("api/v1/integrations/erx/", include("products.cymed.integrations.erx.urls")),
+    # erx (e-prescribing/PDMP) FKs pharmacy's Prescription model — same
+    # pharmacy-or-hospital gate as _ERX_APP in settings.py.
+    *([path("api/v1/integrations/erx/", include("products.cymed.integrations.erx.urls"))]
+      if _PROFILE in ("full", "pharmacy", "hospital") else []),
     # ── FHIR R4 REST Server (P0-4) ─────────────────────────────────────────
     path("fhir/R4/", include("products.cymed.fhir_r4.urls")),
     # ── AI Clinical Decision Support (P0-5) ────────────────────────────────
@@ -81,12 +103,14 @@ urlpatterns = [
     # ── Revenue Cycle Management (P0-6) ────────────────────────────────────
     path("api/v1/rcm/", include("products.cymed.rcm.urls")),
     # ── Clinic gap-fill (P0-8) ─────────────────────────────────────────────
-    path("api/v1/clinic/insurance/",  include("products.cymed.clinic.insurance_verify.urls")),
-    path("api/v1/clinic/kiosk/",      include("products.cymed.clinic.self_checkin.urls")),
-    path("api/v1/clinic/coding/",     include("products.cymed.clinic.auto_coding.urls")),
-    path("api/v1/clinic/referrals/",  include("products.cymed.clinic.referral_loop.urls")),
-    path("api/v1/clinic/shop/",       include("products.cymed.clinic.ecommerce.urls")),
-    path("api/v1/clinic/marketing/",  include("products.cymed.clinic.marketing.urls")),
+    *([
+        path("api/v1/clinic/insurance/",  include("products.cymed.clinic.insurance_verify.urls")),
+        path("api/v1/clinic/kiosk/",      include("products.cymed.clinic.self_checkin.urls")),
+        path("api/v1/clinic/coding/",     include("products.cymed.clinic.auto_coding.urls")),
+        path("api/v1/clinic/referrals/",  include("products.cymed.clinic.referral_loop.urls")),
+        path("api/v1/clinic/shop/",       include("products.cymed.clinic.ecommerce.urls")),
+        path("api/v1/clinic/marketing/",  include("products.cymed.clinic.marketing.urls")),
+    ] if _product_included("clinic") else []),
     # ── CyMed Portals API v1 ───────────────────────────────────────────────
     path("api/v1/patient-portal/", include("products.cymed.patient_portal.urls")),
     # Alias per P0-1 spec: mobile app uses /patient-app/

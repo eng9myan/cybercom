@@ -1,0 +1,27 @@
+# Standalone CyMed Hospital deployment, layered on docker-compose.api.yml:
+#   docker compose --env-file .env.production \
+#     -f infrastructure/docker-compose.api.yml \
+#     -f infrastructure/docker-compose.cymed-hospital.override.yml \
+#     -p cymed-hospital up -d
+#
+# CYMED_PRODUCT_PROFILE=hospital restricts INSTALLED_APPS/urls to the
+# Hospital edition + the shared clinical core + pharmacy's prescriptions
+# app (hospital's eMAR FKs MedicationOrder — see settings.py's
+# _REQUIRES_PHARMACY_PRESCRIPTIONS). Nothing else from Clinic/Pharmacy/
+# Lab/Imaging ships. Port and project-name isolation matches the staging
+# override pattern (infrastructure/scripts/docker-compose.staging.*).
+services:
+  backend:
+    environment:
+      CYMED_PRODUCT_PROFILE: hospital
+    ports: !override
+      - "${CYMED_HOSPITAL_PORT:-8211}:8000"
+  celery-worker:
+    environment:
+      CYMED_PRODUCT_PROFILE: hospital
+  celery-beat:
+    environment:
+      CYMED_PRODUCT_PROFILE: hospital
+  keycloak:
+    ports: !override
+      - "127.0.0.1:${CYMED_HOSPITAL_PORT_KEYCLOAK:-8291}:8080"

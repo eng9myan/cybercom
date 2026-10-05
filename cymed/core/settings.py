@@ -215,6 +215,71 @@ PRODUCT_APPS = [
     "products.cymed.simulations.apps.SimulationsConfig",
 ]
 
+# ---------------------------------------------------------------------------
+# STANDALONE PRODUCT PROFILE (Phase 2 of "sell Hospital/Clinic/Pharmacy/
+# Laboratory/Imaging standalone" — see [[cymed-standalone-products]])
+#
+# CYMED_PRODUCT_PROFILE selects which of the 5 clinical-edition app buckets
+# actually get installed. Default "full" installs everything, byte-for-byte
+# identical to this file's behavior before this profile existed — no
+# existing deployment changes unless it sets the env var. A single-product
+# profile (e.g. "pharmacy") excludes the other 4 buckets' apps so a
+# standalone deployment genuinely doesn't carry code/migrations/DB tables
+# for products it wasn't sold. urls.py applies the matching filter to its
+# path() list so excluded apps' routes are never even attempted to import.
+# ---------------------------------------------------------------------------
+CYMED_PRODUCT_PROFILE = os.environ.get("CYMED_PRODUCT_PROFILE", "full")
+
+_PRODUCT_APP_PREFIXES = {
+    "hospital": "products.cymed.hospital.",
+    "clinic": "products.cymed.clinic.",
+    "pharmacy": "products.cymed.pharmacy.",
+    "laboratory": "products.cymed.laboratory.",
+    "imaging": "products.cymed.imaging.",
+}
+
+
+#   products.cymed.simulations   — demo-tenant seeding (simulations/admin.py)
+#     hard-imports hospital.adt.models.Admission; cross-product demo data
+#     doesn't apply to a single-product deployment anyway, so it's "full"-only.
+#   products.cymed.integrations.erx — ErxTransmission/PdmpCheck FK pharmacy's
+#     Prescription model; only meaningful where pharmacy is present.
+#   hospital's own eMAR (nursing.MedicationAdministration.medication_order)
+#     FKs pharmacy.prescriptions.MedicationOrder — real-world hospitals
+#     administer medication from pharmacy-dispensed orders, so a standalone
+#     Hospital deployment carries pharmacy's PRESCRIPTIONS sub-app only
+#     (not all of pharmacy: dispensing/formulary/automation/etc stay excluded).
+_FULL_ONLY_APPS = {"products.cymed.simulations.apps.SimulationsConfig"}
+_REQUIRES_PHARMACY_PRESCRIPTIONS = {"hospital"}
+_PHARMACY_PRESCRIPTIONS_APP = "products.cymed.pharmacy.prescriptions"
+_ERX_APP = "products.cymed.integrations.erx"
+
+
+def _filter_product_apps(apps: list[str], profile: str) -> list[str]:
+    if profile == "full":
+        return apps
+    if profile not in _PRODUCT_APP_PREFIXES:
+        raise ValueError(
+            f"Unknown CYMED_PRODUCT_PROFILE {profile!r}; expected 'full' or one "
+            f"of {sorted(_PRODUCT_APP_PREFIXES)}."
+        )
+    other_prefixes = [p for k, p in _PRODUCT_APP_PREFIXES.items() if k != profile]
+    filtered = [
+        app for app in apps
+        if not any(app.startswith(p) for p in other_prefixes) and app not in _FULL_ONLY_APPS
+    ]
+
+    has_pharmacy = profile == "pharmacy" or profile in _REQUIRES_PHARMACY_PRESCRIPTIONS
+    if has_pharmacy and profile != "pharmacy" and _PHARMACY_PRESCRIPTIONS_APP not in filtered:
+        filtered.append(_PHARMACY_PRESCRIPTIONS_APP)
+    if not has_pharmacy:
+        filtered = [app for app in filtered if app != _ERX_APP]
+
+    return filtered
+
+
+PRODUCT_APPS = _filter_product_apps(PRODUCT_APPS, CYMED_PRODUCT_PROFILE)
+
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PLATFORM_APPS + PRODUCT_APPS
 
 # ---------------------------------------------------------------------------

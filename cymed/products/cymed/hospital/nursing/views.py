@@ -94,7 +94,15 @@ class MedicationAdministrationViewSet(HospitalModelViewSet):
         return qs
 
     def _order(self, request, order_id):
-        from products.cymed.pharmacy.prescriptions.models import MedicationOrder
+        # The only cross-product coupling in hospital/clinic/pharmacy/lab/
+        # imaging (see [[cymed-standalone-products]] FK audit): a standalone
+        # Hospital deployment without the Pharmacy module installed can't
+        # resolve a medication order here. Degrade to a clear 409 instead
+        # of an ImportError/AppRegistryNotReady 500.
+        try:
+            from products.cymed.pharmacy.prescriptions.models import MedicationOrder
+        except ImportError:
+            return None
 
         return MedicationOrder.objects.filter(id=order_id, tenant_id=request.tenant_id).first()
 

@@ -1,0 +1,19 @@
+# Standalone CyMed Imaging deployment — see docker-compose.cymed-hospital.
+# override.yml for the usage pattern (same, with -p cymed-imaging and this
+# file). CYMED_PRODUCT_PROFILE=imaging — Imaging edition + shared clinical
+# core only.
+services:
+  backend:
+    environment:
+      CYMED_PRODUCT_PROFILE: imaging
+    ports: !override
+      - "${CYMED_IMAGING_PORT:-8215}:8000"
+  celery-worker:
+    environment:
+      CYMED_PRODUCT_PROFILE: imaging
+  celery-beat:
+    environment:
+      CYMED_PRODUCT_PROFILE: imaging
+  keycloak:
+    ports: !override
+      - "127.0.0.1:${CYMED_IMAGING_PORT_KEYCLOAK:-8295}:8080"
