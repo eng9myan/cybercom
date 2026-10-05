@@ -1,14 +1,21 @@
 """
-Pluggable key management with dev / AWS-KMS backends and stubs for Azure / GCP.
+Pluggable key management: local dev + 3 real cloud KMS backends.
 
 Backend selection via env var ``PLATFORM_KMS_BACKEND``:
-    local_dev          -> LocalDevKeyStore (default; insecure — filesystem)
-    aws_kms            -> AWSKmsKeyStore   (boto3 required)
-    azure_key_vault    -> AzureKeyVaultKeyStore (stub)
-    gcp_kms            -> GCPKeyStore      (stub)
+    local_dev          -> LocalDevKeyStore    (default; insecure — filesystem)
+    aws_kms            -> AWSKmsKeyStore      (boto3 required)
+    azure_key_vault    -> AzureKeyVaultKeyStore (azure-identity + azure-keyvault-keys)
+    gcp_kms            -> GCPKeyStore         (google-cloud-kms)
 
 All backends implement the same abstract surface: ``sign``, ``verify``,
 ``wrap`` (envelope encrypt), ``unwrap`` (envelope decrypt). Bytes-in / bytes-out.
+
+Azure/GCP are real implementations against each provider's documented API
+shape, same posture as every other "engine complete, needs a real account"
+integration in this repo (HyperPay, JoFotara, the e-invoicing national
+formats, ...) — neither has been exercised against a real Key Vault/KMS
+project (no account available), so treat as code-complete pending a real
+account to verify end to end before production use.
 """
 
 from __future__ import annotations
@@ -222,60 +229,195 @@ class AWSKmsKeyStore(KeyStore):
 
 
 # ---------------------------------------------------------------------------
-# Azure / GCP stubs
+# Azure Key Vault backend — real HSM-backed asymmetric keys.
 # ---------------------------------------------------------------------------
 class AzureKeyVaultKeyStore(KeyStore):
-    """Stub — implementation pending. See docs/security/kms-onboarding.md."""
+    """
+    Azure Key Vault-backed keystore (``azure-keyvault-keys`` + ``azure-identity``).
+
+    ``key_id`` is the key's name in the vault named by ``AZURE_KEY_VAULT_URL``
+    (``https://<vault>.vault.azure.net``), or a full key identifier URL
+    (``https://<vault>.vault.azure.net/keys/<name>/<version>``) to pin a
+    specific version. Auth via ``DefaultAzureCredential`` (managed identity /
+    env vars / `az login` — whatever's ambient; Azure's own chain).
+
+    Signing needs an EC (P-256) key in the vault and signs the SHA-256 digest
+    with ``ES256`` (Key Vault's `sign` takes a pre-hashed digest, not raw
+    data, for EC keys). Wrap/unwrap needs an RSA key and uses
+    ``RSA-OAEP-256`` direct encrypt/decrypt — correct for small payloads
+    (envelope-encrypting a DEK), not large documents; same caveat the AWS
+    backend's own docstring already states for `kms:Encrypt`.
+    """
 
     backend_name = "azure_key_vault"
     ONBOARDING_DOCS = (
         "https://docs.cybercom.local/security/kms-onboarding#azure-key-vault"
     )
 
-    def _fail(self):
-        raise NotImplementedError(
-            "AzureKeyVaultKeyStore is not yet implemented. Onboarding: "
-            f"{self.ONBOARDING_DOCS}"
-        )
+    def __init__(self, vault_url: Optional[str] = None) -> None:
+        try:
+            import azure.identity  # noqa: F401
+            import azure.keyvault.keys.crypto  # noqa: F401
+        except ImportError as exc:  # pragma: no cover
+            raise RuntimeError(
+                "AzureKeyVaultKeyStore requires azure-identity and azure-keyvault-keys. "
+                "Install with `pip install azure-identity azure-keyvault-keys`."
+            ) from exc
+        self.vault_url = vault_url or os.environ.get("AZURE_KEY_VAULT_URL")
+        if not self.vault_url:
+            raise RuntimeError(
+                "AzureKeyVaultKeyStore requires AZURE_KEY_VAULT_URL (e.g. "
+                "https://<vault>.vault.azure.net)."
+            )
+        self._credential = None
+        self._clients: dict[str, object] = {}
 
-    def sign(self, data: bytes, key_id: str) -> bytes:  # noqa: D401,ARG002
-        self._fail()
+    @property
+    def credential(self):
+        if self._credential is None:
+            from azure.identity import DefaultAzureCredential
 
-    def verify(self, data: bytes, sig: bytes, key_id: str) -> bool:  # noqa: ARG002
-        self._fail()
+            self._credential = DefaultAzureCredential()
+        return self._credential
 
-    def wrap(self, plaintext: bytes, key_id: str) -> bytes:  # noqa: ARG002
-        self._fail()
+    def _key_identifier(self, key_id: str) -> str:
+        return key_id if key_id.startswith("https://") else f"{self.vault_url}/keys/{key_id}"
 
-    def unwrap(self, ciphertext: bytes, key_id: str) -> bytes:  # noqa: ARG002
-        self._fail()
+    def _crypto_client(self, key_id: str):
+        ident = self._key_identifier(key_id)
+        client = self._clients.get(ident)
+        if client is None:
+            from azure.keyvault.keys.crypto import CryptographyClient
+
+            client = CryptographyClient(ident, self.credential)
+            self._clients[ident] = client
+        return client
+
+    def sign(self, data: bytes, key_id: str) -> bytes:
+        import hashlib
+
+        from azure.keyvault.keys.crypto import SignatureAlgorithm
+
+        digest = hashlib.sha256(data).digest()
+        result = self._crypto_client(key_id).sign(SignatureAlgorithm.es256, digest)
+        return result.signature
+
+    def verify(self, data: bytes, sig: bytes, key_id: str) -> bool:
+        import hashlib
+
+        from azure.keyvault.keys.crypto import SignatureAlgorithm
+
+        digest = hashlib.sha256(data).digest()
+        try:
+            result = self._crypto_client(key_id).verify(SignatureAlgorithm.es256, digest, sig)
+            return bool(result.is_valid)
+        except Exception as exc:  # pragma: no cover
+            logger.warning("azure_key_vault.verify_failed: %s", exc)
+            return False
+
+    def wrap(self, plaintext: bytes, key_id: str) -> bytes:
+        from azure.keyvault.keys.crypto import EncryptionAlgorithm
+
+        result = self._crypto_client(key_id).encrypt(EncryptionAlgorithm.rsa_oaep_256, plaintext)
+        return base64.b64encode(result.ciphertext)
+
+    def unwrap(self, ciphertext: bytes, key_id: str) -> bytes:
+        from azure.keyvault.keys.crypto import EncryptionAlgorithm
+
+        raw = base64.b64decode(ciphertext)
+        result = self._crypto_client(key_id).decrypt(EncryptionAlgorithm.rsa_oaep_256, raw)
+        return result.plaintext
 
 
+# ---------------------------------------------------------------------------
+# GCP Cloud KMS backend — real HSM/software-backed keys.
+# ---------------------------------------------------------------------------
 class GCPKeyStore(KeyStore):
-    """Stub — implementation pending. See docs/security/kms-onboarding.md."""
+    """
+    GCP Cloud KMS-backed keystore (``google-cloud-kms``).
+
+    ``key_id`` for `sign`/`verify` must be a full CryptoKeyVersion resource
+    name (``projects/P/locations/L/keyRings/R/cryptoKeys/K/cryptoKeyVersions/V``)
+    of an asymmetric-sign EC_SIGN_P256_SHA256 key. `wrap`/`unwrap` take a full
+    CryptoKey resource name (no version) of a symmetric ENCRYPT_DECRYPT key —
+    GCP KMS natively supports symmetric encrypt/decrypt server-side, the
+    closest match to the AWS backend's own semantics.
+
+    Cloud KMS has no server-side asymmetric `verify` RPC — this backend
+    fetches the public key once (`get_public_key`, cached per key_id) and
+    verifies locally via `cryptography`, the documented GCP pattern.
+    Auth is GCP's standard ambient credential chain (``GOOGLE_APPLICATION_
+    CREDENTIALS`` / workload identity / `gcloud auth`).
+    """
 
     backend_name = "gcp_kms"
     ONBOARDING_DOCS = (
         "https://docs.cybercom.local/security/kms-onboarding#gcp-kms"
     )
 
-    def _fail(self):
-        raise NotImplementedError(
-            "GCPKeyStore is not yet implemented. Onboarding: "
-            f"{self.ONBOARDING_DOCS}"
+    def __init__(self) -> None:
+        try:
+            from google.cloud import kms  # noqa: F401
+        except ImportError as exc:  # pragma: no cover
+            raise RuntimeError(
+                "GCPKeyStore requires google-cloud-kms. Install with "
+                "`pip install google-cloud-kms`."
+            ) from exc
+        self._client = None
+        self._public_keys: dict[str, object] = {}
+
+    @property
+    def client(self):
+        if self._client is None:
+            from google.cloud import kms
+
+            self._client = kms.KeyManagementServiceClient()
+        return self._client
+
+    def sign(self, data: bytes, key_id: str) -> bytes:
+        import hashlib
+
+        digest = hashlib.sha256(data).digest()
+        resp = self.client.asymmetric_sign(
+            request={"name": key_id, "digest": {"sha256": digest}}
         )
+        return resp.signature
 
-    def sign(self, data: bytes, key_id: str) -> bytes:  # noqa: ARG002
-        self._fail()
+    def _public_key(self, key_id: str):
+        pub = self._public_keys.get(key_id)
+        if pub is None:
+            from cryptography.hazmat.primitives import serialization
 
-    def verify(self, data: bytes, sig: bytes, key_id: str) -> bool:  # noqa: ARG002
-        self._fail()
+            resp = self.client.get_public_key(request={"name": key_id})
+            pub = serialization.load_pem_public_key(resp.pem.encode("utf-8"))
+            self._public_keys[key_id] = pub
+        return pub
 
-    def wrap(self, plaintext: bytes, key_id: str) -> bytes:  # noqa: ARG002
-        self._fail()
+    def verify(self, data: bytes, sig: bytes, key_id: str) -> bool:
+        import hashlib
 
-    def unwrap(self, ciphertext: bytes, key_id: str) -> bytes:  # noqa: ARG002
-        self._fail()
+        from cryptography.exceptions import InvalidSignature
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import ec
+
+        try:
+            pub = self._public_key(key_id)
+            pub.verify(sig, data, ec.ECDSA(hashes.SHA256()))
+            return True
+        except InvalidSignature:
+            return False
+        except Exception as exc:  # pragma: no cover
+            logger.warning("gcp_kms.verify_failed: %s", exc)
+            return False
+
+    def wrap(self, plaintext: bytes, key_id: str) -> bytes:
+        resp = self.client.encrypt(request={"name": key_id, "plaintext": plaintext})
+        return base64.b64encode(resp.ciphertext)
+
+    def unwrap(self, ciphertext: bytes, key_id: str) -> bytes:
+        raw = base64.b64decode(ciphertext)
+        resp = self.client.decrypt(request={"name": key_id, "ciphertext": raw})
+        return resp.plaintext
 
 
 # ---------------------------------------------------------------------------

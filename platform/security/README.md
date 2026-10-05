@@ -59,8 +59,8 @@ For staging / production choose a real HSM-backed backend:
 | Backend | `PLATFORM_KMS_BACKEND` | Status |
 |---|---|---|
 | AWS KMS | `aws_kms` | Ready — requires `boto3` and IAM `kms:Sign / Verify / Encrypt / Decrypt` |
-| Azure Key Vault | `azure_key_vault` | Stub — see `docs/security/kms-onboarding.md` |
-| GCP KMS | `gcp_kms` | Stub — see `docs/security/kms-onboarding.md` |
+| Azure Key Vault | `azure_key_vault` | Ready (code) — requires `azure-identity` + `azure-keyvault-keys`, `AZURE_KEY_VAULT_URL`, an EC (P-256) key for sign/verify and an RSA key for wrap/unwrap. **Not yet verified against a real vault.** |
+| GCP KMS | `gcp_kms` | Ready (code) — requires `google-cloud-kms`, an `EC_SIGN_P256_SHA256` asymmetric key for sign/verify and a symmetric `ENCRYPT_DECRYPT` key for wrap/unwrap. **Not yet verified against a real project.** |
 
 The `KeyStore` interface is bytes-in / bytes-out and identical across
 backends: swap the env var, rotate the key ids, redeploy — application code
