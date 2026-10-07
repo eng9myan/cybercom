@@ -74,3 +74,31 @@ class TestBulkhead:
 class Exploding(CompletionProvider):
     def complete(self, *a, **k):
         raise RuntimeError("model down")
+
+
+@pytest.mark.django_db
+class TestMeteringNeverFailsARequest:
+    """A failed usage-log write must not turn a safety answer into a 500 (found by running 20,000 questions on SQLite)."""
+
+    @pytest.fixture
+    def broken_log(self, monkeypatch):
+        from products.cymart.partners.models import PartnerCallLog
+
+        def boom(*a, **k):
+            raise RuntimeError("database is locked")
+        monkeypatch.setattr(PartnerCallLog.objects, "create", boom)
+
+    def test_every_endpoint_still_answers(self, broken_log):
+        c = client()
+        item = {"item_id": "x", "calories": 100, "carbs_g": 1, "ingredients": ["rice"], "diet_tags": []}
+        assert c.post("/api/v1/partner/evaluate/", EVAL, format="json").status_code == 200
+        assert c.post("/api/v1/partner/rank/", {"profile": {}, "items": [item]}, format="json").status_code == 200
+        assert c.post("/api/v1/partner/prepare/", {"profile": {}, "items": [item]}, format="json").status_code == 200
+        assert c.post("/api/v1/partner/agent/turn/", MSG, format="json").status_code == 200
+        assert c.post("/api/v1/partner/plan/targets/", {"intake": {"sex": "male", "age": 30, "height_cm": 180, "weight_kg": 80}}, format="json").status_code == 200
+
+    def test_the_failure_is_logged_for_reconciliation(self, broken_log, caplog):
+        import logging
+        with caplog.at_level(logging.ERROR, logger="products.cymart.partners.metering"):
+            client().post("/api/v1/partner/evaluate/", EVAL, format="json")
+        assert "usage metering failed" in caplog.text

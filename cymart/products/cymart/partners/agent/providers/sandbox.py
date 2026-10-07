@@ -12,6 +12,7 @@ import re
 
 from ...i18n import normalise, t
 from ..tools import MAX_GUESTS, cart_from_transcript, items_seen, party_from_transcript
+from . import scope
 from .base import Completion, CompletionProvider, ToolCall
 
 FILLERS = {
@@ -161,16 +162,43 @@ class SandboxCompletionProvider(CompletionProvider):
     # ── reacting to the customer ────────────────────────────────────────────
     def _on_user(self, lang, messages, text, offered) -> Completion:
         s = S[lang]
-        norm = normalise(text)
+        cleaned = scope.clean(text)
+        norm = cleaned or normalise(text)
         words = norm.split()
-        if norm in CANCEL:
+        ranked_now = self._last_ranked(messages)
+        has_cart = bool(cart_from_transcript(messages))
+        # 0) ordering for people who have no plan comes first (the sentence may also mention an allergy of theirs)
+        party = parse_party(text)
+        if party is not None and not scope.INJECTION.search(text.lower()):
+            guests, allergies, _ = party
+            args = {"guests": guests, **({"guest_allergies": allergies} if allergies else {})}
+            return Completion(tool_calls=[ToolCall("set_party", args)])
+        # 1) everything that is not "find me food": the scripted answers (see scope.py)
+        kind = scope.classify(lang, norm, text, has_cart, ranked_now)
+        if kind == "plan_q":
+            return Completion(tool_calls=[ToolCall("plan_summary", {})])
+        if kind:
+            ar = lang == "ar" or bool(re.search("[؀-ۿ]", text))
+            return Completion(text=scope.R["ar" if ar else lang][kind])
+        # 2) quantities: "make it 3", "2 of the first", "double"
+        if ranked_now and re.fullmatch(r"\d+", norm) and int(norm) > 20:
+            return Completion(text=scope.R[lang]["qty_limit"])
+        q = scope.quantity(norm, ranked_now)
+        if q is not None and "add_to_cart" in offered:
+            idx, n = q
+            if n > 20:
+                return Completion(text=scope.R[lang]["qty_limit"])
+            guests, _ = party_from_transcript(messages)
+            args = {"item_id": str(ranked_now[idx]["item_id"]), "quantity": n, **({"for_diner": "me"} if guests else {})}
+            return Completion(tool_calls=[ToolCall("add_to_cart", args)])
+        if norm in CANCEL or scope.is_cancel(norm):
             return Completion(text=s["cancelled"])
-        if norm in CONFIRM or " ".join(words[:2]) in CONFIRM:
+        if norm in CONFIRM or " ".join(words[:2]) in CONFIRM or scope.is_confirm(norm):
             if not cart_from_transcript(messages):
                 return Completion(text=s["cart_empty"])
             if "checkout" in offered:
                 return Completion(tool_calls=[ToolCall("checkout", {})])
-        if ("cart" in words or normalise("السلة") in words or normalise("سلتي") in words) and "view_cart" in offered:
+        if (scope.is_cart_view(norm) or "cart" in words or normalise("السلة") in words or normalise("سلتي") in words) and "view_cart" in offered:
             return Completion(tool_calls=[ToolCall("view_cart", {})])
 
         party = parse_party(text)
@@ -181,6 +209,9 @@ class SandboxCompletionProvider(CompletionProvider):
 
         ranked = self._last_ranked(messages)
         choice = self._choice(norm, words, ranked)
+        if choice is None and ranked:
+            k = scope.choice_index(norm, len(ranked))
+            choice = str(ranked[k]["item_id"]) if k is not None else None
         if choice is not None:
             if "add_to_cart" in offered:
                 guests, _ = party_from_transcript(messages)
@@ -230,6 +261,9 @@ class SandboxCompletionProvider(CompletionProvider):
         seen, _ = items_seen(messages)
         if not isinstance(p, dict):
             return Completion(text=s["error"].format(error=str(p)[:100]))
+
+        if name == "plan_summary":
+            return Completion(text=scope.plan_text(lang, p))
 
         if name == "set_party":
             guests, allergies = party_from_transcript(messages)

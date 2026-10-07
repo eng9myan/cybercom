@@ -23,6 +23,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .allergens import allergies_of
 from .i18n import join_list, normalise, t
 
 _SEVERITY_RANK = {"allow": 0, "warn": 1, "block": 2, "hard_block": 3}
@@ -93,7 +94,6 @@ class PartnerEvaluation:
 class PartnerShieldEngine:
     def __init__(self, lang: str = "en"):
         self.lang = lang if lang in ("en", "ar") else "en"
-        self._allergy_orig: dict[str, str] = {}
 
     def evaluate(
         self, profile: dict, items: list[dict], cumulative: bool = False
@@ -111,8 +111,7 @@ class PartnerShieldEngine:
         in order, and each item that passes uses up part of the remaining
         budget before the next is checked."""
         strictness = profile.get("strictness", "balanced")
-        allergies = _tokens(profile.get("allergies"))
-        self._allergy_orig = _originals(profile.get("allergies"))
+        allergies = allergies_of(profile.get("allergies"))
         regimes = profile.get("regimes") or []
         remaining = profile.get("remaining_calories")
 
@@ -137,9 +136,8 @@ class PartnerShieldEngine:
     def check_item(self, profile: dict, item: dict) -> PartnerLineVerdict:
         """One item against one profile, on its own (no basket budget, no
         swap lookup) — the building block /rank/ filters with."""
-        self._allergy_orig = _originals(profile.get("allergies"))
         return self._evaluate_item(
-            item, _tokens(profile.get("allergies")), profile.get("regimes") or [],
+            item, allergies_of(profile.get("allergies")), profile.get("regimes") or [],
             profile.get("remaining_calories"), profile.get("strictness", "balanced"),
         )
 
@@ -154,9 +152,8 @@ class PartnerShieldEngine:
         lang = self.lang
 
         if allergies:
-            hit = _allergy_hit(allergies, ingredients)
-            if hit:
-                matched = sorted(self._allergy_orig.get(h, h) for h in hit)
+            matched = allergies.hits(ingredients)
+            if matched:
                 return PartnerLineVerdict(
                     item_id, "hard_block", CODE_ALLERGEN,
                     t(lang, CODE_ALLERGEN, matched=join_list(lang, matched)), matched,

@@ -4,7 +4,7 @@ These are a STARTING POINT for the platform's nutrition or compliance team to re
 they are not clinical guidance and not a certification (for example, "halal" here only blocks
 obviously non-halal ingredients; it does not verify slaughter or certification).
 
-Remember the matching rule: allergies match partially ("peanut" also catches "peanut sauce"),
+Remember the matching rule: allergies match partially ("peanut" also catches "peanut sauce") and by group ("dairy" catches "cheese", see allergens.py),
 but regime ingredients match WHOLE names, so list the variants your catalog uses.
 """
 

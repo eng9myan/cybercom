@@ -22,7 +22,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .engine import PartnerShieldEngine, _allergy_hit, _originals, _tokens
+from .allergens import Allergies, allergies_of
+from .engine import PartnerShieldEngine, _tokens
 from .i18n import join_list, normalise, t
 
 STATUS_OK = "ok"
@@ -51,9 +52,9 @@ def _blocked_by_regime(regimes: list[dict], name: str, ingredients: list[str]) -
     return any(_tokens(r.get("block_ingredients")) & toks for r in regimes)
 
 
-def _option_is_safe(opt: dict, allergies: set[str], regimes: list[dict]) -> bool:
+def _option_is_safe(opt: dict, allergies: Allergies, regimes: list[dict]) -> bool:
     parts = [opt.get("name", ""), *(opt.get("ingredients") or [])]
-    if allergies and _allergy_hit(allergies, _tokens(parts)):
+    if allergies and allergies.hits(_tokens(parts)):
         return False
     return not _blocked_by_regime(regimes, opt.get("name", ""), list(opt.get("ingredients") or []))
 
@@ -81,8 +82,7 @@ class KitchenInstructions:
 
     def prepare(self, profile: dict, item: dict) -> PrepareResult:
         lang = self.lang
-        allergies = _tokens(profile.get("allergies"))
-        allergy_orig = _originals(profile.get("allergies"))
+        allergies = allergies_of(profile.get("allergies"))
         regimes = profile.get("regimes") or []
         work = {
             **item,
@@ -95,7 +95,7 @@ class KitchenInstructions:
         unresolved: list[dict] = []
 
         if allergies:
-            names = sorted(allergy_orig.get(a, a) for a in allergies)
+            names = list(allergies.names)
             instructions.append({
                 "type": "allergy_alert", "priority": "critical", "allergens": names,
                 "reason_code": "allergen_conflict",
@@ -130,7 +130,7 @@ class KitchenInstructions:
         # 1) Ingredients that conflict with an allergy or a diet rule.
         for ingredient in list(work["ingredients"]):
             tok = _norm(ingredient)
-            allergen = sorted(allergy_orig.get(a, a) for a in allergies if _allergy_hit({a}, {tok}))
+            allergen = allergies.hits({tok}) if allergies else []
             regime_codes = [str(r.get("code", "")).lower() for r in regimes
                             if tok in _tokens(r.get("block_ingredients"))]
             if not allergen and not regime_codes:

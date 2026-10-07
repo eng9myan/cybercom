@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 
 from .. import schema  # noqa: F401
 from ..auth import PartnerAPIKeyAuthentication
-from ..models import PartnerCallLog
+from ..metering import record_usage
 from ..throttle import AgentRateThrottle, PartnerRateThrottle
 from .orchestrator import AgentOrchestrator
 from .serializers import AgentTurnRequestSerializer
@@ -58,7 +58,7 @@ class PartnerAgentTurnView(APIView):
         finally:
             _slots.release()
 
-        PartnerCallLog.objects.create(partner=request.partner, item_count=min(result.steps, 32000))
+        record_usage(request.partner, result.steps)
         return Response({
             "language": data["language"],
             "status": result.status,

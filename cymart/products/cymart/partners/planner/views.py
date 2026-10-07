@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from .. import schema  # noqa: F401
 from ..auth import PartnerAPIKeyAuthentication
-from ..models import PartnerCallLog
+from ..metering import record_usage
 from ..throttle import PartnerRateThrottle
 from .basket import build_basket
 from .serializers import BasketRequestSerializer, TargetsRequestSerializer, WeekRequestSerializer
@@ -27,7 +27,7 @@ class _PlannerView(APIView):
 
     @staticmethod
     def meter(request, n):
-        PartnerCallLog.objects.create(partner=request.partner, item_count=min(n, 32000))
+        record_usage(request.partner, n)
 
 
 class PlanTargetsView(_PlannerView):

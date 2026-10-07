@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from . import schema  # noqa: F401  (registers the API-key scheme for the docs)
 from .auth import PartnerAPIKeyAuthentication
 from .engine import PartnerShieldEngine
-from .models import PartnerCallLog
+from .metering import record_usage
 from .prepare import KitchenInstructions
 from .ranking import PartnerRanker
 from .throttle import PartnerRateThrottle
@@ -32,7 +32,7 @@ class PartnerEvaluateView(APIView):
         result = PartnerShieldEngine(data["language"]).evaluate(
             data["profile"], data["items"], cumulative=data["cumulative"]
         )
-        PartnerCallLog.objects.create(partner=request.partner, item_count=len(data["items"]))
+        record_usage(request.partner, len(data["items"]))
 
         return Response(
             {
@@ -74,7 +74,7 @@ class PartnerRankView(APIView):
             data["profile"], data["items"], limit=data["limit"],
             include_warnings=data["include_warnings"],
         )
-        PartnerCallLog.objects.create(partner=request.partner, item_count=len(data["items"]))
+        record_usage(request.partner, len(data["items"]))
 
         return Response(
             {
@@ -121,7 +121,7 @@ class PartnerPrepareView(APIView):
 
         kitchen = KitchenInstructions(data["language"])
         results = [kitchen.prepare(data["profile"], item) for item in data["items"]]
-        PartnerCallLog.objects.create(partner=request.partner, item_count=len(data["items"]))
+        record_usage(request.partner, len(data["items"]))
 
         statuses = {r.status for r in results}
         return Response(
