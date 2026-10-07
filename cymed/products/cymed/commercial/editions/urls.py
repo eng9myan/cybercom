@@ -7,6 +7,7 @@ from products.cymed.commercial.editions.views import (
     EditionModuleViewSet,
     ProductCatalogEntryViewSet,
     ProductEditionViewSet,
+    TenantProductSubscriptionViewSet,
 )
 
 router = DefaultRouter()
@@ -15,5 +16,6 @@ router.register("editions", ProductEditionViewSet)
 router.register("edition-features", EditionFeatureViewSet)
 router.register("edition-limits", EditionLimitViewSet)
 router.register("edition-modules", EditionModuleViewSet)
+router.register("tenant-subscriptions", TenantProductSubscriptionViewSet, basename="tenant-product-subscription")
 
 urlpatterns = [path("", include(router.urls))]

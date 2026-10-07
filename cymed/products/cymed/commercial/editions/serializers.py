@@ -6,6 +6,7 @@ from products.cymed.commercial.editions.models import (
     EditionModule,
     ProductCatalogEntry,
     ProductEdition,
+    TenantProductSubscription,
 )
 
 
@@ -40,4 +41,13 @@ class ProductEditionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductEdition
+        fields = "__all__"
+
+
+class TenantProductSubscriptionSerializer(serializers.ModelSerializer):
+    product_code = serializers.CharField(source="product.code", read_only=True)
+    edition_code = serializers.CharField(source="edition.code", read_only=True)
+
+    class Meta:
+        model = TenantProductSubscription
         fields = "__all__"

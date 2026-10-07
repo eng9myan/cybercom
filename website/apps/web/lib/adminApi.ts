@@ -1,6 +1,10 @@
 import { tokenStore } from "./auth/tokens";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// CyMed is its own Django service/deployment, separate from the platform API
+// above — the same platform_admin bearer token is valid against both (shared
+// Keycloak realm across every CyberCom product).
+const CYMED_API_BASE_URL = process.env.NEXT_PUBLIC_CYMED_API_URL || "http://localhost:8095";
 
 export interface Tenant {
   id: string;
@@ -51,9 +55,9 @@ export interface TenantSubscriptionInvoice {
   updated_at: string;
 }
 
-async function authedFetch<T>(path: string, init?: RequestInit): Promise<T> {
+async function authedFetch<T>(path: string, init?: RequestInit, baseUrl = API_BASE_URL): Promise<T> {
   const token = tokenStore.getAccessToken();
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(`${baseUrl}${path}`, {
     ...init,
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -67,6 +71,38 @@ async function authedFetch<T>(path: string, init?: RequestInit): Promise<T> {
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+function cymedFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  return authedFetch<T>(path, init, CYMED_API_BASE_URL);
+}
+
+export interface CymedProduct {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface CymedEdition {
+  id: string;
+  product: string;
+  code: string;
+  name: string;
+  tier: string;
+  is_active: boolean;
+}
+
+export interface CymedTenantProductSubscription {
+  id: string;
+  tenant_id: string;
+  product: string;
+  product_code: string;
+  edition: string;
+  edition_code: string;
+  is_active: boolean;
+  started_at: string;
+  ends_at: string | null;
 }
 
 interface Paginated<T> {
@@ -110,5 +146,45 @@ export const adminApi = {
   },
   async activateTenant(id: string): Promise<Tenant> {
     return authedFetch<Tenant>(`/api/v1/tenants/${id}/activate/`, { method: "POST" });
+  },
+
+  async listCymedProducts(): Promise<CymedProduct[]> {
+    return unwrap(
+      await cymedFetch<Paginated<CymedProduct> | CymedProduct[]>(
+        "/api/v1/commercial/editions/products/",
+      ),
+    );
+  },
+  async listCymedEditions(): Promise<CymedEdition[]> {
+    return unwrap(
+      await cymedFetch<Paginated<CymedEdition> | CymedEdition[]>(
+        "/api/v1/commercial/editions/editions/",
+      ),
+    );
+  },
+  async listCymedTenantSubscriptions(): Promise<CymedTenantProductSubscription[]> {
+    return unwrap(
+      await cymedFetch<Paginated<CymedTenantProductSubscription> | CymedTenantProductSubscription[]>(
+        "/api/v1/commercial/editions/tenant-subscriptions/",
+      ),
+    );
+  },
+  async grantCymedProduct(
+    tenantId: string,
+    productCode: string,
+    editionCode: string,
+  ): Promise<CymedTenantProductSubscription> {
+    return cymedFetch<CymedTenantProductSubscription>(
+      "/api/v1/commercial/editions/tenant-subscriptions/grant/",
+      {
+        method: "POST",
+        body: JSON.stringify({ tenant_id: tenantId, product_code: productCode, edition_code: editionCode }),
+      },
+    );
+  },
+  async revokeCymedProduct(subscriptionId: string): Promise<void> {
+    return cymedFetch<void>(`/api/v1/commercial/editions/tenant-subscriptions/${subscriptionId}/`, {
+      method: "DELETE",
+    });
   },
 };

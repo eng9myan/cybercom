@@ -5,7 +5,7 @@ import { usePathname, useParams, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, ShoppingBag, Package,
   TrendingUp, Settings, Bell, LogOut, ChevronRight,
-  Shield, Menu, X, BarChart3, Loader2, Receipt,
+  Shield, Menu, X, BarChart3, Loader2, Receipt, Stethoscope,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { tokenStore } from "@/lib/auth/tokens";
@@ -17,6 +17,7 @@ const NAV = [
   { href: "/en/admin/subscriptions", label: "Subscriptions", icon: ShoppingBag },
   { href: "/en/admin/invoices", label: "Invoices", icon: Receipt },
   { href: "/en/admin/products", label: "Products", icon: Package },
+  { href: "/en/admin/cymed-access", label: "CyMed Access", icon: Stethoscope },
 ];
 
 const PUBLIC_ADMIN_PATHS = ["/admin/login", "/admin/auth/callback"];
