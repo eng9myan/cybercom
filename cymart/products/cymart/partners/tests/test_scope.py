@@ -138,3 +138,39 @@ class TestCommandsTolerateRealLife:
     def test_choose_the_first(self, text):
         r = ask(text, searched())
         assert r.status == "tool_calls" and r.tool_calls[0]["name"] == "add_to_cart", (text, r.status, r.reply)
+
+
+class TestFoundByTheOrderingScripts:
+    """Each of these was a real bug the ordering scripts (testing/orders) caught."""
+
+    def query_of(self, text):
+        r = ask(text)
+        assert r.status == "tool_calls" and r.tool_calls[0]["name"] == "search_menu", (text, r.status, r.reply)
+        return r.tool_calls[0]["arguments"]["query"].lower()
+
+    def test_salad_is_a_dish_not_a_typo_of_salam(self):
+        assert self.query_of("salad") == "salad"
+
+    def test_politeness_is_not_part_of_the_search(self):
+        assert self.query_of("burger please!!") == "burger"
+        assert self.query_of("Bunless Burger pls") == "bunless burger"
+
+    def test_voice_fillers_inside_a_sentence_are_dropped(self):
+        assert self.query_of("uh i want a uh burger") == "burger"
+
+    def test_a_name_with_punctuation_is_kept_intact(self):
+        assert self.query_of("Egg & Avocado Plate please") == "egg & avocado plate"
+
+    def test_make_it_n_is_a_quantity_not_a_kitchen_request(self):
+        r = ask("make it 50", searched_cart())
+        no_side_effects(r)
+        assert "20" in r.reply
+
+    def test_a_bare_number_with_nothing_to_pick_from_does_not_search(self):
+        r = ask("1")
+        no_side_effects(r)
+        assert "first" in r.reply.lower()
+
+    def test_the_rest_of_a_group_sentence_is_not_a_dish(self):
+        r = ask("for me and 2 friends, they don't have a plan")
+        assert r.status == "reply" and "guest" in r.reply and "plan" in r.reply

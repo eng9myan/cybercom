@@ -17,7 +17,7 @@ from .base import Completion, CompletionProvider, ToolCall
 
 FILLERS = {
     "en": set("i want to order get give me show find a an some please can you would like something with the for my "
-              "need looking look eat have lets let's i'd i'll hungry food some".split()),
+              "need looking look eat have lets let's i'd i'll hungry food some uh um umm uhh ummm hmm hm eh ah er yeah yep well whatever guess like wanna gimme".split()),
     "ar": {normalise(w) for w in "اريد أريد ابغى ابي بدي عايز عاوز اطلب أطلب اعطني أعطني ممكن لو سمحت من فضلك وجبة شيء اي أي".split()},
 }
 CONFIRM = {normalise(w) for w in "yes yep confirm ok okay sure go ahead place order place it checkout نعم اجل أجل تمام موافق اكد أكد أكّد تأكيد تاكيد".split()}
@@ -105,6 +105,9 @@ _GROUP_PATTERNS = [
     re.compile(r"(?:لي\s+)?ول?(صديقين|صديقان)"),
 ]
 _ALLERGY = [re.compile(r"\ballerg\w*\s+(?:to|of|from)\s+([^.;?!]+)"), re.compile(r"حساسيه\s+(?:من|ل)\s*([^.;?!]+)")]
+GROUP_FUNCTION_WORDS = set("they their them he she it is are was be do does don't dont doesn't didn't have has had a an the and or but also who that this these those with without "
+                           "to of for from on in at as so just only really anyone anything everything something plan diet allergic allergy allergies aren't isn't not no yes eat eating "
+                           "joining coming over arriving here there too as well ما عندهم عندي عنده خطه خطتي ليس لديهم بدون معي معنا ضيوف اصدقاء اصحاب انا هم هو هي كل شي حميه".split())
 GROUP_FILLERS = set("full meal meals person persons people them us of not no without plan from on in are is and also friends friend "
                     "guests guest allergic allergy to dont don't aren't isn't have has do does me my ordering order "
                     "كامله كامل اشخاص شخص منهم لديهم خطه خطتي عندهم وجبات لشخصين".split())
@@ -220,8 +223,10 @@ class SandboxCompletionProvider(CompletionProvider):
         elif ranked and re.fullmatch(r"\s*(number|option|رقم)?\s*\d+\s*", norm):
             return Completion(text=s["unknown_choice"])
 
+        if not ranked and (re.fullmatch(r"(number |option |#)?\d+", norm) or scope.choice_index(norm, 3) is not None):
+            return Completion(text=s["nothing_to_pick"])
         fillers = FILLERS[lang] | FILLERS["en"]
-        query = " ".join(w for w in text.replace("،", " ").split() if normalise(w) not in fillers).strip(" ?!.,")
+        query = " ".join(w for w in scope.search_text(text).split() if normalise(w) not in fillers).strip(" ?!.,")
         if not query:
             return Completion(text=s["ask"] if not ranked else s["unknown_choice"])
         if "search_menu" in offered:
@@ -273,8 +278,9 @@ class SandboxCompletionProvider(CompletionProvider):
             parsed = parse_party(user)
             rest = parsed[2] if parsed else user
             fillers = FILLERS["en"] | FILLERS[lang] | GROUP_FILLERS | {normalise(w) for w in GROUP_FILLERS}
-            query = " ".join(w for w in rest.replace("،", " ").split()
-                             if normalise(w) not in fillers and not w.isdigit() and normalise(w).lstrip("ل") not in _NUMW).strip(" ?!.,")
+            fillers = fillers | {normalise(w) for w in GROUP_FUNCTION_WORDS}
+            query = " ".join(w for w in rest.replace("،", " ").replace(",", " ").split()
+                             if normalise(w).strip("?!.,'") not in fillers and not w.isdigit() and normalise(w).lstrip("ل") not in _NUMW).strip(" ?!.,")
             if query:
                 return Completion(tool_calls=[ToolCall("search_menu", {"query": query[:200], "limit": 20})])
             part = s["party_allergies"].format(allergies=", ".join(allergies)) if allergies else s["party_no_allergies"]

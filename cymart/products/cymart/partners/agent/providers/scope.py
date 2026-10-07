@@ -231,7 +231,7 @@ def classify(lang: str, c: str, raw: str, has_cart: bool, ranked: list) -> str |
     if WEEK.search(low) or (ar and WEEK_AR.search(c)):
         return "week"
     question_form = "?" in raw or "؟" in raw or bool(re.match(r"^(is|are|does|do|can|will|would|any|how many|what|ingredients|carbs|calories|هل|كم|شو|في|ممكن)\b", c))
-    if re.match(r"(no|number|option|رقم|الخيار|#)\s*\d+\b", c) or re.match(r"(number|option)\s*(one|two|three)\b", c):
+    if re.match(r"(no|number|option|رقم|الخيار|#|make it|x|خليها)\s*\d+\b", c) or re.match(r"(number|option)\s*(one|two|three)\b", c):
         return None                     # "no.2" / "option 1" choose an option, they are not requests
     if ALLERGY_STMT.search(low) and not (SAFETY_Q.search(low) and question_form) or (ar and ALLERGY_STMT_AR.search(c) and not SAFETY_Q_AR.search(c) and "هل" not in c.split()):
         return "allergy"
@@ -246,7 +246,7 @@ def classify(lang: str, c: str, raw: str, has_cart: bool, ranked: list) -> str |
             return table[0]
     if 1 <= len(c.split()) <= 4 and len(c) >= 4 and c.isascii():
         import difflib
-        near = difflib.get_close_matches(c, list(_SMALL_PHRASES), n=1, cutoff=0.8)
+        near = difflib.get_close_matches(c, list(_SMALL_PHRASES), n=1, cutoff=0.86)
         if near:
             return _SMALL_PHRASES[near[0]]
     if ranked and (ALTERNATIVES.search(c) or (ar and ALTERNATIVES_AR.search(c))):
@@ -367,3 +367,28 @@ def choice_index(c: str, n: int):
         if word in ORD and ORD[word] <= n and word not in ("one", "two", "three"):
             return ORD[word] - 1
     return None
+
+
+def search_text(text: str) -> str:
+    """The customer's words with the politeness and emoji at the two ends taken off, but everything inside kept as typed
+    ("Egg & Avocado Plate" stays as it is): what is sent to the platform's search."""
+    toks = str(text).replace("،", " ").split()
+
+    def bare(t):
+        return normalise(_SYMBOLS.sub("", t.translate(_ARNUM))).replace("’", "'")
+
+    changed = True
+    while toks and changed:
+        changed = False
+        for n in (3, 2, 1):                       # multi-word filler first ("thank you", "if possible", "for me")
+            if len(toks) > n and " ".join(bare(t) for t in toks[:n]) in _FLUFF_SET and not all(bare(t) == "" for t in toks[:n]):
+                toks, changed = toks[n:], True
+                break
+            if len(toks) > n and " ".join(bare(t) for t in toks[-n:]) in _FLUFF_SET:
+                toks, changed = toks[:-n], True
+                break
+        if toks and not bare(toks[-1]) and len(toks) > 1:     # a trailing emoji or "!!"
+            toks, changed = toks[:-1], True
+        if toks and not bare(toks[0]) and len(toks) > 1:
+            toks, changed = toks[1:], True
+    return " ".join(toks)
