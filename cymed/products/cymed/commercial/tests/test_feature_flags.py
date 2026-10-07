@@ -134,6 +134,19 @@ class TestFeatureFlagService:
         assert TenantFeature.objects.filter(tenant_id=TENANT).count() >= 2
 
     @patch("products.cymed.commercial.feature_flags.services.cache")
+    def test_enable_for_edition_enables_the_editions_features(self, mock_cache, flag, flag_disabled):
+        mock_cache.get.return_value = None
+        count = FeatureFlagService.enable_for_edition(str(TENANT), "cymed_clinic", "starter")
+        assert count > 0
+        assert FeatureFlagService.is_enabled("clinic.appointments", tenant_id=str(TENANT)) is True
+
+    @patch("products.cymed.commercial.feature_flags.services.cache")
+    def test_enable_for_edition_unknown_product_is_a_noop(self, mock_cache, db):
+        mock_cache.get.return_value = None
+        count = FeatureFlagService.enable_for_edition(str(TENANT), "no_such_product", "x")
+        assert count == 0
+
+    @patch("products.cymed.commercial.feature_flags.services.cache")
     def test_cache_hit_returns_cached_value(self, mock_cache, flag):
         mock_cache.get.return_value = False
         result = FeatureFlagService.is_enabled("clinic.appointments", tenant_id=str(TENANT))

@@ -101,6 +101,19 @@ class FeatureFlagService:
             count += 1
         return count
 
+    @classmethod
+    def enable_for_edition(cls, tenant_id: str, product_code: str, edition_code: str) -> int:
+        """Turn on every feature code EDITION_FEATURE_MAP lists for product:edition.
+        Shared by SubscriptionService (billing-driven provisioning) and
+        TenantProductSubscriptionViewSet.grant (admin-driven provisioning) —
+        the two paths a tenant's edition can change from. Additive only: a
+        downgrade does not turn OFF features the previous, richer edition
+        already enabled."""
+        features = EDITION_FEATURE_MAP.get(f"{product_code}:{edition_code}", [])
+        if not features:
+            return 0
+        return cls.bulk_enable_edition_features(tenant_id, features)
+
 
 # Edition → feature code mapping
 CLINIC_STARTER_FEATURES = [

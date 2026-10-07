@@ -62,15 +62,9 @@ class SubscriptionService:
         product/edition (e.g. cymed_laboratory:basic) never actually gets
         enabled, so every gated ViewSet keeps rejecting it.
         """
-        from products.cymed.commercial.feature_flags.services import (
-            EDITION_FEATURE_MAP,
-            FeatureFlagService,
-        )
+        from products.cymed.commercial.feature_flags.services import FeatureFlagService
 
-        edition_key = f"{plan.product_code}:{plan.edition_code}"
-        features = EDITION_FEATURE_MAP.get(edition_key, [])
-        if features:
-            FeatureFlagService.bulk_enable_edition_features(tenant_id, features)
+        FeatureFlagService.enable_for_edition(tenant_id, plan.product_code, plan.edition_code)
 
     @classmethod
     def renew_subscription(cls, subscription: Subscription) -> Subscription:

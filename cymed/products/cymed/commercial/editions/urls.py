@@ -5,6 +5,7 @@ from products.cymed.commercial.editions.views import (
     EditionFeatureViewSet,
     EditionLimitViewSet,
     EditionModuleViewSet,
+    MyEntitlementsView,
     ProductCatalogEntryViewSet,
     ProductEditionViewSet,
     TenantProductSubscriptionViewSet,
@@ -18,4 +19,7 @@ router.register("edition-limits", EditionLimitViewSet)
 router.register("edition-modules", EditionModuleViewSet)
 router.register("tenant-subscriptions", TenantProductSubscriptionViewSet, basename="tenant-product-subscription")
 
-urlpatterns = [path("", include(router.urls))]
+urlpatterns = [
+    path("my-entitlements/", MyEntitlementsView.as_view(), name="cymed-my-entitlements"),
+    path("", include(router.urls)),
+]

@@ -2,7 +2,9 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from platform.api.permissions import IsAuthenticatedViaClaims
 from platform.api.tenancy import is_platform_admin
 from products.cymed.commercial.editions.models import (
     EditionFeature,
@@ -117,4 +119,38 @@ class TenantProductSubscriptionViewSet(viewsets.ModelViewSet):
             product=edition.product,
             defaults={"edition": edition, "is_active": True},
         )
+        # Without this, the tenant passes ProductEntitlementMiddleware's
+        # product-boundary gate but still 403s on every endpoint behind a
+        # `required_feature` check — granting only ever created the
+        # TenantProductSubscription row, never the feature flags the
+        # existing ~37 gated ViewSets actually read. Same helper
+        # SubscriptionService's billing-driven provisioning flow uses, so
+        # there's one source of truth (EDITION_FEATURE_MAP) for both paths.
+        from products.cymed.commercial.feature_flags.services import FeatureFlagService
+
+        FeatureFlagService.enable_for_edition(str(tenant_id), edition.product.code, edition.code)
         return Response(TenantProductSubscriptionSerializer(sub).data, status=200)
+
+
+class MyEntitlementsView(APIView):
+    """
+    GET /api/v1/commercial/editions/my-entitlements/ — the signed-in tenant's
+    own entitled CyMed product codes, for a frontend nav to hide what a
+    tenant hasn't bought. Mirrors ProductEntitlementMiddleware's exact
+    legacy rule: a tenant with zero subscription rows is unconfigured/full
+    access (every active product), not locked out of everything.
+    """
+
+    permission_classes = [IsAuthenticatedViaClaims]
+
+    def get(self, request):
+        tenant_id = getattr(request, "tenant_id", None)
+        if not tenant_id:
+            return Response({"products": [], "legacy_full_access": False})
+        if not TenantProductSubscription.objects.filter(tenant_id=tenant_id).exists():
+            codes = list(ProductCatalogEntry.objects.filter(is_active=True).values_list("code", flat=True))
+            return Response({"products": codes, "legacy_full_access": True})
+        return Response({
+            "products": EditionService.tenant_entitled_products(tenant_id),
+            "legacy_full_access": False,
+        })
