@@ -30,8 +30,11 @@ export default function AdminInvoicesPage() {
   };
 
   useEffect(() => {
+    // load() sets state inside its own .then/.catch/.finally callbacks, not
+    // synchronously in the effect body — safe, but the compiler's static
+    // analysis can't see through the function call to verify that.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function markPaid(inv: TenantSubscriptionInvoice) {

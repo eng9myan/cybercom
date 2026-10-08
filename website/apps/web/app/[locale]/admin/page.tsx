@@ -48,7 +48,7 @@ export default function AdminRevenuePage() {
     return map;
   }, [subs]);
 
-  const activeTenants = tenants.filter((t) => t.status === "active");
+  const activeTenants = useMemo(() => tenants.filter((t) => t.status === "active"), [tenants]);
   const mrr = activeTenants.reduce((sum, t) => sum + Number(subByTenant[t.id]?.monthly_price_usd || 0), 0);
   const pendingInvoices = invoices.filter((i) => i.status === "pending");
   const pendingAmount = pendingInvoices.reduce((sum, i) => sum + Number(i.amount || 0), 0);
