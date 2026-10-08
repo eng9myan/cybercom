@@ -14,7 +14,7 @@ The production client
 """
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from django.core.cache import cache
@@ -71,13 +71,12 @@ def test_token_is_cached_across_calls(nphies_env):
     )
 
 
-def test_token_ttl_matches_expires_in_minus_60(nphies_env, mocker):
+def test_token_ttl_matches_expires_in_minus_60(nphies_env):
     """cache.set must be called with ttl = expires_in - 60 (55min buffer)."""
     from products.cymed.integrations.nphies.client import NphiesClient
 
-    cache_set = mocker.spy(cache, "set")
-
-    NphiesClient(client=_mock_client(expires_in=3300))._token()
+    with patch.object(cache, "set", wraps=cache.set) as cache_set:
+        NphiesClient(client=_mock_client(expires_in=3300))._token()
 
     assert cache_set.call_count == 1
     args, _ = cache_set.call_args
