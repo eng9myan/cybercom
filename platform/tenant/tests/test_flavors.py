@@ -37,7 +37,9 @@ class TestTenantFlavorActions:
         flavors.sync_registry()
         tenant = Tenant.objects.create(name="Acme Retail", slug="acme-retail")
 
-        resp = admin_client.post(f"/api/v1/tenants/{tenant.id}/enable-flavor/", {"key": "retail"})
+        resp = admin_client.post(
+            f"/api/v1/tenants/{tenant.id}/enable-flavor/", {"key": "retail"}, format="json"
+        )
         assert resp.status_code == 200
         assert resp.data["flavor_set"] == ["retail"]
         tenant.refresh_from_db()
@@ -46,7 +48,7 @@ class TestTenantFlavorActions:
     def test_enable_flavor_unknown_key_returns_404(self, admin_client):
         tenant = Tenant.objects.create(name="Acme2", slug="acme-2")
         resp = admin_client.post(
-            f"/api/v1/tenants/{tenant.id}/enable-flavor/", {"key": "no-such-flavor"}
+            f"/api/v1/tenants/{tenant.id}/enable-flavor/", {"key": "no-such-flavor"}, format="json"
         )
         assert resp.status_code == 404
         tenant.refresh_from_db()
@@ -55,7 +57,7 @@ class TestTenantFlavorActions:
     def test_enable_flavor_bad_key_format_returns_400(self, admin_client):
         tenant = Tenant.objects.create(name="Acme3", slug="acme-3")
         resp = admin_client.post(
-            f"/api/v1/tenants/{tenant.id}/enable-flavor/", {"key": "not a slug!"}
+            f"/api/v1/tenants/{tenant.id}/enable-flavor/", {"key": "not a slug!"}, format="json"
         )
         assert resp.status_code == 400
 
@@ -64,7 +66,9 @@ class TestTenantFlavorActions:
         tenant = Tenant.objects.create(
             name="Acme4", slug="acme-4", flavor_set=["retail", "clinic"]
         )
-        resp = admin_client.post(f"/api/v1/tenants/{tenant.id}/disable-flavor/", {"key": "retail"})
+        resp = admin_client.post(
+            f"/api/v1/tenants/{tenant.id}/disable-flavor/", {"key": "retail"}, format="json"
+        )
         assert resp.status_code == 200
         assert resp.data["flavor_set"] == ["clinic"]
         tenant.refresh_from_db()
@@ -73,7 +77,7 @@ class TestTenantFlavorActions:
     def test_disable_flavor_is_a_safe_noop_for_unregistered_key(self, admin_client):
         tenant = Tenant.objects.create(name="Acme5", slug="acme-5")
         resp = admin_client.post(
-            f"/api/v1/tenants/{tenant.id}/disable-flavor/", {"key": "never-enabled"}
+            f"/api/v1/tenants/{tenant.id}/disable-flavor/", {"key": "never-enabled"}, format="json"
         )
         assert resp.status_code == 200
         tenant.refresh_from_db()

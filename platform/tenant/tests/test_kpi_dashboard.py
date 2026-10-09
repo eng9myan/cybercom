@@ -1,10 +1,23 @@
 import uuid
 
 import pytest
+from django.apps import apps as django_apps
 from rest_framework.test import APIClient
 
-from platform.ephemeral_envs.models import EphemeralEnvironment
 from platform.tenant.models import Tenant, TenantStatus, TenantSubscription, SubscriptionPlan
+
+# platform.ephemeral_envs is only installed in platform's own test project and
+# cycom (see views_kpi.py, which already degrades gracefully for this exact
+# reason) — collecting this eagerly under e.g. cymed's settings module blows
+# up with "doesn't declare an explicit app_label and isn't in INSTALLED_APPS"
+# before any test even runs. Skip the whole module instead of hard-failing.
+if not django_apps.is_installed("platform.ephemeral_envs"):
+    pytest.skip(
+        "platform.ephemeral_envs isn't installed under this settings module",
+        allow_module_level=True,
+    )
+
+from platform.ephemeral_envs.models import EphemeralEnvironment  # noqa: E402
 
 
 def _authed_client(mint_token, mock_jwks, *, roles, tenant_id=None, email="ops@cybercom.io"):
